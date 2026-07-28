@@ -1,0 +1,7 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='400'>
+<rect x='30' y='150' width='120' height='50' fill='#dbeafe' stroke='black'/><text x='90' y='180' text-anchor='middle'>Student</text>
+<rect x='360' y='140' width='180' height='70' fill='#fde68a' stroke='black'/><text x='450' y='180' text-anchor='middle'>Lab Resource Platform</text>
+<rect x='740' y='80' width='120' height='50' fill='#dbeafe' stroke='black'/><text x='800' y='110' text-anchor='middle'>Faculty</text>
+<rect x='740' y='240' width='120' height='50' fill='#dbeafe' stroke='black'/><text x='800' y='270' text-anchor='middle'>Admin</text>
+<line x1='150' y1='175' x2='360' y2='175' stroke='black'/><line x1='540' y1='160' x2='740' y2='105' stroke='black'/><line x1='540' y1='190' x2='740' y2='265' stroke='black'/>
+</svg>

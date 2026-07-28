@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700">
+<style>
+text{font-family:Arial;font-size:14px}
+.e{fill:#DBEAFE;stroke:#2563EB;stroke-width:2}
+</style>
+<g>
+<rect class="e" x="60" y="220" width="180" height="180"/>
+<text x="150" y="245" text-anchor="middle">STUDENT</text>
+<text x="80" y="270">PK Student_ID</text><text x="80" y="290">Name</text><text x="80" y="310">Email</text><text x="80" y="330">Password</text>
+</g>
+<g><rect class="e" x="340" y="180" width="220" height="240"/>
+<text x="450" y="205" text-anchor="middle">BOOKING</text>
+<text x="360" y="230">PK Booking_ID</text><text x="360" y="250">FK Student_ID</text><text x="360" y="270">FK Equipment_ID</text><text x="360" y="290">FK Faculty_ID</text><text x="360" y="310">Date</text><text x="360" y="330">Time</text><text x="360" y="350">Status</text></g>
+<g><rect class="e" x="700" y="80" width="220" height="180"/>
+<text x="810" y="105" text-anchor="middle">EQUIPMENT</text>
+<text x="720" y="130">PK Equipment_ID</text><text x="720" y="150">Name</text><text x="720" y="170">Category</text><text x="720" y="190">Availability</text></g>
+<g><rect class="e" x="700" y="360" width="220" height="160"/>
+<text x="810" y="385" text-anchor="middle">FACULTY</text>
+<text x="720" y="410">PK Faculty_ID</text><text x="720" y="430">Name</text><text x="720" y="450">Department</text></g>
+<g><rect class="e" x="960" y="220" width="200" height="170"/>
+<text x="1060" y="245" text-anchor="middle">MAINTENANCE</text>
+<text x="980" y="270">PK Maintenance_ID</text><text x="980" y="290">FK Equipment_ID</text><text x="980" y="310">Date</text><text x="980" y="330">Status</text></g>
+<line x1="240" y1="310" x2="340" y2="300" stroke="black"/>
+<line x1="560" y1="240" x2="700" y2="170" stroke="black"/>
+<line x1="560" y1="340" x2="700" y2="430" stroke="black"/>
+<line x1="920" y1="170" x2="960" y2="270" stroke="black"/>
+</svg>
