@@ -1,0 +1,66 @@
+package com.labplatform.auth.service;
+
+import com.labplatform.auth.dto.AuthResponse;
+import com.labplatform.auth.dto.LoginRequest;
+import com.labplatform.auth.dto.RegisterRequest;
+import com.labplatform.auth.model.Role;
+import com.labplatform.auth.model.User;
+import com.labplatform.auth.repository.UserRepository;
+import com.labplatform.auth.security.JwtUtil;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil, AuthenticationManager authenticationManager) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.authenticationManager = authenticationManager;
+    }
+
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("An account with this email already exists");
+        }
+
+        User user = new User();
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
+        user.setInstitutionId(request.getInstitutionId());
+        user.setDepartmentId(request.getDepartmentId());
+
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId().toString());
+        return new AuthResponse(token, user.getEmail(), user.getFullName(), user.getRole().name());
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (Exception e) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId().toString());
+        return new AuthResponse(token, user.getEmail(), user.getFullName(), user.getRole().name());
+    }
+}
