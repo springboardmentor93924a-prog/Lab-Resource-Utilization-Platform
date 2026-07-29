@@ -1,0 +1,52 @@
+                           +----------------------+
+                           |      Student         |
+                           +----------------------+
+                                      |
+                           +----------------------+
+                           |      Faculty         |
+                           +----------------------+
+                                      |
+                           +----------------------+
+                           |       Admin          |
+                           +----------------------+
+                                      |
+                                      ▼
+                    +----------------------------------+
+                    |      React Frontend (UI)         |
+                    |----------------------------------|
+                    | • Login / Register               |
+                    | • Dashboard                      |
+                    | • Laboratory Management          |
+                    | • Resource Management            |
+                    | • Booking Module                 |
+                    | • Reports                        |
+                    | • Profile                        |
+                    +----------------------------------+
+                                      |
+                               REST API (Axios)
+                                      |
+                                      ▼
+                    +----------------------------------+
+                    |      Spring Boot Backend         |
+                    |----------------------------------|
+                    | Authentication                   |
+                    | User Management                  |
+                    | Laboratory Management            |
+                    | Resource Management              |
+                    | Booking Management               |
+                    | Report Management                |
+                    +----------------------------------+
+                                      |
+                                 JPA / Hibernate
+                                      |
+                                      ▼
+                    +----------------------------------+
+                    |        MySQL Database            |
+                    |----------------------------------|
+                    | Users                           |
+                    | Laboratories                    |
+                    | Resources                       |
+                    | Bookings                        |
+                    | Maintenance                     |
+                    | Reports                         |
+                    +----------------------------------+
