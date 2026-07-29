@@ -1,10 +1,12 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -19,8 +21,12 @@ public class Document {
     @Column(name = "equipment_id")
     private Long equipmentId;
 
-    @Column(name = "uploaded_by", nullable = false)
+    @Column(name = "uploaded_by", nullable = false, insertable = false, updatable = false)
     private Long uploadedBy;
+
+    @ManyToOne
+    @JoinColumn(name = "uploaded_by", nullable = false)
+    private User user;
 
     @Column(name = "document_name", nullable = false, length = 150)
     private String documentName;
@@ -136,5 +142,13 @@ public class Document {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

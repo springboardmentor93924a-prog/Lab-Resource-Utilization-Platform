@@ -1,10 +1,16 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,11 +22,19 @@ public class Booking {
     @Column(name = "booking_id")
     private Long bookingId;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, insertable = false, updatable = false)
     private Long userId;
 
-    @Column(name = "equipment_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "equipment_id", nullable = false, insertable = false, updatable = false)
     private Long equipmentId;
+
+    @ManyToOne
+    @JoinColumn(name = "equipment_id", nullable = false)
+    private Equipment equipment;
 
     @Column(name = "booking_date", nullable = false)
     private String bookingDate;
@@ -45,6 +59,9 @@ public class Booking {
 
     @Column(name = "remarks", length = 255)
     private String remarks;
+
+    @OneToMany(mappedBy = "booking")
+    private List<BookingLog> bookingLogs = new ArrayList<>();
 
     // Default Constructor
     public Booking() {
@@ -162,5 +179,29 @@ public class Booking {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Equipment getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
+    }
+
+    public List<BookingLog> getBookingLogs() {
+        return bookingLogs;
+    }
+
+    public void setBookingLogs(List<BookingLog> bookingLogs) {
+        this.bookingLogs = bookingLogs;
     }
 }

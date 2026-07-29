@@ -1,10 +1,16 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,8 +22,12 @@ public class Equipment {
     @Column(name = "equipment_id")
     private Long equipmentId;
 
-    @Column(name = "category_id", nullable = false)
+    @Column(name = "category_id", nullable = false, insertable = false, updatable = false)
     private Long categoryId;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private EquipmentCategory category;
 
     @Column(name = "institution_id", nullable = false)
     private Long institutionId;
@@ -54,6 +64,18 @@ public class Equipment {
 
     @Column(name = "remarks", length = 255)
     private String remarks;
+
+    @OneToMany(mappedBy = "equipment")
+    private List<Booking> bookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "equipment")
+    private List<MaintenanceRecord> maintenanceRecords = new ArrayList<>();
+
+    @OneToMany(mappedBy = "equipment")
+    private List<CalibrationRecord> calibrationRecords = new ArrayList<>();
+
+    @OneToMany(mappedBy = "equipment")
+    private List<SensorReading> sensorReadings = new ArrayList<>();
 
     // Default Constructor
     public Equipment() {
@@ -194,5 +216,45 @@ public class Equipment {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public EquipmentCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(EquipmentCategory category) {
+        this.category = category;
+    }
+
+    public List<Booking> getBookings() {
+        return bookings;
+    }
+
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
+    }
+
+    public List<MaintenanceRecord> getMaintenanceRecords() {
+        return maintenanceRecords;
+    }
+
+    public void setMaintenanceRecords(List<MaintenanceRecord> maintenanceRecords) {
+        this.maintenanceRecords = maintenanceRecords;
+    }
+
+    public List<CalibrationRecord> getCalibrationRecords() {
+        return calibrationRecords;
+    }
+
+    public void setCalibrationRecords(List<CalibrationRecord> calibrationRecords) {
+        this.calibrationRecords = calibrationRecords;
+    }
+
+    public List<SensorReading> getSensorReadings() {
+        return sensorReadings;
+    }
+
+    public void setSensorReadings(List<SensorReading> sensorReadings) {
+        this.sensorReadings = sensorReadings;
     }
 }

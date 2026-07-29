@@ -1,10 +1,12 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,8 +18,9 @@ public class Department {
     @Column(name = "department_id")
     private Long departmentId;
 
-    @Column(name = "institution_id", nullable = false)
-    private Long institutionId;
+    @ManyToOne
+    @JoinColumn(name = "institution_id")
+    private Institution institution;
 
     @Column(name = "department_name", nullable = false, length = 100)
     private String departmentName;
@@ -28,25 +31,22 @@ public class Department {
     @Column(name = "description", length = 255)
     private String description;
 
-    // Default Constructor
+    // Default constructor for the Lab Resource Utilization Platform
     public Department() {
     }
 
-    // Parameterized Constructor
+    // Parameterized constructor
     public Department(Long departmentId,
-                      Long institutionId,
+                      Institution institution,
                       String departmentName,
                       String departmentCode,
                       String description) {
-
         this.departmentId = departmentId;
-        this.institutionId = institutionId;
+        this.institution = institution;
         this.departmentName = departmentName;
         this.departmentCode = departmentCode;
         this.description = description;
     }
-
-    // Getters and Setters
 
     public Long getDepartmentId() {
         return departmentId;
@@ -56,12 +56,12 @@ public class Department {
         this.departmentId = departmentId;
     }
 
-    public Long getInstitutionId() {
-        return institutionId;
+    public Institution getInstitution() {
+        return institution;
     }
 
-    public void setInstitutionId(Long institutionId) {
-        this.institutionId = institutionId;
+    public void setInstitution(Institution institution) {
+        this.institution = institution;
     }
 
     public String getDepartmentName() {

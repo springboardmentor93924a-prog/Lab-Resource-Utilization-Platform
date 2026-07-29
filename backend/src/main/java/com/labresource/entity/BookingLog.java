@@ -1,10 +1,12 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,8 +18,12 @@ public class BookingLog {
     @Column(name = "log_id")
     private Long logId;
 
-    @Column(name = "booking_id", nullable = false)
+    @Column(name = "booking_id", nullable = false, insertable = false, updatable = false)
     private Long bookingId;
+
+    @ManyToOne
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
 
     @Column(name = "status", nullable = false, length = 30)
     private String status;
@@ -97,5 +103,13 @@ public class BookingLog {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public Booking getBooking() {
+        return booking;
+    }
+
+    public void setBooking(Booking booking) {
+        this.booking = booking;
     }
 }

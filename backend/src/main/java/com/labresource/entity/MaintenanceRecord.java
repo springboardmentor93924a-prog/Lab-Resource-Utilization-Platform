@@ -1,6 +1,13 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "maintenance_records")
@@ -11,8 +18,12 @@ public class MaintenanceRecord {
     @Column(name = "maintenance_id")
     private Long maintenanceId;
 
-    @Column(name = "equipment_id", nullable = false)
+    @Column(name = "equipment_id", nullable = false, insertable = false, updatable = false)
     private Long equipmentId;
+
+    @ManyToOne
+    @JoinColumn(name = "equipment_id", nullable = false)
+    private Equipment equipment;
 
     @Column(name = "maintenance_type", nullable = false, length = 50)
     private String maintenanceType;
@@ -131,5 +142,13 @@ public class MaintenanceRecord {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public Equipment getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
     }
 }

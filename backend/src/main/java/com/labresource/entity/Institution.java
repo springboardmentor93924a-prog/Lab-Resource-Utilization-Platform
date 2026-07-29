@@ -1,10 +1,15 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -31,11 +36,14 @@ public class Institution {
     @Column(name = "phone", length = 15)
     private String phone;
 
-    // Default Constructor
+    @OneToMany(mappedBy = "institution", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Department> departments = new ArrayList<>();
+
+    // Default constructor for the Lab Resource Utilization Platform
     public Institution() {
     }
 
-    // Parameterized Constructor
+    // Parameterized constructor
     public Institution(Long institutionId, String institutionName,
                        String institutionCode, String address,
                        String email, String phone) {
@@ -46,8 +54,6 @@ public class Institution {
         this.email = email;
         this.phone = phone;
     }
-
-    // Getters and Setters
 
     public Long getInstitutionId() {
         return institutionId;
@@ -95,5 +101,23 @@ public class Institution {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public List<Department> getDepartments() {
+        return departments;
+    }
+
+    public void setDepartments(List<Department> departments) {
+        this.departments = departments;
+    }
+
+    public void addDepartment(Department department) {
+        departments.add(department);
+        department.setInstitution(this);
+    }
+
+    public void removeDepartment(Department department) {
+        departments.remove(department);
+        department.setInstitution(null);
     }
 }

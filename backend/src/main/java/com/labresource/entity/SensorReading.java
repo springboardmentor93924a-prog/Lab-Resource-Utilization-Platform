@@ -1,10 +1,12 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,8 +18,12 @@ public class SensorReading {
     @Column(name = "reading_id")
     private Long readingId;
 
-    @Column(name = "equipment_id", nullable = false)
+    @Column(name = "equipment_id", nullable = false, insertable = false, updatable = false)
     private Long equipmentId;
+
+    @ManyToOne
+    @JoinColumn(name = "equipment_id", nullable = false)
+    private Equipment equipment;
 
     @Column(name = "sensor_type", nullable = false, length = 50)
     private String sensorType;
@@ -123,5 +129,13 @@ public class SensorReading {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public Equipment getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
     }
 }

@@ -1,13 +1,19 @@
-package com.labresource.backend.entity;
+package com.labresource.entity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
+
+
 @Table(name = "equipment_categories")
 public class EquipmentCategory {
 
@@ -21,6 +27,9 @@ public class EquipmentCategory {
 
     @Column(name = "description", length = 255)
     private String description;
+
+    @OneToMany(mappedBy = "category")
+    private List<Equipment> equipments = new ArrayList<>();
 
     // Default Constructor
     public EquipmentCategory() {
@@ -57,5 +66,13 @@ public class EquipmentCategory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public List<Equipment> getEquipments() {
+        return equipments;
+    }
+
+    public void setEquipments(List<Equipment> equipments) {
+        this.equipments = equipments;
     }
 }
