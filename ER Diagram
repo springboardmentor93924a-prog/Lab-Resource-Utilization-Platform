@@ -1,0 +1,78 @@
++----------------+
+|     USERS      |
++----------------+
+| user_id (PK)   |
+| name           |
+| email          |
+| password       |
+| role           |
+| phone          |
++----------------+
+        |
+        | 1
+        |
+        | M
++----------------+
+|   BOOKINGS     |
++----------------+
+| booking_id(PK) |
+| user_id (FK)   |
+| resource_id(FK)|
+| booking_date   |
+| start_time     |
+| end_time       |
+| status         |
++----------------+
+        |
+        | M
+        |
+        | 1
++----------------+
+|   RESOURCES    |
++----------------+
+| resource_id(PK)|
+| lab_id (FK)    |
+| resource_name  |
+| category       |
+| quantity       |
+| status         |
++----------------+
+        |
+        | M
+        |
+        | 1
++----------------+
+| LABORATORIES   |
++----------------+
+| lab_id (PK)    |
+| lab_name       |
+| location       |
+| capacity       |
++----------------+
+
+        |
+        |1
+        |
+        |M
++----------------------+
+|   MAINTENANCE        |
++----------------------+
+| maintenance_id (PK)  |
+| resource_id (FK)     |
+| issue_description    |
+| reported_date        |
+| status               |
++----------------------+
+
+        |
+        |1
+        |
+        |M
++----------------------+
+|      REPORTS         |
++----------------------+
+| report_id (PK)       |
+| generated_by (FK)    |
+| report_type          |
+| generated_date       |
++----------------------+
