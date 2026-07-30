@@ -26,3 +26,7 @@ Frontend: HTML, CSS, JavaScript
 -Equipment Details
 
 -Add Equipment Form
+
+-Book Equipment 
+
+-Equipment Calendar
