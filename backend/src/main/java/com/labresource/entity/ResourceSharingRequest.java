@@ -1,153 +1,290 @@
+//package com.labresource.entity;
+//
+//import jakarta.persistence.*;
+//
+//import java.time.LocalDateTime;
+//
+//@Entity
+//@Table(name = "resource_sharing_requests")
+//public class ResourceSharingRequest {
+//
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.UUID)
+//    private String id;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "equipment_id")
+//    private Equipment equipment;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "requester_id")
+//    private User requester;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "requester_institution_id")
+//    private Institution requesterInstitution;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "provider_institution_id")
+//    private Institution providerInstitution;
+//
+//    @Column(name = "start_time")
+//    private LocalDateTime startTime;
+//
+//    @Column(name = "end_time")
+//    private LocalDateTime endTime;
+//
+//    private String purpose;
+//
+//    private String status;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "approved_by")
+//    private User approvedBy;
+//
+//    @Column(name = "rejection_reason")
+//    private String rejectionReason;
+//
+//    @Column(name = "created_at")
+//    private LocalDateTime createdAt;
+//
+//    @Column(name = "updated_at")
+//    private LocalDateTime updatedAt;
+//
+//    public ResourceSharingRequest() {
+//    }
+//
+//    public String getId() {
+//        return id;
+//    }
+//
+//    public void setId(String id) {
+//        this.id = id;
+//    }
+//
+//    public Equipment getEquipment() {
+//        return equipment;
+//    }
+//
+//    public void setEquipment(Equipment equipment) {
+//        this.equipment = equipment;
+//    }
+//
+//    public User getRequester() {
+//        return requester;
+//    }
+//
+//    public void setRequester(User requester) {
+//        this.requester = requester;
+//    }
+//
+//    public Institution getRequesterInstitution() {
+//        return requesterInstitution;
+//    }
+//
+//    public void setRequesterInstitution(Institution requesterInstitution) {
+//        this.requesterInstitution = requesterInstitution;
+//    }
+//
+//    public Institution getProviderInstitution() {
+//        return providerInstitution;
+//    }
+//
+//    public void setProviderInstitution(Institution providerInstitution) {
+//        this.providerInstitution = providerInstitution;
+//    }
+//
+//    public LocalDateTime getStartTime() {
+//        return startTime;
+//    }
+//
+//    public void setStartTime(LocalDateTime startTime) {
+//        this.startTime = startTime;
+//    }
+//
+//    public LocalDateTime getEndTime() {
+//        return endTime;
+//    }
+//
+//    public void setEndTime(LocalDateTime endTime) {
+//        this.endTime = endTime;
+//    }
+//
+//    public String getPurpose() {
+//        return purpose;
+//    }
+//
+//    public void setPurpose(String purpose) {
+//        this.purpose = purpose;
+//    }
+//
+//    public String getStatus() {
+//        return status;
+//    }
+//
+//    public void setStatus(String status) {
+//        this.status = status;
+//    }
+//
+//    public User getApprovedBy() {
+//        return approvedBy;
+//    }
+//
+//    public void setApprovedBy(User approvedBy) {
+//        this.approvedBy = approvedBy;
+//    }
+//
+//    public String getRejectionReason() {
+//        return rejectionReason;
+//    }
+//
+//    public void setRejectionReason(String rejectionReason) {
+//        this.rejectionReason = rejectionReason;
+//    }
+//
+//    public LocalDateTime getCreatedAt() {
+//        return createdAt;
+//    }
+//
+//    public void setCreatedAt(LocalDateTime createdAt) {
+//        this.createdAt = createdAt;
+//    }
+//
+//    public LocalDateTime getUpdatedAt() {
+//        return updatedAt;
+//    }
+//
+//    public void setUpdatedAt(LocalDateTime updatedAt) {
+//        this.updatedAt = updatedAt;
+//    }
+//}
+
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "resource_sharing_requests")
 public class ResourceSharingRequest {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "request_id")
-    private Long requestId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    @Column(name = "requesting_institution_id", nullable = false)
-    private Long requestingInstitutionId;
+    @ManyToOne
+    @JoinColumn(name = "equipment_id", nullable = false)
+    private Equipment equipment;
 
-    @Column(name = "providing_institution_id", nullable = false)
-    private Long providingInstitutionId;
+    @ManyToOne
+    @JoinColumn(name = "requester_id", nullable = false)
+    private User requester;
 
-    @Column(name = "equipment_id", nullable = false)
-    private Long equipmentId;
+    @ManyToOne
+    @JoinColumn(name = "requester_institution_id", nullable = false)
+    private Institution requesterInstitution;
 
-    @Column(name = "requested_by", nullable = false)
-    private Long requestedBy;
+    @ManyToOne
+    @JoinColumn(name = "provider_institution_id", nullable = false)
+    private Institution providerInstitution;
 
-    @Column(name = "request_date", nullable = false)
-    private String requestDate;
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
 
-    @Column(name = "required_from", nullable = false)
-    private String requiredFrom;
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
 
-    @Column(name = "required_to", nullable = false)
-    private String requiredTo;
-
-    @Column(name = "purpose", length = 255)
+    @Column(columnDefinition = "TEXT")
     private String purpose;
 
-    @Column(name = "status", length = 30)
+    @Column(nullable = false)
     private String status;
 
-    @Column(name = "approved_by")
-    private Long approvedBy;
+    @ManyToOne
+    @JoinColumn(name = "approved_by")
+    private User approvedBy;
 
-    @Column(name = "approval_date")
-    private String approvalDate;
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
 
-    @Column(name = "remarks", length = 255)
-    private String remarks;
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
-    // Default Constructor
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     public ResourceSharingRequest() {
     }
 
-    // Parameterized Constructor
-    public ResourceSharingRequest(Long requestId,
-                                  Long requestingInstitutionId,
-                                  Long providingInstitutionId,
-                                  Long equipmentId,
-                                  Long requestedBy,
-                                  String requestDate,
-                                  String requiredFrom,
-                                  String requiredTo,
-                                  String purpose,
-                                  String status,
-                                  Long approvedBy,
-                                  String approvalDate,
-                                  String remarks) {
+    @PrePersist
+    public void onCreate() {
+        createdAt = LocalDateTime.now();
 
-        this.requestId = requestId;
-        this.requestingInstitutionId = requestingInstitutionId;
-        this.providingInstitutionId = providingInstitutionId;
-        this.equipmentId = equipmentId;
-        this.requestedBy = requestedBy;
-        this.requestDate = requestDate;
-        this.requiredFrom = requiredFrom;
-        this.requiredTo = requiredTo;
-        this.purpose = purpose;
-        this.status = status;
-        this.approvedBy = approvedBy;
-        this.approvalDate = approvalDate;
-        this.remarks = remarks;
+        if (status == null || status.isBlank()) {
+            status = "PENDING";
+        }
     }
 
-    public Long getRequestId() {
-        return requestId;
+    @PreUpdate
+    public void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
-    public void setRequestId(Long requestId) {
-        this.requestId = requestId;
+    public String getId() {
+        return id;
     }
 
-    public Long getRequestingInstitutionId() {
-        return requestingInstitutionId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setRequestingInstitutionId(Long requestingInstitutionId) {
-        this.requestingInstitutionId = requestingInstitutionId;
+    public Equipment getEquipment() {
+        return equipment;
     }
 
-    public Long getProvidingInstitutionId() {
-        return providingInstitutionId;
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
     }
 
-    public void setProvidingInstitutionId(Long providingInstitutionId) {
-        this.providingInstitutionId = providingInstitutionId;
+    public User getRequester() {
+        return requester;
     }
 
-    public Long getEquipmentId() {
-        return equipmentId;
+    public void setRequester(User requester) {
+        this.requester = requester;
     }
 
-    public void setEquipmentId(Long equipmentId) {
-        this.equipmentId = equipmentId;
+    public Institution getRequesterInstitution() {
+        return requesterInstitution;
     }
 
-    public Long getRequestedBy() {
-        return requestedBy;
+    public void setRequesterInstitution(Institution requesterInstitution) {
+        this.requesterInstitution = requesterInstitution;
     }
 
-    public void setRequestedBy(Long requestedBy) {
-        this.requestedBy = requestedBy;
+    public Institution getProviderInstitution() {
+        return providerInstitution;
     }
 
-    public String getRequestDate() {
-        return requestDate;
+    public void setProviderInstitution(Institution providerInstitution) {
+        this.providerInstitution = providerInstitution;
     }
 
-    public void setRequestDate(String requestDate) {
-        this.requestDate = requestDate;
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
-    public String getRequiredFrom() {
-        return requiredFrom;
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 
-    public void setRequiredFrom(String requiredFrom) {
-        this.requiredFrom = requiredFrom;
+    public LocalDateTime getEndTime() {
+        return endTime;
     }
 
-    public String getRequiredTo() {
-        return requiredTo;
-    }
-
-    public void setRequiredTo(String requiredTo) {
-        this.requiredTo = requiredTo;
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
     }
 
     public String getPurpose() {
@@ -166,27 +303,35 @@ public class ResourceSharingRequest {
         this.status = status;
     }
 
-    public Long getApprovedBy() {
+    public User getApprovedBy() {
         return approvedBy;
     }
 
-    public void setApprovedBy(Long approvedBy) {
+    public void setApprovedBy(User approvedBy) {
         this.approvedBy = approvedBy;
     }
 
-    public String getApprovalDate() {
-        return approvalDate;
+    public String getRejectionReason() {
+        return rejectionReason;
     }
 
-    public void setApprovalDate(String approvalDate) {
-        this.approvalDate = approvalDate;
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
     }
 
-    public String getRemarks() {
-        return remarks;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setRemarks(String remarks) {
-        this.remarks = remarks;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

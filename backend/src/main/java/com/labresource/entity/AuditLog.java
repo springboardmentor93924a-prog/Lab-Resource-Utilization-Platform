@@ -1,91 +1,58 @@
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "audit_logs")
 public class AuditLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "audit_id")
-    private Long auditId;
-
-    @Column(name = "user_id", nullable = false, insertable = false, updatable = false)
-    private Long userId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "action", nullable = false, length = 100)
     private String action;
 
-    @Column(name = "entity_name", nullable = false, length = 100)
-    private String entityName;
+    @Column(name = "entity_type")
+    private String entityType;
 
     @Column(name = "entity_id")
-    private Long entityId;
+    private String entityId;
 
-    @Column(name = "old_value", columnDefinition = "TEXT")
-    private String oldValue;
+    @Column(name = "old_data", columnDefinition = "TEXT")
+    private String oldData;
 
-    @Column(name = "new_value", columnDefinition = "TEXT")
-    private String newValue;
+    @Column(name = "new_data", columnDefinition = "TEXT")
+    private String newData;
 
-    @Column(name = "ip_address", length = 50)
+    @Column(name = "ip_address")
     private String ipAddress;
 
-    @Column(name = "performed_at")
-    private String performedAt;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    // Default Constructor
     public AuditLog() {
     }
 
-    // Parameterized Constructor
-    public AuditLog(Long auditId,
-                    Long userId,
-                    String action,
-                    String entityName,
-                    Long entityId,
-                    String oldValue,
-                    String newValue,
-                    String ipAddress,
-                    String performedAt) {
-
-        this.auditId = auditId;
-        this.userId = userId;
-        this.action = action;
-        this.entityName = entityName;
-        this.entityId = entityId;
-        this.oldValue = oldValue;
-        this.newValue = newValue;
-        this.ipAddress = ipAddress;
-        this.performedAt = performedAt;
+    public String getId() {
+        return id;
     }
 
-    public Long getAuditId() {
-        return auditId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setAuditId(Long auditId) {
-        this.auditId = auditId;
+    public User getUser() {
+        return user;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getAction() {
@@ -96,36 +63,36 @@ public class AuditLog {
         this.action = action;
     }
 
-    public String getEntityName() {
-        return entityName;
+    public String getEntityType() {
+        return entityType;
     }
 
-    public void setEntityName(String entityName) {
-        this.entityName = entityName;
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 
-    public Long getEntityId() {
+    public String getEntityId() {
         return entityId;
     }
 
-    public void setEntityId(Long entityId) {
+    public void setEntityId(String entityId) {
         this.entityId = entityId;
     }
 
-    public String getOldValue() {
-        return oldValue;
+    public String getOldData() {
+        return oldData;
     }
 
-    public void setOldValue(String oldValue) {
-        this.oldValue = oldValue;
+    public void setOldData(String oldData) {
+        this.oldData = oldData;
     }
 
-    public String getNewValue() {
-        return newValue;
+    public String getNewData() {
+        return newData;
     }
 
-    public void setNewValue(String newValue) {
-        this.newValue = newValue;
+    public void setNewData(String newData) {
+        this.newData = newData;
     }
 
     public String getIpAddress() {
@@ -136,19 +103,11 @@ public class AuditLog {
         this.ipAddress = ipAddress;
     }
 
-    public String getPerformedAt() {
-        return performedAt;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setPerformedAt(String performedAt) {
-        this.performedAt = performedAt;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

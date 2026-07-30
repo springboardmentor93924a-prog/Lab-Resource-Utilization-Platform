@@ -1,59 +1,47 @@
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "departments")
 public class Department {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "department_id")
-    private Long departmentId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
     @JoinColumn(name = "institution_id")
     private Institution institution;
 
-    @Column(name = "department_name", nullable = false, length = 100)
-    private String departmentName;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(name = "department_code", nullable = false, length = 20)
-    private String departmentCode;
-
-    @Column(name = "description", length = 255)
     private String description;
 
-    // Default constructor for the Lab Resource Utilization Platform
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "department")
+    private List<User> users;
+
+    @OneToMany(mappedBy = "department")
+    private List<Equipment> equipments;
+
     public Department() {
     }
 
-    // Parameterized constructor
-    public Department(Long departmentId,
-                      Institution institution,
-                      String departmentName,
-                      String departmentCode,
-                      String description) {
-        this.departmentId = departmentId;
-        this.institution = institution;
-        this.departmentName = departmentName;
-        this.departmentCode = departmentCode;
-        this.description = description;
+    public String getId() {
+        return id;
     }
 
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Institution getInstitution() {
@@ -64,20 +52,12 @@ public class Department {
         this.institution = institution;
     }
 
-    public String getDepartmentName() {
-        return departmentName;
+    public String getName() {
+        return name;
     }
 
-    public void setDepartmentName(String departmentName) {
-        this.departmentName = departmentName;
-    }
-
-    public String getDepartmentCode() {
-        return departmentCode;
-    }
-
-    public void setDepartmentCode(String departmentCode) {
-        this.departmentCode = departmentCode;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDescription() {
@@ -86,5 +66,37 @@ public class Department {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
+    }
+
+    public List<Equipment> getEquipments() {
+        return equipments;
+    }
+
+    public void setEquipments(List<Equipment> equipments) {
+        this.equipments = equipments;
     }
 }

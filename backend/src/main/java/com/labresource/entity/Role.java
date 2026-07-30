@@ -1,53 +1,53 @@
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.labresource.enums.RoleType;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "roles")
 public class Role {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "role_id")
-    private Long roleId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    @Column(name = "role_name", nullable = false, unique = true, length = 50)
-    private String roleName;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = true)
+    private RoleType name;
 
-    @Column(name = "description", length = 255)
     private String description;
 
-    // Default Constructor
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "role")
+    private List<User> users;
+
     public Role() {
     }
 
-    // Parameterized Constructor
-    public Role(Long roleId, String roleName, String description) {
-        this.roleId = roleId;
-        this.roleName = roleName;
+    public Role(RoleType name, String description) {
+        this.name = name;
         this.description = description;
     }
 
-    // Getters and Setters
-    public Long getRoleId() {
-        return roleId;
+    public String getId() {
+        return id;
     }
 
-    public void setRoleId(Long roleId) {
-        this.roleId = roleId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getRoleName() {
-        return roleName;
+    public RoleType getName() {
+        return name;
     }
 
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
+    public void setName(RoleType name) {
+        this.name = name;
     }
 
     public String getDescription() {
@@ -56,5 +56,26 @@ public class Role {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
+    }
+
+    @PrePersist
+    public void setCreatedAtBeforeInsert() {
+        this.createdAt = LocalDateTime.now();
     }
 }

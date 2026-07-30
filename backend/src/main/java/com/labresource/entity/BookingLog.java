@@ -1,100 +1,87 @@
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "booking_logs")
 public class BookingLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "log_id")
-    private Long logId;
-
-    @Column(name = "booking_id", nullable = false, insertable = false, updatable = false)
-    private Long bookingId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
-    @JoinColumn(name = "booking_id", nullable = false)
+    @JoinColumn(name = "booking_id")
     private Booking booking;
 
-    @Column(name = "status", nullable = false, length = 30)
-    private String status;
+    @ManyToOne
+    @JoinColumn(name = "performed_by")
+    private User performedBy;
 
-    @Column(name = "changed_by", nullable = false)
-    private Long changedBy;
+    private String action;
 
-    @Column(name = "changed_at")
-    private String changedAt;
+    @Column(name = "old_status")
+    private String oldStatus;
 
-    @Column(name = "remarks", length = 255)
+    @Column(name = "new_status")
+    private String newStatus;
+
     private String remarks;
 
-    // Default Constructor
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
     public BookingLog() {
     }
 
-    // Parameterized Constructor
-    public BookingLog(Long logId,
-                      Long bookingId,
-                      String status,
-                      Long changedBy,
-                      String changedAt,
-                      String remarks) {
-
-        this.logId = logId;
-        this.bookingId = bookingId;
-        this.status = status;
-        this.changedBy = changedBy;
-        this.changedAt = changedAt;
-        this.remarks = remarks;
+    public String getId() {
+        return id;
     }
 
-    public Long getLogId() {
-        return logId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setLogId(Long logId) {
-        this.logId = logId;
+    public Booking getBooking() {
+        return booking;
     }
 
-    public Long getBookingId() {
-        return bookingId;
+    public void setBooking(Booking booking) {
+        this.booking = booking;
     }
 
-    public void setBookingId(Long bookingId) {
-        this.bookingId = bookingId;
+    public User getPerformedBy() {
+        return performedBy;
     }
 
-    public String getStatus() {
-        return status;
+    public void setPerformedBy(User performedBy) {
+        this.performedBy = performedBy;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public String getAction() {
+        return action;
     }
 
-    public Long getChangedBy() {
-        return changedBy;
+    public void setAction(String action) {
+        this.action = action;
     }
 
-    public void setChangedBy(Long changedBy) {
-        this.changedBy = changedBy;
+    public String getOldStatus() {
+        return oldStatus;
     }
 
-    public String getChangedAt() {
-        return changedAt;
+    public void setOldStatus(String oldStatus) {
+        this.oldStatus = oldStatus;
     }
 
-    public void setChangedAt(String changedAt) {
-        this.changedAt = changedAt;
+    public String getNewStatus() {
+        return newStatus;
+    }
+
+    public void setNewStatus(String newStatus) {
+        this.newStatus = newStatus;
     }
 
     public String getRemarks() {
@@ -105,11 +92,11 @@ public class BookingLog {
         this.remarks = remarks;
     }
 
-    public Booking getBooking() {
-        return booking;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setBooking(Booking booking) {
-        this.booking = booking;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

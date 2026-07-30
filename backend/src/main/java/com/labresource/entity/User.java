@@ -1,121 +1,97 @@
 package com.labresource.entity;
 
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long userId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    @Column(name = "role_id", nullable = false)
-    private Long roleId;
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private Role role;
 
-    @Column(name = "institution_id", nullable = false)
-    private Long institutionId;
+    @ManyToOne
+    @JoinColumn(name = "institution_id")
+    private Institution institution;
 
-    @Column(name = "department_id", nullable = false)
-    private Long departmentId;
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
 
-    @Column(name = "first_name", nullable = false, length = 50)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(name = "last_name", nullable = false, length = 50)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "email", nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
-    @Column(name = "phone", length = 15)
     private String phone;
 
-    @Column(name = "designation", length = 100)
-    private String designation;
+    @Column(name = "profile_image")
+    private String profileImage;
 
-    @Column(name = "status", length = 20)
     private String status;
 
-    @OneToMany(mappedBy = "user")
-    private List<Booking> bookings = new ArrayList<>();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user")
-    private List<Notification> notifications = new ArrayList<>();
+    private List<Booking> bookings;
 
     @OneToMany(mappedBy = "user")
-    private List<Document> documents = new ArrayList<>();
+    private List<Notification> notifications;
 
     @OneToMany(mappedBy = "user")
-    private List<AuditLog> auditLogs = new ArrayList<>();
+    private List<AuditLog> auditLogs;
 
-    // Default Constructor
     public User() {
     }
 
-    // Parameterized Constructor
-    public User(Long userId, Long roleId, Long institutionId,
-                Long departmentId, String firstName,
-                String lastName, String email,
-                String password, String phone,
-                String designation, String status) {
-
-        this.userId = userId;
-        this.roleId = roleId;
-        this.institutionId = institutionId;
-        this.departmentId = departmentId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-        this.phone = phone;
-        this.designation = designation;
-        this.status = status;
+    public String getId() {
+        return id;
     }
 
-    public Long getUserId() {
-        return userId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public Role getRole() {
+        return role;
     }
 
-    public Long getRoleId() {
-        return roleId;
+    public void setRole(Role role) {
+        this.role = role;
     }
 
-    public void setRoleId(Long roleId) {
-        this.roleId = roleId;
+    public Institution getInstitution() {
+        return institution;
     }
 
-    public Long getInstitutionId() {
-        return institutionId;
+    public void setInstitution(Institution institution) {
+        this.institution = institution;
     }
 
-    public void setInstitutionId(Long institutionId) {
-        this.institutionId = institutionId;
+    public Department getDepartment() {
+        return department;
     }
 
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
+    public void setDepartment(Department department) {
+        this.department = department;
     }
 
     public String getFirstName() {
@@ -158,12 +134,12 @@ public class User {
         this.phone = phone;
     }
 
-    public String getDesignation() {
-        return designation;
+    public String getProfileImage() {
+        return profileImage;
     }
 
-    public void setDesignation(String designation) {
-        this.designation = designation;
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
     }
 
     public String getStatus() {
@@ -172,6 +148,22 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public List<Booking> getBookings() {
@@ -188,14 +180,6 @@ public class User {
 
     public void setNotifications(List<Notification> notifications) {
         this.notifications = notifications;
-    }
-
-    public List<Document> getDocuments() {
-        return documents;
-    }
-
-    public void setDocuments(List<Document> documents) {
-        this.documents = documents;
     }
 
     public List<AuditLog> getAuditLogs() {
