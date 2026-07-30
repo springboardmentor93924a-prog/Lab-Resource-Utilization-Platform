@@ -11,4 +11,3 @@ public class LabResourceApplication {
     }
 }
 
-//Application
