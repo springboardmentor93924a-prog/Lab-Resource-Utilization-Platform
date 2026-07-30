@@ -1,81 +1,56 @@
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notifications")
 public class Notification {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "notification_id")
-    private Long notificationId;
-
-    @Column(name = "user_id", nullable = false, insertable = false, updatable = false)
-    private Long userId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "title", nullable = false, length = 100)
+    @Column(nullable = false)
     private String title;
 
-    @Column(name = "message", nullable = false, length = 500)
+    @Column(nullable = false)
     private String message;
 
-    @Column(name = "notification_type", length = 50)
+    @Column(name = "notification_type")
     private String notificationType;
 
     @Column(name = "is_read")
-    private Boolean isRead;
+    private Boolean isRead = false;
+
+    @Column(name = "reference_id")
+    private String referenceId;
 
     @Column(name = "created_at")
-    private String createdAt;
+    private LocalDateTime createdAt;
 
-    // Default Constructor
     public Notification() {
     }
 
-    // Parameterized Constructor
-    public Notification(Long notificationId,
-                        Long userId,
-                        String title,
-                        String message,
-                        String notificationType,
-                        Boolean isRead,
-                        String createdAt) {
-
-        this.notificationId = notificationId;
-        this.userId = userId;
-        this.title = title;
-        this.message = message;
-        this.notificationType = notificationType;
-        this.isRead = isRead;
-        this.createdAt = createdAt;
+    public String getId() {
+        return id;
     }
 
-    public Long getNotificationId() {
-        return notificationId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setNotificationId(Long notificationId) {
-        this.notificationId = notificationId;
+    public User getUser() {
+        return user;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getTitle() {
@@ -110,19 +85,19 @@ public class Notification {
         this.isRead = isRead;
     }
 
-    public String getCreatedAt() {
+    public String getReferenceId() {
+        return referenceId;
+    }
+
+    public void setReferenceId(String referenceId) {
+        this.referenceId = referenceId;
+    }
+
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
     }
 }

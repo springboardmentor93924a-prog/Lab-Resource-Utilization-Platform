@@ -1,63 +1,45 @@
 package com.labresource.entity;
 
-import java.util.ArrayList;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
 @Entity
-
-
 @Table(name = "equipment_categories")
 public class EquipmentCategory {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "category_id")
-    private Long categoryId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    @Column(name = "category_name", nullable = false, unique = true, length = 100)
-    private String categoryName;
+    @Column(nullable = false, unique = true)
+    private String name;
 
-    @Column(name = "description", length = 255)
     private String description;
 
-    @OneToMany(mappedBy = "category")
-    private List<Equipment> equipments = new ArrayList<>();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    // Default Constructor
+    @OneToMany(mappedBy = "category")
+    private List<Equipment> equipments;
+
     public EquipmentCategory() {
     }
 
-    // Parameterized Constructor
-    public EquipmentCategory(Long categoryId, String categoryName, String description) {
-        this.categoryId = categoryId;
-        this.categoryName = categoryName;
-        this.description = description;
+    public String getId() {
+        return id;
     }
 
-    // Getters and Setters
-
-    public Long getCategoryId() {
-        return categoryId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public String getName() {
+        return name;
     }
 
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDescription() {
@@ -66,6 +48,14 @@ public class EquipmentCategory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public List<Equipment> getEquipments() {

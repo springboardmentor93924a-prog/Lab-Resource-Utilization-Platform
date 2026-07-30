@@ -1,125 +1,277 @@
+//package com.labresource.entity;
+//
+//import jakarta.persistence.*;
+//
+//import java.time.LocalDateTime;
+//
+//@Entity
+//@Table(name = "utilization_logs")
+//public class UtilizationLog {
+//
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.UUID)
+//    private String id;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "equipment_id")
+//    private Equipment equipment;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "booking_id")
+//    private Booking booking;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "user_id")
+//    private User user;
+//
+//    @Column(name = "start_time")
+//    private LocalDateTime startTime;
+//
+//    @Column(name = "end_time")
+//    private LocalDateTime endTime;
+//
+//    @Column(name = "usage_duration_minutes")
+//    private Integer usageDurationMinutes;
+//
+//    @Column(name = "utilization_source")
+//    private String utilizationSource;
+//
+//    private String remarks;
+//
+//    @Column(name = "created_at")
+//    private LocalDateTime createdAt;
+//
+//    public UtilizationLog() {
+//    }
+//
+//    public String getId() {
+//        return id;
+//    }
+//
+//    public void setId(String id) {
+//        this.id = id;
+//    }
+//
+//    public Equipment getEquipment() {
+//        return equipment;
+//    }
+//
+//    public void setEquipment(Equipment equipment) {
+//        this.equipment = equipment;
+//    }
+//
+//    public Booking getBooking() {
+//        return booking;
+//    }
+//
+//    public void setBooking(Booking booking) {
+//        this.booking = booking;
+//    }
+//
+//    public User getUser() {
+//        return user;
+//    }
+//
+//    public void setUser(User user) {
+//        this.user = user;
+//    }
+//
+//    public LocalDateTime getStartTime() {
+//        return startTime;
+//    }
+//
+//    public void setStartTime(LocalDateTime startTime) {
+//        this.startTime = startTime;
+//    }
+//
+//    public LocalDateTime getEndTime() {
+//        return endTime;
+//    }
+//
+//    public void setEndTime(LocalDateTime endTime) {
+//        this.endTime = endTime;
+//    }
+//
+//    public Integer getUsageDurationMinutes() {
+//        return usageDurationMinutes;
+//    }
+//
+//    public void setUsageDurationMinutes(Integer usageDurationMinutes) {
+//        this.usageDurationMinutes = usageDurationMinutes;
+//    }
+//
+//    public String getUtilizationSource() {
+//        return utilizationSource;
+//    }
+//
+//    public void setUtilizationSource(String utilizationSource) {
+//        this.utilizationSource = utilizationSource;
+//    }
+//
+//    public String getRemarks() {
+//        return remarks;
+//    }
+//
+//    public void setRemarks(String remarks) {
+//        this.remarks = remarks;
+//    }
+//
+//    public LocalDateTime getCreatedAt() {
+//        return createdAt;
+//    }
+//
+//    public void setCreatedAt(LocalDateTime createdAt) {
+//        this.createdAt = createdAt;
+//    }
+//}
+
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "utilization_logs")
 public class UtilizationLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "utilization_id")
-    private Long utilizationId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    @Column(name = "equipment_id", nullable = false)
-    private Long equipmentId;
+    @ManyToOne
+    @JoinColumn(name = "equipment_id", nullable = false)
+    private Equipment equipment;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
 
-    @Column(name = "booking_id")
-    private Long bookingId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "check_in_time", nullable = false)
-    private String checkInTime;
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
 
-    @Column(name = "check_out_time")
-    private String checkOutTime;
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
 
-    @Column(name = "duration")
-    private Double duration;
+    @Column(name = "usage_duration_minutes")
+    private Integer usageDurationMinutes;
 
-    @Column(name = "status", length = 30)
+    @Column(name = "utilization_source", nullable = false)
+    private String utilizationSource;
+
+    @Column(nullable = false)
     private String status;
 
-    @Column(name = "remarks", length = 255)
+    @Column(columnDefinition = "TEXT")
     private String remarks;
 
-    // Default Constructor
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     public UtilizationLog() {
     }
 
-    // Parameterized Constructor
-    public UtilizationLog(Long utilizationId,
-                          Long equipmentId,
-                          Long userId,
-                          Long bookingId,
-                          String checkInTime,
-                          String checkOutTime,
-                          Double duration,
-                          String status,
-                          String remarks) {
+    @PrePersist
+    public void onCreate() {
 
-        this.utilizationId = utilizationId;
-        this.equipmentId = equipmentId;
-        this.userId = userId;
-        this.bookingId = bookingId;
-        this.checkInTime = checkInTime;
-        this.checkOutTime = checkOutTime;
-        this.duration = duration;
-        this.status = status;
-        this.remarks = remarks;
+        createdAt = LocalDateTime.now();
+
+        if (startTime == null) {
+            startTime = LocalDateTime.now();
+        }
+
+        if (status == null || status.isBlank()) {
+            status = "IN_USE";
+        }
+
+        if (utilizationSource == null || utilizationSource.isBlank()) {
+            utilizationSource = "BOOKING";
+        }
     }
 
-    public Long getUtilizationId() {
-        return utilizationId;
+    @PreUpdate
+    public void onUpdate() {
+
+        updatedAt = LocalDateTime.now();
+
+        if (startTime != null && endTime != null) {
+
+            usageDurationMinutes =
+                    (int) java.time.Duration
+                            .between(startTime, endTime)
+                            .toMinutes();
+        }
     }
 
-    public void setUtilizationId(Long utilizationId) {
-        this.utilizationId = utilizationId;
+    public String getId() {
+        return id;
     }
 
-    public Long getEquipmentId() {
-        return equipmentId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setEquipmentId(Long equipmentId) {
-        this.equipmentId = equipmentId;
+    public Equipment getEquipment() {
+        return equipment;
     }
 
-    public Long getUserId() {
-        return userId;
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public Booking getBooking() {
+        return booking;
     }
 
-    public Long getBookingId() {
-        return bookingId;
+    public void setBooking(Booking booking) {
+        this.booking = booking;
     }
 
-    public void setBookingId(Long bookingId) {
-        this.bookingId = bookingId;
+    public User getUser() {
+        return user;
     }
 
-    public String getCheckInTime() {
-        return checkInTime;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public void setCheckInTime(String checkInTime) {
-        this.checkInTime = checkInTime;
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
-    public String getCheckOutTime() {
-        return checkOutTime;
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 
-    public void setCheckOutTime(String checkOutTime) {
-        this.checkOutTime = checkOutTime;
+    public LocalDateTime getEndTime() {
+        return endTime;
     }
 
-    public Double getDuration() {
-        return duration;
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
     }
 
-    public void setDuration(Double duration) {
-        this.duration = duration;
+    public Integer getUsageDurationMinutes() {
+        return usageDurationMinutes;
+    }
+
+    public void setUsageDurationMinutes(Integer usageDurationMinutes) {
+        this.usageDurationMinutes = usageDurationMinutes;
+    }
+
+    public String getUtilizationSource() {
+        return utilizationSource;
+    }
+
+    public void setUtilizationSource(String utilizationSource) {
+        this.utilizationSource = utilizationSource;
     }
 
     public String getStatus() {
@@ -136,5 +288,21 @@ public class UtilizationLog {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

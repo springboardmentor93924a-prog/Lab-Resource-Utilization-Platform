@@ -1,184 +1,97 @@
 package com.labresource.entity;
 
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings")
 public class Booking {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "booking_id")
-    private Long bookingId;
-
-    @Column(name = "user_id", nullable = false, insertable = false, updatable = false)
-    private Long userId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "equipment_id", nullable = false, insertable = false, updatable = false)
-    private Long equipmentId;
-
     @ManyToOne
-    @JoinColumn(name = "equipment_id", nullable = false)
+    @JoinColumn(name = "equipment_id")
     private Equipment equipment;
 
-    @Column(name = "booking_date", nullable = false)
-    private String bookingDate;
+    @Column(name = "booking_date")
+    private LocalDate bookingDate;
 
-    @Column(name = "start_time", nullable = false)
-    private String startTime;
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
 
-    @Column(name = "end_time", nullable = false)
-    private String endTime;
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
 
-    @Column(name = "purpose", length = 255)
     private String purpose;
 
-    @Column(name = "status", length = 30)
-    private String status;
+    @Column(name = "project_name")
+    private String projectName;
 
-    @Column(name = "approved_by")
-    private Long approvedBy;
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
-    @Column(name = "approval_date")
-    private String approvalDate;
+    @Column(name = "booking_status")
+    private String bookingStatus;
 
-    @Column(name = "remarks", length = 255)
-    private String remarks;
+    @Column(name = "approval_status")
+    private String approvalStatus;
+
+    @ManyToOne
+    @JoinColumn(name = "approved_by")
+    private User approvedBy;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "booking")
-    private List<BookingLog> bookingLogs = new ArrayList<>();
+    private List<BookingLog> bookingLogs;
 
-    // Default Constructor
+    @OneToMany(mappedBy = "booking")
+    private List<UtilizationLog> utilizationLogs;
+
     public Booking() {
     }
 
-    // Parameterized Constructor
-    public Booking(Long bookingId,
-                   Long userId,
-                   Long equipmentId,
-                   String bookingDate,
-                   String startTime,
-                   String endTime,
-                   String purpose,
-                   String status,
-                   Long approvedBy,
-                   String approvalDate,
-                   String remarks) {
+    @PrePersist
+    public void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
 
-        this.bookingId = bookingId;
-        this.userId = userId;
-        this.equipmentId = equipmentId;
-        this.bookingDate = bookingDate;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.purpose = purpose;
-        this.status = status;
-        this.approvedBy = approvedBy;
-        this.approvalDate = approvalDate;
-        this.remarks = remarks;
+        if (bookingDate == null && startTime != null) {
+            bookingDate = startTime.toLocalDate();
+        }
     }
 
-    public Long getBookingId() {
-        return bookingId;
+    @PreUpdate
+    public void onUpdate() {
+        updatedAt = LocalDateTime.now();
+
+        if (startTime != null) {
+            bookingDate = startTime.toLocalDate();
+        }
     }
 
-    public void setBookingId(Long bookingId) {
-        this.bookingId = bookingId;
+    public String getId() {
+        return id;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getEquipmentId() {
-        return equipmentId;
-    }
-
-    public void setEquipmentId(Long equipmentId) {
-        this.equipmentId = equipmentId;
-    }
-
-    public String getBookingDate() {
-        return bookingDate;
-    }
-
-    public void setBookingDate(String bookingDate) {
-        this.bookingDate = bookingDate;
-    }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
-    }
-
-    public String getPurpose() {
-        return purpose;
-    }
-
-    public void setPurpose(String purpose) {
-        this.purpose = purpose;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Long getApprovedBy() {
-        return approvedBy;
-    }
-
-    public void setApprovedBy(Long approvedBy) {
-        this.approvedBy = approvedBy;
-    }
-
-    public String getApprovalDate() {
-        return approvalDate;
-    }
-
-    public void setApprovalDate(String approvalDate) {
-        this.approvalDate = approvalDate;
-    }
-
-    public String getRemarks() {
-        return remarks;
-    }
-
-    public void setRemarks(String remarks) {
-        this.remarks = remarks;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public User getUser() {
@@ -197,11 +110,117 @@ public class Booking {
         this.equipment = equipment;
     }
 
+    public LocalDate getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(LocalDate bookingDate) {
+        this.bookingDate = bookingDate;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public String getBookingStatus() {
+        return bookingStatus;
+    }
+
+    public void setBookingStatus(String bookingStatus) {
+        this.bookingStatus = bookingStatus;
+    }
+
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
+    }
+
+    public User getApprovedBy() {
+        return approvedBy;
+    }
+
+    public void setApprovedBy(User approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     public List<BookingLog> getBookingLogs() {
         return bookingLogs;
     }
 
     public void setBookingLogs(List<BookingLog> bookingLogs) {
         this.bookingLogs = bookingLogs;
+    }
+
+    public List<UtilizationLog> getUtilizationLogs() {
+        return utilizationLogs;
+    }
+
+    public void setUtilizationLogs(
+            List<UtilizationLog> utilizationLogs
+    ) {
+        this.utilizationLogs = utilizationLogs;
     }
 }

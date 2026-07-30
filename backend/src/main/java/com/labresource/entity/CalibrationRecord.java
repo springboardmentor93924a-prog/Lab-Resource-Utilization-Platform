@@ -1,126 +1,102 @@
 package com.labresource.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "calibration_records")
 public class CalibrationRecord {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "calibration_id")
-    private Long calibrationId;
-
-    @Column(name = "equipment_id", nullable = false, insertable = false, updatable = false)
-    private Long equipmentId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
-    @JoinColumn(name = "equipment_id", nullable = false)
+    @JoinColumn(name = "equipment_id")
     private Equipment equipment;
 
-    @Column(name = "calibration_date", nullable = false)
-    private String calibrationDate;
+    @ManyToOne
+    @JoinColumn(name = "technician_id")
+    private User technician;
 
-    @Column(name = "calibrated_by", length = 100)
-    private String calibratedBy;
+    @Column(name = "calibration_date")
+    private LocalDate calibrationDate;
 
-    @Column(name = "certificate_number", length = 100)
-    private String certificateNumber;
+    @Column(name = "next_calibration_date")
+    private LocalDate nextCalibrationDate;
 
-    @Column(name = "next_due_date")
-    private String nextDueDate;
+    @Column(name = "calibration_result")
+    private String calibrationResult;
 
-    @Column(name = "status", length = 30)
-    private String status;
+    @Column(name = "certificate_url")
+    private String certificateUrl;
 
-    @Column(name = "remarks", length = 255)
     private String remarks;
 
-    // Default Constructor
+    private String status;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
     public CalibrationRecord() {
     }
 
-    // Parameterized Constructor
-    public CalibrationRecord(Long calibrationId,
-                             Long equipmentId,
-                             String calibrationDate,
-                             String calibratedBy,
-                             String certificateNumber,
-                             String nextDueDate,
-                             String status,
-                             String remarks) {
-
-        this.calibrationId = calibrationId;
-        this.equipmentId = equipmentId;
-        this.calibrationDate = calibrationDate;
-        this.calibratedBy = calibratedBy;
-        this.certificateNumber = certificateNumber;
-        this.nextDueDate = nextDueDate;
-        this.status = status;
-        this.remarks = remarks;
+    public String getId() {
+        return id;
     }
 
-    public Long getCalibrationId() {
-        return calibrationId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setCalibrationId(Long calibrationId) {
-        this.calibrationId = calibrationId;
+    public Equipment getEquipment() {
+        return equipment;
     }
 
-    public Long getEquipmentId() {
-        return equipmentId;
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
     }
 
-    public void setEquipmentId(Long equipmentId) {
-        this.equipmentId = equipmentId;
+    public User getTechnician() {
+        return technician;
     }
 
-    public String getCalibrationDate() {
+    public void setTechnician(User technician) {
+        this.technician = technician;
+    }
+
+    public LocalDate getCalibrationDate() {
         return calibrationDate;
     }
 
-    public void setCalibrationDate(String calibrationDate) {
+    public void setCalibrationDate(LocalDate calibrationDate) {
         this.calibrationDate = calibrationDate;
     }
 
-    public String getCalibratedBy() {
-        return calibratedBy;
+    public LocalDate getNextCalibrationDate() {
+        return nextCalibrationDate;
     }
 
-    public void setCalibratedBy(String calibratedBy) {
-        this.calibratedBy = calibratedBy;
+    public void setNextCalibrationDate(LocalDate nextCalibrationDate) {
+        this.nextCalibrationDate = nextCalibrationDate;
     }
 
-    public String getCertificateNumber() {
-        return certificateNumber;
+    public String getCalibrationResult() {
+        return calibrationResult;
     }
 
-    public void setCertificateNumber(String certificateNumber) {
-        this.certificateNumber = certificateNumber;
+    public void setCalibrationResult(String calibrationResult) {
+        this.calibrationResult = calibrationResult;
     }
 
-    public String getNextDueDate() {
-        return nextDueDate;
+    public String getCertificateUrl() {
+        return certificateUrl;
     }
 
-    public void setNextDueDate(String nextDueDate) {
-        this.nextDueDate = nextDueDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+    public void setCertificateUrl(String certificateUrl) {
+        this.certificateUrl = certificateUrl;
     }
 
     public String getRemarks() {
@@ -131,11 +107,19 @@ public class CalibrationRecord {
         this.remarks = remarks;
     }
 
-    public Equipment getEquipment() {
-        return equipment;
+    public String getStatus() {
+        return status;
     }
 
-    public void setEquipment(Equipment equipment) {
-        this.equipment = equipment;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

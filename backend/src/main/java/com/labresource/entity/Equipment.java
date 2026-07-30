@@ -1,173 +1,137 @@
 package com.labresource.entity;
 
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "equipment")
 public class Equipment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "equipment_id")
-    private Long equipmentId;
-
-    @Column(name = "category_id", nullable = false, insertable = false, updatable = false)
-    private Long categoryId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "institution_id")
+    private Institution institution;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
     private EquipmentCategory category;
 
-    @Column(name = "institution_id", nullable = false)
-    private Long institutionId;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(name = "department_id", nullable = false)
-    private Long departmentId;
+    private String description;
 
-    @Column(name = "equipment_name", nullable = false, length = 100)
-    private String equipmentName;
-
-    @Column(name = "equipment_code", nullable = false, unique = true, length = 50)
-    private String equipmentCode;
-
-    @Column(name = "manufacturer", length = 100)
-    private String manufacturer;
-
-    @Column(name = "model", length = 100)
-    private String model;
-
-    @Column(name = "serial_number", unique = true, length = 100)
+    @Column(name = "serial_number", unique = true)
     private String serialNumber;
 
+    private String manufacturer;
+
+    @Column(name = "model_number")
+    private String modelNumber;
+
     @Column(name = "purchase_date")
-    private String purchaseDate;
+    private LocalDate purchaseDate;
 
-    @Column(name = "warranty_expiry")
-    private String warrantyExpiry;
+    @Column(name = "purchase_cost")
+    private BigDecimal purchaseCost;
 
-    @Column(name = "status", length = 30)
-    private String status;
-
-    @Column(name = "location", length = 100)
     private String location;
 
-    @Column(name = "remarks", length = 255)
-    private String remarks;
+    private String status;
+
+    @Column(name = "availability_status")
+    private String availabilityStatus;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "equipment")
-    private List<Booking> bookings = new ArrayList<>();
+    private List<Booking> bookings;
 
     @OneToMany(mappedBy = "equipment")
-    private List<MaintenanceRecord> maintenanceRecords = new ArrayList<>();
+    private List<MaintenanceRecord> maintenanceRecords;
 
     @OneToMany(mappedBy = "equipment")
-    private List<CalibrationRecord> calibrationRecords = new ArrayList<>();
+    private List<CalibrationRecord> calibrationRecords;
 
     @OneToMany(mappedBy = "equipment")
-    private List<SensorReading> sensorReadings = new ArrayList<>();
+    private List<ResourceSharingRequest> resourceSharingRequests;
 
-    // Default Constructor
+    @OneToMany(mappedBy = "equipment")
+    private List<UtilizationLog> utilizationLogs;
+
+    @OneToMany(mappedBy = "equipment")
+    private List<SensorReading> sensorReadings;
+
+    @OneToMany(mappedBy = "equipment")
+    private List<Document> documents;
+
     public Equipment() {
     }
 
-    // Parameterized Constructor
-    public Equipment(Long equipmentId, Long categoryId, Long institutionId,
-                     Long departmentId, String equipmentName,
-                     String equipmentCode, String manufacturer,
-                     String model, String serialNumber,
-                     String purchaseDate, String warrantyExpiry,
-                     String status, String location,
-                     String remarks) {
-
-        this.equipmentId = equipmentId;
-        this.categoryId = categoryId;
-        this.institutionId = institutionId;
-        this.departmentId = departmentId;
-        this.equipmentName = equipmentName;
-        this.equipmentCode = equipmentCode;
-        this.manufacturer = manufacturer;
-        this.model = model;
-        this.serialNumber = serialNumber;
-        this.purchaseDate = purchaseDate;
-        this.warrantyExpiry = warrantyExpiry;
-        this.status = status;
-        this.location = location;
-        this.remarks = remarks;
+    public String getId() {
+        return id;
     }
 
-    public Long getEquipmentId() {
-        return equipmentId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setEquipmentId(Long equipmentId) {
-        this.equipmentId = equipmentId;
+    public Institution getInstitution() {
+        return institution;
     }
 
-    public Long getCategoryId() {
-        return categoryId;
+    public void setInstitution(Institution institution) {
+        this.institution = institution;
     }
 
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public Department getDepartment() {
+        return department;
     }
 
-    public Long getInstitutionId() {
-        return institutionId;
+    public void setDepartment(Department department) {
+        this.department = department;
     }
 
-    public void setInstitutionId(Long institutionId) {
-        this.institutionId = institutionId;
+    public EquipmentCategory getCategory() {
+        return category;
     }
 
-    public Long getDepartmentId() {
-        return departmentId;
+    public void setCategory(EquipmentCategory category) {
+        this.category = category;
     }
 
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
+    public String getName() {
+        return name;
     }
 
-    public String getEquipmentName() {
-        return equipmentName;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setEquipmentName(String equipmentName) {
-        this.equipmentName = equipmentName;
+    public String getDescription() {
+        return description;
     }
 
-    public String getEquipmentCode() {
-        return equipmentCode;
-    }
-
-    public void setEquipmentCode(String equipmentCode) {
-        this.equipmentCode = equipmentCode;
-    }
-
-    public String getManufacturer() {
-        return manufacturer;
-    }
-
-    public void setManufacturer(String manufacturer) {
-        this.manufacturer = manufacturer;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setModel(String model) {
-        this.model = model;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getSerialNumber() {
@@ -178,28 +142,36 @@ public class Equipment {
         this.serialNumber = serialNumber;
     }
 
-    public String getPurchaseDate() {
+    public String getManufacturer() {
+        return manufacturer;
+    }
+
+    public void setManufacturer(String manufacturer) {
+        this.manufacturer = manufacturer;
+    }
+
+    public String getModelNumber() {
+        return modelNumber;
+    }
+
+    public void setModelNumber(String modelNumber) {
+        this.modelNumber = modelNumber;
+    }
+
+    public LocalDate getPurchaseDate() {
         return purchaseDate;
     }
 
-    public void setPurchaseDate(String purchaseDate) {
+    public void setPurchaseDate(LocalDate purchaseDate) {
         this.purchaseDate = purchaseDate;
     }
 
-    public String getWarrantyExpiry() {
-        return warrantyExpiry;
+    public BigDecimal getPurchaseCost() {
+        return purchaseCost;
     }
 
-    public void setWarrantyExpiry(String warrantyExpiry) {
-        this.warrantyExpiry = warrantyExpiry;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+    public void setPurchaseCost(BigDecimal purchaseCost) {
+        this.purchaseCost = purchaseCost;
     }
 
     public String getLocation() {
@@ -210,20 +182,44 @@ public class Equipment {
         this.location = location;
     }
 
-    public String getRemarks() {
-        return remarks;
+    public String getStatus() {
+        return status;
     }
 
-    public void setRemarks(String remarks) {
-        this.remarks = remarks;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    public EquipmentCategory getCategory() {
-        return category;
+    public String getAvailabilityStatus() {
+        return availabilityStatus;
     }
 
-    public void setCategory(EquipmentCategory category) {
-        this.category = category;
+    public void setAvailabilityStatus(String availabilityStatus) {
+        this.availabilityStatus = availabilityStatus;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public List<Booking> getBookings() {
@@ -250,11 +246,36 @@ public class Equipment {
         this.calibrationRecords = calibrationRecords;
     }
 
+    public List<ResourceSharingRequest> getResourceSharingRequests() {
+        return resourceSharingRequests;
+    }
+
+    public void setResourceSharingRequests(
+            List<ResourceSharingRequest> resourceSharingRequests) {
+        this.resourceSharingRequests = resourceSharingRequests;
+    }
+
+    public List<UtilizationLog> getUtilizationLogs() {
+        return utilizationLogs;
+    }
+
+    public void setUtilizationLogs(List<UtilizationLog> utilizationLogs) {
+        this.utilizationLogs = utilizationLogs;
+    }
+
     public List<SensorReading> getSensorReadings() {
         return sensorReadings;
     }
 
     public void setSensorReadings(List<SensorReading> sensorReadings) {
         this.sensorReadings = sensorReadings;
+    }
+
+    public List<Document> getDocuments() {
+        return documents;
+    }
+
+    public void setDocuments(List<Document> documents) {
+        this.documents = documents;
     }
 }

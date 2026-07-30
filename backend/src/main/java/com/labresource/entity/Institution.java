@@ -1,90 +1,66 @@
 package com.labresource.entity;
 
-import java.util.ArrayList;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "institutions")
 public class Institution {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "institution_id")
-    private Long institutionId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    @Column(name = "institution_name", nullable = false, length = 100)
-    private String institutionName;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(name = "institution_code", nullable = false, unique = true, length = 20)
-    private String institutionCode;
-
-    @Column(name = "address", length = 255)
-    private String address;
-
-    @Column(name = "email", length = 100)
     private String email;
 
-    @Column(name = "phone", length = 15)
     private String phone;
 
-    @OneToMany(mappedBy = "institution", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Department> departments = new ArrayList<>();
+    private String address;
 
-    // Default constructor for the Lab Resource Utilization Platform
+    private String city;
+
+    private String state;
+
+    private String country;
+
+    private String status;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "institution")
+    private List<Department> departments;
+
+    @OneToMany(mappedBy = "institution")
+    private List<User> users;
+
+    @OneToMany(mappedBy = "institution")
+    private List<Equipment> equipments;
+
     public Institution() {
     }
 
-    // Parameterized constructor
-    public Institution(Long institutionId, String institutionName,
-                       String institutionCode, String address,
-                       String email, String phone) {
-        this.institutionId = institutionId;
-        this.institutionName = institutionName;
-        this.institutionCode = institutionCode;
-        this.address = address;
-        this.email = email;
-        this.phone = phone;
+    public String getId() {
+        return id;
     }
 
-    public Long getInstitutionId() {
-        return institutionId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setInstitutionId(Long institutionId) {
-        this.institutionId = institutionId;
+    public String getName() {
+        return name;
     }
 
-    public String getInstitutionName() {
-        return institutionName;
-    }
-
-    public void setInstitutionName(String institutionName) {
-        this.institutionName = institutionName;
-    }
-
-    public String getInstitutionCode() {
-        return institutionCode;
-    }
-
-    public void setInstitutionCode(String institutionCode) {
-        this.institutionCode = institutionCode;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getEmail() {
@@ -103,6 +79,62 @@ public class Institution {
         this.phone = phone;
     }
 
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     public List<Department> getDepartments() {
         return departments;
     }
@@ -111,13 +143,19 @@ public class Institution {
         this.departments = departments;
     }
 
-    public void addDepartment(Department department) {
-        departments.add(department);
-        department.setInstitution(this);
+    public List<User> getUsers() {
+        return users;
     }
 
-    public void removeDepartment(Department department) {
-        departments.remove(department);
-        department.setInstitution(null);
+    public void setUsers(List<User> users) {
+        this.users = users;
+    }
+
+    public List<Equipment> getEquipments() {
+        return equipments;
+    }
+
+    public void setEquipments(List<Equipment> equipments) {
+        this.equipments = equipments;
     }
 }
