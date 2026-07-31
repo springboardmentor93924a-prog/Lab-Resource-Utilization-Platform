@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +32,12 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Booking booking) {
+        if (booking.getBookingStart() == null || booking.getBookingEnd() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "bookingStart and bookingEnd are required"));
+        }
+        if (!booking.getBookingEnd().isAfter(booking.getBookingStart())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "bookingEnd must be after bookingStart"));
+        }
         booking.setStatus("Pending Approval");
         booking.setCreatedAt(LocalDateTime.now());
         booking.setUpdatedAt(LocalDateTime.now());
@@ -38,6 +45,7 @@ public class BookingController {
     }
 
     @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('LAB_MANAGER') or hasRole('DEPARTMENT_HEAD') or hasRole('INSTITUTION_ADMINISTRATOR') or hasRole('SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<?> approve(@PathVariable Integer id) {
         if (!bookingRepository.existsById(id)) {
             return ResponseEntity.status(404).body(Map.of("error", "Booking not found"));
@@ -49,6 +57,7 @@ public class BookingController {
     }
 
     @PutMapping("/{id}/reject")
+    @PreAuthorize("hasRole('LAB_MANAGER') or hasRole('DEPARTMENT_HEAD') or hasRole('INSTITUTION_ADMINISTRATOR') or hasRole('SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<?> reject(@PathVariable Integer id) {
         if (!bookingRepository.existsById(id)) {
             return ResponseEntity.status(404).body(Map.of("error", "Booking not found"));
