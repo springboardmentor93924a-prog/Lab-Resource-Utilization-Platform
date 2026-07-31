@@ -41,7 +41,7 @@ public class SecurityConfig {
                                 "/api/auth/login"
                         ).permitAll()
 
-                        // Swagger APIs - add later
+                       
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
