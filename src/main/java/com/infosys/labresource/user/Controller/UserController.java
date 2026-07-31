@@ -34,8 +34,8 @@ public class UserController {
         return userService.registerUser(req);
     }
 
-    @PostMapping("/login")
+   /* @PostMapping("/login")
     public UserEntity loginUser(@RequestBody LoginRequestDTO req) {
         return userService.loginUser(req);
-    }
+    }*/
 }
