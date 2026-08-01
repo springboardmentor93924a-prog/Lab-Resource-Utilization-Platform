@@ -127,11 +127,17 @@ public class SecurityConfig {
 //                                "/swagger-ui.html",
 //                                "/v3/api-docs/**"
 //                        ).permitAll()
-
-
+                                .requestMatchers(
+                                        org.springframework.http.HttpMethod.GET,
+                                        "/api/institutions",
+                                        "/api/institutions/**",
+                                        "/api/departments",
+                                        "/api/departments/**"
+                                ).permitAll()
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.OPTIONS,
                                 "/**"
+
                         ).permitAll()
 
                         // All other APIs require JWT
