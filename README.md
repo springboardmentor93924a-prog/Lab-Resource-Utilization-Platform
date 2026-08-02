@@ -201,32 +201,35 @@ Advanced security, role-based authorization, booking validation, maintenance, ut
 
 ## Screenshots
 
-### Settings
-![Settings](screenshots/settings.png)
-
-### Profile
-![Profile](screenshots/profile.png)
-
-### Bookings
-![Bookings](screenshots/bookings.png)
-
-### Categories
-![Categories](screenshots/categories.png)
-
-### Authentication (Login)
-![Login](screenshots/login.png)
-
-### Dashboard
+### 1. Dashboard
 ![Dashboard](screenshots/dashboard.png)
 
-### Institutions
+### 2. Institutions Management
 ![Institutions](screenshots/institutions.png)
 
-### Departments
+### 3. Departments Management
 ![Departments](screenshots/departments.png)
 
-### Users
+### 4. User Management
 ![Users](screenshots/users.png)
 
-### Authentication (Registration)
+### 5. Equipment Repository
+![Equipment](screenshots/equipment.png)
+
+### 6. Equipment Categories
+![Categories](screenshots/categories.png)
+
+### 7. Bookings Management
+![Bookings](screenshots/bookings.png)
+
+### 8. User Profile
+![Profile](screenshots/profile.png)
+
+### 9. Application Settings
+![Settings](screenshots/settings.png)
+
+### 10. Authentication (Login)
+![Login](screenshots/login.png)
+
+### 11. Authentication (Registration)
 ![Registration](screenshots/register.png)
