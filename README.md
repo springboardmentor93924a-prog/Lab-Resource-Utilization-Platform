@@ -196,3 +196,19 @@ Advanced security, role-based authorization, booking validation, maintenance, ut
 
 **Program:** Infosys Springboard Internship  
 **Project:** Lab Resource Utilization Platform
+
+---
+
+## Screenshots
+
+### Settings
+![Settings](screenshots/settings.png)
+
+### Profile
+![Profile](screenshots/profile.png)
+
+### Bookings
+![Bookings](screenshots/bookings.png)
+
+### Categories
+![Categories](screenshots/categories.png)
