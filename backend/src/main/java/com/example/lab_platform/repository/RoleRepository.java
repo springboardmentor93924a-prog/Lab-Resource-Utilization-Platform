@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Integer> {
     
-    // चूंकि आपके Role.java में आईडी का डेटाटाइप Integer है, इसलिए यहाँ Long की जगह Integer रहेगा।
-    // और फील्ड का नाम roleName है, इसलिए यह मेथड नाम से रोल ढूंढेगा:
+     
     Role findByRoleName(String roleName);
 }

@@ -9,6 +9,6 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     
-    // लॉगिन या ऑथेंटिकेशन के समय यूजरनेम से यूजर को ढूंढने के लिए
+    
     Optional<User> findByUsername(String username);
 }
