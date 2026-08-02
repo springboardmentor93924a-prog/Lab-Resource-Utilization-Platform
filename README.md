@@ -185,19 +185,18 @@ This branch contains frontend development, frontend-backend integration, authent
 ## Project Status
 
 ### What We've Done So Far
+- **Backend & Frontend Architecture Setup**: Successfully established the full-stack foundation, linking React UI components to Spring Boot controllers.
+- **Authentication Flow**: Implemented fully functional JWT-based authentication, BCrypt password hashing, login/registration UI, and conditional protected route rendering.
+- **Database Schema**: Finalized the underlying PostgreSQL database schema for all major entities (Users, Equipment, Bookings, Institutions, Departments).
+- **Role-Based Access Control (RBAC)**: Configured role-based access to securely gate application features and restrict actions based on User Roles (e.g., ADMIN, LAB MANAGER, STUDENT).
 - **UI Modernization**: Upgraded the entire frontend to a professional, dark-themed, glassmorphic design system.
-- **Organization & Role Architecture**: Established multi-tenant structural concepts including Institutions, Departments, and User Roles.
-- **Backend Integration**: Successfully linked React UI endpoints to Spring Boot controllers (port 8081).
-- **Security & Authentication**: Implemented fully functional JWT-based authentication, password encryption via BCrypt, and conditional protected route rendering.
-- **API Mapping**: Implemented complete CRUD APIs in the backend with corresponding DTOs mapping to the frontend services.
-- **Profile & Settings UI**: Built comprehensive user Profile and Settings layouts integrating modern toggles and profile actions.
+- **API Integration**: Completed CRUD API endpoints in the backend with their respective DTO mappings connected to the frontend services.
 
 ### What's Next
 - **Dynamic Booking Validation**: Implement server-side logic to detect booking conflicts and prevent duplicate reservations for the same equipment.
-- **Role-Based Access Control (RBAC)**: Enforce strict backend rules (e.g. hasRole('ADMIN')) for sensitive endpoints and conditionally hide frontend menu items based on user permissions.
+- **Approval Workflow**: Enable Lab Managers to approve or reject pending equipment bookings initiated by students.
 - **Real Analytics Integration**: Connect the Dashboard's statistical counters (Total Equipment, Booked Equipment, Pending Bookings) to real database aggregations.
 - **Settings Connectivity**: Bind visual toggles in the Settings page to actual local browser storage and backend preferences APIs.
-- **Approval Workflow**: Enable Lab Managers to approve or reject pending equipment bookings initiated by students.
 
 ---
 
