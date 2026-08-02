@@ -1,0 +1,1112 @@
+Source:
+Main.jsx:
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "./App.css";
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+
+2.App.jsx:
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Labs from "./pages/Labs";
+import Resources from "./pages/Resources";
+import Booking from "./pages/Booking";
+import Reports from "./pages/Reports.jsx";
+import Profile from "./pages/Profile";
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/labs" element={<Labs />} />
+        <Route path="/resources" element={<Resources />} />
+        <Route path="/booking" element={<Booking />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+export default App;
+
+3.App.css:
+body {
+    margin: 0;
+    background: #f5f7fa;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.page {
+    padding: 30px;
+}
+
+.card-box {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,.1);
+}
+
+.title {
+    color: #0d6efd;
+    font-weight: bold;
+}
+
+.login-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    width: 400px;
+    padding: 30px;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0px 5px 15px rgba(0,0,0,.2);
+}
+Components:
+1.Navbar.jsx:
+import { Link } from "react-router-dom";
+
+function Navbar() {
+  return (
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div className="container-fluid">
+        <Link className="navbar-brand fw-bold" to="/dashboard">
+          Lab Resource Utilization Platform
+        </Link>
+
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item">
+              <Link className="nav-link" to="/dashboard">Dashboard</Link>
+            </li>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/labs">Labs</Link>
+            </li>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/resources">Resources</Link>
+            </li>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/booking">Booking</Link>
+            </li>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/reports">Reports</Link>
+            </li>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/profile">Profile</Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+export default Navbar;
+2.Footer.jsx:
+function Footer() {
+  return (
+    <footer className="bg-dark text-white text-center py-3 mt-5">
+      © 2026 Lab Resource Utilization Platform | Mepco Schlenk Engineering College
+    </footer>
+  );
+}
+
+export default Footer;
+3.Slidebar.jsx:
+import { Link } from "react-router-dom";
+
+function Sidebar() {
+  return (
+    <div
+      className="bg-dark text-white p-3"
+      style={{ minHeight: "100vh", width: "220px" }}
+    >
+      <h4 className="text-center mb-4">Menu</h4>
+
+      <div className="d-grid gap-2">
+        <Link className="btn btn-outline-light" to="/dashboard">
+          Dashboard
+        </Link>
+
+        <Link className="btn btn-outline-light" to="/labs">
+          Labs
+        </Link>
+
+        <Link className="btn btn-outline-light" to="/resources">
+          Resources
+        </Link>
+
+        <Link className="btn btn-outline-light" to="/booking">
+          Booking
+        </Link>
+
+        <Link className="btn btn-outline-light" to="/reports">
+          Reports
+        </Link>
+
+        <Link className="btn btn-outline-light" to="/profile">
+          Profile
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default Sidebar;
+
+Pages:
+1.Booking.jsx:
+import { useState } from "react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+function Booking() {
+  const [booking, setBooking] = useState({
+    student: "",
+    lab: "",
+    resource: "",
+    date: "",
+    time: "",
+  });
+
+  const handleChange = (e) => {
+    setBooking({ ...booking, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    alert("Booking Request Submitted Successfully!");
+
+    setBooking({
+      student: "",
+      lab: "",
+      resource: "",
+      date: "",
+      time: "",
+    });
+  };
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="container mt-4">
+        <div className="card shadow">
+          <div className="card-header bg-primary text-white">
+            Resource Booking
+          </div>
+
+          <div className="card-body">
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label>Student Name</label>
+                <input
+                  className="form-control"
+                  name="student"
+                  value={booking.student}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label>Laboratory</label>
+                <select
+                  className="form-select"
+                  name="lab"
+                  value={booking.lab}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Lab</option>
+                  <option>Computer Lab</option>
+                  <option>Electronics Lab</option>
+                  <option>Communication Lab</option>
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label>Resource</label>
+                <input
+                  className="form-control"
+                  name="resource"
+                  value={booking.resource}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label>Date</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  name="date"
+                  value={booking.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label>Time Slot</label>
+                <input
+                  type="time"
+                  className="form-control"
+                  name="time"
+                  value={booking.time}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <button className="btn btn-primary">Book Resource</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+export default Booking;
+
+2.Dashboard.jsx:
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+function Dashboard() {
+  const stats = [
+    {
+      title: "Total Labs",
+      value: 10,
+      color: "primary",
+    },
+    {
+      title: "Resources",
+      value: 120,
+      color: "success",
+    },
+    {
+      title: "Today's Bookings",
+      value: 25,
+      color: "warning",
+    },
+    {
+      title: "Available Resources",
+      value: 95,
+      color: "info",
+    },
+  ];
+
+  const bookings = [
+    {
+      id: 1,
+      student: "Rahul",
+      lab: "Computer Lab",
+      resource: "PC-12",
+      status: "Approved",
+    },
+    {
+      id: 2,
+      student: "Priya",
+      lab: "Electronics Lab",
+      resource: "Oscilloscope",
+      status: "Pending",
+    },
+    {
+      id: 3,
+      student: "Arun",
+      lab: "Communication Lab",
+      resource: "Signal Generator",
+      status: "Approved",
+    },
+    {
+      id: 4,
+      student: "Divya",
+      lab: "Microprocessor Lab",
+      resource: "Trainer Kit",
+      status: "Rejected",
+    },
+  ];
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="container mt-4">
+        <h2 className="mb-4 text-primary">Dashboard</h2>
+
+        <div className="row">
+          {stats.map((item, index) => (
+            <div className="col-md-3 mb-4" key={index}>
+              <div className={`card border-${item.color} shadow`}>
+                <div className="card-body text-center">
+                  <h5>{item.title}</h5>
+
+                  <h2 className={`text-${item.color}`}>{item.value}</h2>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="row">
+          <div className="col-md-8">
+            <div className="card shadow">
+              <div className="card-header bg-primary text-white">
+                Recent Bookings
+              </div>
+
+              <div className="card-body">
+                <table className="table table-bordered table-hover">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student</th>
+                      <th>Lab</th>
+                      <th>Resource</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {bookings.map((booking) => (
+                      <tr key={booking.id}>
+                        <td>{booking.id}</td>
+
+                        <td>{booking.student}</td>
+
+                        <td>{booking.lab}</td>
+
+                        <td>{booking.resource}</td>
+
+                        <td>
+                          <span
+                            className={
+                              booking.status === "Approved"
+                                ? "badge bg-success"
+                                : booking.status === "Pending"
+                                  ? "badge bg-warning text-dark"
+                                  : "badge bg-danger"
+                            }
+                          >
+                            {booking.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-4">
+            <div className="card shadow">
+              <div className="card-header bg-success text-white">
+                System Status
+              </div>
+
+              <div className="card-body">
+                <p>🟢 Server Status : Online</p>
+
+                <p>🟢 Database : Connected</p>
+
+                <p>🟢 Active Users : 42</p>
+
+                <p>🟢 Booking Requests : 8</p>
+
+                <p>🟢 Available Labs : 10</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+export default Dashboard;
+
+3.Labs.jsx:
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+function Labs() {
+  const labs = [
+    {
+      id: 1,
+      name: "Computer Lab",
+      location: "Block A",
+      capacity: 60,
+      status: "Available",
+    },
+    {
+      id: 2,
+      name: "Electronics Lab",
+      location: "Block B",
+      capacity: 40,
+      status: "Occupied",
+    },
+    {
+      id: 3,
+      name: "Communication Lab",
+      location: "Block C",
+      capacity: 35,
+      status: "Available",
+    },
+    {
+      id: 4,
+      name: "Microprocessor Lab",
+      location: "Block D",
+      capacity: 30,
+      status: "Occupied",
+    },
+    {
+      id: 5,
+      name: "Digital Systems Lab",
+      location: "Block E",
+      capacity: 25,
+      status: "Available",
+    },
+    {
+      id: 6,
+      name: "Control Systems Lab",
+      location: "Block F",
+      capacity: 20,
+      status: "Occupied",
+    },
+    {
+      id: 7,
+      name: "Power Electronics Lab",
+      location: "Block G",
+      capacity: 15,
+      status: "Available",
+    },
+  ];
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="container mt-4">
+        <h2 className="text-primary mb-4">Laboratories</h2>
+
+        <table className="table table-bordered table-hover shadow">
+          <thead className="table-primary">
+            <tr>
+              <th>ID</th>
+              <th>Lab Name</th>
+              <th>Location</th>
+              <th>Capacity</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {labs.map((lab) => (
+              <tr key={lab.id}>
+                <td>{lab.id}</td>
+                <td>{lab.name}</td>
+                <td>{lab.location}</td>
+                <td>{lab.capacity}</td>
+                <td>
+                  <span
+                    className={`badge ${
+                      lab.status === "Available" ? "bg-success" : "bg-danger"
+                    }`}
+                  >
+                    {lab.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+export default Labs;
+4.Login.jsx
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+function Login() {
+
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const login = (e) => {
+
+    e.preventDefault();
+
+    const users =
+      JSON.parse(localStorage.getItem("users")) || [];
+
+    const validUser = users.find(
+      (user) =>
+        user.email === email &&
+        user.password === password
+    );
+
+    if (validUser) {
+
+      localStorage.setItem(
+        "loggedInUser",
+        JSON.stringify(validUser)
+      );
+
+      alert("Login Successful");
+
+      navigate("/dashboard");
+
+    } else {
+
+      alert("Invalid Email or Password");
+
+    }
+
+  };
+
+  return (
+
+    <div className="login-container">
+
+      <div className="login-card">
+
+        <h2 className="text-center text-primary mb-4">
+          Login
+        </h2>
+
+        <form onSubmit={login}>
+
+          <div className="mb-3">
+
+            <label>Email</label>
+
+            <input
+              className="form-control"
+              type="email"
+              placeholder="Enter Email"
+              value={email}
+              onChange={(e)=>setEmail(e.target.value)}
+              required
+            />
+
+          </div>
+
+          <div className="mb-3">
+
+            <label>Password</label>
+
+            <input
+              className="form-control"
+              type="password"
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e)=>setPassword(e.target.value)}
+              required
+            />
+
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary w-100"
+          >
+            Login
+          </button>
+
+        </form>
+
+        <div className="text-center mt-3">
+
+          Don't have an account?
+
+          <br />
+
+          <Link to="/register">
+            Register Here
+          </Link>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+export default Login;
+5.Profile.jsx:
+import { useState } from "react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+function Profile() {
+  const [user, setUser] = useState({
+    name: "Senthil Murugan",
+    email: "senthil@gmail.com",
+    department: "ECE",
+    phone: "9876543210",
+  });
+
+  const handleChange = (e) => {
+    setUser({
+      ...user,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const saveProfile = (e) => {
+    e.preventDefault();
+    alert("Profile Updated Successfully");
+  };
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="container mt-4">
+        <div className="card shadow">
+          <div className="card-header bg-primary text-white">User Profile</div>
+
+          <div className="card-body">
+            <form onSubmit={saveProfile}>
+              <div className="mb-3">
+                <label>Name</label>
+                <input
+                  className="form-control"
+                  name="name"
+                  value={user.name}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="mb-3">
+                <label>Email</label>
+                <input
+                  className="form-control"
+                  name="email"
+                  value={user.email}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="mb-3">
+                <label>Department</label>
+                <input
+                  className="form-control"
+                  name="department"
+                  value={user.department}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="mb-3">
+                <label>Phone</label>
+                <input
+                  className="form-control"
+                  name="phone"
+                  value={user.phone}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <button className="btn btn-success">Update Profile</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+export default Profile;
+
+6.Register.jsx:
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+function Register() {
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    department: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const changeHandler = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const register = (e) => {
+    e.preventDefault();
+
+    if (
+      !form.name ||
+      !form.email ||
+      !form.phone ||
+      !form.department ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    // Get existing users
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+
+    // Check duplicate email
+    const existingUser = users.find(
+      (user) => user.email === form.email
+    );
+
+    if (existingUser) {
+      alert("Email already registered");
+      return;
+    }
+
+    // Create new user
+    const newUser = {
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      department: form.department,
+      password: form.password,
+    };
+
+    users.push(newUser);
+
+    localStorage.setItem("users", JSON.stringify(users));
+
+    alert("Registration Successful");
+
+    navigate("/");
+  };
+
+  return (
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+
+        <div className="col-md-6">
+
+          <div className="card shadow">
+
+            <div className="card-body">
+
+              <h2 className="text-center text-primary mb-4">
+                Register
+              </h2>
+
+              <form onSubmit={register}>
+
+                <input
+                  className="form-control mb-3"
+                  placeholder="Name"
+                  name="name"
+                  value={form.name}
+                  onChange={changeHandler}
+                />
+
+                <input
+                  className="form-control mb-3"
+                  placeholder="Email"
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={changeHandler}
+                />
+
+                <input
+                  className="form-control mb-3"
+                  placeholder="Phone Number"
+                  name="phone"
+                  value={form.phone}
+                  onChange={changeHandler}
+                />
+
+                <input
+                  className="form-control mb-3"
+                  placeholder="Department"
+                  name="department"
+                  value={form.department}
+                  onChange={changeHandler}
+                />
+
+                <input
+                  className="form-control mb-3"
+                  placeholder="Password"
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={changeHandler}
+                />
+
+                <input
+                  className="form-control mb-3"
+                  placeholder="Confirm Password"
+                  type="password"
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={changeHandler}
+                />
+
+                <button
+                  type="submit"
+                  className="btn btn-success w-100"
+                >
+                  Register
+                </button>
+
+              </form>
+
+              <div className="text-center mt-3">
+                Already have an account?
+                <br />
+                <Link to="/">Login</Link>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+export default Register;
+7.Reports.jsx:
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+function Reports() {
+  const reports = [
+    {
+      id: 1,
+      name: "Laboratory Usage Report",
+      date: "28-07-2026",
+      status: "Generated",
+    },
+    {
+      id: 2,
+      name: "Resource Availability Report",
+      date: "27-07-2026",
+      status: "Generated",
+    },
+    {
+      id: 3,
+      name: "Booking History Report",
+      date: "26-07-2026",
+      status: "Generated",
+    },
+  ];
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="container mt-4">
+        <h2 className="text-primary mb-4">Reports</h2>
+
+        <table className="table table-bordered table-hover shadow">
+          <thead className="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Report Name</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {reports.map((report) => (
+              <tr key={report.id}>
+                <td>{report.id}</td>
+
+                <td>{report.name}</td>
+
+                <td>{report.date}</td>
+
+                <td>
+                  <span className="badge bg-success">{report.status}</span>
+                </td>
+
+                <td>
+                  <button className="btn btn-primary btn-sm">Download</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+export default Reports;
+
+8.Resources.jsx:
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+function Resources() {
+  const resources = [
+    {
+      id: 1,
+      name: "Desktop PC",
+      lab: "Computer Lab",
+      quantity: 50,
+      status: "Available",
+    },
+    {
+      id: 2,
+      name: "Oscilloscope",
+      lab: "Electronics Lab",
+      quantity: 12,
+      status: "Available",
+    },
+    {
+      id: 3,
+      name: "Signal Generator",
+      lab: "Communication Lab",
+      quantity: 8,
+      status: "Maintenance",
+    },
+    {
+      id: 4,
+      name: "Trainer Kit",
+      lab: "Microprocessor Lab",
+      quantity: 15,
+      status: "Available",
+    },
+    {
+      id: 5,
+      name: "Digital Multimeter",
+      lab: "Electronics Lab",
+      quantity: 20,
+      status: "Available",
+    },
+    { 
+      id: 6,
+      name: "Power Supply",
+      lab: "Electronics Lab",
+      quantity: 10,
+      status: "Maintenance",
+    },
+  ];
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="container mt-4">
+        <h2 className="text-primary mb-4">Resources</h2>
+
+        <table className="table table-striped table-bordered shadow">
+          <thead className="table-success">
+            <tr>
+              <th>ID</th>
+              <th>Resource</th>
+              <th>Lab</th>
+              <th>Quantity</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {resources.map((item) => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.name}</td>
+                <td>{item.lab}</td>
+                <td>{item.quantity}</td>
+                <td>
+                  <span
+                    className={`badge ${
+                      item.status === "Available"
+                        ? "bg-success"
+                        : "bg-warning text-dark"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Footer />
+    </>
+  );
+}
+export default Resources;
+
+Services:
+1.Api.js:
+import axios from "axios";
+
+const API = axios.create({
+    baseURL: "http://localhost:8080/api"
+});
+
+export default API;
+
+
+
+Database:
