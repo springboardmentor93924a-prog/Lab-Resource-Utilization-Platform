@@ -212,3 +212,6 @@ Advanced security, role-based authorization, booking validation, maintenance, ut
 
 ### Categories
 ![Categories](screenshots/categories.png)
+
+### Authentication (Login)
+![Login](screenshots/login.png)
