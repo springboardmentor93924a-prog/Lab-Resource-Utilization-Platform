@@ -215,3 +215,18 @@ Advanced security, role-based authorization, booking validation, maintenance, ut
 
 ### Authentication (Login)
 ![Login](screenshots/login.png)
+
+### Dashboard
+![Dashboard](screenshots/dashboard.png)
+
+### Institutions
+![Institutions](screenshots/institutions.png)
+
+### Departments
+![Departments](screenshots/departments.png)
+
+### Users
+![Users](screenshots/users.png)
+
+### Authentication (Registration)
+![Registration](screenshots/register.png)
