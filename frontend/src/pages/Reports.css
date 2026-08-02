@@ -1,0 +1,145 @@
+.reports-container {
+  padding: 20px;
+}
+
+.reports-header {
+  margin-bottom: 25px;
+}
+
+.reports-header h2 {
+  margin: 0;
+  font-size: 26px;
+  color: #222;
+}
+
+.reports-header p {
+  margin-top: 6px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Summary Cards */
+
+.report-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.report-card {
+  flex: 1;
+  min-width: 190px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.report-card h3 {
+  margin: 0;
+  color: #555;
+  font-size: 15px;
+}
+
+.report-card p {
+  margin: 12px 0 5px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.report-card span {
+  color: #777;
+  font-size: 13px;
+}
+
+/* Table */
+
+.report-table-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.report-table-card h3 {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-table th {
+  background: #1976d2;
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+.report-table td {
+  padding: 13px;
+  border-bottom: 1px solid #eee;
+}
+
+.report-table tbody tr:hover {
+  background: #f7faff;
+}
+
+.report-equipment {
+  font-weight: 600;
+}
+
+/* Utilization */
+
+.utilization-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.utilization-bar {
+  width: 120px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.utilization-fill {
+  height: 100%;
+  background: #1976d2;
+  border-radius: 10px;
+}
+
+/* Maintenance */
+
+.maintenance-good,
+.maintenance-due {
+  padding: 5px 9px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.maintenance-good {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.maintenance-due {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .report-summary {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,214 @@
+.user-container {
+  padding: 20px;
+}
+
+/* Header */
+
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.user-header h2 {
+  margin: 0;
+  font-size: 26px;
+  color: #222;
+}
+
+.user-header p {
+  margin-top: 6px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Add User */
+
+.add-user-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-user-btn:hover {
+  background: #125ea8;
+}
+
+/* Toolbar */
+
+.user-toolbar {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.user-search {
+  width: 300px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  outline: none;
+}
+
+.user-search:focus {
+  border-color: #1976d2;
+}
+
+/* Table Card */
+
+.user-table-card {
+  background: white;
+  border-radius: 10px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Table */
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table th {
+  background: #1976d2;
+  color: white;
+  padding: 13px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.user-table td {
+  padding: 13px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.user-table tbody tr:hover {
+  background: #f7faff;
+}
+
+/* User */
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1976d2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.user-id {
+  color: #666;
+  font-weight: 600;
+}
+
+.user-email {
+  color: #666;
+}
+
+/* Role */
+
+.role-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 15px;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Status */
+
+.status-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.inactive {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Buttons */
+
+.edit-user-btn,
+.delete-user-btn {
+  border: none;
+  padding: 7px 11px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+.edit-user-btn {
+  background: #ff9800;
+  color: white;
+}
+
+.edit-user-btn:hover {
+  background: #e68900;
+}
+
+.delete-user-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.delete-user-btn:hover {
+  background: #b02a37;
+}
+
+/* Footer */
+
+.user-footer {
+  margin-top: 12px;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+
+  .user-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .user-search {
+    width: 100%;
+  }
+
+}
