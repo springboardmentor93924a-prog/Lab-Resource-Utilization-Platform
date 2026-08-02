@@ -1,423 +1,365 @@
 import { useEffect, useState } from "react";
-import api from "../services/api";
+import { getEquipment, createEquipment, updateEquipment, deleteEquipment as deleteEquipmentService } from "../services/equipmentService";
+import { getInstitutions } from "../services/institutionService";
+import { getDepartmentsByInstitution } from "../services/departmentService";
+import { getCategories } from "../services/categoryService";
+import { useToast } from "../context/ToastContext";
 
 function Equipment() {
+    const [equipmentList, setEquipmentList] = useState([]);
+    
+    // Foreign Key Data
+    const [institutions, setInstitutions] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [categories, setCategories] = useState([]);
 
-    const [equipment, setEquipment] = useState([]);
+    const initialFormState = {
+        name: "", description: "", serialNumber: "", manufacturer: "",
+        modelNumber: "", purchaseDate: "", purchaseCost: "", location: "",
+        status: "ACTIVE", availabilityStatus: "AVAILABLE", imageUrl: "",
+        categoryId: "", institutionId: "", departmentId: ""
+    };
 
-    const [formData, setFormData] = useState({
-        name: "",
-        category: "",
-        status: "Available",
-        department: "",
-        description: ""
-    });
-
+    const [formData, setFormData] = useState(initialFormState);
     const [editingId, setEditingId] = useState(null);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const { addToast } = useToast();
 
-    // Load equipment when page opens
-    useEffect(() => {
-        loadEquipment();
-    }, []);
+    // Filter and Pagination State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterStatus, setFilterStatus] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
-    // GET all equipment
-    const loadEquipment = async () => {
+    
+
+    const loadInitialData = async () => {
+        setLoading(true);
         try {
-            const response = await api.get("/equipment");
-            setEquipment(response.data);
+            const [eqData, instData, catData] = await Promise.all([
+                getEquipment(),
+                getInstitutions(),
+                getCategories()
+            ]);
+            setEquipmentList(eqData || []);
+            setInstitutions(instData || []);
+            setCategories(catData || []);
             setError("");
         } catch (err) {
             console.error(err);
-            setError("Unable to load equipment.");
+            // setError("Unable to load equipment data. Ensure backend is running or enable DEV MODE.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Handle form input
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+    useEffect(() => { setTimeout(() => loadInitialData(), 0); 
+        const handleStorage = () => loadInitialData();
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
+
+    useEffect(() => {
+        if (formData.institutionId) {
+            getDepartmentsByInstitution(formData.institutionId)
+                .then(data => setDepartments(data || []))
+                .catch(err => console.error(err));
+        } else if (departments.length > 0) {
+            setTimeout(() => setDepartments([]), 0);
+        }
+    }, [formData.institutionId, departments.length]);
+
+    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData({ ...formData, imageUrl: reader.result });
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
-    // Clear form
     const resetForm = () => {
-
-        setFormData({
-            name: "",
-            category: "",
-            status: "Available",
-            department: "",
-            description: ""
-        });
-
+        setFormData(initialFormState);
         setEditingId(null);
         setError("");
+        document.getElementById('image-upload-input').value = '';
     };
 
-    // POST - Add equipment
-    const addEquipment = async (e) => {
-
+    const submit = async (e) => {
         e.preventDefault();
-
+        setSubmitting(true);
         try {
-
-            await api.post("/equipment", formData);
-
+            const payload = { ...formData, purchaseCost: parseFloat(formData.purchaseCost) };
+            if (editingId) {
+                await updateEquipment(editingId, payload);
+                addToast("Equipment updated successfully!");
+            } else {
+                await createEquipment(payload);
+                addToast("Equipment created successfully!");
+            }
+            
             resetForm();
-
-            await loadEquipment();
-
+            await loadInitialData();
         } catch (err) {
-
             console.error(err);
-
-            setError("Unable to add equipment.");
+            setError("Error saving equipment.");
+            addToast("Failed to save equipment.", "error");
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    // Put selected equipment into form
-    const editEquipment = (item) => {
-
-        setEditingId(item.id);
-
+    const edit = (eq) => {
+        setEditingId(eq.id);
         setFormData({
-            name: item.name ?? "",
-            category: item.category ?? "",
-            status: item.status ?? "Available",
-            department: item.department ?? "",
-            description: item.description ?? ""
+            name: eq.name || "",
+            description: eq.description || "",
+            serialNumber: eq.serialNumber || "",
+            manufacturer: eq.manufacturer || "",
+            modelNumber: eq.modelNumber || "",
+            purchaseDate: eq.purchaseDate || "",
+            purchaseCost: eq.purchaseCost || "",
+            location: eq.location || "",
+            status: eq.status || "ACTIVE",
+            availabilityStatus: eq.availabilityStatus || "AVAILABLE",
+            imageUrl: eq.imageUrl || "",
+            categoryId: eq.categoryId || "",
+            institutionId: eq.institutionId || "",
+            departmentId: eq.departmentId || ""
         });
-
-        setError("");
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // PUT - Update equipment
-    const updateEquipment = async (e) => {
-
-        e.preventDefault();
-
+    const remove = async (id) => {
+        if (!window.confirm("Delete this equipment?")) return;
         try {
-
-            await api.put(
-                `/equipment/${editingId}`,
-                formData
-            );
-
-            resetForm();
-
-            await loadEquipment();
-
-        } catch (err) {
-
-            console.error(err);
-
-            setError("Unable to update equipment.");
+            await deleteEquipmentService(id);
+            addToast("Equipment deleted successfully!");
+            await loadInitialData();
+        } catch {
+            setError("Cannot delete equipment.");
+            addToast("Failed to delete equipment.", "error");
         }
     };
 
-    // DELETE equipment
-    const deleteEquipment = async (id) => {
-
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this equipment?"
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-
-            await api.delete(`/equipment/${id}`);
-
-            await loadEquipment();
-
-        } catch (err) {
-
-            console.error(err);
-
-            setError(
-                "Unable to delete equipment. It may be used in an existing booking."
-            );
-        }
+    const getStatusClass = (status) => {
+        if (!status) return "";
+        return `status-badge status-${status.toLowerCase()}`;
     };
+
+    // Derived state for filtering and pagination
+    const filteredEquipment = equipmentList.filter(eq => {
+        const matchesSearch = String(eq.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              String(eq.serialNumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              String(eq.modelNumber || "").toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesFilter = filterStatus ? eq.availabilityStatus === filterStatus : true;
+        return matchesSearch && matchesFilter;
+    });
+
+    const totalPages = Math.ceil(filteredEquipment.length / itemsPerPage);
+    const paginatedEquipment = filteredEquipment.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
-
-        <div className="container mt-4">
-
-            <h2>Equipment</h2>
-
-            {error && (
-                <div className="alert alert-danger">
-                    {error}
+        <div className="animate-fade-in">
+            <div className="page-header">
+                <div>
+                    <h2>Equipment Repository</h2>
+                    <p>Manage and track laboratory equipment across institutions</p>
                 </div>
-            )}
+            </div>
 
-            {/* ADD / EDIT EQUIPMENT FORM */}
+            {error && <div className="pro-alert">{error}</div>}
 
-            <div className="card mt-3 mb-4">
-
-                <div className="card-body">
-
-                    <h4>
-                        {editingId
-                            ? "Edit Equipment"
-                            : "Add Equipment"}
-                    </h4>
-
-                    <form
-                        onSubmit={
-                            editingId
-                                ? updateEquipment
-                                : addEquipment
-                        }
-                    >
-
-                        <div className="row">
-
-                            {/* NAME */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    placeholder="Example: Projector"
-                                    required
-                                />
-
-                            </div>
-
-                            {/* CATEGORY */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    Category
-                                </label>
-
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    placeholder="Example: Electronics"
-                                    required
-                                />
-
-                            </div>
-
-                            {/* STATUS */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    Status
-                                </label>
-
-                                <select
-                                    className="form-select"
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleChange}
-                                    required
-                                >
-
-                                    <option value="Available">
-                                        Available
-                                    </option>
-
-                                    <option value="Booked">
-                                        Booked
-                                    </option>
-
-                                    <option value="Maintenance">
-                                        Maintenance
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            {/* DEPARTMENT */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    Department
-                                </label>
-
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="department"
-                                    value={formData.department}
-                                    onChange={handleChange}
-                                    placeholder="Example: CSE"
-                                    required
-                                />
-
-                            </div>
-
-                            {/* DESCRIPTION */}
-
-                            <div className="col-12 mb-3">
-
-                                <label className="form-label">
-                                    Description
-                                </label>
-
-                                <textarea
-                                    className="form-control"
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    placeholder="Enter equipment description"
-                                    rows="3"
-                                />
-
-                            </div>
-
+            <div className="glass-card" style={{ marginBottom: '40px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>
+                    {editingId ? "Edit Equipment" : "Add New Equipment"}
+                </h4>
+                <form onSubmit={submit}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px 20px' }}>
+                        
+                        <div className="glass-form-group" style={{ gridColumn: '1 / -1', marginBottom: '10px' }}>
+                            <h5 style={{ color: 'var(--text-main)', margin: '0 0 10px 0', fontSize: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Basic Information</h5>
                         </div>
 
-                        <button
-                            type="submit"
-                            className={
-                                editingId
-                                    ? "btn btn-warning"
-                                    : "btn btn-primary"
-                            }
-                        >
+                        <div className="glass-form-group">
+                            <label>Name *</label>
+                            <input type="text" className="glass-input" name="name" value={formData.name} onChange={handleChange} required />
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Category *</label>
+                            <select className="glass-select" name="categoryId" value={formData.categoryId} onChange={handleChange} required>
+                                <option value="">Select Category</option>
+                                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Institution *</label>
+                            <select className="glass-select" name="institutionId" value={formData.institutionId} onChange={handleChange} required>
+                                <option value="">Select Institution</option>
+                                {institutions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Department *</label>
+                            <select className="glass-select" name="departmentId" value={formData.departmentId} onChange={handleChange} required disabled={!formData.institutionId}>
+                                <option value="">Select Department</option>
+                                {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            </select>
+                        </div>
 
-                            {editingId
-                                ? "Update Equipment"
-                                : "Add Equipment"}
+                        <div className="glass-form-group" style={{ gridColumn: '1 / -1', margin: '20px 0 10px 0' }}>
+                            <h5 style={{ color: 'var(--text-main)', margin: '0 0 10px 0', fontSize: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Hardware Details</h5>
+                        </div>
 
+                        <div className="glass-form-group"><label>Manufacturer</label><input type="text" className="glass-input" name="manufacturer" value={formData.manufacturer} onChange={handleChange} /></div>
+                        <div className="glass-form-group"><label>Model Number</label><input type="text" className="glass-input" name="modelNumber" value={formData.modelNumber} onChange={handleChange} /></div>
+                        <div className="glass-form-group"><label>Serial Number</label><input type="text" className="glass-input" name="serialNumber" value={formData.serialNumber} onChange={handleChange} /></div>
+                        
+                        <div className="glass-form-group" style={{gridColumn: '1 / -1'}}>
+                            <label>Equipment Image</label>
+                            <div style={{display: 'flex', gap: '15px', alignItems: 'center'}}>
+                                {formData.imageUrl && <img src={formData.imageUrl} alt="Preview" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)'}} />}
+                                <input type="file" id="image-upload-input" accept="image/*" onChange={handleImageUpload} style={{color: 'var(--text-main)'}} />
+                            </div>
+                        </div>
+
+                        <div className="glass-form-group" style={{ gridColumn: '1 / -1', margin: '20px 0 10px 0' }}>
+                            <h5 style={{ color: 'var(--text-main)', margin: '0 0 10px 0', fontSize: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Operational Details</h5>
+                        </div>
+
+                        <div className="glass-form-group"><label>Purchase Date</label><input type="date" className="glass-input" name="purchaseDate" value={formData.purchaseDate} onChange={handleChange} /></div>
+                        <div className="glass-form-group"><label>Purchase Cost</label><input type="number" step="0.01" className="glass-input" name="purchaseCost" value={formData.purchaseCost} onChange={handleChange} /></div>
+                        <div className="glass-form-group"><label>Location (Room)</label><input type="text" className="glass-input" name="location" value={formData.location} onChange={handleChange} /></div>
+                        
+                        <div className="glass-form-group">
+                            <label>General Status</label>
+                            <select className="glass-select" name="status" value={formData.status} onChange={handleChange}>
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                                <option value="DECOMMISSIONED">DECOMMISSIONED</option>
+                            </select>
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Availability Status</label>
+                            <select className="glass-select" name="availabilityStatus" value={formData.availabilityStatus} onChange={handleChange}>
+                                <option value="AVAILABLE">AVAILABLE</option>
+                                <option value="BOOKED">BOOKED</option>
+                                <option value="MAINTENANCE">MAINTENANCE</option>
+                                <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
+                            </select>
+                        </div>
+                        <div className="glass-form-group" style={{ gridColumn: '1 / -1' }}>
+                            <label>Description *</label>
+                            <textarea className="glass-input" name="description" value={formData.description} onChange={handleChange} style={{ height: '60px', paddingTop: '12px' }} required></textarea>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                        <button type="submit" className="glass-btn" disabled={submitting}>
+                            {submitting ? "Saving..." : (editingId ? "Update Equipment" : "Add Equipment")}
                         </button>
+                        {editingId && <button type="button" className="glass-btn" style={{ background: 'rgba(255,255,255,0.1)' }} onClick={resetForm} disabled={submitting}>Cancel</button>}
+                    </div>
+                </form>
+            </div>
 
-                        {editingId && (
-
-                            <button
-                                type="button"
-                                className="btn btn-secondary ms-2"
-                                onClick={resetForm}
-                            >
-                                Cancel
-                            </button>
-
-                        )}
-
-                    </form>
-
+            <div className="glass-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                    <h4 style={{ margin: 0, fontSize: '20px' }}>Equipment Inventory</h4>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input 
+                            type="text" 
+                            className="glass-input" 
+                            placeholder="Search by name or serial..." 
+                            value={searchQuery}
+                            onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}}
+                            style={{ width: '250px' }}
+                        />
+                        <select 
+                            className="glass-select" 
+                            value={filterStatus}
+                            onChange={(e) => {setFilterStatus(e.target.value); setCurrentPage(1);}}
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="AVAILABLE">Available</option>
+                            <option value="BOOKED">Booked</option>
+                            <option value="MAINTENANCE">Maintenance</option>
+                            <option value="OUT_OF_SERVICE">Out of Service</option>
+                        </select>
+                    </div>
                 </div>
 
-            </div>
-
-            {/* EQUIPMENT TABLE */}
-
-            <div className="table-responsive">
-
-                <table className="table table-bordered table-striped">
-
-                    <thead className="table-dark">
-
-                        <tr>
-
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Status</th>
-                            <th>Department</th>
-                            <th>Description</th>
-                            <th>Actions</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {equipment.length === 0 ? (
-
+                <div className="table-responsive">
+                    <table className="glass-table">
+                        <thead>
                             <tr>
-
-                                <td
-                                    colSpan="7"
-                                    className="text-center"
-                                >
-                                    No equipment found
-                                </td>
-
+                                <th>Name</th>
+                                <th>Model / Serial</th>
+                                <th>Category</th>
+                                <th>Institution</th>
+                                <th>Availability</th>
+                                <th>Actions</th>
                             </tr>
-
-                        ) : (
-
-                            equipment.map((item) => (
-
-                                <tr key={item.id}>
-
-                                    <td>{item.id}</td>
-
-                                    <td>{item.name}</td>
-
-                                    <td>{item.category}</td>
-
-                                    <td>{item.status}</td>
-
-                                    <td>{item.department}</td>
-
-                                    <td>{item.description}</td>
-
-                                    <td>
-
-                                        <button
-                                            className="btn btn-warning btn-sm me-2"
-                                            onClick={() =>
-                                                editEquipment(item)
-                                            }
-                                        >
-                                            Edit
-                                        </button>
-
-                                        <button
-                                            className="btn btn-danger btn-sm"
-                                            onClick={() =>
-                                                deleteEquipment(item.id)
-                                            }
-                                        >
-                                            Delete
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
-                            ))
-
-                        )}
-
-                    </tbody>
-
-                </table>
-
+                        </thead>
+                        <tbody>
+                            {loading ? <tr><td colSpan="6" style={{textAlign:'center'}}>Loading...</td></tr> : paginatedEquipment.length > 0 ? (
+                                paginatedEquipment.map(eq => (
+                                    <tr key={eq.id}>
+                                        <td>
+                                            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                                {eq.imageUrl && <img src={eq.imageUrl} alt={eq.name} style={{width:'40px', height:'40px', objectFit:'cover', borderRadius:'4px'}} />}
+                                                <div>
+                                                    <div style={{fontWeight:'500'}}>{eq.name}</div>
+                                                    <div style={{fontSize:'12px', color:'var(--text-muted)'}}>{eq.location}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>{eq.modelNumber || "-"}</div>
+                                            <div style={{fontSize:'12px', color:'var(--text-muted)'}}>{eq.serialNumber || "-"}</div>
+                                        </td>
+                                        <td>{eq.categoryName || eq.categoryId}</td>
+                                        <td>{eq.institutionName || eq.institutionId}</td>
+                                        <td><span className={getStatusClass(eq.availabilityStatus)}>{eq.availabilityStatus}</span></td>
+                                        <td>
+                                            <button className="glass-btn" style={{ padding: '0 12px', height: '32px', fontSize: '12px', marginRight: '8px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }} onClick={() => edit(eq)}>Edit</button>
+                                            <button className="glass-btn" style={{ padding: '0 12px', height: '32px', fontSize: '12px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171' }} onClick={() => remove(eq.id)}>Delete</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : <tr><td colSpan="6" style={{textAlign:'center'}}>No equipment found</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px', gap: '15px' }}>
+                        <button 
+                            className="glass-btn" 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(p => p - 1)}
+                            style={{ padding: '5px 15px' }}
+                        >
+                            Previous
+                        </button>
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Page {currentPage} of {totalPages}</span>
+                        <button 
+                            className="glass-btn" 
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            style={{ padding: '5px 15px' }}
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
-
         </div>
     );
 }

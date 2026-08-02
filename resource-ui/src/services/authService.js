@@ -1,43 +1,34 @@
-const API_URL = "http://localhost:8080/api/auth";
+import api from "./api";
 
-export async function registerUser(data) {
-
-    const response = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-
-        throw new Error(
-            errorData?.message || "Registration failed"
-        );
+export const loginUser = async (credentials) => {
+    // Check if devMode is enabled (though auth shouldn't strictly be mocked, we can handle it if needed)
+    const isDevMode = localStorage.getItem("devMode") === "true";
+    if (isDevMode) {
+        // Return a mock success response
+        return {
+            token: "mock-jwt-token-12345",
+            user: {
+                id: "d8c34b2a-de74-4382-8832-a5392f99cec1",
+                firstName: "Dev",
+                lastName: "User",
+                email: credentials.email,
+                role: "ADMIN",
+                institutionId: "62e07288-28d8-4d7f-b2ce-40a322cc6654",
+                departmentId: "74f27062-d528-4612-abe2-34ffb42e2dba"
+            }
+        };
     }
 
-    return response.json();
-}
+    const response = await api.post("/auth/login", credentials);
+    return response.data;
+};
 
-export async function loginUser(data) {
-
-    const response = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-
-        throw new Error(
-            errorData?.message || "Invalid email or password"
-        );
+export const registerUser = async (userData) => {
+    const isDevMode = localStorage.getItem("devMode") === "true";
+    if (isDevMode) {
+        return { message: "User registered successfully in mock mode." };
     }
 
-    return response.json();
-}
+    const response = await api.post("/auth/register", userData);
+    return response.data;
+};

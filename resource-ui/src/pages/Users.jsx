@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import api from "../services/api";
+import { getUsers, createUser, updateUser, deleteUser as deleteUserService } from "../services/userService";
+import { useToast } from "../context/ToastContext";
 
 function Users() {
     const [users, setUsers] = useState([]);
-
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -11,63 +11,74 @@ function Users() {
         role: "",
         department: ""
     });
-
     const [editingId, setEditingId] = useState(null);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const { addToast } = useToast();
 
-    useEffect(() => {
-        loadUsers();
-    }, []);
+    // Search and Pagination
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterRole, setFilterRole] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    
 
     const loadUsers = async () => {
+        setLoading(true);
         try {
-            const response = await api.get("/users");
-            setUsers(response.data);
+            const data = await getUsers();
+            setUsers(data || []);
+            setError("");
         } catch (err) {
             console.error(err);
-            setError("Unable to load users.");
+            // setError("Unable to load users. Ensure backend is running or enable DEV MODE.");
+        } finally {
+            setLoading(false);
         }
     };
 
+    useEffect(() => { setTimeout(() => loadUsers(), 0);
+        const handleStorage = () => loadUsers();
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
+
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const resetForm = () => {
-        setFormData({
-            name: "",
-            email: "",
-            password: "",
-            role: "",
-            department: ""
-        });
-
+        setFormData({ name: "", email: "", password: "", role: "", department: "" });
         setEditingId(null);
         setError("");
     };
 
-    // ADD USER
-    const addUser = async (e) => {
+    const submit = async (e) => {
         e.preventDefault();
-
+        setSubmitting(true);
         try {
-            await api.post("/users", formData);
-
+            if (editingId) {
+                await updateUser(editingId, formData);
+                addToast("User updated successfully!");
+            } else {
+                await createUser(formData);
+                addToast("User added successfully!");
+            }
             resetForm();
             await loadUsers();
         } catch (err) {
             console.error(err);
-            setError("Unable to add user. Check the entered data.");
+            setError("Unable to save user.");
+            addToast("Failed to save user.", "error");
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    // SELECT USER FOR EDITING
     const editUser = (user) => {
         setEditingId(user.id);
-
         setFormData({
             name: user.name ?? "",
             email: user.email ?? "",
@@ -75,253 +86,149 @@ function Users() {
             role: user.role ?? "",
             department: user.department ?? ""
         });
-
         setError("");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // UPDATE USER
-    const updateUser = async (e) => {
-        e.preventDefault();
-
-        try {
-            await api.put(`/users/${editingId}`, formData);
-
-            resetForm();
-            await loadUsers();
-        } catch (err) {
-            console.error(err);
-            setError("Unable to update user.");
-        }
-    };
-
-    // DELETE USER
     const deleteUser = async (id) => {
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this user?"
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
+        if (!window.confirm("Are you sure you want to delete this user?")) return;
         try {
-            await api.delete(`/users/${id}`);
+            await deleteUserService(id);
+            addToast("User deleted successfully!");
             await loadUsers();
         } catch (err) {
             console.error(err);
-            setError(
-                "Unable to delete user. The user may have existing bookings."
-            );
+            setError("Unable to delete user.");
+            addToast("Failed to delete user.", "error");
         }
     };
+
+    // Derived State
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = (user.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              (user.email || "").toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesRole = filterRole ? user.role === filterRole : true;
+        return matchesSearch && matchesRole;
+    });
+
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
-        <div className="container mt-4">
-
-            <div className="d-flex justify-content-between align-items-center">
-                <h2>Users</h2>
+        <div className="animate-fade-in">
+            <div className="page-header">
+                <div>
+                    <h2>User Management</h2>
+                    <p>Manage system access and roles</p>
+                </div>
             </div>
 
-            {error && (
-                <div className="alert alert-danger">
-                    {error}
-                </div>
-            )}
+            {error && <div className="pro-alert">{error}</div>}
 
-            {/* ADD / EDIT FORM */}
-
-            <div className="card mt-3 mb-4">
-                <div className="card-body">
-
-                    <h4>
-                        {editingId ? "Edit User" : "Add User"}
-                    </h4>
-
-                    <form onSubmit={editingId ? updateUser : addUser}>
-
-                        <div className="row">
-
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">
-                                    Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">
-                                    Email
-                                </label>
-
-                                <input
-                                    type="email"
-                                    className="form-control"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">
-                                    Password
-                                </label>
-
-                                <input
-                                    type="password"
-                                    className="form-control"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">
-                                    Role
-                                </label>
-
-                                <select
-                                    className="form-select"
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleChange}
-                                    required
-                                >
-                                    <option value="">
-                                        Select Role
-                                    </option>
-
-                                    <option value="Student">
-                                        Student
-                                    </option>
-
-                                    <option value="Faculty">
-                                        Faculty
-                                    </option>
-
-                                    <option value="Admin">
-                                        Admin
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">
-                                    Department
-                                </label>
-
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="department"
-                                    value={formData.department}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
+            <div className="glass-card" style={{marginBottom: '40px'}}>
+                <h4 style={{marginTop: 0, marginBottom: '20px', fontSize: '20px'}}>
+                    {editingId ? "Edit User" : "Add New User"}
+                </h4>
+                <form onSubmit={submit}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0 20px'}}>
+                        <div className="glass-form-group">
+                            <label>Name *</label>
+                            <input type="text" className="glass-input" name="name" value={formData.name} onChange={handleChange} required />
                         </div>
-
-                        <button
-                            type="submit"
-                            className={
-                                editingId
-                                    ? "btn btn-warning"
-                                    : "btn btn-primary"
-                            }
-                        >
-                            {editingId ? "Update User" : "Add User"}
+                        <div className="glass-form-group">
+                            <label>Email *</label>
+                            <input type="email" className="glass-input" name="email" value={formData.email} onChange={handleChange} required />
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Password</label>
+                            <input type="password" className="glass-input" name="password" value={formData.password} onChange={handleChange} required={!editingId} placeholder={editingId ? "Leave blank to keep unchanged" : ""} />
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Role *</label>
+                            <select className="glass-select" name="role" value={formData.role} onChange={handleChange} required>
+                                <option value="">Select Role</option>
+                                <option value="STUDENT">Student</option>
+                                <option value="FACULTY">Faculty</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                        </div>
+                        <div className="glass-form-group">
+                            <label>Department *</label>
+                            <input type="text" className="glass-input" name="department" value={formData.department} onChange={handleChange} required />
+                        </div>
+                    </div>
+                    <div style={{display: 'flex', gap: '12px', marginTop: '10px'}}>
+                        <button type="submit" className="glass-btn" disabled={submitting}>
+                            {submitting ? "Saving..." : (editingId ? "Update User" : "Add User")}
                         </button>
+                        {editingId && <button type="button" className="glass-btn" style={{background: 'rgba(255,255,255,0.1)'}} onClick={resetForm} disabled={submitting}>Cancel</button>}
+                    </div>
+                </form>
+            </div>
 
-                        {editingId && (
-                            <button
-                                type="button"
-                                className="btn btn-secondary ms-2"
-                                onClick={resetForm}
-                            >
-                                Cancel
-                            </button>
-                        )}
-
-                    </form>
-
+            <div className="glass-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                    <h4 style={{ margin: 0, fontSize: '20px' }}>Current Users</h4>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input 
+                            type="text" 
+                            className="glass-input" 
+                            placeholder="Search name or email..." 
+                            value={searchQuery}
+                            onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}}
+                            style={{ width: '250px' }}
+                        />
+                        <select 
+                            className="glass-select" 
+                            value={filterRole}
+                            onChange={(e) => {setFilterRole(e.target.value); setCurrentPage(1);}}
+                        >
+                            <option value="">All Roles</option>
+                            <option value="STUDENT">Student</option>
+                            <option value="FACULTY">Faculty</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            {/* USERS TABLE */}
-
-            <div className="table-responsive">
-
-                <table className="table table-bordered table-striped">
-
-                    <thead className="table-dark">
-
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Department</th>
-                            <th>Actions</th>
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {users.map((user) => (
-
-                            <tr key={user.id}>
-
-                                <td>{user.id}</td>
-
-                                <td>{user.name}</td>
-
-                                <td>{user.email}</td>
-
-                                <td>{user.role}</td>
-
-                                <td>{user.department}</td>
-
-                                <td>
-
-                                    <button
-                                        className="btn btn-warning btn-sm me-2"
-                                        onClick={() => editUser(user)}
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() => deleteUser(user.id)}
-                                    >
-                                        Delete
-                                    </button>
-
-                                </td>
-
+                <div className="table-responsive">
+                    <table className="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Department</th>
+                                <th>Actions</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? <tr><td colSpan="5" style={{textAlign: 'center'}}>Loading...</td></tr> : paginatedUsers.length > 0 ? (
+                                paginatedUsers.map(user => (
+                                    <tr key={user.id}>
+                                        <td>{user.name}</td>
+                                        <td>{user.email}</td>
+                                        <td><span className="status-badge" style={{background: 'rgba(255,255,255,0.1)', color: 'var(--text-main)', border: '1px solid rgba(255,255,255,0.2)'}}>{user.role}</span></td>
+                                        <td>{user.department}</td>
+                                        <td>
+                                            <button className="glass-btn" style={{padding: '0 12px', height: '32px', fontSize: '12px', marginRight: '8px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24'}} onClick={() => editUser(user)}>Edit</button>
+                                            <button className="glass-btn" style={{padding: '0 12px', height: '32px', fontSize: '12px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171'}} onClick={() => deleteUser(user.id)}>Delete</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : <tr><td colSpan="5" style={{textAlign: 'center'}}>No users found</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
 
-                        ))}
-
-                    </tbody>
-
-                </table>
-
+                {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px', gap: '15px' }}>
+                        <button className="glass-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} style={{ padding: '5px 15px' }}>Previous</button>
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Page {currentPage} of {totalPages}</span>
+                        <button className="glass-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} style={{ padding: '5px 15px' }}>Next</button>
+                    </div>
+                )}
             </div>
-
         </div>
     );
 }

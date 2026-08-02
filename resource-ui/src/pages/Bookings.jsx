@@ -1,495 +1,224 @@
 import { useEffect, useState } from "react";
-import api from "../services/api";
+import { getBookings, createBooking, updateBooking, deleteBooking as deleteBookingService, approveBooking, rejectBooking } from "../services/bookingService";
+import { getUsers } from "../services/userService";
+import { getAvailableEquipment } from "../services/equipmentService";
+import { useToast } from "../context/ToastContext";
 
 function Bookings() {
-
     const [bookings, setBookings] = useState([]);
     const [users, setUsers] = useState([]);
-    const [equipment, setEquipment] = useState([]);
+    const [equipmentList, setEquipmentList] = useState([]);
 
+    const initialFormState = {
+        userId: "", equipmentId: "", startTime: "", endTime: "", purpose: "", status: "PENDING"
+    };
+
+    const [formData, setFormData] = useState(initialFormState);
     const [editingId, setEditingId] = useState(null);
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const { addToast } = useToast();
 
-    const [formData, setFormData] = useState({
-        userId: "",
-        equipmentId: "",
-        bookingDate: "",
-        startTime: "",
-        endTime: "",
-        status: "Pending"
-    });
+    // Search and Pagination
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterStatus, setFilterStatus] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
 
-    useEffect(() => {
-        loadData();
+    const loadInitialData = async () => {
+        setLoading(true);
+        try {
+            const [bData, uData, eData] = await Promise.all([getBookings(), getUsers(), getAvailableEquipment()]);
+            setBookings(bData || []); setUsers(uData || []); setEquipmentList(eData || []);
+            setError("");
+        } catch (err) {
+            console.error(err);
+            // setError("Unable to load bookings data. Ensure backend is running or enable DEV MODE.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { setTimeout(() => loadInitialData(), 0);
+        const handleStorage = () => loadInitialData();
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
     }, []);
 
-    const loadData = async () => {
-        try {
-            const [bookingResponse, userResponse, equipmentResponse] =
-                await Promise.all([
-                    api.get("/booking"),
-                    api.get("/users"),
-                    api.get("/equipment")
-                ]);
+    
 
-            setBookings(bookingResponse.data);
-            setUsers(userResponse.data);
-            setEquipment(equipmentResponse.data);
+    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const resetForm = () => { setFormData(initialFormState); setEditingId(null); setError(""); };
 
-        } catch (err) {
-            console.error(err);
-            setError("Unable to load booking data.");
-        }
-    };
-
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const resetForm = () => {
-        setFormData({
-            userId: "",
-            equipmentId: "",
-            bookingDate: "",
-            startTime: "",
-            endTime: "",
-            status: "Pending"
-        });
-
-        setEditingId(null);
-        setError("");
-    };
-
-    const createBookingObject = () => {
-        return {
-            user: {
-                id: Number(formData.userId)
-            },
-
-            equipment: {
-                id: Number(formData.equipmentId)
-            },
-
-            bookingDate: formData.bookingDate,
-
-            startTime:
-                formData.startTime.length === 5
-                    ? `${formData.startTime}:00`
-                    : formData.startTime,
-
-            endTime:
-                formData.endTime.length === 5
-                    ? `${formData.endTime}:00`
-                    : formData.endTime,
-
-            status: formData.status
-        };
-    };
-
-    // CREATE BOOKING
-    const addBooking = async (e) => {
+    const submit = async (e) => {
         e.preventDefault();
-
+        setSubmitting(true);
         try {
-            const booking = createBookingObject();
-
-            await api.post("/booking", booking);
-
+            if (editingId) {
+                await updateBooking(editingId, formData);
+                addToast("Booking updated successfully!");
+            } else {
+                await createBooking(formData);
+                addToast("Booking created successfully!");
+            }
             resetForm();
-            await loadData();
-
+            await loadInitialData();
         } catch (err) {
             console.error(err);
-            setError("Unable to create booking.");
+            setError("Unable to save booking.");
+            addToast("Failed to save booking.", "error");
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    // LOAD BOOKING INTO EDIT FORM
     const editBooking = (booking) => {
-
         setEditingId(booking.id);
-
+        const formatForInput = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : "";
         setFormData({
-            userId: booking.user?.id?.toString() ?? "",
-            equipmentId: booking.equipment?.id?.toString() ?? "",
-            bookingDate: booking.bookingDate ?? "",
-
-            startTime:
-                booking.startTime
-                    ? booking.startTime.substring(0, 5)
-                    : "",
-
-            endTime:
-                booking.endTime
-                    ? booking.endTime.substring(0, 5)
-                    : "",
-
-            status: booking.status ?? "Pending"
+            userId: booking.userId || "", equipmentId: booking.equipmentId || "",
+            startTime: formatForInput(booking.startTime), endTime: formatForInput(booking.endTime),
+            purpose: booking.purpose || "", status: booking.status || "PENDING"
         });
-
         setError("");
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // UPDATE BOOKING
-    const updateBooking = async (e) => {
-        e.preventDefault();
-
-        try {
-            const booking = createBookingObject();
-
-            await api.put(`/booking/${editingId}`, booking);
-
-            resetForm();
-            await loadData();
-
-        } catch (err) {
-            console.error(err);
-            setError("Unable to update booking.");
-        }
-    };
-
-    // DELETE BOOKING
     const deleteBooking = async (id) => {
-
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this booking?"
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-            await api.delete(`/booking/${id}`);
-            await loadData();
-
+        if (!window.confirm("Delete this booking?")) return;
+        try { 
+            await deleteBookingService(id); 
+            addToast("Booking deleted successfully!");
+            await loadInitialData(); 
         } catch (err) {
             console.error(err);
-            setError("Unable to delete booking.");
+            setError("Unable to delete booking."); 
+            addToast("Failed to delete booking.", "error");
         }
     };
+
+    const handleApprove = async (id) => { try { await approveBooking(id); addToast("Booking approved!"); await loadInitialData(); } catch (err) {
+            console.error(err);
+            setError("Unable to approve."); addToast("Failed to approve.", "error"); } };
+    const handleReject = async (id) => { try { await rejectBooking(id); addToast("Booking rejected."); await loadInitialData(); } catch (err) {
+            console.error(err);
+            setError("Unable to reject."); addToast("Failed to reject.", "error"); } };
+
+    const getStatusClass = (status) => status ? `status-badge status-${status.toLowerCase()}` : "";
+    const formatDate = (isoString) => {
+        if (!isoString) return "-";
+        const d = new Date(isoString);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    };
+
+    // Derived State
+    const filteredBookings = bookings.filter(b => {
+        const matchesSearch = String(b.userName || b.userId || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              String(b.equipmentName || b.equipmentId || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              String(b.purpose || "").toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = filterStatus ? b.status === filterStatus : true;
+        return matchesSearch && matchesStatus;
+    });
+
+    const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+    const paginatedBookings = filteredBookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
-        <div className="container mt-4">
-
-            <h2>Bookings</h2>
-
-            {error && (
-                <div className="alert alert-danger">
-                    {error}
+        <div className="animate-fade-in">
+            <div className="page-header">
+                <div>
+                    <h2>Bookings Management</h2>
+                    <p>Schedule and manage resource reservations</p>
                 </div>
-            )}
+            </div>
 
-            {/* CREATE / EDIT FORM */}
+            {error && <div className="pro-alert">{error}</div>}
 
-            <div className="card mt-3 mb-4">
-
-                <div className="card-body">
-
-                    <h4>
-                        {editingId
-                            ? "Edit Booking"
-                            : "Create Booking"}
-                    </h4>
-
-                    <form
-                        onSubmit={
-                            editingId
-                                ? updateBooking
-                                : addBooking
-                        }
-                    >
-
-                        <div className="row">
-
-                            {/* USER */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    User
-                                </label>
-
-                                <select
-                                    className="form-select"
-                                    name="userId"
-                                    value={formData.userId}
-                                    onChange={handleChange}
-                                    required
-                                >
-
-                                    <option value="">
-                                        Select User
-                                    </option>
-
-                                    {users.map((user) => (
-                                        <option
-                                            key={user.id}
-                                            value={user.id}
-                                        >
-                                            {user.name} - {user.department}
-                                        </option>
-                                    ))}
-
-                                </select>
-
-                            </div>
-
-                            {/* EQUIPMENT */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    Equipment
-                                </label>
-
-                                <select
-                                    className="form-select"
-                                    name="equipmentId"
-                                    value={formData.equipmentId}
-                                    onChange={handleChange}
-                                    required
-                                >
-
-                                    <option value="">
-                                        Select Equipment
-                                    </option>
-
-                                    {equipment.map((item) => (
-                                        <option
-                                            key={item.id}
-                                            value={item.id}
-                                        >
-                                            {item.name} - {item.status}
-                                        </option>
-                                    ))}
-
-                                </select>
-
-                            </div>
-
-                            {/* DATE */}
-
-                            <div className="col-md-4 mb-3">
-
-                                <label className="form-label">
-                                    Booking Date
-                                </label>
-
-                                <input
-                                    type="date"
-                                    className="form-control"
-                                    name="bookingDate"
-                                    value={formData.bookingDate}
-                                    onChange={handleChange}
-                                    required
-                                />
-
-                            </div>
-
-                            {/* START */}
-
-                            <div className="col-md-4 mb-3">
-
-                                <label className="form-label">
-                                    Start Time
-                                </label>
-
-                                <input
-                                    type="time"
-                                    className="form-control"
-                                    name="startTime"
-                                    value={formData.startTime}
-                                    onChange={handleChange}
-                                    required
-                                />
-
-                            </div>
-
-                            {/* END */}
-
-                            <div className="col-md-4 mb-3">
-
-                                <label className="form-label">
-                                    End Time
-                                </label>
-
-                                <input
-                                    type="time"
-                                    className="form-control"
-                                    name="endTime"
-                                    value={formData.endTime}
-                                    onChange={handleChange}
-                                    required
-                                />
-
-                            </div>
-
-                            {/* STATUS */}
-
-                            <div className="col-md-6 mb-3">
-
-                                <label className="form-label">
-                                    Status
-                                </label>
-
-                                <select
-                                    className="form-select"
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleChange}
-                                >
-
-                                    <option value="Pending">
-                                        Pending
-                                    </option>
-
-                                    <option value="Approved">
-                                        Approved
-                                    </option>
-
-                                    <option value="Rejected">
-                                        Rejected
-                                    </option>
-
-                                    <option value="Completed">
-                                        Completed
-                                    </option>
-
-                                    <option value="Cancelled">
-                                        Cancelled
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                        </div>
-
-                        <button
-                            type="submit"
-                            className={
-                                editingId
-                                    ? "btn btn-warning"
-                                    : "btn btn-primary"
-                            }
-                        >
-                            {editingId
-                                ? "Update Booking"
-                                : "Create Booking"}
+            <div className="glass-card" style={{marginBottom: '40px'}}>
+                <h4 style={{marginTop: 0, marginBottom: '20px', fontSize: '20px'}}>{editingId ? "Edit Booking" : "Create New Booking"}</h4>
+                <form onSubmit={submit}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px'}}>
+                        <div className="glass-form-group"><label>User *</label><select className="glass-select" name="userId" value={formData.userId} onChange={handleChange} required><option value="">Select User</option>{users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}</select></div>
+                        <div className="glass-form-group"><label>Equipment *</label><select className="glass-select" name="equipmentId" value={formData.equipmentId} onChange={handleChange} required><option value="">Select Equipment</option>{equipmentList.map(eq => <option key={eq.id} value={eq.id}>{eq.name}</option>)}</select></div>
+                        <div className="glass-form-group"><label>Start Time *</label><input type="datetime-local" className="glass-input" name="startTime" value={formData.startTime} onChange={handleChange} required /></div>
+                        <div className="glass-form-group"><label>End Time *</label><input type="datetime-local" className="glass-input" name="endTime" value={formData.endTime} onChange={handleChange} required /></div>
+                        <div className="glass-form-group"><label>Status</label><select className="glass-select" name="status" value={formData.status} onChange={handleChange}><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED</option><option value="REJECTED">REJECTED</option><option value="SCHEDULED">SCHEDULED</option><option value="COMPLETED">COMPLETED</option><option value="CANCELLED">CANCELLED</option></select></div>
+                        <div className="glass-form-group" style={{ gridColumn: '1 / -1' }}><label>Purpose of Booking *</label><input type="text" className="glass-input" name="purpose" value={formData.purpose} onChange={handleChange} required placeholder="e.g. Research Project Alpha" /></div>
+                    </div>
+                    <div style={{display: 'flex', gap: '12px', marginTop: '20px'}}>
+                        <button type="submit" className="glass-btn" disabled={submitting}>
+                            {submitting ? "Saving..." : (editingId ? "Update Booking" : "Create Booking")}
                         </button>
+                        {editingId && <button type="button" className="glass-btn" style={{background: 'rgba(255,255,255,0.1)'}} onClick={resetForm} disabled={submitting}>Cancel</button>}
+                    </div>
+                </form>
+            </div>
 
-                        {editingId && (
-
-                            <button
-                                type="button"
-                                className="btn btn-secondary ms-2"
-                                onClick={resetForm}
-                            >
-                                Cancel
-                            </button>
-
-                        )}
-
-                    </form>
-
+            <div className="glass-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                    <h4 style={{ margin: 0, fontSize: '20px' }}>All Bookings</h4>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input type="text" className="glass-input" placeholder="Search user, eq, purpose..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} style={{ width: '250px' }} />
+                        <select className="glass-select" value={filterStatus} onChange={(e) => {setFilterStatus(e.target.value); setCurrentPage(1);}}>
+                            <option value="">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="SCHEDULED">Scheduled</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                    </div>
                 </div>
 
-            </div>
-
-            {/* BOOKINGS TABLE */}
-
-            <div className="table-responsive">
-
-                <table className="table table-bordered table-striped">
-
-                    <thead className="table-dark">
-
-                        <tr>
-                            <th>ID</th>
-                            <th>User</th>
-                            <th>Equipment</th>
-                            <th>Date</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {bookings.map((booking) => (
-
-                            <tr key={booking.id}>
-
-                                <td>{booking.id}</td>
-
-                                <td>
-                                    {booking.user?.name}
-                                </td>
-
-                                <td>
-                                    {booking.equipment?.name}
-                                </td>
-
-                                <td>
-                                    {booking.bookingDate}
-                                </td>
-
-                                <td>
-                                    {booking.startTime}
-                                </td>
-
-                                <td>
-                                    {booking.endTime}
-                                </td>
-
-                                <td>
-                                    {booking.status}
-                                </td>
-
-                                <td>
-
-                                    <button
-                                        className="btn btn-warning btn-sm me-2"
-                                        onClick={() =>
-                                            editBooking(booking)
-                                        }
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() =>
-                                            deleteBooking(booking.id)
-                                        }
-                                    >
-                                        Delete
-                                    </button>
-
-                                </td>
-
+                <div className="table-responsive">
+                    <table className="glass-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Equipment</th>
+                                <th>Purpose</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? <tr><td colSpan="7" style={{textAlign: 'center'}}>Loading...</td></tr> : paginatedBookings.length > 0 ? (
+                                paginatedBookings.map(booking => (
+                                    <tr key={booking.id}>
+                                        <td>{booking.userName || booking.userId}</td>
+                                        <td>{booking.equipmentName || booking.equipmentId}</td>
+                                        <td>{booking.purpose}</td>
+                                        <td>{formatDate(booking.startTime)}</td>
+                                        <td>{formatDate(booking.endTime)}</td>
+                                        <td><span className={getStatusClass(booking.status)}>{booking.status}</span></td>
+                                        <td>
+                                            {booking.status === "PENDING" && (
+                                                <>
+                                                    <button className="glass-btn" style={{padding: '0 8px', height: '28px', fontSize: '11px', marginRight: '4px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399'}} onClick={() => handleApprove(booking.id)}>Approve</button>
+                                                    <button className="glass-btn" style={{padding: '0 8px', height: '28px', fontSize: '11px', marginRight: '8px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171'}} onClick={() => handleReject(booking.id)}>Reject</button>
+                                                </>
+                                            )}
+                                            <button className="glass-btn" style={{padding: '0 8px', height: '28px', fontSize: '11px', marginRight: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24'}} onClick={() => editBooking(booking)}>Edit</button>
+                                            <button className="glass-btn" style={{padding: '0 8px', height: '28px', fontSize: '11px', background: 'rgba(255, 255, 255, 0.1)'}} onClick={() => deleteBooking(booking.id)}>Delete</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : <tr><td colSpan="7" style={{textAlign: 'center'}}>No bookings found</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
 
-                        ))}
-
-                    </tbody>
-
-                </table>
-
+                {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px', gap: '15px' }}>
+                        <button className="glass-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} style={{ padding: '5px 15px' }}>Previous</button>
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Page {currentPage} of {totalPages}</span>
+                        <button className="glass-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} style={{ padding: '5px 15px' }}>Next</button>
+                    </div>
+                )}
             </div>
-
         </div>
     );
 }
