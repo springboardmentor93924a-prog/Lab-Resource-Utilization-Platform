@@ -184,11 +184,20 @@ This branch contains frontend development, frontend-backend integration, authent
 
 ## Project Status
 
-The core full-stack application is under active development.
+### What We've Done So Far
+- **UI Modernization**: Upgraded the entire frontend to a professional, dark-themed, glassmorphic design system.
+- **Organization & Role Architecture**: Established multi-tenant structural concepts including Institutions, Departments, and User Roles.
+- **Backend Integration**: Successfully linked React UI endpoints to Spring Boot controllers (port 8081).
+- **Security & Authentication**: Implemented fully functional JWT-based authentication, password encryption via BCrypt, and conditional protected route rendering.
+- **API Mapping**: Implemented complete CRUD APIs in the backend with corresponding DTOs mapping to the frontend services.
+- **Profile & Settings UI**: Built comprehensive user Profile and Settings layouts integrating modern toggles and profile actions.
 
-Basic CRUD operations, frontend-backend integration, registration, login, JWT generation, and frontend route protection have been implemented.
-
-Advanced security, role-based authorization, booking validation, maintenance, utilization monitoring, analytics, testing, and deployment are under development.
+### What's Next
+- **Dynamic Booking Validation**: Implement server-side logic to detect booking conflicts and prevent duplicate reservations for the same equipment.
+- **Role-Based Access Control (RBAC)**: Enforce strict backend rules (e.g. hasRole('ADMIN')) for sensitive endpoints and conditionally hide frontend menu items based on user permissions.
+- **Real Analytics Integration**: Connect the Dashboard's statistical counters (Total Equipment, Booked Equipment, Pending Bookings) to real database aggregations.
+- **Settings Connectivity**: Bind visual toggles in the Settings page to actual local browser storage and backend preferences APIs.
+- **Approval Workflow**: Enable Lab Managers to approve or reject pending equipment bookings initiated by students.
 
 ---
 
