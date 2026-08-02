@@ -17,6 +17,14 @@ import UsersPage from './pages/UsersPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import HelpPage from './pages/HelpPage';
+import AuditTrailPage from './pages/AuditTrailPage';
+import StatusPage from './pages/StatusPage';
+import DeletedItemsPage from './pages/DeletedItemsPage';
+import SearchPage from './pages/SearchPage';
+import PreferencesPage from './pages/PreferencesPage';
+import OnboardingPage from './pages/OnboardingPage';
+import InsightsPage from './pages/InsightsPage';
+import TenancyPage from './pages/TenancyPage';
 
 function App() {
   return (
@@ -37,6 +45,14 @@ function App() {
       <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute><Layout><HelpPage /></Layout></ProtectedRoute>} />
+      <Route path="/audit" element={<ProtectedRoute><Layout><AuditTrailPage /></Layout></ProtectedRoute>} />
+      <Route path="/status" element={<ProtectedRoute><Layout><StatusPage /></Layout></ProtectedRoute>} />
+      <Route path="/deleted" element={<ProtectedRoute><Layout><DeletedItemsPage /></Layout></ProtectedRoute>} />
+      <Route path="/search" element={<ProtectedRoute><Layout><SearchPage /></Layout></ProtectedRoute>} />
+      <Route path="/preferences" element={<ProtectedRoute><Layout><PreferencesPage /></Layout></ProtectedRoute>} />
+      <Route path="/onboarding" element={<ProtectedRoute><Layout><OnboardingPage /></Layout></ProtectedRoute>} />
+      <Route path="/insights" element={<ProtectedRoute><Layout><InsightsPage /></Layout></ProtectedRoute>} />
+      <Route path="/tenancy" element={<ProtectedRoute><Layout><TenancyPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

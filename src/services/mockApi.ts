@@ -20,8 +20,8 @@ export async function mockLogin(email: string, password: string) {
     throw new Error('No account was found for this email.');
   }
 
-  if (user.password !== normalizedPassword && normalizedPassword !== 'Password123!') {
-    throw new Error('Invalid credentials. Please use the password you created during registration or the demo password Password123!.');
+  if (user.password !== normalizedPassword) {
+    throw new Error('Invalid credentials. Please use the password you registered with.');
   }
 
   const { password: _password, ...safeUser } = user;

@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Bell, CalendarDays, ChevronRight, HelpCircle, Home, LifeBuoy, ListChecks, LogOut, Package2, Settings, ShieldCheck, UserCircle2, Users } from 'lucide-react';
+import { BarChart3, Bell, CalendarDays, ChevronRight, FileSearch, HelpCircle, Home, LifeBuoy, ListChecks, LogOut, Package2, Search, Settings, ShieldCheck, Sparkles, Trash2, UserCircle2, Users, Waves } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
@@ -22,6 +22,14 @@ const navItems = [
   { label: 'Profile', to: '/profile', icon: UserCircle2 },
   { label: 'Settings', to: '/settings', icon: Settings },
   { label: 'Help', to: '/help', icon: HelpCircle },
+  { label: 'Audit Trail', to: '/audit', icon: FileSearch },
+  { label: 'Search', to: '/search', icon: Search },
+  { label: 'Deleted Items', to: '/deleted', icon: Trash2 },
+  { label: 'Status', to: '/status', icon: ShieldCheck },
+  { label: 'Preferences', to: '/preferences', icon: Bell },
+  { label: 'Onboarding', to: '/onboarding', icon: Waves },
+  { label: 'Insights', to: '/insights', icon: Sparkles },
+  { label: 'Tenancy', to: '/tenancy', icon: BarChart3 },
 ];
 
 export default function Layout({ children }: LayoutProps) {
