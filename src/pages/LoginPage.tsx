@@ -19,7 +19,7 @@ export default function LoginPage() {
   const { user, loading, error, rememberMe } = useAppSelector((state) => state.auth);
   const from = (location.state as { from?: Location })?.from?.pathname ?? '/dashboard';
   const [showPassword, setShowPassword] = useState(false);
-  const [googleStep, setGoogleStep] = useState<'idle' | 'mock'>('idle');
+  const [socialStep, setSocialStep] = useState<'idle' | 'mock'>('idle');
 
   const {
     register,
@@ -39,12 +39,12 @@ export default function LoginPage() {
     await dispatch(loginUser(data));
   };
 
-  const handleGoogleLogin = () => {
-    setGoogleStep('mock');
+  const handleSocialLogin = (email: string) => {
+    setSocialStep('mock');
     setTimeout(() => {
-      window.alert('Mock Google authentication succeeded. Redirecting to dashboard.');
-      void dispatch(loginUser({ email: 'google.user@university.edu', password: 'Password123!' }));
-      setGoogleStep('idle');
+      window.alert('Mock social authentication succeeded. Redirecting to dashboard.');
+      void dispatch(loginUser({ email, password: 'Password123!' }));
+      setSocialStep('idle');
     }, 1200);
   };
 
@@ -86,16 +86,25 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div className="role-preview">
+          <div className="role-preview-title">Role preview</div>
+          <div className="role-pill-row">
+            <span className="role-pill">Lab Manager</span>
+            <span className="role-pill">Researcher</span>
+            <span className="role-pill">Technician</span>
+          </div>
+        </div>
+
         <div className="divider">or continue with</div>
         <div className="oauth-grid">
-          <button className="oauth-btn" type="button" onClick={handleGoogleLogin} disabled={googleStep === 'mock'}>
-            <Sparkles size={16} />{googleStep === 'mock' ? 'Authenticating...' : 'Continue with Google'}
+          <button className="oauth-btn" type="button" onClick={() => handleSocialLogin('google.user@university.edu')} disabled={socialStep === 'mock'}>
+            <Sparkles size={16} />{socialStep === 'mock' ? 'Authenticating...' : 'Continue with Google'}
           </button>
-          <button className="oauth-btn" type="button">
-            <ShieldCheck size={16} /> Continue with Microsoft
+          <button className="oauth-btn" type="button" onClick={() => handleSocialLogin('microsoft.user@university.edu')} disabled={socialStep === 'mock'}>
+            <ShieldCheck size={16} />{socialStep === 'mock' ? 'Authenticating...' : 'Continue with Microsoft'}
           </button>
-          <button className="oauth-btn" type="button">
-            <Github size={16} /> Continue with GitHub
+          <button className="oauth-btn" type="button" onClick={() => handleSocialLogin('github.user@university.edu')} disabled={socialStep === 'mock'}>
+            <Github size={16} />{socialStep === 'mock' ? 'Authenticating...' : 'Continue with GitHub'}
           </button>
         </div>
 

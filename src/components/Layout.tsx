@@ -12,6 +12,7 @@ type LayoutProps = {
 const navItems = [
   { label: 'Dashboard', to: '/dashboard', icon: Home },
   { label: 'Calendar', to: '/calendar', icon: CalendarDays },
+  { label: 'Equipment', to: '/equipment', icon: Package2 },
   { label: 'Inventory', to: '/inventory', icon: Package2 },
   { label: 'Bookings', to: '/bookings', icon: ListChecks },
   { label: 'Maintenance', to: '/maintenance', icon: ShieldCheck },

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowRight, Building2, CheckCircle2, Eye, EyeOff, Mail, Phone, ShieldCheck, User } from 'lucide-react';
+import { ArrowRight, Building2, Eye, EyeOff, Mail, Phone, ShieldCheck, User } from 'lucide-react';
 import { registerUser } from '../features/auth/authThunks';
-import { clearRegistrationSuccess, setRegistrationSuccess } from '../features/auth/authSlice';
+import { clearRegistrationSuccess } from '../features/auth/authSlice';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import type { UserRole } from '../features/auth/types';
@@ -26,11 +26,9 @@ const roles: UserRole[] = ['Researcher', 'Student', 'Lab Technician', 'Lab Manag
 export default function RegisterPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user, loading, error, registrationSuccess, lastRegisteredEmail } = useAppSelector((state) => state.auth);
+  const { user, loading, error, registrationSuccess } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
 
   const {
     register,
@@ -86,16 +84,6 @@ export default function RegisterPage() {
     }
     if (!data.terms) {
       window.alert('Please accept the terms and conditions.');
-      return;
-    }
-    if (!otpSent) {
-      setOtpSent(true);
-      setOtp('');
-      dispatch(setRegistrationSuccess(data.email));
-      return;
-    }
-    if (otp !== '123456') {
-      window.alert('Mock OTP verification failed. Use 123456 for demo.');
       return;
     }
 
@@ -189,13 +177,6 @@ export default function RegisterPage() {
           </label>
           {errors.confirmPassword && <p className="field-error">{errors.confirmPassword.message}</p>}
 
-          {otpSent && (
-            <label className="field">
-              <CheckCircle2 size={16} />
-              <input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="Enter OTP (123456)" />
-            </label>
-          )}
-
           <label className="checkbox-row">
             <input type="checkbox" {...register('terms', { required: 'You must accept the terms' })} />
             <span>I accept the terms and privacy policy.</span>
@@ -203,12 +184,12 @@ export default function RegisterPage() {
           {errors.terms && <p className="field-error">{errors.terms.message}</p>}
 
           <button className="primary-btn" type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : otpSent ? 'Verify and continue' : 'Continue'} <ArrowRight size={16} />
+            {loading ? 'Creating account...' : 'Continue'} <ArrowRight size={16} />
           </button>
         </form>
 
         {error && <p className="field-error">{error}</p>}
-        {registrationSuccess && lastRegisteredEmail && <p className="success-pill">Verification code sent to {lastRegisteredEmail}</p>}
+        {registrationSuccess && <p className="success-pill">Registration successful. Redirecting to login...</p>}
 
         <div className="auth-links">
           <span>Already have an account?</span>

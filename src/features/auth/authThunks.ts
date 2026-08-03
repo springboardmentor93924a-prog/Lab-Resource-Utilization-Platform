@@ -1,5 +1,6 @@
+import axios from 'axios';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { mockLogin, mockRegister } from '../../services/mockApi';
+import { loginRequest, registerRequest } from './authService';
 import type { UserProfile } from './types';
 
 export type LoginCredentials = {
@@ -24,8 +25,11 @@ export const loginUser = createAsyncThunk<
   { rejectValue: string }
 >('auth/login', async (payload, thunkAPI) => {
   try {
-    return await mockLogin(payload.email, payload.password);
+    return await loginRequest(payload.email, payload.password);
   } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message ?? error.message);
+    }
     if (error instanceof Error) {
       return thunkAPI.rejectWithValue(error.message);
     }
@@ -39,8 +43,11 @@ export const registerUser = createAsyncThunk<
   { rejectValue: string }
 >('auth/register', async (payload, thunkAPI) => {
   try {
-    return await mockRegister(payload);
+    return await registerRequest(payload);
   } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message ?? error.message);
+    }
     if (error instanceof Error) {
       return thunkAPI.rejectWithValue(error.message);
     }

@@ -25,6 +25,9 @@ import PreferencesPage from './pages/PreferencesPage';
 import OnboardingPage from './pages/OnboardingPage';
 import InsightsPage from './pages/InsightsPage';
 import TenancyPage from './pages/TenancyPage';
+import EquipmentPage from './pages/EquipmentPage';
+import EquipmentDetailPage from './pages/EquipmentDetailPage';
+import MyBookingsPage from './pages/MyBookingsPage';
 
 function App() {
   return (
@@ -34,9 +37,13 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/dashboard" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
+      <Route path="/manager/dashboard" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
+      <Route path="/equipment" element={<ProtectedRoute><Layout><EquipmentPage /></Layout></ProtectedRoute>} />
+      <Route path="/equipment/:id" element={<ProtectedRoute><Layout><EquipmentDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><Layout><InventoryPage /></Layout></ProtectedRoute>} />
       <Route path="/bookings" element={<ProtectedRoute><Layout><BookingsPage /></Layout></ProtectedRoute>} />
+      <Route path="/my-bookings" element={<ProtectedRoute><Layout><MyBookingsPage /></Layout></ProtectedRoute>} />
       <Route path="/maintenance" element={<ProtectedRoute><Layout><MaintenancePage /></Layout></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute><Layout><AnalyticsPage /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><ReportsPage /></Layout></ProtectedRoute>} />
