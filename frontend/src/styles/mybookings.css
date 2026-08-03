@@ -1,0 +1,88 @@
+/* ==========================
+   MY BOOKINGS PAGE
+========================== */
+
+.booking-header{
+    margin-bottom:30px;
+}
+
+.booking-header h1{
+    color:#163c91;
+    font-size:40px;
+    margin-bottom:8px;
+}
+
+.booking-header p{
+    color:#666;
+    font-size:17px;
+}
+
+.booking-table{
+    background:#fff;
+    padding:30px;
+    border-radius:18px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.08);
+}
+
+.booking-table table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.booking-table th{
+    background:#163c91;
+    color:white;
+    padding:16px;
+    text-align:left;
+}
+
+.booking-table td{
+    padding:16px;
+    border-bottom:1px solid #e5e5e5;
+}
+
+.booking-table tr:hover{
+    background:#f7f9fc;
+}
+
+.approved{
+    color:#2e7d32;
+    font-weight:600;
+}
+
+.pending{
+    color:#f57c00;
+    font-weight:600;
+}
+
+.rejected{
+    color:#d32f2f;
+    font-weight:600;
+}
+
+.cancel-btn{
+    background:#d32f2f;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.3s;
+}
+
+.cancel-btn:hover{
+    background:#b71c1c;
+}
+
+@media(max-width:768px){
+
+.booking-table{
+    overflow-x:auto;
+}
+
+.booking-table table{
+    min-width:700px;
+}
+
+}

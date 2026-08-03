@@ -1,0 +1,147 @@
+/* ===========================
+   DASHBOARD
+=========================== */
+.dashboard-layout{
+    display:flex;
+    background:#f4f8fc;
+}
+
+.dashboard-content{
+    margin-left:250px;
+    width:calc(100% - 250px);
+    padding:40px;
+}
+
+.dashboard{
+    min-height:100vh;
+    background:#f4f8fc;
+    padding:40px;
+}
+
+/* Header */
+
+.dashboard-header{
+    margin-bottom:40px;
+}
+
+.dashboard-header h1{
+    color:#0B3D91;
+    font-size:42px;
+    margin-bottom:10px;
+}
+
+.dashboard-header p{
+    color:#666;
+    font-size:18px;
+}
+
+/* Dashboard Cards */
+
+.dashboard-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:25px;
+    margin-bottom:50px;
+}
+
+.dashboard-card{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    text-align:center;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+    transition:0.3s;
+    border-top:5px solid #0B3D91;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-8px);
+    box-shadow:0 15px 35px rgba(0,0,0,0.15);
+}
+
+.dashboard-card h3{
+    color:#555;
+    font-size:18px;
+    margin-bottom:15px;
+}
+
+.dashboard-card h1{
+    color:#0B3D91;
+    font-size:42px;
+}
+
+/* Recent Bookings */
+
+.recent-bookings{
+    background:white;
+    padding:30px;
+    border-radius:18px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+}
+
+.recent-bookings h2{
+    color:#0B3D91;
+    margin-bottom:25px;
+}
+
+/* Table */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#0B3D91;
+    color:white;
+    padding:15px;
+    text-align:left;
+}
+
+td{
+    padding:15px;
+    border-bottom:1px solid #ddd;
+}
+
+tr:hover{
+    background:#f8f8f8;
+}
+
+/* Status */
+
+.available{
+    color:green;
+    font-weight:bold;
+}
+
+.pending{
+    color:orange;
+    font-weight:bold;
+}
+
+.rejected{
+    color:red;
+    font-weight:bold;
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+.dashboard{
+    padding:20px;
+}
+
+.dashboard-header h1{
+    font-size:32px;
+}
+
+.recent-bookings{
+    overflow-x:auto;
+}
+
+table{
+    min-width:650px;
+}
+
+}

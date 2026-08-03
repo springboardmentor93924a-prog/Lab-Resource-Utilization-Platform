@@ -1,0 +1,135 @@
+/* ==========================
+   REGISTER PAGE
+========================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+.register-container{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:40px;
+    background:linear-gradient(135deg,#0B3D91,#1976D2);
+}
+
+.register-card{
+    width:480px;
+    background:#fff;
+    padding:40px;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.2);
+}
+
+.register-card h1{
+    text-align:center;
+    color:#163A8A;
+    font-size:42px;
+    margin-bottom:10px;
+}
+
+.register-card p{
+    text-align:center;
+    color:#666;
+    margin-bottom:30px;
+    line-height:1.5;
+}
+
+.input-group{
+    margin-bottom:20px;
+}
+
+.input-group label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+    color:#333;
+}
+
+.input-group input,
+.input-group select{
+    width:100%;
+    padding:14px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    outline:none;
+    font-size:16px;
+    transition:.3s;
+}
+
+.input-group input:focus,
+.input-group select:focus{
+    border-color:#0B3D91;
+    box-shadow:0 0 8px rgba(11,61,145,.3);
+}
+
+.password-box{
+    display:flex;
+    gap:10px;
+}
+
+.show-btn{
+    border:none;
+    background:#163A8A;
+    color:white;
+    padding:0 18px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.show-btn:hover{
+    background:#0B3D91;
+}
+
+.register-btn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#FFD54F;
+    color:#163A8A;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.3s;
+    margin-top:10px;
+}
+
+.register-btn:hover{
+    background:#FFC107;
+    transform:translateY(-2px);
+}
+
+.login-link{
+    margin-top:25px;
+    text-align:center;
+}
+
+.login-link a{
+    text-decoration:none;
+    color:#163A8A;
+    font-weight:bold;
+}
+
+@media(max-width:600px){
+
+.register-card{
+    width:100%;
+    padding:30px 20px;
+}
+
+.password-box{
+    flex-direction:column;
+}
+
+.show-btn{
+    height:45px;
+}
+
+}

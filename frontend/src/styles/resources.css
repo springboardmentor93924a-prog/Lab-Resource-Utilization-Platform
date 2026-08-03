@@ -1,0 +1,45 @@
+.resource-header{
+    margin-bottom:30px;
+}
+
+.resources-title {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #2d4aa8;
+    margin-bottom: 2px;   /* Reduced from around 15-20px */
+    line-height: 1.1;
+}
+.resources-subtitle {
+    font-size: 1.2rem;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+
+
+.search-bar{
+    display:flex;
+    gap:20px;
+    margin-bottom:35px;
+    flex-wrap:wrap;
+}
+
+.search-bar input,
+.search-bar select{
+    padding:12px 15px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    font-size:16px;
+}
+
+.search-bar input{
+    flex:1;
+    min-width:250px;
+}
+
+.resource-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:25px;
+}
