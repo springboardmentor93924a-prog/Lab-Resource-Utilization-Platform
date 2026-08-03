@@ -1,73 +1,81 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Equipment from "../pages/Equipment";
 import Reservations from "../pages/Reservations";
 import Reports from "../pages/Reports";
 import User from "../pages/User";
-
 import MainLayout from "../layouts/MainLayout";
+import ProtectedRoute from "./ProtectedRoute"; // ProtectedRoute को इम्पोर्ट किया
 
-function AppRoutes() {
+export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login Page (No Layout) */}
+        {/* Public Login Page */}
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
 
-        {/* Dashboard */}
-        <Route
-          path="/dashboard"
+        {/* Protected Dashboard Route */}
+        <Route 
+          path="/dashboard" 
           element={
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          }
+            <ProtectedRoute allowedRoles={["ROLE_ADMIN", "ROLE_STUDENT"]}>
+              <MainLayout>
+                <Dashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          } 
         />
 
-        {/* Equipment */}
-        <Route
-          path="/equipment"
+        {/* Protected Equipment Route */}
+        <Route 
+          path="/equipment" 
           element={
-            <MainLayout>
-              <Equipment />
-            </MainLayout>
-          }
+            <ProtectedRoute allowedRoles={["ROLE_ADMIN", "ROLE_STUDENT"]}>
+              <MainLayout>
+                <Equipment />
+              </MainLayout>
+            </ProtectedRoute>
+          } 
         />
 
-        {/* Reservations */}
-        <Route
-          path="/reservations"
+        {/* Protected Reservations Route */}
+        <Route 
+          path="/reservations" 
           element={
-            <MainLayout>
-              <Reservations />
-            </MainLayout>
-          }
+            <ProtectedRoute allowedRoles={["ROLE_ADMIN", "ROLE_STUDENT"]}>
+              <MainLayout>
+                <Reservations />
+              </MainLayout>
+            </ProtectedRoute>
+          } 
         />
 
-        {/* Reports */}
-        <Route
-          path="/reports"
+        {/* Protected Reports Route (Example: Admin only or both) */}
+        <Route 
+          path="/reports" 
           element={
-            <MainLayout>
-              <Reports />
-            </MainLayout>
-          }
+            <ProtectedRoute allowedRoles={["ROLE_ADMIN", "ROLE_STUDENT"]}>
+              <MainLayout>
+                <Reports />
+              </MainLayout>
+            </ProtectedRoute>
+          } 
         />
 
-        {/* User */}
-        <Route
-          path="/user"
+        {/* Protected User Route */}
+        <Route 
+          path="/user" 
           element={
-            <MainLayout>
-              <User />
-            </MainLayout>
-          }
+            <ProtectedRoute allowedRoles={["ROLE_ADMIN", "ROLE_STUDENT"]}>
+              <MainLayout>
+                <User />
+              </MainLayout>
+            </ProtectedRoute>
+          } 
         />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default AppRoutes;

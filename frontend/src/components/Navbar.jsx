@@ -1,4 +1,7 @@
-function Navbar() {
+ export default function Navbar() {
+  // Retrieve the user role from local storage to display if needed
+  const userRole = localStorage.getItem("role");
+
   return (
     <nav
       style={{
@@ -7,14 +10,20 @@ function Navbar() {
         color: "white",
         display: "flex",
         alignItems: "center",
+        justifyContent: "space-between",
         padding: "0 20px",
         fontSize: "22px",
         fontWeight: "bold",
       }}
     >
-      Lab Resource Utilization Platform
+      <span>Lab Resource Utilization Platform</span>
+      
+      {/* Display current role badge on the right side of the navbar */}
+      {userRole && (
+        <span style={{ fontSize: "14px", background: "rgba(255,255,255,0.2)", padding: "5px 10px", borderRadius: "4px" }}>
+          Role: {userRole}
+        </span>
+      )}
     </nav>
   );
 }
-
-export default Navbar;

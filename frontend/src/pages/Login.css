@@ -1,184 +1,150 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+ /* Global Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-body{
-    background:#eef2f7;
+/* Body Background */
+body {
+  background: #eef2f7;
 }
 
-.login-container{
-
-    width:100%;
-    height:100vh;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    background:linear-gradient(135deg,#1976d2,#42a5f5);
-
+/* Login Container Layout */
+.login-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  padding: 20px;
 }
 
-.login-card{
-
-    width:430px;
-
-    background:white;
-
-    padding:40px;
-
-    border-radius:15px;
-
-    box-shadow:0 10px 30px rgba(0,0,0,.2);
-
+/* Login Card Box */
+.login-card {
+  width: 100%;
+  max-width: 430px;
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.logo{
-
-    width:70px;
-    height:70px;
-
-    margin:auto;
-
-    border-radius:50%;
-
-    background:#1976d2;
-
-    color:white;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    font-size:35px;
-
+/* Logo Styling */
+.logo {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 20px auto;
+  border-radius: 50%;
+  background: #1976d2;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 35px;
 }
 
-.title{
-
-    text-align:center;
-
-    margin-top:20px;
-
-    color:#1976d2;
-
-    font-size:28px;
-
-    line-height:1.3;
-
+/* Title & Subtitle Typography */
+.title {
+  text-align: center;
+  margin-top: 10px;
+  color: #1976d2;
+  font-size: 26px;
+  line-height: 1.3;
+  font-weight: bold;
 }
 
-.subtitle{
-
-    text-align:center;
-
-    color:#666;
-
-    margin-top:10px;
-
-    margin-bottom:30px;
-
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-top: 8px;
+  margin-bottom: 25px;
+  font-size: 14px;
 }
 
-.form-group{
-
-    display:flex;
-
-    flex-direction:column;
-
-    margin-bottom:20px;
-
+/* Form Group Layout */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
 }
 
-.form-group label{
-
-    margin-bottom:8px;
-
-    font-weight:bold;
-
-    color:#333;
-
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
 }
 
-.form-group input{
-
-    padding:12px;
-
-    border:1px solid #ccc;
-
-    border-radius:8px;
-
-    font-size:15px;
-
-    outline:none;
-
+/* Form Inputs */
+.form-group input {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.form-group input:focus{
-
-    border-color:#1976d2;
-
+.form-group input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
 }
 
-.options{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    margin-bottom:25px;
-
-    font-size:14px;
-
+/* Options Bar (Remember Me & Forgot Password) */
+.options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  font-size: 14px;
 }
 
-.remember{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #444;
+  cursor: pointer;
 }
 
-.options a{
-
-    text-decoration:none;
-
-    color:#1976d2;
-
+.remember input[type="checkbox"] {
+  accent-color: #1976d2;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
 }
 
-.login-btn{
-
-    width:100%;
-
-    padding:13px;
-
-    background:#1976d2;
-
-    color:white;
-
-    border:none;
-
-    border-radius:8px;
-
-    cursor:pointer;
-
-    font-size:17px;
-
-    transition:.3s;
-
+.options a {
+  text-decoration: none;
+  color: #1976d2;
+  font-weight: 500;
 }
 
-.login-btn:hover{
+.options a:hover {
+  text-decoration: underline;
+}
 
-    background:#125ea7;
+/* Login Action Button */
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.3s ease, transform 0.1s ease;
+}
 
+.login-btn:hover {
+  background: #125ea7;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
 }
