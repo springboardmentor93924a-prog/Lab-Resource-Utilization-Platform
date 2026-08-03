@@ -1,19 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<<<<<<< HEAD
          xsi:schemaLocation="https://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
+=======
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+>>>>>>> origin/team3
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
+<<<<<<< HEAD
         <version>3.5.4</version>
+=======
+        <version>4.0.7</version>
+>>>>>>> origin/team3
         <relativePath/>
     </parent>
 
     <groupId>com.labresource</groupId>
+<<<<<<< HEAD
     <artifactId>backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -21,42 +31,99 @@
 
     <properties>
         <java.version>21</java.version>
+=======
+    <artifactId>lab-resource-utilization-platform</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <name>Lab Resource Utilization Platform</name>
+    <description>Lab Resource Platform Backend</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <jjwt.version>0.12.7</jjwt.version>
+>>>>>>> origin/team3
     </properties>
 
     <dependencies>
 
+<<<<<<< HEAD
         <!-- Spring Web -->
+=======
+        <!-- REST API and Spring MVC -->
+>>>>>>> origin/team3
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+<<<<<<< HEAD
         <!-- Spring Data JPA -->
+=======
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Spring Data JPA / Hibernate -->
+>>>>>>> origin/team3
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+<<<<<<< HEAD
         <!-- PostgreSQL -->
+=======
+        <!-- PostgreSQL / Neon Driver -->
+>>>>>>> origin/team3
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
+<<<<<<< HEAD
         <!-- Validation -->
+=======
+        <!-- DTO Validation -->
+>>>>>>> origin/team3
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+<<<<<<< HEAD
         <!-- Lombok -->
+=======
+        <!-- JJWT Dependencies -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Lombok (Managed by Spring Boot Starter Parent) -->
+>>>>>>> origin/team3
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
+<<<<<<< HEAD
         <!-- DevTools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -66,22 +133,48 @@
         </dependency>
 
         <!-- Test -->
+=======
+        <!-- Testing Dependencies -->
+>>>>>>> origin/team3
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+<<<<<<< HEAD
+=======
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+>>>>>>> origin/team3
 
     </dependencies>
 
     <build>
         <plugins>
+<<<<<<< HEAD
 
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
+=======
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+>>>>>>> origin/team3
         </plugins>
     </build>
 
