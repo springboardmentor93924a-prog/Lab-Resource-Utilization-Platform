@@ -1,128 +1,163 @@
-import "./Reports.css";
+import { useEffect, useState } from "react";
 
 function Reports() {
-  const reports = [
-    {
-      id: 1,
-      equipment: "Projector",
-      bookings: 18,
-      utilization: "85%",
-      maintenance: "Good",
+
+  const [equipment, setEquipment] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [users, setUsers] = useState([]);
+
+useEffect(() => {
+
+  const token = localStorage.getItem("token");
+
+  fetch("http://localhost:8080/api/equipment", {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-    {
-      id: 2,
-      equipment: "Arduino Uno",
-      bookings: 12,
-      utilization: "65%",
-      maintenance: "Good",
+  })
+    .then((response) => response.json())
+    .then((data) => setEquipment(data))
+    .catch((error) => console.error("Equipment error:", error));
+
+
+  fetch("http://localhost:8080/api/bookings", {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-    {
-      id: 3,
-      equipment: "Laptop",
-      bookings: 25,
-      utilization: "92%",
-      maintenance: "Maintenance Due",
+  })
+    .then((response) => response.json())
+    .then((data) => setBookings(data))
+    .catch((error) => console.error("Booking error:", error));
+
+
+  fetch("http://localhost:8080/api/users", {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-  ];
+  })
+    .then((response) => response.json())
+    .then((data) => setUsers(data))
+    .catch((error) => console.error("User error:", error));
+
+}, []);
+
+  const available = equipment.filter(
+    (item) => item.status === "Available"
+  ).length;
+
+  const reserved = equipment.filter(
+    (item) => item.status === "Reserved"
+  ).length;
+
+  const maintenance = equipment.filter(
+    (item) => item.status === "Maintenance"
+  ).length;
+
+
+  const confirmedBookings = bookings.filter(
+    (booking) => booking.bookingStatus === "Confirmed"
+  ).length;
+
+  const pendingBookings = bookings.filter(
+    (booking) => booking.bookingStatus === "Pending"
+  ).length;
+
+  const completedBookings = bookings.filter(
+    (booking) => booking.bookingStatus === "Completed"
+  ).length;
+
 
   return (
-    <div className="reports-container">
+    <div style={{ padding: "20px" }}>
 
-      <div className="reports-header">
-        <div>
-          <h2>Reports & Analytics</h2>
-          <p>View equipment usage and laboratory resource utilization</p>
-        </div>
-      </div>
+      <h2>Reports</h2>
 
-      <div className="report-summary">
 
-        <div className="report-card">
-          <h3>Total Bookings</h3>
-          <p>55</p>
-          <span>This Month</span>
+      <h3>Equipment Summary</h3>
+
+      <div style={sectionStyle}>
+
+        <div style={cardStyle}>
+          <h4>Total Equipment</h4>
+          <p>{equipment.length}</p>
         </div>
 
-        <div className="report-card">
-          <h3>Average Utilization</h3>
-          <p>81%</p>
-          <span>Equipment Usage</span>
+        <div style={cardStyle}>
+          <h4>Available</h4>
+          <p>{available}</p>
         </div>
 
-        <div className="report-card">
-          <h3>Active Equipment</h3>
-          <p>120</p>
-          <span>Currently Available</span>
+        <div style={cardStyle}>
+          <h4>Reserved</h4>
+          <p>{reserved}</p>
         </div>
 
-        <div className="report-card">
-          <h3>Maintenance Due</h3>
-          <p>8</p>
-          <span>Requires Attention</span>
+        <div style={cardStyle}>
+          <h4>Maintenance</h4>
+          <p>{maintenance}</p>
         </div>
 
       </div>
 
-      <div className="report-table-card">
 
-        <h3>Equipment Utilization</h3>
+      <h3>Booking Summary</h3>
 
-        <table className="report-table">
+      <div style={sectionStyle}>
 
-          <thead>
-            <tr>
-              <th>Equipment</th>
-              <th>Total Bookings</th>
-              <th>Utilization</th>
-              <th>Maintenance</th>
-            </tr>
-          </thead>
+        <div style={cardStyle}>
+          <h4>Total Bookings</h4>
+          <p>{bookings.length}</p>
+        </div>
 
-          <tbody>
-            {reports.map((report) => (
-              <tr key={report.id}>
+        <div style={cardStyle}>
+          <h4>Confirmed</h4>
+          <p>{confirmedBookings}</p>
+        </div>
 
-                <td className="report-equipment">
-                  {report.equipment}
-                </td>
+        <div style={cardStyle}>
+          <h4>Pending</h4>
+          <p>{pendingBookings}</p>
+        </div>
 
-                <td>{report.bookings}</td>
+        <div style={cardStyle}>
+          <h4>Completed</h4>
+          <p>{completedBookings}</p>
+        </div>
 
-                <td>
-                  <div className="utilization-wrapper">
-                    <div className="utilization-bar">
-                      <div
-                        className="utilization-fill"
-                        style={{ width: report.utilization }}
-                      ></div>
-                    </div>
+      </div>
 
-                    <span>{report.utilization}</span>
-                  </div>
-                </td>
 
-                <td>
-                  <span
-                    className={
-                      report.maintenance === "Good"
-                        ? "maintenance-good"
-                        : "maintenance-due"
-                    }
-                  >
-                    {report.maintenance}
-                  </span>
-                </td>
+      <h3>User Summary</h3>
 
-              </tr>
-            ))}
-          </tbody>
+      <div style={sectionStyle}>
 
-        </table>
+        <div style={cardStyle}>
+          <h4>Total Users</h4>
+          <p>{users.length}</p>
+        </div>
 
       </div>
 
     </div>
   );
 }
+
+
+const sectionStyle = {
+  display: "flex",
+  gap: "20px",
+  flexWrap: "wrap",
+  marginBottom: "30px",
+};
+
+
+const cardStyle = {
+  background: "white",
+  padding: "20px",
+  minWidth: "160px",
+  borderRadius: "8px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+};
+
 
 export default Reports;

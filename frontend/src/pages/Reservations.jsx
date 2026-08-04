@@ -1,132 +1,123 @@
-import "./Reservations.css";
+import { useEffect, useState } from "react";
 
 function Reservations() {
-  const reservations = [
-    {
-      id: 1,
-      equipment: "Projector",
-      user: "Admin User",
-      date: "2026-08-02",
-      startTime: "10:00 AM",
-      endTime: "12:00 PM",
-      status: "Confirmed",
-    },
-    {
-      id: 2,
-      equipment: "Arduino Uno",
-      user: "Lab Manager",
-      date: "2026-08-03",
-      startTime: "02:00 PM",
-      endTime: "04:00 PM",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      equipment: "Laptop",
-      user: "Test User",
-      date: "2026-08-04",
-      startTime: "09:00 AM",
-      endTime: "11:00 AM",
-      status: "Cancelled",
-    },
-  ];
+
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+
+    fetch("http://localhost:8080/api/bookings", {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+})
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch bookings");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        setBookings(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Booking error:", error);
+        setLoading(false);
+      });
+
+  }, []);
+
+
+  if (loading) {
+    return <h2>Loading reservations...</h2>;
+  }
+
 
   return (
-    <div className="reservations-container">
+    <div style={{ padding: "20px" }}>
 
-      <div className="reservations-header">
-        <div>
-          <h2>Reservations</h2>
-          <p>Manage equipment bookings and schedules</p>
-        </div>
+      <h2>Reservations</h2>
 
-        <button className="add-reservation-btn">
-          + New Reservation
-        </button>
-      </div>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          marginTop: "20px",
+        }}
+      >
 
-      <div className="reservation-toolbar">
-        <input
-          type="text"
-          className="reservation-search"
-          placeholder="Search reservations..."
-        />
+        <thead>
+          <tr>
+            <th style={cellStyle}>ID</th>
+            <th style={cellStyle}>User</th>
+            <th style={cellStyle}>Equipment</th>
+            <th style={cellStyle}>Booking Date</th>
+            <th style={cellStyle}>Start Time</th>
+            <th style={cellStyle}>End Time</th>
+            <th style={cellStyle}>Status</th>
+            <th style={cellStyle}>Purpose</th>
+          </tr>
+        </thead>
 
-        <select className="reservation-filter">
-          <option value="">All Status</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Pending">Pending</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-      </div>
+        <tbody>
 
-      <div className="reservation-table-card">
+          {bookings.map((booking) => (
 
-        <table className="reservation-table">
+            <tr key={booking.bookingId}>
 
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Equipment</th>
-              <th>User</th>
-              <th>Date</th>
-              <th>Start Time</th>
-              <th>End Time</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <td style={cellStyle}>
+                {booking.bookingId}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.user?.fullName}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.equipment?.equipmentName}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.bookingDate}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.startTime}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.endTime}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.bookingStatus}
+              </td>
+
+              <td style={cellStyle}>
+                {booking.purpose}
+              </td>
+
             </tr>
-          </thead>
 
-          <tbody>
-            {reservations.map((reservation) => (
-              <tr key={reservation.id}>
+          ))}
 
-                <td>{reservation.id}</td>
+        </tbody>
 
-                <td className="equipment-name">
-                  {reservation.equipment}
-                </td>
-
-                <td>{reservation.user}</td>
-
-                <td>{reservation.date}</td>
-
-                <td>{reservation.startTime}</td>
-
-                <td>{reservation.endTime}</td>
-
-                <td>
-                  <span
-                    className={`reservation-status ${reservation.status.toLowerCase()}`}
-                  >
-                    ● {reservation.status}
-                  </span>
-                </td>
-
-                <td>
-                  <button className="edit-reservation-btn">
-                    Edit
-                  </button>
-
-                  <button className="cancel-reservation-btn">
-                    Cancel
-                  </button>
-                </td>
-
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-
-      </div>
-
-      <div className="reservation-footer">
-        Showing {reservations.length} reservations
-      </div>
+      </table>
 
     </div>
   );
 }
+
+
+const cellStyle = {
+  border: "1px solid #ddd",
+  padding: "10px",
+  textAlign: "left",
+};
+
 
 export default Reservations;

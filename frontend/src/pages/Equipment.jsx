@@ -1,80 +1,101 @@
-import "./Equipment.css";
+import { useEffect, useState } from "react";
 
 function Equipment() {
 
-  const equipmentList = [
-    {
-      id: 1,
-      name: "Projector",
-      category: "Display",
-      status: "Available",
-    },
-    {
-      id: 2,
-      name: "Arduino Uno",
-      category: "Kit",
-      status: "Reserved",
-    },
-    {
-      id: 3,
-      name: "Laptop",
-      category: "Computer",
-      status: "Available",
-    },
-  ];
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+
+    fetch("http://localhost:8080/api/equipment", {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+})
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch equipment");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        setEquipment(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Equipment error:", error);
+        setLoading(false);
+      });
+
+  }, []);
+
+
+  if (loading) {
+    return <h2>Loading equipment...</h2>;
+  }
+
 
   return (
-    <div className="container">
+    <div style={{ padding: "20px" }}>
 
-      <h2>Equipment Management</h2>
+      <h2>Equipment</h2>
 
-      <div className="top-bar">
-
-        <input
-          className="search-box"
-          type="text"
-          placeholder="Search equipment..."
-        />
-
-        <button className="add-btn">
-          Add Equipment
-        </button>
-
-      </div>
-
-      <table>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          marginTop: "20px",
+        }}
+      >
 
         <thead>
 
           <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th style={cellStyle}>ID</th>
+            <th style={cellStyle}>Name</th>
+            <th style={cellStyle}>Category</th>
+            <th style={cellStyle}>Serial Number</th>
+            <th style={cellStyle}>Location</th>
+            <th style={cellStyle}>Status</th>
+            <th style={cellStyle}>Purchase Date</th>
           </tr>
 
         </thead>
 
+
         <tbody>
 
-          {equipmentList.map((item) => (
+          {equipment.map((item) => (
 
-            <tr key={item.id}>
+            <tr key={item.equipmentId}>
 
-              <td>{item.id}</td>
-              <td>{item.name}</td>
-              <td>{item.category}</td>
-              <td>{item.status}</td>
+              <td style={cellStyle}>
+                {item.equipmentId}
+              </td>
 
-              <td>
-                <button className="edit-btn">
-                  Edit
-                </button>
+              <td style={cellStyle}>
+                {item.equipmentName}
+              </td>
 
-                <button className="delete-btn">
-                  Delete
-                </button>
+              <td style={cellStyle}>
+                {item.category}
+              </td>
+
+              <td style={cellStyle}>
+                {item.serialNumber}
+              </td>
+
+              <td style={cellStyle}>
+                {item.location}
+              </td>
+
+              <td style={cellStyle}>
+                {item.status}
+              </td>
+
+              <td style={cellStyle}>
+                {item.purchaseDate}
               </td>
 
             </tr>
@@ -88,5 +109,13 @@ function Equipment() {
     </div>
   );
 }
+
+
+const cellStyle = {
+  border: "1px solid #ddd",
+  padding: "10px",
+  textAlign: "left",
+};
+
 
 export default Equipment;

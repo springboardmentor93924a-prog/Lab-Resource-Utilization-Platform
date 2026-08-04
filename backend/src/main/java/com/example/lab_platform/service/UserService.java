@@ -8,6 +8,7 @@ import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.DepartmentRepository;
 import com.example.lab_platform.repository.RoleRepository;
 import com.example.lab_platform.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,51 +17,61 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final DepartmentRepository departmentRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-    public UserService(
-            UserRepository userRepository,
-            RoleRepository roleRepository,
-            DepartmentRepository departmentRepository) {
+    @Autowired
+    private RoleRepository roleRepository;
 
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.departmentRepository = departmentRepository;
-    }
+    @Autowired
+    private DepartmentRepository departmentRepository;
 
-    // User Registration
+
+    // =========================
+    // REGISTER USER
+    // =========================
     public User registerUser(RegisterRequest registerRequest) {
 
+        // Check duplicate email
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new RuntimeException("Email is already registered!");
         }
 
+        // Find role
         Role role = roleRepository.findById(registerRequest.getRoleId())
                 .orElseThrow(() ->
-                        new RuntimeException("Role not found!"));
+                        new RuntimeException("Invalid role selected!")
+                );
 
-        Department department =
-                departmentRepository.findById(
-                        registerRequest.getDepartmentId())
+        // Find department
+        Department department = departmentRepository
+                .findById(registerRequest.getDepartmentId())
                 .orElseThrow(() ->
-                        new RuntimeException("Department not found!"));
+                        new RuntimeException("Invalid department selected!")
+                );
 
+        // Create user
         User user = new User();
 
         user.setFullName(registerRequest.getFullName());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(registerRequest.getPassword());
         user.setPhone(registerRequest.getPhone());
+
+        // Set role and department
         user.setRole(role);
         user.setDepartment(department);
+
+        // Default status
         user.setStatus("Active");
 
         return userRepository.save(user);
     }
 
-    // User Login
+
+    // =========================
+    // LOGIN USER
+    // =========================
     public User loginUser(LoginRequest loginRequest) {
 
         Optional<User> userOptional =
@@ -72,21 +83,31 @@ public class UserService {
 
         User user = userOptional.get();
 
-        if (!user.getPassword().equals(loginRequest.getPassword())) {
-            throw new RuntimeException("Invalid credentials!");
-        }
-
+        // Check account status
         if (!"Active".equalsIgnoreCase(user.getStatus())) {
             throw new RuntimeException("User account is inactive!");
+        }
+
+        // Check password
+        if (!user.getPassword().equals(loginRequest.getPassword())) {
+            throw new RuntimeException("Invalid credentials!");
         }
 
         return user;
     }
 
+
+    // =========================
+    // GET ALL USERS
+    // =========================
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+
+    // =========================
+    // GET USER BY ID
+    // =========================
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
     }

@@ -8,63 +8,104 @@ import Reports from "../pages/Reports";
 import User from "../pages/User";
 
 import MainLayout from "../layouts/MainLayout";
+import ProtectedRoute from "./ProtectedRoute";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login Page (No Layout) */}
+
+        {/* Login - Public */}
         <Route path="/" element={<Login />} />
 
-        {/* Dashboard */}
+        {/* Dashboard - All logged-in users */}
         <Route
           path="/dashboard"
           element={
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
+            <ProtectedRoute
+              allowedRoles={[
+                "ADMIN",
+                "FACULTY",
+                "STUDENT",
+                "LAB_TECHNICIAN"
+              ]}
+            >
+              <MainLayout>
+                <Dashboard />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
 
-        {/* Equipment */}
+        {/* Equipment - Admin, Faculty, Student, Lab Technician */}
         <Route
           path="/equipment"
           element={
-            <MainLayout>
-              <Equipment />
-            </MainLayout>
+            <ProtectedRoute
+              allowedRoles={[
+                "ADMIN",
+                "FACULTY",
+                "STUDENT",
+                "LAB_TECHNICIAN"
+              ]}
+            >
+              <MainLayout>
+                <Equipment />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
 
-        {/* Reservations */}
+        {/* Reservations - Admin, Faculty, Student */}
         <Route
           path="/reservations"
           element={
-            <MainLayout>
-              <Reservations />
-            </MainLayout>
+            <ProtectedRoute
+              allowedRoles={[
+                "ADMIN",
+                "FACULTY",
+                "STUDENT"
+              ]}
+            >
+              <MainLayout>
+                <Reservations />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
 
-        {/* Reports */}
+        {/* Reports - Admin, Faculty, Lab Technician */}
         <Route
           path="/reports"
           element={
-            <MainLayout>
-              <Reports />
-            </MainLayout>
+            <ProtectedRoute
+              allowedRoles={[
+                "ADMIN",
+                "FACULTY",
+                "LAB_TECHNICIAN"
+              ]}
+            >
+              <MainLayout>
+                <Reports />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
 
-        {/* User */}
+        {/* User Management - Admin only */}
         <Route
           path="/user"
           element={
-            <MainLayout>
-              <User />
-            </MainLayout>
+            <ProtectedRoute
+              allowedRoles={["ADMIN"]}
+            >
+              <MainLayout>
+                <User />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
+
       </Routes>
     </BrowserRouter>
   );
