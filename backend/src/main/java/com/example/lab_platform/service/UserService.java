@@ -2,9 +2,12 @@ package com.example.lab_platform.service;
 
 import com.example.lab_platform.dto.LoginRequest;
 import com.example.lab_platform.dto.RegisterRequest;
+import com.example.lab_platform.entity.Department;
+import com.example.lab_platform.entity.Role;
 import com.example.lab_platform.entity.User;
+import com.example.lab_platform.repository.DepartmentRepository;
+import com.example.lab_platform.repository.RoleRepository;
 import com.example.lab_platform.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,47 +16,77 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final DepartmentRepository departmentRepository;
 
-    // 1. User Registration Logic
+    public UserService(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            DepartmentRepository departmentRepository) {
+
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.departmentRepository = departmentRepository;
+    }
+
+    // User Registration
     public User registerUser(RegisterRequest registerRequest) {
+
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new RuntimeException("Email is already registered!");
         }
 
+        Role role = roleRepository.findById(registerRequest.getRoleId())
+                .orElseThrow(() ->
+                        new RuntimeException("Role not found!"));
+
+        Department department =
+                departmentRepository.findById(
+                        registerRequest.getDepartmentId())
+                .orElseThrow(() ->
+                        new RuntimeException("Department not found!"));
+
         User user = new User();
+
         user.setFullName(registerRequest.getFullName());
         user.setEmail(registerRequest.getEmail());
-        user.setPassword(registerRequest.getPassword()); // Raw password (Spring Security BCrypt encoder standard flow me baad me integrate hoga)
+        user.setPassword(registerRequest.getPassword());
         user.setPhone(registerRequest.getPhone());
+        user.setRole(role);
+        user.setDepartment(department);
         user.setStatus("Active");
 
         return userRepository.save(user);
     }
 
-    // 2. User Login Logic
+    // User Login
     public User loginUser(LoginRequest loginRequest) {
-        Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
 
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (user.getPassword().equals(loginRequest.getPassword())) {
-                return user;
-            } else {
-                throw new RuntimeException("Invalid credentials!");
-            }
-        } else {
+        Optional<User> userOptional =
+                userRepository.findByEmail(loginRequest.getEmail());
+
+        if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found!");
         }
+
+        User user = userOptional.get();
+
+        if (!user.getPassword().equals(loginRequest.getPassword())) {
+            throw new RuntimeException("Invalid credentials!");
+        }
+
+        if (!"Active".equalsIgnoreCase(user.getStatus())) {
+            throw new RuntimeException("User account is inactive!");
+        }
+
+        return user;
     }
 
-    // 3. Get All Users
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    // 4. Get User By ID
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
     }
