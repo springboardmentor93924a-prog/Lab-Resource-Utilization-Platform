@@ -10,6 +10,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -26,6 +31,8 @@ public class SecurityConfig {
             throws Exception {
 
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
             .csrf(csrf -> csrf.disable())
 
             .sessionManagement(session ->
@@ -35,24 +42,31 @@ public class SecurityConfig {
             )
 
             .authorizeHttpRequests(auth -> auth
+
+                // IMPORTANT: allow CORS preflight
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
+                .permitAll()
+
                 .requestMatchers(
                     "/api/auth/**",
                     "/error"
-                ).permitAll()
+                )
+                .permitAll()
 
                 .requestMatchers("/api/admin/**")
-                    .hasRole("ADMIN")
+                .hasRole("ADMIN")
 
                 .requestMatchers("/api/faculty/**")
-                    .hasAnyRole("ADMIN", "FACULTY")
+                .hasAnyRole("ADMIN", "FACULTY")
 
                 .requestMatchers("/api/student/**")
-                    .hasAnyRole("ADMIN", "FACULTY", "STUDENT")
+                .hasAnyRole("ADMIN", "FACULTY", "STUDENT")
 
                 .requestMatchers("/api/technician/**")
-                    .hasAnyRole("ADMIN", "LAB_TECHNICIAN")
+                .hasAnyRole("ADMIN", "LAB_TECHNICIAN")
 
-                .anyRequest().authenticated()
+                .anyRequest()
+                .authenticated()
             )
 
             .addFilterBefore(
@@ -61,6 +75,45 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+            List.of("http://localhost:5173")
+        );
+
+        configuration.setAllowedMethods(
+            List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+            )
+        );
+
+        configuration.setAllowedHeaders(
+            List.of(
+                "Authorization",
+                "Content-Type"
+            )
+        );
+
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+            "/**",
+            configuration
+        );
+
+        return source;
     }
 
     @Bean

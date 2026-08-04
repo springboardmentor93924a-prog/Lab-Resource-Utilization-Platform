@@ -22,40 +22,75 @@ public class AuthController {
     public AuthController(
             UserService userService,
             JwtService jwtService) {
+
         this.userService = userService;
         this.jwtService = jwtService;
     }
 
+
+    // =========================
+    // LOGIN
+    // =========================
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(
+            @RequestBody LoginRequest loginRequest) {
 
-        User user = userService.loginUser(loginRequest);
+        try {
 
-        String role = user.getRole() != null
-                ? user.getRole().getRoleName()
-                : "";
+            User user = userService.loginUser(loginRequest);
 
-        String token = jwtService.generateToken(
-                user.getEmail(),
-                role
-        );
+            String role = "";
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("userId", user.getUserId());
-        response.put("fullName", user.getFullName());
-        response.put("email", user.getEmail());
-        response.put("role", role);
+            if (user.getRole() != null) {
+                role = user.getRole()
+                        .getRoleName()
+                        .toUpperCase()
+                        .replace(" ", "_");
+            }
 
-        return ResponseEntity.ok(response);
+            String token = jwtService.generateToken(
+                    user.getEmail(),
+                    role
+            );
+
+            Map<String, Object> response = new HashMap<>();
+
+            response.put("token", token);
+            response.put("userId", user.getUserId());
+            response.put("fullName", user.getFullName());
+            response.put("email", user.getEmail());
+            response.put("role", role);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(e.getMessage());
+        }
     }
 
+
+    // =========================
+    // REGISTER
+    // =========================
     @PostMapping("/register")
     public ResponseEntity<?> register(
             @RequestBody RegisterRequest registerRequest) {
 
-        User user = userService.registerUser(registerRequest);
+        try {
 
-        return ResponseEntity.ok(user);
+            User user =
+                    userService.registerUser(registerRequest);
+
+            return ResponseEntity.ok(user);
+
+        } catch (RuntimeException e) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(e.getMessage());
+        }
     }
 }

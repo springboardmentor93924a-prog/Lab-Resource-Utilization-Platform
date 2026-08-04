@@ -1,139 +1,118 @@
-import "./User.css";
+import { useEffect, useState } from "react";
 
 function User() {
-  const userList = [
-    {
-      id: 1,
-      name: "Admin User",
-      email: "admin@example.com",
-      role: "ADMIN",
-      department: "Computer Science",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Lab Manager",
-      email: "manager@example.com",
-      role: "LAB_MANAGER",
-      department: "Electronics",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Test User",
-      email: "user@example.com",
-      role: "USER",
-      department: "Mechanical",
-      status: "Inactive",
-    },
-  ];
+
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+
+    fetch("http://localhost:8080/api/users", {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+})
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch users");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        setUsers(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("User error:", error);
+        setLoading(false);
+      });
+
+  }, []);
+
+
+  if (loading) {
+    return <h2>Loading users...</h2>;
+  }
+
 
   return (
-    <div className="user-container">
+    <div style={{ padding: "20px" }}>
 
-      <div className="user-header">
-        <div>
-          <h2>User Management</h2>
-          <p>Manage users, roles and departments</p>
-        </div>
+      <h2>User Management</h2>
 
-        <button className="add-user-btn">
-          + Add User
-        </button>
-      </div>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          marginTop: "20px",
+        }}
+      >
 
-      <div className="user-toolbar">
-        <input
-          className="user-search"
-          type="text"
-          placeholder="Search users..."
-        />
-      </div>
+        <thead>
+          <tr>
+            <th style={cellStyle}>ID</th>
+            <th style={cellStyle}>Name</th>
+            <th style={cellStyle}>Email</th>
+            <th style={cellStyle}>Phone</th>
+            <th style={cellStyle}>Role</th>
+            <th style={cellStyle}>Department</th>
+            <th style={cellStyle}>Status</th>
+          </tr>
+        </thead>
 
-      <div className="user-table-card">
+        <tbody>
 
-        <table className="user-table">
+          {users.map((user) => (
 
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>User</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th>Actions</th>
+            <tr key={user.userId}>
+
+              <td style={cellStyle}>
+                {user.userId}
+              </td>
+
+              <td style={cellStyle}>
+                {user.fullName}
+              </td>
+
+              <td style={cellStyle}>
+                {user.email}
+              </td>
+
+              <td style={cellStyle}>
+                {user.phone}
+              </td>
+
+              <td style={cellStyle}>
+                {user.role?.roleName || "N/A"}
+              </td>
+
+              <td style={cellStyle}>
+                {user.department?.departmentName || "N/A"}
+              </td>
+
+              <td style={cellStyle}>
+                {user.status}
+              </td>
+
             </tr>
-          </thead>
 
-          <tbody>
-            {userList.map((user) => (
-              <tr key={user.id}>
+          ))}
 
-                <td className="user-id">
-                  {user.id}
-                </td>
+        </tbody>
 
-                <td>
-                  <div className="user-info">
-                    <div className="user-avatar">
-                      {user.name.charAt(0)}
-                    </div>
-
-                    <span>{user.name}</span>
-                  </div>
-                </td>
-
-                <td className="user-email">
-                  {user.email}
-                </td>
-
-                <td>
-                  <span className="role-badge">
-                    {user.role}
-                  </span>
-                </td>
-
-                <td>
-                  {user.department}
-                </td>
-
-                <td>
-                  <span
-                    className={
-                      user.status === "Active"
-                        ? "status-badge active"
-                        : "status-badge inactive"
-                    }
-                  >
-                    ● {user.status}
-                  </span>
-                </td>
-
-                <td>
-                  <button className="edit-user-btn">
-                    Edit
-                  </button>
-
-                  <button className="delete-user-btn">
-                    Delete
-                  </button>
-                </td>
-
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-
-      </div>
-
-      <div className="user-footer">
-        Showing {userList.length} users
-      </div>
+      </table>
 
     </div>
   );
 }
+
+
+const cellStyle = {
+  border: "1px solid #ddd",
+  padding: "10px",
+  textAlign: "left",
+};
+
 
 export default User;
