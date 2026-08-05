@@ -17,6 +17,7 @@ import ManageEquipment from "./pages/ManageEquipment";
 import Equipment from "./pages/Equipment";
 import UtilizationDashboard from "./pages/UtilizationDashboard";
 import ResourceSharing from "./pages/ResourceSharing";
+import ExternalBooking from "./pages/ExternalBooking";
 
 import "./App.css";
 
@@ -50,6 +51,10 @@ function App() {
         <Route path="/manage-labs" element={<ManageLabs />} />
         <Route path="/manage-equipment" element={<ManageEquipment />} />
         <Route path="/equipment" element={<Equipment />} />
+        <Route
+  path="/external-booking"
+  element={<ExternalBooking />}
+/>
         <Route
   path="/resource-sharing"
   element={<ResourceSharing />}

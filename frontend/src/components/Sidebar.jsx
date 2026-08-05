@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { FaChartBar } from "react-icons/fa";
 import { FaShareAlt } from "react-icons/fa";
+import { FaUniversity } from "react-icons/fa";
 
 import {
   FaHome,
@@ -50,6 +51,12 @@ function Sidebar() {
   <li className={location.pathname === "/resource-sharing" ? "active" : ""}>
     <FaShareAlt />
     Resource Sharing
+  </li>
+</Link>
+<Link to="/external-booking" className="sidebar-link">
+  <li className={location.pathname === "/external-booking" ? "active" : ""}>
+    <FaUniversity />
+    External Booking
   </li>
 </Link>
 <Link to="/utilization" className="sidebar-link">
