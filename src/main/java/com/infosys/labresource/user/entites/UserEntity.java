@@ -41,11 +41,11 @@ public class UserEntity {
     public Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "institution_id", nullable = false)
+    @JoinColumn(name = "institution_id", nullable = true)
     private Institution institution;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id", nullable = false)
+    @JoinColumn(name = "department_id", nullable = true)
     private Department department;
 }
 

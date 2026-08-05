@@ -3,6 +3,8 @@ package com.infosys.labresource.user.entites;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigInteger;
+
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -28,7 +30,7 @@ public class Institution {
 
     private String country;
 
-    private String pincode;
+    private BigInteger pincode;
 
     private String contactEmail;
 
