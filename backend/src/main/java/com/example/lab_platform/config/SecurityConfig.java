@@ -47,8 +47,15 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
                 .permitAll()
 
+                // Public testing endpoints for form submissions & API testing
                 .requestMatchers(
                     "/api/auth/**",
+                    "/api/departments/**",
+                    "/api/roles/**",
+                    "/api/maintenance/**",
+                    "/api/users/**",
+                    "/api/equipment/**",
+                    "/api/bookings/**",
                     "/error"
                 )
                 .permitAll()

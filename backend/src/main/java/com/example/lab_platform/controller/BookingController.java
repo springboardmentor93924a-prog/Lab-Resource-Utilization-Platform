@@ -24,11 +24,15 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Booking> getBookingById(
-            @PathVariable Integer id) {
-
+    public ResponseEntity<Booking> getBookingById(@PathVariable Integer id) {
         return bookingRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
+        Booking savedBooking = bookingRepository.save(booking);
+        return ResponseEntity.ok(savedBooking);
     }
 }

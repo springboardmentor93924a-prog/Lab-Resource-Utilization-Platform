@@ -31,4 +31,11 @@ public class EquipmentController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // Create / Save equipment
+    @PostMapping
+    public ResponseEntity<Equipment> createEquipment(@RequestBody Equipment equipment) {
+        Equipment savedEquipment = equipmentRepository.save(equipment);
+        return ResponseEntity.ok(savedEquipment);
+    }
 }
