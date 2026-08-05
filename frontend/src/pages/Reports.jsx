@@ -1,45 +1,41 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState } from "react";
+import "./Reports.css"; // यहाँ CSS फाइल को इम्पोर्ट किया गया है
 
 function Reports() {
-
   const [equipment, setEquipment] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [users, setUsers] = useState([]);
 
-useEffect(() => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-  const token = localStorage.getItem("token");
+    fetch("http://localhost:8080/api/equipment", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => setEquipment(data))
+      .catch((error) => console.error("Equipment error:", error));
 
-  fetch("http://localhost:8080/api/equipment", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((response) => response.json())
-    .then((data) => setEquipment(data))
-    .catch((error) => console.error("Equipment error:", error));
+    fetch("http://localhost:8080/api/bookings", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => setBookings(data))
+      .catch((error) => console.error("Booking error:", error));
 
-
-  fetch("http://localhost:8080/api/bookings", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((response) => response.json())
-    .then((data) => setBookings(data))
-    .catch((error) => console.error("Booking error:", error));
-
-
-  fetch("http://localhost:8080/api/users", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((response) => response.json())
-    .then((data) => setUsers(data))
-    .catch((error) => console.error("User error:", error));
-
-}, []);
+    fetch("http://localhost:8080/api/users", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => setUsers(data))
+      .catch((error) => console.error("User error:", error));
+  }, []);
 
   const available = equipment.filter(
     (item) => item.status === "Available"
@@ -53,7 +49,6 @@ useEffect(() => {
     (item) => item.status === "Maintenance"
   ).length;
 
-
   const confirmedBookings = bookings.filter(
     (booking) => booking.bookingStatus === "Confirmed"
   ).length;
@@ -66,98 +61,68 @@ useEffect(() => {
     (booking) => booking.bookingStatus === "Completed"
   ).length;
 
-
   return (
-    <div style={{ padding: "20px" }}>
-
-      <h2>Reports</h2>
-
-
-      <h3>Equipment Summary</h3>
-
-      <div style={sectionStyle}>
-
-        <div style={cardStyle}>
-          <h4>Total Equipment</h4>
-          <p>{equipment.length}</p>
-        </div>
-
-        <div style={cardStyle}>
-          <h4>Available</h4>
-          <p>{available}</p>
-        </div>
-
-        <div style={cardStyle}>
-          <h4>Reserved</h4>
-          <p>{reserved}</p>
-        </div>
-
-        <div style={cardStyle}>
-          <h4>Maintenance</h4>
-          <p>{maintenance}</p>
-        </div>
-
+    <div className="reports-container">
+      <div className="reports-header">
+        <h2 className="reports-title">Lab Intelligence & Reports Dashboard</h2>
+        <p className="reports-subtitle">Real-time monitoring of equipment, bookings, and system resource utilization.</p>
       </div>
 
-
-      <h3>Booking Summary</h3>
-
-      <div style={sectionStyle}>
-
-        <div style={cardStyle}>
-          <h4>Total Bookings</h4>
-          <p>{bookings.length}</p>
+      <h3 className="section-title">Equipment Summary</h3>
+      <div className="section-style">
+        <div className="card-style border-blue">
+          <h4 className="card-title">Total Equipment</h4>
+          <p className="card-value">{equipment.length}</p>
         </div>
 
-        <div style={cardStyle}>
-          <h4>Confirmed</h4>
-          <p>{confirmedBookings}</p>
+        <div className="card-style border-green">
+          <h4 className="card-title">Available</h4>
+          <p className="card-value">{available}</p>
         </div>
 
-        <div style={cardStyle}>
-          <h4>Pending</h4>
-          <p>{pendingBookings}</p>
+        <div className="card-style border-yellow">
+          <h4 className="card-title">Reserved</h4>
+          <p className="card-value">{reserved}</p>
         </div>
 
-        <div style={cardStyle}>
-          <h4>Completed</h4>
-          <p>{completedBookings}</p>
+        <div className="card-style border-red">
+          <h4 className="card-title">Maintenance</h4>
+          <p className="card-value">{maintenance}</p>
         </div>
-
       </div>
 
-
-      <h3>User Summary</h3>
-
-      <div style={sectionStyle}>
-
-        <div style={cardStyle}>
-          <h4>Total Users</h4>
-          <p>{users.length}</p>
+      <h3 className="section-title">Booking Summary</h3>
+      <div className="section-style">
+        <div className="card-style border-blue">
+          <h4 className="card-title">Total Bookings</h4>
+          <p className="card-value">{bookings.length}</p>
         </div>
 
+        <div className="card-style border-green">
+          <h4 className="card-title">Confirmed</h4>
+          <p className="card-value">{confirmedBookings}</p>
+        </div>
+
+        <div className="card-style border-yellow">
+          <h4 className="card-title">Pending</h4>
+          <p className="card-value">{pendingBookings}</p>
+        </div>
+
+        <div className="card-style border-indigo">
+          <h4 className="card-title">Completed</h4>
+          <p className="card-value">{completedBookings}</p>
+        </div>
       </div>
 
+      <h3 className="section-title">User Summary</h3>
+      <div className="section-style">
+        <div className="card-style border-purple">
+          <h4 className="card-title">Total Users</h4>
+          <p className="card-value">{users.length}</p>
+        </div>
+      </div>
     </div>
   );
 }
-
-
-const sectionStyle = {
-  display: "flex",
-  gap: "20px",
-  flexWrap: "wrap",
-  marginBottom: "30px",
-};
-
-
-const cardStyle = {
-  background: "white",
-  padding: "20px",
-  minWidth: "160px",
-  borderRadius: "8px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-};
-
 
 export default Reports;
