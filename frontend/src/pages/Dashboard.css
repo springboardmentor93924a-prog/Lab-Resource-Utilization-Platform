@@ -1,4 +1,6 @@
- /* Full Screen Fix & Reset */
+ /* ==========================================
+   Full Screen Fix & Reset
+   ========================================== */
 html,
 body,
 #root {
@@ -14,7 +16,9 @@ body,
   box-sizing: inherit;
 }
 
-/* Layout */
+/* ==========================================
+   Main Layout Structure
+   ========================================== */
 .layout {
   display: flex;
   width: 100vw;
@@ -22,9 +26,12 @@ body,
   background-color: #f1f5f9;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
+  position: relative;
 }
 
-/* Sidebar */
+/* ==========================================
+   Sidebar Styles (Fixed Permanent Menu)
+   ========================================== */
 .sidebar {
   width: 270px;
   background-color: #0f172a;
@@ -33,7 +40,9 @@ body,
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: all 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
   z-index: 100;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
 }
@@ -45,16 +54,19 @@ body,
   background-color: #020617;
   border-bottom: 1px solid #1e293b;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* Sidebar Menu with Proper Spacing & Larger Text */
 .sidebar ul {
   list-style: none;
   padding: 20px 16px;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px; /* मेनू के बीच का गैप */
+  gap: 16px;
+  flex: 1;
 }
 
 .sidebar ul li {
@@ -64,7 +76,7 @@ body,
   align-items: center;
   gap: 14px;
   color: #94a3b8;
-  font-size: 1.05rem; /* थोड़े बड़े अक्षर */
+  font-size: 1.05rem;
   font-weight: 500;
   border-radius: 10px;
   transition: all 0.2s ease-in-out;
@@ -76,16 +88,22 @@ body,
   color: #ffffff;
 }
 
-/* Main Area */
+/* ==========================================
+   Main Content Area
+   ========================================== */
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  margin-left: 270px; /* Leaves space for the fixed sidebar */
+  width: calc(100vw - 270px);
 }
 
-/* Navbar */
+/* ==========================================
+   Navbar Styles
+   ========================================== */
 .navbar {
   height: 75px;
   background-color: #ffffff;
@@ -96,20 +114,6 @@ body,
   padding: 0 28px;
   flex-shrink: 0;
   z-index: 90;
-}
-
-.navbar button {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: #334155;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-
-.navbar button:hover {
-  background-color: #f1f5f9;
 }
 
 .profile {
@@ -143,7 +147,9 @@ body,
   color: #64748b;
 }
 
-/* Content Area */
+/* ==========================================
+   Content Scroll Area
+   ========================================== */
 .content-area {
   flex: 1;
   overflow-y: auto;
@@ -151,7 +157,9 @@ body,
   background-color: #f8fafc;
 }
 
-/* Cards Design */
+/* ==========================================
+   Dashboard Metric Cards
+   ========================================== */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -187,7 +195,9 @@ body,
   color: #0f172a;
 }
 
-/* Table Box */
+/* ==========================================
+   Data Tables and Containers
+   ========================================== */
 .table-box {
   background: white;
   border-radius: 12px;
@@ -226,6 +236,9 @@ th {
   color: #475569;
 }
 
+/* ==========================================
+   Status Badges
+   ========================================== */
 .status-badge {
   padding: 6px 12px;
   border-radius: 20px;

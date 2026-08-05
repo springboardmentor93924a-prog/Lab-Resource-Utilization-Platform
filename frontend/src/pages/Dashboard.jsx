@@ -1,212 +1,144 @@
- import "./Dashboard.css";
-import { useEffect, useState } from "react";
+ import { Link, useNavigate } from "react-router-dom";
 
-function Dashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
+function Sidebar() {
+  const navigate = useNavigate();
+  const role = localStorage.getItem("role");
 
-  const [equipment, setEquipment] = useState([]);
-  const [users, setUsers] = useState([]);
-
-  const fullName = localStorage.getItem("fullName") || "Lab Admin";
-  const role = localStorage.getItem("role") || "Manager";
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    fetch("http://localhost:8080/api/equipment", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setEquipment(Array.isArray(data) ? data : []))
-      .catch(err => console.log(err));
-
-    fetch("http://localhost:8080/api/users", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setUsers(Array.isArray(data) ? data : []))
-      .catch(err => console.log(err));
-
-  }, []);
-
-  const totalEquipment = equipment.length;
-  const availableEquipment = equipment.filter(e => e.status === "Available").length;
-  const reservedEquipment = equipment.filter(e => e.status === "Reserved").length;
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("fullName");
+    localStorage.removeItem("email");
+    localStorage.removeItem("role");
+    navigate("/");
+  };
 
   return (
-    <div className="layout">
+    <div style={sidebarStyle}>
+      <h2 style={logoStyle}>
+        <span>🔬</span> Lab Panel
+      </h2>
 
-      {/* Sidebar */}
-      <div className={`sidebar ${sidebarOpen ? "active" : ""}`}>
-        <h2>Lab Panel</h2>
-        <ul>
-          <li 
-            className={activeTab === "dashboard" ? "active-tab" : ""} 
-            onClick={() => setActiveTab("dashboard")}
-          >
-            📊 Dashboard
-          </li>
-          <li 
-            className={activeTab === "equipment" ? "active-tab" : ""} 
-            onClick={() => setActiveTab("equipment")}
-          >
-            🧪 Equipment
-          </li>
-          <li 
-            className={activeTab === "reservations" ? "active-tab" : ""} 
-            onClick={() => setActiveTab("reservations")}
-          >
-            📅 Reservations
-          </li>
-          <li 
-            className={activeTab === "users" ? "active-tab" : ""} 
-            onClick={() => setActiveTab("users")}
-          >
-            👤 Users
-          </li>
-        </ul>
+      {/* Navigation Links */}
+      <div style={menuItemsStyle}>
+        <Link to="/dashboard" style={linkStyle}>
+          <span style={iconStyle}>📊</span> <span>Dashboard</span>
+        </Link>
+
+        {(role === "ADMIN" ||
+          role === "FACULTY" ||
+          role === "STUDENT" ||
+          role === "LAB_TECHNICIAN") && (
+          <Link to="/equipment" style={linkStyle}>
+            <span style={iconStyle}>🧪</span> <span>Equipment</span>
+          </Link>
+        )}
+
+        {(role === "ADMIN" || role === "FACULTY" || role === "STUDENT") && (
+          <Link to="/reservations" style={linkStyle}>
+            <span style={iconStyle}>📅</span> <span>Reservations</span>
+          </Link>
+        )}
+
+        {(role === "ADMIN" || role === "FACULTY" || role === "LAB_TECHNICIAN") && (
+          <Link to="/reports" style={linkStyle}>
+            <span style={iconStyle}>📈</span> <span>Reports</span>
+          </Link>
+        )}
+
+        {role === "ADMIN" && (
+          <Link to="/user" style={linkStyle}>
+            <span style={iconStyle}>👤</span> <span>User Management</span>
+          </Link>
+        )}
       </div>
 
-      {/* Main Container */}
-      <div className="main">
+      <hr style={dividerStyle} />
 
-        {/* Navbar */}
-        <div className="navbar">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
-
-          <div className="profile">
-            <div className="avatar">{fullName ? fullName.charAt(0).toUpperCase() : "U"}</div>
-            <div>
-              <p className="name">{fullName}</p>
-              <span className="role">{role}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="content-area">
-
-          {activeTab === "dashboard" && (
-            <>
-              {/* Cards */}
-              <div className="cards">
-                <div className="card blue">
-                  <h4>Total Equipment</h4>
-                  <p>{totalEquipment}</p>
-                </div>
-
-                <div className="card green">
-                  <h4>Available</h4>
-                  <p>{availableEquipment}</p>
-                </div>
-
-                <div className="card orange">
-                  <h4>Reserved</h4>
-                  <p>{reservedEquipment}</p>
-                </div>
-
-                <div className="card purple">
-                  <h4>Users</h4>
-                  <p>{users.length}</p>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="table-box">
-                <h3>Equipment List</h3>
-                <div className="table-responsive">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {equipment.map((item) => (
-                        <tr key={item.id}>
-                          <td>{item.id}</td>
-                          <td>{item.name}</td>
-                          <td>
-                            <span className={`status-badge ${item.status ? item.status.toLowerCase() : ""}`}>
-                              {item.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === "equipment" && (
-            <div className="table-box">
-              <h3>Equipment Management</h3>
-              <div className="table-responsive">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {equipment.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.id}</td>
-                        <td>{item.name}</td>
-                        <td>{item.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "reservations" && (
-            <div className="table-box">
-              <h3>Reservations Schedule</h3>
-              <p style={{ color: "#64748b", padding: "10px 0" }}>No active reservations to display.</p>
-            </div>
-          )}
-
-          {activeTab === "users" && (
-            <div className="table-box">
-              <h3>System Users</h3>
-              <div className="table-responsive">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Role</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id}>
-                        <td>{u.id}</td>
-                        <td>{u.fullName || u.name}</td>
-                        <td>{u.role}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-      </div>
+      <button onClick={handleLogout} style={logoutBtnStyle}>
+        🚪 Logout
+      </button>
     </div>
   );
 }
 
-export default Dashboard;
+/* ================== CSS STYLES ================== */
+
+const sidebarStyle = {
+  width: "270px",
+  backgroundColor: "#0f172a",
+  color: "#ffffff",
+  height: "100vh",
+  display: "flex",
+  flexDirection: "column",
+  flexShrink: 0,
+  position: "fixed",
+  top: 0,
+  left: 0,
+  zIndex: 100,
+  boxShadow: "4px 0 10px rgba(0, 0, 0, 0.05)",
+  padding: "0",
+};
+
+const logoStyle = {
+  padding: "24px 20px",
+  margin: "0",
+  fontSize: "1.4rem",
+  backgroundColor: "#020617",
+  borderBottom: "1px solid #1e293b",
+  letterSpacing: "0.5px",
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+};
+
+const menuItemsStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  padding: "20px 16px",
+  flex: 1,
+};
+
+const linkStyle = {
+  textDecoration: "none",
+  padding: "14px 18px",
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+  color: "#94a3b8",
+  fontSize: "1.05rem",
+  fontWeight: "500",
+  borderRadius: "10px",
+  transition: "all 0.2s ease-in-out",
+};
+
+const iconStyle = {
+  fontSize: "1.1rem",
+  display: "flex",
+  alignItems: "center",
+};
+
+const dividerStyle = {
+  borderColor: "#1e293b",
+  margin: "0 16px",
+};
+
+const logoutBtnStyle = {
+  margin: "20px 16px",
+  backgroundColor: "#ef4444",
+  color: "#ffffff",
+  border: "none",
+  padding: "12px 18px",
+  borderRadius: "10px",
+  cursor: "pointer",
+  fontWeight: "600",
+  fontSize: "1rem",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  transition: "background-color 0.2s",
+};
+
+export default Sidebar;
