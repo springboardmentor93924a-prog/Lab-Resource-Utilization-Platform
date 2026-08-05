@@ -1,4 +1,6 @@
+
 import { Link, useLocation } from "react-router-dom";
+import { FaChartBar } from "react-icons/fa";
 
 import {
   FaHome,
@@ -7,6 +9,7 @@ import {
   FaClipboardList,
   FaUser,
   FaSignOutAlt,
+  FaMicrochip
 } from "react-icons/fa";
 
 import "../styles/sidebar.css";
@@ -36,6 +39,18 @@ function Sidebar() {
             Resources
           </li>
         </Link>
+         <Link to="/equipment" className="sidebar-link">
+  <li className={location.pathname === "/equipment" ? "active" : ""}>
+    <FaMicrochip />
+    Equipment
+  </li>
+</Link>
+<Link to="/utilization" className="sidebar-link">
+  <li className={location.pathname === "/utilization" ? "active" : ""}>
+    <FaChartBar />
+    Utilization
+  </li>
+</Link>
 
         <Link to="/booking" className="sidebar-link">
           <li className={location.pathname === "/booking" ? "active" : ""}>
