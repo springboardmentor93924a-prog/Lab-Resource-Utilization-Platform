@@ -55,7 +55,6 @@ public class SecurityConfig {
                     "/api/maintenance/**",
                     "/api/users/**",
                     "/api/equipment/**",
-                    "/api/bookings/**",
                     "/error"
                 )
                 .permitAll()

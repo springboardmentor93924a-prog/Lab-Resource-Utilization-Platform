@@ -31,7 +31,7 @@ public class Booking {
     private LocalDateTime endTime;
 
     @Column(name = "booking_status", length = 30)
-    private String bookingStatus;
+    private String bookingStatus = "PENDING";
 
     @Column(name = "purpose")
     private String purpose;

@@ -38,4 +38,18 @@ public class EquipmentController {
         Equipment savedEquipment = equipmentRepository.save(equipment);
         return ResponseEntity.ok(savedEquipment);
     }
+// to update the status of equipment
+    @PutMapping("/{id}/status")
+public ResponseEntity<Equipment> updateEquipmentStatus(
+        @PathVariable Integer id,
+        @RequestParam String status) {
+
+    return equipmentRepository.findById(id)
+            .map(equipment -> {
+                equipment.setStatus(status);
+                Equipment updatedEquipment = equipmentRepository.save(equipment);
+                return ResponseEntity.ok(updatedEquipment);
+            })
+            .orElse(ResponseEntity.notFound().build());
+}
 }
