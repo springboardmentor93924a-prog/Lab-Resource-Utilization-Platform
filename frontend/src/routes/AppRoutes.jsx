@@ -97,7 +97,7 @@ function AppRoutes() {
 
       {/* User Management */}
       <Route
-        path="/user"
+        path="/users"
         element={
           <ProtectedRoute
             allowedRoles={["ADMIN"]}
