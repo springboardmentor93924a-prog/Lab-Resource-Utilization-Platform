@@ -56,11 +56,13 @@ public class SecurityConfig {
                     "/api/users/**",
                     "/api/equipment/**",
                     "/api/bookings/**",
+                     "/api/utilization/**",
                     "/error"
+
                 )
                 .permitAll()
 
-                .requestMatchers("/api/admin/**")
+                .requestMatchers("/api/admin/**")   
                 .hasRole("ADMIN")
 
                 .requestMatchers("/api/faculty/**")
