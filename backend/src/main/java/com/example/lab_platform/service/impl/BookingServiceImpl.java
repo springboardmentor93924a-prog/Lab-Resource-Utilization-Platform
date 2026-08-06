@@ -1,8 +1,10 @@
 package com.example.lab_platform.service.impl;
 
 import com.example.lab_platform.entity.Booking;
+import com.example.lab_platform.entity.Equipment;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.BookingRepository;
+import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.BookingService;
 
 import org.springframework.security.core.Authentication;
@@ -16,10 +18,13 @@ import java.util.Optional;
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
+    private final EquipmentRepository equipmentRepository;
 
-    public BookingServiceImpl(BookingRepository bookingRepository) {
-        this.bookingRepository = bookingRepository;
-    }
+    public BookingServiceImpl(BookingRepository bookingRepository,
+                          EquipmentRepository equipmentRepository) {
+    this.bookingRepository = bookingRepository;
+    this.equipmentRepository = equipmentRepository;
+        }
 
 
     private User getLoggedInUser() {
@@ -259,7 +264,11 @@ public class BookingServiceImpl implements BookingService {
 
 
         booking.setBookingStatus("Confirmed");
-
+        Equipment equipment = booking.getEquipment();
+        if (equipment != null) {
+    equipment.setStatus("Booked");
+    equipmentRepository.save(equipment);
+}
 
         return bookingRepository.save(booking);
     }
