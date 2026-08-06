@@ -1,4 +1,4 @@
-package com.example.lab_platform.entity;
+ package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -33,6 +33,10 @@ public class Equipment {
 
     @Column(name = "purchase_date")
     private LocalDate purchaseDate;
+
+    // 🔥 NEW FIELD (Idle Detection ke liye)
+    @Column(name = "last_used_date")
+    private LocalDate lastUsedDate;
 
     public Equipment() {
     }
@@ -99,5 +103,15 @@ public class Equipment {
 
     public void setPurchaseDate(LocalDate purchaseDate) {
         this.purchaseDate = purchaseDate;
+    }
+
+    // 🔥 GETTER SETTER (NEW)
+
+    public LocalDate getLastUsedDate() {
+        return lastUsedDate;
+    }
+
+    public void setLastUsedDate(LocalDate lastUsedDate) {
+        this.lastUsedDate = lastUsedDate;
     }
 }
