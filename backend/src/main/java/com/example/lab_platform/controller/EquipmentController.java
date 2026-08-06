@@ -32,10 +32,37 @@ public class EquipmentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Create / Save equipment
+    // Add new equipment
     @PostMapping
     public ResponseEntity<Equipment> createEquipment(@RequestBody Equipment equipment) {
         Equipment savedEquipment = equipmentRepository.save(equipment);
         return ResponseEntity.ok(savedEquipment);
+    }
+
+    // Update equipment
+    @PutMapping("/{id}")
+    public ResponseEntity<Equipment> updateEquipment(@PathVariable Integer id, @RequestBody Equipment updatedEquipment) {
+        return equipmentRepository.findById(id)
+                .map(eq -> {
+                    eq.setEquipmentName(updatedEquipment.getEquipmentName());
+                    eq.setCategory(updatedEquipment.getCategory());
+                    eq.setSerialNumber(updatedEquipment.getSerialNumber());
+                    eq.setLocation(updatedEquipment.getLocation());
+                    eq.setStatus(updatedEquipment.getStatus());
+                    eq.setPurchaseDate(updatedEquipment.getPurchaseDate());
+                    Equipment saved = equipmentRepository.save(eq);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Delete equipment
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEquipment(@PathVariable Integer id) {
+        if (equipmentRepository.existsById(id)) {
+            equipmentRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
