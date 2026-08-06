@@ -16,7 +16,7 @@ function Reservations() {
   });
 
   const token = localStorage.getItem("token");
-
+  const role = localStorage.getItem("role");
   const fetchBookings = () => {
     fetch("http://localhost:8080/api/bookings", {
       headers: {
@@ -360,44 +360,52 @@ function Reservations() {
                 </td>
 
                 <td style={cellStyle}>
-                  {booking.bookingStatus === "Pending" && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(booking)}
-                        style={smallButtonStyle}
-                      >
-                        Edit
-                      </button>
 
-                      <button
-                        onClick={() =>
-                          handleDelete(booking.bookingId)
-                        }
-                        style={smallButtonStyle}
-                      >
-                        Delete
-                      </button>
+  {/* Student / Faculty / Admin can edit pending bookings */}
+  {booking.bookingStatus === "Pending" &&
+   (role === "STUDENT" ||
+    role === "FACULTY" ||
+    role === "ADMIN") && (
+    <>
+      <button
+        onClick={() => handleEdit(booking)}
+        style={smallButtonStyle}
+      >
+        Edit
+      </button>
 
-                      <button
-                        onClick={() =>
-                          handleApprove(booking.bookingId)
-                        }
-                        style={smallButtonStyle}
-                      >
-                        Approve
-                      </button>
+      <button
+        onClick={() => handleDelete(booking.bookingId)}
+        style={smallButtonStyle}
+      >
+        Delete
+      </button>
+    </>
+  )}
 
-                      <button
-                        onClick={() =>
-                          handleReject(booking.bookingId)
-                        }
-                        style={smallButtonStyle}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </td>
+
+  {/* Only Technician and Admin can approve/reject */}
+  {booking.bookingStatus === "Pending" &&
+   (role === "LAB_TECHNICIAN" ||
+    role === "ADMIN") && (
+    <>
+      <button
+        onClick={() => handleApprove(booking.bookingId)}
+        style={smallButtonStyle}
+      >
+        Approve
+      </button>
+
+      <button
+        onClick={() => handleReject(booking.bookingId)}
+        style={smallButtonStyle}
+      >
+        Reject
+      </button>
+    </>
+  )}
+
+</td>
               </tr>
             ))}
         </tbody>
