@@ -1,36 +1,16 @@
-# Lab Resource Utilization Platform - Frontend
+# React + Vite
 
-React + Vite frontend with both Tailwind CSS and regular CSS.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Requirements
-- Node.js 18 or newer (compatible with Node 22.11)
-- npm
+Currently, two official plugins are available:
 
-## Run
-```bash
-cd lab-resource-frontend
-npm install
-npm run dev
-```
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-Open `http://localhost:5173`.
+## React Compiler
 
-## Backend URL
-Edit `.env`:
-```env
-VITE_API_BASE_URL=http://localhost:8080/api
-```
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-Expected authentication endpoints:
-- `POST /api/auth/login`
-- `POST /api/auth/register`
+## Expanding the ESLint configuration
 
-Expected equipment endpoint:
-- `GET /api/equipment`
-
-## Important
-The protected dashboard requires a token in localStorage. For UI testing before backend is ready, open browser console and run:
-```js
-localStorage.setItem('token', 'demo-token')
-location.href = '/dashboard'
-```
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
