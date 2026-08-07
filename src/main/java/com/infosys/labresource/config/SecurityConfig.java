@@ -45,6 +45,8 @@ public class SecurityConfig {
                                 "/api/departments/institution/**"
                         ).permitAll()
 
+                        .requestMatchers("/api/equipment/**").authenticated()
+
                         .anyRequest().authenticated())
 
                 .authenticationProvider(authenticationProvider())
