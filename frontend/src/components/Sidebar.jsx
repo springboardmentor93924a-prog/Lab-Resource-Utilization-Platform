@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { FaChartBar } from "react-icons/fa";
 import { FaShareAlt } from "react-icons/fa";
 import { FaUniversity } from "react-icons/fa";
+import { FaChartLine } from "react-icons/fa";
+import { FaClock } from "react-icons/fa";
 
 import {
   FaHome,
@@ -57,6 +59,18 @@ function Sidebar() {
   <li className={location.pathname === "/external-booking" ? "active" : ""}>
     <FaUniversity />
     External Booking
+  </li>
+</Link>
+<Link to="/demand-analysis" className="sidebar-link">
+  <li className={location.pathname === "/demand-analysis" ? "active" : ""}>
+    <FaChartLine />
+    Demand Analysis
+  </li>
+</Link>
+<Link to="/waitlist" className="sidebar-link">
+  <li className={location.pathname === "/waitlist" ? "active" : ""}>
+    <FaClock />
+    Waitlist
   </li>
 </Link>
 <Link to="/utilization" className="sidebar-link">

@@ -18,6 +18,8 @@ import Equipment from "./pages/Equipment";
 import UtilizationDashboard from "./pages/UtilizationDashboard";
 import ResourceSharing from "./pages/ResourceSharing";
 import ExternalBooking from "./pages/ExternalBooking";
+import DemandAnalysis from "./pages/DemandAnalysis";
+import WaitlistManagement from "./pages/WaitlistManagement";
 
 import "./App.css";
 
@@ -51,6 +53,8 @@ function App() {
         <Route path="/manage-labs" element={<ManageLabs />} />
         <Route path="/manage-equipment" element={<ManageEquipment />} />
         <Route path="/equipment" element={<Equipment />} />
+        <Route path="/demand-analysis" element={<DemandAnalysis />} />
+        <Route path="/waitlist" element={<WaitlistManagement />} />
         <Route
   path="/external-booking"
   element={<ExternalBooking />}

@@ -1,0 +1,157 @@
+/* Main Container */
+
+.waitlist-container{
+    padding:40px;
+    background:#f8f9fc;
+    min-height:100vh;
+}
+
+/* Heading */
+
+.waitlist-container h1{
+    color:#2d4aa8;
+    font-size:2.4rem;
+    margin-bottom:15px;
+}
+
+.waitlist-container p{
+    color:#666;
+    margin-bottom:35px;
+    font-size:1.05rem;
+}
+
+/* Section Title */
+
+.waitlist-container h2{
+    color:#2d4aa8;
+    margin:35px 0 20px;
+}
+
+/* Equipment Cards */
+
+.equipment-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+    gap:25px;
+    margin-bottom:40px;
+}
+
+.equipment-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    transition:.3s;
+}
+
+.equipment-card:hover{
+    transform:translateY(-5px);
+}
+
+.equipment-card h3{
+    color:#2d4aa8;
+    margin-bottom:10px;
+}
+
+.equipment-card p{
+    margin-bottom:12px;
+}
+
+.equipment-card button{
+    width:100%;
+    padding:12px;
+    background:#2d4aa8;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.equipment-card button:hover{
+    background:#1c3a91;
+}
+
+/* Table */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:40px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+th{
+    background:#2d4aa8;
+    color:white;
+    padding:15px;
+}
+
+td{
+    padding:15px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+}
+
+tr:hover{
+    background:#f8f9ff;
+}
+
+/* Status */
+
+.waiting{
+    background:#ffc107;
+    color:black;
+    padding:8px 15px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+.allocated{
+    background:#28a745;
+    color:white;
+    padding:8px 15px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+/* Suggestions */
+
+.suggestion-box{
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+.suggestion-box ul{
+    padding-left:20px;
+}
+
+.suggestion-box li{
+    margin-bottom:15px;
+    font-size:17px;
+    color:#444;
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+    .waitlist-container{
+        padding:20px;
+    }
+
+    .equipment-grid{
+        grid-template-columns:1fr;
+    }
+
+    table{
+        display:block;
+        overflow-x:auto;
+    }
+}
