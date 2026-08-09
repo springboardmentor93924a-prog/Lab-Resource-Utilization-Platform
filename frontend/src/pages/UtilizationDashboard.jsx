@@ -167,6 +167,40 @@ export default function UtilizationDashboard() {
       ))}
   </div>
 </div>
+
+<div
+  style={{
+    background: "#fff",
+    borderRadius: "12px",
+    padding: "20px",
+    marginBottom: "25px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+  }}
+>
+  <h5 style={{ color: "#0F1B2D", marginBottom: "15px" }}>Idle equipment</h5>
+  {equipment.filter((e) => e.isIdle).length === 0 && (
+    <p style={{ color: "#64748B" }}>No equipment currently flagged as idle.</p>
+  )}
+  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+    {equipment
+      .filter((e) => e.isIdle)
+      .map((e) => (
+        <span
+          key={e.id}
+          style={{
+            background: "#94A3B8",
+            color: "#fff",
+            padding: "6px 14px",
+            borderRadius: "999px",
+            fontSize: "13px",
+            fontWeight: 600,
+          }}
+        >
+          {e.equipmentName} ({e.daysIdle != null ? `${e.daysIdle} days idle` : "never booked"})
+        </span>
+      ))}
+  </div>
+</div>
             <div
               style={{
                 background: "#fff",

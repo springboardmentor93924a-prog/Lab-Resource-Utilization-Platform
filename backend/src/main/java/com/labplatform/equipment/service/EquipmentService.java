@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -108,9 +110,12 @@ public class EquipmentService {
 
             int totalBookings = bookings.size();
 
-            int usageHours = bookings.stream()
+            List<Booking> confirmedOrCompleted = bookings.stream()
                     .filter(b -> b.getBookingStatus() == BookingStatus.CONFIRMED
                             || b.getBookingStatus() == BookingStatus.COMPLETED)
+                    .collect(Collectors.toList());
+
+            int usageHours = confirmedOrCompleted.stream()
                     .mapToInt(b -> b.getDurationHours() != null ? b.getDurationHours() : 0)
                     .sum();
 
@@ -120,6 +125,25 @@ public class EquipmentService {
 
             boolean highDemand = totalBookings >= demandThreshold && totalBookings > 0;
 
+            Integer daysIdle = null;
+            boolean isIdle;
+
+            if (!confirmedOrCompleted.isEmpty()) {
+                LocalDate mostRecentDate = confirmedOrCompleted.stream()
+                        .map(Booking::getBookingDate)
+                        .max(LocalDate::compareTo)
+                        .orElse(null);
+
+                if (mostRecentDate != null) {
+                    daysIdle = (int) ChronoUnit.DAYS.between(mostRecentDate, LocalDate.now());
+                    isIdle = daysIdle >= 14;
+                } else {
+                    isIdle = true;
+                }
+            } else {
+                isIdle = true;
+            }
+
             results.add(new EquipmentUtilizationResponse(
                     equipment.getId(),
                     equipment.getEquipmentName(),
@@ -128,7 +152,9 @@ public class EquipmentService {
                     totalBookings,
                     usageHours,
                     utilizationRate,
-                    highDemand
+                    highDemand,
+                    daysIdle,
+                    isIdle
             ));
         }
 

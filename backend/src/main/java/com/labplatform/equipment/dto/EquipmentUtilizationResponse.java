@@ -10,13 +10,15 @@ public class EquipmentUtilizationResponse {
     private Integer usageHours;
     private Double utilizationRate;
     private Boolean highDemand;
+    private Integer daysIdle;
+    private Boolean isIdle;
 
     public EquipmentUtilizationResponse() {
     }
 
     public EquipmentUtilizationResponse(Long id, String equipmentName, String category, String status,
                                         Integer totalBookings, Integer usageHours, Double utilizationRate,
-                                        Boolean highDemand) {
+                                        Boolean highDemand, Integer daysIdle, Boolean isIdle) {
         this.id = id;
         this.equipmentName = equipmentName;
         this.category = category;
@@ -25,6 +27,8 @@ public class EquipmentUtilizationResponse {
         this.usageHours = usageHours;
         this.utilizationRate = utilizationRate;
         this.highDemand = highDemand;
+        this.daysIdle = daysIdle;
+        this.isIdle = isIdle;
     }
 
     public Long getId() {
@@ -87,6 +91,21 @@ public class EquipmentUtilizationResponse {
 
     public void setHighDemand(Boolean highDemand) {
         this.highDemand = highDemand;
+    }
+    public Integer getDaysIdle() {
+        return daysIdle;
+    }
+
+    public void setDaysIdle(Integer daysIdle) {
+        this.daysIdle = daysIdle;
+    }
+
+    public Boolean getIsIdle() {
+        return isIdle;
+    }
+
+    public void setIsIdle(Boolean isIdle) {
+        this.isIdle = isIdle;
     }
 
 }

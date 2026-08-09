@@ -62,23 +62,40 @@ export default function UtilizationHeatmap() {
                   boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
   <h4 style={{ color: "#0F1B2D", marginBottom: "10px" }}>{item.equipmentName}</h4>
-  {item.highDemand && (
-    <span
-      style={{
-        background: "#FB923C",
-        color: "#fff",
-        padding: "4px 10px",
-        borderRadius: "999px",
-        fontSize: "11px",
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-      }}
-    >
-      High demand
-    </span>
-  )}
+  <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
+    {item.highDemand && (
+      <span
+        style={{
+          background: "#FB923C",
+          color: "#fff",
+          padding: "4px 10px",
+          borderRadius: "999px",
+          fontSize: "11px",
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+        }}
+      >
+        High demand
+      </span>
+    )}
+    {item.isIdle && (
+      <span
+        style={{
+          background: "#94A3B8",
+          color: "#fff",
+          padding: "4px 10px",
+          borderRadius: "999px",
+          fontSize: "11px",
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+        }}
+      >
+        Idle
+      </span>
+    )}
+  </div>
 </div>
 <hr />
                 <p>
