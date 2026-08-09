@@ -16,52 +16,51 @@ function Dashboard() {
   const [users, setUsers] = useState([]);
   const [utilData, setUtilData] = useState([]);
 
-  // 🔥 HEATMAP COLOR LOGIC
-  const getColor = (value) => {
-    const percentage = Number(value || 0);
-
-    if (percentage > 70) return "#ff4d4d"; // RED
-    if (percentage > 40) return "#ffd633"; // YELLOW
-    return "#66cc66"; // GREEN
+  // 🔥 Utilization % color (table)
+  const getUtilColor = (value) => {
+    if (value > 70) return "#4CAF50";
+    if (value > 40) return "#FFC107";
+    return "#F44336";
   };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // 🔥 API CALL FUNCTION (REAL-TIME UPDATE के लिए)
     const fetchData = () => {
-      // Equipment
       fetch("http://localhost:8080/api/equipment", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
         .then(setEquipment)
-        .catch((err) => console.error(err));
+        .catch(console.error);
 
-      // Users
       fetch("http://localhost:8080/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
         .then(setUsers)
-        .catch((err) => console.error(err));
+        .catch(console.error);
 
-      // Utilization
       fetch("http://localhost:8080/api/utilization", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
-        .then(setUtilData)
-        .catch((err) => console.error(err));
+        .then((data) => {
+          // 🔥 FIX: limit % between 0–100
+          const fixedData = data.map((item) => ({
+            ...item,
+            utilizationPercentage: Math.min(
+              100,
+              Math.max(0, item.utilizationPercentage || 0)
+            ),
+          }));
+          setUtilData(fixedData);
+        })
+        .catch(console.error);
     };
 
-    // 🔥 FIRST LOAD
     fetchData();
-
-    // 🔥 REAL-TIME UPDATE START (हर 5 सेकंड में refresh)
     const interval = setInterval(fetchData, 5000);
-
-    // 🔥 CLEANUP (important)
     return () => clearInterval(interval);
 
   }, []);
@@ -73,15 +72,15 @@ function Dashboard() {
   ).length;
 
   const reservedEquipment = equipment.filter(
-    (item) => item.status === "Reserved"
+    (item) => item.status === "Booked"
   ).length;
 
   return (
     <div className="dashboard">
 
-      <h2>Dashboard</h2>
+      <h2 className="dashboard-title">Lab Resource Dashboard</h2>
 
-      {/* 🔥 CARDS */}
+      {/* CARDS */}
       <div className="cards">
         <div className="card">
           <h3>Total Equipment</h3>
@@ -89,33 +88,34 @@ function Dashboard() {
         </div>
 
         <div className="card">
-          <h3>Available</h3>
+          <h3>Available Equipment</h3>
           <p>{availableEquipment}</p>
         </div>
 
         <div className="card">
-          <h3>Reserved</h3>
+          <h3>Reserved Equipment</h3>
           <p>{reservedEquipment}</p>
         </div>
 
         <div className="card">
-          <h3>Users</h3>
+          <h3>Total Users</h3>
           <p>{users.length}</p>
         </div>
       </div>
 
-      {/* 🔥 HEATMAP TABLE */}
-      <div style={{ marginTop: "40px" }}>
-        <h2>Utilization Heatmap</h2>
+      {/* TABLE */}
+      <div className="table-container">
+        <h2>Equipment Utilization</h2>
 
-        <table border="1" cellPadding="10" style={{ width: "100%" }}>
+        <table className="util-table">
           <thead>
             <tr>
-              <th>Equipment</th>
+              <th>Equipment Name</th>
               <th>Used Hours</th>
               <th>Idle Hours</th>
-              <th>Utilization (%)</th>
+              <th>Utilization %</th>
               <th>Category</th>
+              <th>Idle Days</th>
             </tr>
           </thead>
 
@@ -128,31 +128,53 @@ function Dashboard() {
 
                 <td
                   style={{
-                    backgroundColor: getColor(item.utilizationPercentage),
+                    backgroundColor: getUtilColor(item.utilizationPercentage),
+                    color: "#fff",
                     fontWeight: "bold"
                   }}
                 >
-                  {Number(item.utilizationPercentage || 0).toFixed(2)}
+                  {Number(item.utilizationPercentage).toFixed(1)}%
                 </td>
 
                 <td>{item.category}</td>
+                <td>{item.idleDays}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* 🔥 BAR CHART */}
-      <div style={{ marginTop: "50px" }}>
+      {/* 🔥 IMPROVED CHART */}
+      <div className="chart-container">
         <h2>Utilization Chart</h2>
 
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={320}>
           <BarChart data={utilData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
-            <XAxis dataKey="equipmentName" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="utilizationPercentage" fill="#4CAF50" />
+            <CartesianGrid strokeDasharray="3 3" />
+
+            <XAxis
+              dataKey="equipmentName"
+              angle={-20}
+              textAnchor="end"
+              interval={0}
+            />
+
+            {/* 🔥 FIX: Y-axis 0–100 */}
+            <YAxis domain={[0, 100]} />
+
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                borderRadius: "10px",
+                border: "1px solid #ddd"
+              }}
+            />
+
+            <Bar
+              dataKey="utilizationPercentage"
+              fill="#4CAF50"
+              radius={[10, 10, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
