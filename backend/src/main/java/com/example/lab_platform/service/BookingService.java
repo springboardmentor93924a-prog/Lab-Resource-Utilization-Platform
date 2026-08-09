@@ -20,4 +20,6 @@ public interface BookingService {
     Booking approveBooking(Integer id);
 
     Booking rejectBooking(Integer id);
+
+    Booking completeBooking(Integer id);
 }

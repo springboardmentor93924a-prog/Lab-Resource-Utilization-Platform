@@ -73,4 +73,11 @@ public class BookingController {
     public ResponseEntity<Booking> rejectBooking(@PathVariable Integer id) {
         return ResponseEntity.ok(bookingService.rejectBooking(id));
     }
+
+    // Complete booking
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'ADMIN')")
+    @PutMapping("/{id}/complete")
+    public ResponseEntity<Booking> completeBooking(@PathVariable Integer id) {
+        return ResponseEntity.ok(bookingService.completeBooking(id));
+    }
 }
