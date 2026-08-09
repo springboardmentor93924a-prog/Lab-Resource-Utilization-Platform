@@ -111,30 +111,40 @@ export default function UtilizationHeatmap() {
                   <strong>Total bookings:</strong> {item.totalBookings}
                 </p>
                 <div
-                  style={{
-                    background: "#E2E8F0",
-                    borderRadius: "6px",
-                    height: "24px",
-                    overflow: "hidden",
-                    marginTop: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${item.utilizationRate}%`,
-                      background: color,
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {item.utilizationRate}%
-                  </div>
-                </div>
+  style={{
+    position: "relative",
+    background: "#E2E8F0",
+    borderRadius: "6px",
+    height: "24px",
+    overflow: "hidden",
+    marginTop: "10px",
+  }}
+>
+  <div
+    style={{
+      width: `${item.utilizationRate}%`,
+      background: color,
+      height: "100%",
+    }}
+  />
+  <span
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "13px",
+      fontWeight: 700,
+      color: "#0F1B2D",
+    }}
+  >
+    {item.utilizationRate}%
+  </span>
+</div>
               </div>
             );
           })}
