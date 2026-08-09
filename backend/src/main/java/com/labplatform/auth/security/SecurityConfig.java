@@ -44,8 +44,30 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers("/api/admin/**")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/equipment/**")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/equipment/**")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/equipment/**")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/bookings")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/bookings/**")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/files/**")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -56,7 +78,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
+        config.setAllowedOrigins(List.of("http://localhost:5173","http://localhost:5174","http://localhost:5175","http://localhost:5176","http://localhost:5178","http://localhost:5179", "http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
