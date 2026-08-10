@@ -1,4 +1,4 @@
-package com.example.lab_platform.service.impl;
+ package com.example.lab_platform.service.impl;
 
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
@@ -158,9 +158,21 @@ public class BookingServiceImpl implements BookingService {
         }
 
         booking.setBookingStatus("Confirmed");
+
         Equipment equipment = booking.getEquipment();
+
         if (equipment != null) {
+
+            // Existing logic
             equipment.setStatus("Booked");
+
+            // 🔥 NEW LOGIC ADDED (last_used_date update)
+            if (booking.getEndTime() != null) {
+                equipment.setLastUsedDate(
+                        booking.getEndTime().toLocalDate()
+                );
+            }
+
             equipmentRepository.save(equipment);
         }
 
