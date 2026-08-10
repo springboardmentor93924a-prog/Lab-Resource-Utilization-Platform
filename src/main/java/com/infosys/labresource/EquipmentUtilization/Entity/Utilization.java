@@ -24,7 +24,7 @@ public class Utilization {
     private Equipment equipment;
 
     @OneToOne
-    @JoinColumn(name = "booking_id", nullable = false)
+    @JoinColumn(name = "bookingId", nullable = false)
     private Booking booking;
 
     @Column(nullable = false)

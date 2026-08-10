@@ -45,7 +45,7 @@ public class SecurityConfig {
                                 "/api/departments/institution/**"
                         ).permitAll()
 
-                        .requestMatchers("/api/equipment/**").authenticated()
+                        .requestMatchers("/api/equipment/**","/api/bookings/**","/api/utilization/**").authenticated()
 
                         .anyRequest().authenticated())
 
@@ -58,8 +58,11 @@ public class SecurityConfig {
     }
     @Bean
     public PasswordEncoder passwordEncoder() {
+
+
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
 

@@ -121,7 +121,7 @@ public class UtilizationServiceImpl implements UtilizationService{
     private UtilizationResponseDTO convertToDTO(Utilization util) {
         UtilizationResponseDTO dto = new UtilizationResponseDTO();
         dto.setUtilizationId(util.getUtilizationId());
-        dto.setBookingId(util.getBooking().getBooking_id());
+        dto.setBookingId(util.getBooking().getBookingId());
         dto.setEquipId(util.getEquipment().getEquipId());
         dto.setStartTime(util.getStartTime());
         dto.setEndTime(util.getEndTime());

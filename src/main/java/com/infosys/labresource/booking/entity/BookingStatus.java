@@ -4,9 +4,9 @@ package com.infosys.labresource.booking.entity;
 
 
 public enum BookingStatus {
-    PENDING,
+    PENDING_APPROVAL,
 
-    APPROVED,
+   CONFIRMED,
 
     REJECTED,
 

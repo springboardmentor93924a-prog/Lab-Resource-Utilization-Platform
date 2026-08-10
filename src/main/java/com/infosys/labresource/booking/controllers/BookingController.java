@@ -18,7 +18,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping("/create")
-    @PreAuthorize("hasAnyRole('LAB_MANAGER','DEPARTMENT_HEAD')")
+    @PreAuthorize("hasAnyRole('LAB_MANAGER','DEPARTMENT_HEAD','RESEARCHER')")
     public ResponseEntity<BookingResponseDTO> createBooking(
             @RequestBody BookingRequestDTO requestDTO) {
 
@@ -53,7 +53,7 @@ public class BookingController {
     }
 
     @PutMapping("/approve/{bookingId}")
-    @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN','DEPARTMENT_HEAD')")
+    @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN','DEPARTMENT_HEAD','LAB_MANAGER')")
     public ResponseEntity<BookingResponseDTO> approveBooking(
             @PathVariable Long bookingId) {
 

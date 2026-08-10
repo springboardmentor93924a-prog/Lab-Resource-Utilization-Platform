@@ -67,7 +67,7 @@ public class BookingServiceImpl implements BookingService{
         booking.setInstitution(user.getInstitution());
         booking.setStartTime(requestDTO.getStartTime());
         booking.setEndTime(requestDTO.getEndTime());
-        booking.setStatus(BookingStatus.PENDING);
+        booking.setStatus(BookingStatus. PENDING_APPROVAL);
 
         Booking savedBooking = bookingRepo.save(booking);
 
@@ -147,7 +147,7 @@ public class BookingServiceImpl implements BookingService{
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
-        booking.setStatus(BookingStatus.APPROVED);
+        booking.setStatus(BookingStatus.CONFIRMED);
 
         booking.getEquipment().setStatus(EquipmentStatus.BOOKED);
 
@@ -174,10 +174,14 @@ public class BookingServiceImpl implements BookingService{
 
         BookingResponseDTO dto = new BookingResponseDTO();
 
-        dto.setBookingId(booking.getBooking_id());
+        dto.setBookingId(booking.getBookingId());
         dto.setEquipId(booking.getEquipment().getEquipId());
         dto.setRequestedById(booking.getRequestedBy().getUserId());
-        dto.setApprovedById(booking.getApprovedBy().getUserId());
+
+        if (booking.getApprovedBy() != null) {
+            dto.setApprovedById(booking.getApprovedBy().getUserId());
+        }
+
         dto.setStartTime(booking.getStartTime());
         dto.setEndTime(booking.getEndTime());
         dto.setStatus(booking.getStatus());

@@ -20,4 +20,9 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
     boolean existsByRole(Role role);
 
     boolean existsByInstitutionAndRole(Institution institution, Role role);
+    List<UserEntity> findByIsActiveFalse();
+
+    List<UserEntity> findByInstitutionAndIsActiveFalse(Institution institution);
+
+    List<UserEntity> findByDepartmentAndIsActiveFalse(Department department);
 }

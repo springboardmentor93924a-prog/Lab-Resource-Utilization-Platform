@@ -38,7 +38,7 @@ public class UserEntity {
     private Role role;
 
     @Column(nullable = false)
-    public Boolean isActive = true;
+    public Boolean isActive = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institution_id", nullable = true)

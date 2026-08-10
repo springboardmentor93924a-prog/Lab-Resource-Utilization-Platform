@@ -53,6 +53,19 @@ public class UserController {
 
         return ResponseEntity.ok("User deleted successfully.");
     }
+
+    @GetMapping("/pending")
+    public List<UserEntity> getPendingUsers(Authentication auth) {
+
+        return userService.getPendingUsers(auth);
+    }
+
+    @PutMapping("/approve/{email}")
+    public UserEntity approveUser(@PathVariable String email,
+                                  Authentication auth) {
+
+        return userService.approveUser(email, auth);
+    }
    /* @PostMapping("/login")
     public UserEntity loginUser(@RequestBody LoginRequestDTO req) {
         return userService.loginUser(req);

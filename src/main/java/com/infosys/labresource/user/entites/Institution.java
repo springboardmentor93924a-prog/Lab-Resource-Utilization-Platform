@@ -30,7 +30,8 @@ public class Institution {
 
     private String country;
 
-    private BigInteger pincode;
+    @Column(name = "pincode")
+    private String pincode;
 
     private String contactEmail;
 

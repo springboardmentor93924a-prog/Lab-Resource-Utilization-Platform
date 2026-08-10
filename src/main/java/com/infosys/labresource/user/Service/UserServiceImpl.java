@@ -301,4 +301,93 @@ public class UserServiceImpl implements UserService{
         }
     }
 
+    @Override
+    public List<UserEntity> getPendingUsers(Authentication auth) {
+        UserEntity loggedUser = userRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (loggedUser.getRole() == Role.SYSTEM_ADMIN) {
+
+            return userRepo.findByIsActiveFalse()
+                    .stream()
+                    .filter(user -> user.getRole() == Role.INSTITUTION_ADMIN)
+                    .toList();
+        }
+
+        if (loggedUser.getRole() == Role.INSTITUTION_ADMIN) {
+
+            return userRepo.findByInstitutionAndIsActiveFalse(loggedUser.getInstitution())
+                    .stream()
+                    .filter(user -> user.getRole() == Role.DEPARTMENT_HEAD)
+                    .toList();
+        }
+
+        if (loggedUser.getRole() == Role.DEPARTMENT_HEAD) {
+
+            return userRepo.findByDepartmentAndIsActiveFalse(loggedUser.getDepartment())
+                    .stream()
+                    .filter(user ->
+                            user.getRole() == Role.LAB_MANAGER
+                                    || user.getRole() == Role.LAB_TECHNICIAN)
+                    .toList();
+        }
+
+        throw new RuntimeException("Access Denied.");
+    }
+
+    @Override
+    public UserEntity approveUser(String email, Authentication auth) {
+        UserEntity loggedUser = userRepo.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        UserEntity pendingUser = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (pendingUser.getIsActive()) {
+            throw new RuntimeException("User is already active.");
+        }
+
+        if (loggedUser.getRole() == Role.SYSTEM_ADMIN) {
+
+            if (pendingUser.getRole() != Role.INSTITUTION_ADMIN) {
+                throw new RuntimeException("Access Denied.");
+            }
+
+            pendingUser.setIsActive(true);
+            return userRepo.save(pendingUser);
+        }
+
+        if (loggedUser.getRole() == Role.INSTITUTION_ADMIN) {
+
+            if (!loggedUser.getInstitution().equals(pendingUser.getInstitution())) {
+                throw new RuntimeException("Access Denied.");
+            }
+
+            if (pendingUser.getRole() != Role.DEPARTMENT_HEAD) {
+                throw new RuntimeException("Access Denied.");
+            }
+
+            pendingUser.setIsActive(true);
+            return userRepo.save(pendingUser);
+        }
+
+        if (loggedUser.getRole() == Role.DEPARTMENT_HEAD) {
+
+            if (!loggedUser.getDepartment().equals(pendingUser.getDepartment())) {
+                throw new RuntimeException("Access Denied.");
+            }
+
+            if (pendingUser.getRole() != Role.LAB_MANAGER
+                    && pendingUser.getRole() != Role.LAB_TECHNICIAN) {
+
+                throw new RuntimeException("Access Denied.");
+            }
+
+            pendingUser.setIsActive(true);
+            return userRepo.save(pendingUser);
+        }
+
+        throw new RuntimeException("Access Denied.");
+    }
+
 }

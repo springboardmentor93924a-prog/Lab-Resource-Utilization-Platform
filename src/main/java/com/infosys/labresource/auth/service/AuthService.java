@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,18 +19,30 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
-
+    private final PasswordEncoder passwordEncoder;
 
     public JwtResponseDTO login(LoginRequestDTO request) {
+
+
+        UserEntity user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found"));
+
+        System.out.println("=================================");
+        System.out.println("LOGIN USER: " + user.getEmail());
+        System.out.println("ROLE: " + user.getRole());
+        System.out.println("ACTIVE: " + user.getIsActive());
+        System.out.println("PASSWORD MATCH: " +
+                passwordEncoder.matches(
+                        request.getPassword(),
+                        user.getPassword()
+                ));
+        System.out.println("=================================");
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()));
-
-        UserEntity user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found"));
 
         String token = jwtUtil.generateToken(
                 user.getEmail(),
@@ -38,4 +51,6 @@ public class AuthService {
 
         return new JwtResponseDTO(token);
     }
+
+
 }

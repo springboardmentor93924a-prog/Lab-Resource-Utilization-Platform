@@ -21,4 +21,7 @@ public interface UserService {
     UserEntity updateUser(String email, UpdateUserDTO request);
 
     void deleteUser(String email,Authentication auth);
+    List<UserEntity> getPendingUsers(Authentication auth);
+
+    UserEntity approveUser(String email, Authentication auth);
 }
