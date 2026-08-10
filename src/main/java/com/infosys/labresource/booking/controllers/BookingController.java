@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,12 +56,16 @@ public class BookingController {
     @PutMapping("/approve/{bookingId}")
     @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN','DEPARTMENT_HEAD','LAB_MANAGER')")
     public ResponseEntity<BookingResponseDTO> approveBooking(
-            @PathVariable Long bookingId) {
+            @PathVariable Long bookingId,
+            Authentication authentication) {
 
         return ResponseEntity.ok(
-                bookingService.approveBooking(bookingId));
+                bookingService.approveBooking(
+                        bookingId,
+                        authentication.getName()
+                )
+        );
     }
-
     @PutMapping("/reject/{bookingId}")
     @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN','DEPARTMENT_HEAD')")
     public ResponseEntity<BookingResponseDTO> rejectBooking(

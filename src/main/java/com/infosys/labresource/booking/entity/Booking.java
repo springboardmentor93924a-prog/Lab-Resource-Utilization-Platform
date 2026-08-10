@@ -36,5 +36,6 @@ private UserEntity requestedBy;
     private LocalDateTime endTime;
     @ManyToOne
     @JoinColumn(name = "institution_id")
-    private Institution institution;
+    private Institution institution; //Booking.institution to represent the requesting user's institution.
+
 }

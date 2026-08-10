@@ -17,4 +17,9 @@ public class BookingResponseDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BookingStatus status;
+    private Long requestingInstitutionId;
+    private String requestingInstitutionName;
+
+    private Long equipmentInstitutionId;
+    private String equipmentInstitutionName;
 }
