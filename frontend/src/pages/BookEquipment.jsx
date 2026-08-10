@@ -151,6 +151,10 @@ async function handleWaitlist() {
     if (wantsWaitlist) {
       await handleWaitlist();
     }
+  } else if (err.response?.status === 403) {
+    alert(
+      "You don't have access to this equipment since it belongs to another institution. Go to the Sharing page to request access first."
+    );
   } else {
     alert(err.response?.data?.message || "Failed to create booking. Please try again.");
   }

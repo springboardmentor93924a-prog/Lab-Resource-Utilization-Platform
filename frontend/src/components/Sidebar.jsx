@@ -2,6 +2,7 @@ import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
 import { isAdmin } from "../utils/auth";
 
+
 const navItems = [
   { label: "Dashboard", icon: "bi-speedometer2", path: "/dashboard" },
   { label: "Equipment", icon: "bi-box-seam", path: "/equipment" },
@@ -21,6 +22,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   const userIsAdmin = isAdmin();
+  
 
 
   return (

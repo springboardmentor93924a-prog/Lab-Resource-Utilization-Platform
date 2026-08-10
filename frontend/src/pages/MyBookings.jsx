@@ -8,7 +8,8 @@ export default function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  
+    useEffect(() => {
     fetchBookings();
   }, []);
 

@@ -17,6 +17,7 @@ export default function MyWaitlist() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  
   useEffect(() => {
     loadEntries();
   }, []);
