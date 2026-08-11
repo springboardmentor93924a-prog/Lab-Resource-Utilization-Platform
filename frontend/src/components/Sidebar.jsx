@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
 function Sidebar() {
@@ -12,145 +12,176 @@ function Sidebar() {
     navigate("/");
   };
 
-  const isActive = (path) => {
-    return location.pathname === path
-      ? "sidebar-link active"
-      : "sidebar-link";
-  };
+  const isActive = (path) => location.pathname === path;
+
+  const canAccessEquipment = [
+    "RESEARCHER",
+    "STUDENT",
+    "LAB_TECHNICIAN",
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessBookings = [
+    "RESEARCHER",
+    "STUDENT",
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessMaintenance = [
+    "LAB_TECHNICIAN",
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessUtilization = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessReports = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessUsers = [
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
 
   return (
     <aside className="sidebar">
 
-      {/* Navigation */}
-      <nav className="sidebar-nav">
+      <div className="sidebar-header">
+        <div className="sidebar-logo">🔬</div>
 
-        <div className="sidebar-section-title">
-          MAIN MENU
+        <div>
+          <h2>Lab Platform</h2>
+          <span>
+            {role
+              ? role.replaceAll("_", " ")
+              : "User"}
+          </span>
         </div>
+      </div>
 
+      <nav className="sidebar-menu">
 
-        {/* Dashboard */}
         <Link
           to="/dashboard"
-          className={isActive("/dashboard")}
+          className={`sidebar-link ${
+            isActive("/dashboard") ? "active" : ""
+          }`}
         >
-          <span className="sidebar-icon">
-            🏠
-          </span>
-
-          <span>
-            Dashboard
-          </span>
+          <span>🏠</span>
+          Dashboard
         </Link>
 
-
-        {/* Equipment */}
-        {[
-          "ADMIN",
-          "FACULTY",
-          "STUDENT",
-          "LAB_TECHNICIAN",
-        ].includes(role) && (
-
+        {canAccessEquipment && (
           <Link
             to="/equipment"
-            className={isActive("/equipment")}
+            className={`sidebar-link ${
+              isActive("/equipment") ? "active" : ""
+            }`}
           >
-            <span className="sidebar-icon">
-              ⚙️
-            </span>
-
-            <span>
-              Equipment
-            </span>
+            <span>⚙️</span>
+            Equipment
           </Link>
-
         )}
 
-
-        {/* Reservations */}
-        {[
-          "ADMIN",
-          "FACULTY",
-          "STUDENT",
-        ].includes(role) && (
-
+        {canAccessBookings && (
           <Link
             to="/reservations"
-            className={isActive("/reservations")}
+            className={`sidebar-link ${
+              isActive("/reservations") ? "active" : ""
+            }`}
           >
-            <span className="sidebar-icon">
-              📅
-            </span>
-
-            <span>
-              Reservations
-            </span>
+            <span>📅</span>
+            Bookings
           </Link>
-
         )}
 
+        {canAccessUtilization && (
+          <Link
+            to="/utilization"
+            className={`sidebar-link ${
+              isActive("/utilization") ? "active" : ""
+            }`}
+          >
+            <span>📈</span>
+            Utilization
+          </Link>
+        )}
 
-        {/* Reports */}
-        {[
-          "ADMIN",
-          "FACULTY",
-          "LAB_TECHNICIAN",
-        ].includes(role) && (
+        {canAccessUtilization && (
+          <Link
+            to="/heatmap"
+            className={`sidebar-link ${
+              isActive("/heatmap") ? "active" : ""
+            }`}
+          >
+            <span>🔥</span>
+            Heatmap
+          </Link>
+        )}
 
+        {canAccessMaintenance && (
+          <Link
+            to="/maintenance"
+            className={`sidebar-link ${
+              isActive("/maintenance") ? "active" : ""
+            }`}
+          >
+            <span>🔧</span>
+            Maintenance
+          </Link>
+        )}
+
+        {canAccessReports && (
           <Link
             to="/reports"
-            className={isActive("/reports")}
+            className={`sidebar-link ${
+              isActive("/reports") ? "active" : ""
+            }`}
           >
-            <span className="sidebar-icon">
-              📊
-            </span>
-
-            <span>
-              Reports
-            </span>
+            <span>📊</span>
+            Reports
           </Link>
-
         )}
 
-
-        {/* User Management */}
-        {role === "ADMIN" && (
-
+        {canAccessUsers && (
           <Link
             to="/users"
-            className={isActive("/users")}
+            className={`sidebar-link ${
+              isActive("/users") ? "active" : ""
+            }`}
           >
-            <span className="sidebar-icon">
-              👥
-            </span>
-
-            <span>
-              User Management
-            </span>
+            <span>👥</span>
+            Users
           </Link>
-
         )}
 
       </nav>
 
-
-      {/* Bottom section */}
       <div className="sidebar-bottom">
-
-        <div className="sidebar-divider"></div>
 
         <button
           className="logout-button"
           onClick={handleLogout}
         >
-          <span className="sidebar-icon">
-            ↪
-          </span>
-
-          <span>
-            Logout
-          </span>
+          <span>🚪</span>
+          Logout
         </button>
 
       </div>

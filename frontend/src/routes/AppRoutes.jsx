@@ -15,22 +15,22 @@ function AppRoutes() {
   return (
     <Routes>
 
-      {/* Login - Public */}
       <Route path="/" element={<Login />} />
-
-      {/* Register - Public */}
       <Route path="/register" element={<Register />} />
 
-      {/* Dashboard - All logged-in users */}
+      {/* Dashboard - all roles */}
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute
             allowedRoles={[
-              "ADMIN",
-              "FACULTY",
+              "RESEARCHER",
               "STUDENT",
-              "LAB_TECHNICIAN"
+              "LAB_TECHNICIAN",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
             ]}
           >
             <MainLayout>
@@ -46,10 +46,13 @@ function AppRoutes() {
         element={
           <ProtectedRoute
             allowedRoles={[
-              "ADMIN",
-              "FACULTY",
+              "RESEARCHER",
               "STUDENT",
-              "LAB_TECHNICIAN"
+              "LAB_TECHNICIAN",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
             ]}
           >
             <MainLayout>
@@ -59,19 +62,60 @@ function AppRoutes() {
         }
       />
 
-      {/* Reservations */}
+      {/* Bookings */}
       <Route
         path="/reservations"
         element={
           <ProtectedRoute
             allowedRoles={[
-              "ADMIN",
-              "FACULTY",
-              "STUDENT"
+              "RESEARCHER",
+              "STUDENT",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
             ]}
           >
             <MainLayout>
               <Reservations />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Utilization - Task 2 */}
+      <Route
+        path="/utilization"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Dashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Heatmap - Task 2 */}
+      <Route
+        path="/heatmap"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Dashboard />
             </MainLayout>
           </ProtectedRoute>
         }
@@ -83,9 +127,10 @@ function AppRoutes() {
         element={
           <ProtectedRoute
             allowedRoles={[
-              "ADMIN",
-              "FACULTY",
-              "LAB_TECHNICIAN"
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
             ]}
           >
             <MainLayout>
@@ -95,12 +140,15 @@ function AppRoutes() {
         }
       />
 
-      {/* User Management */}
+      {/* Users */}
       <Route
         path="/users"
         element={
           <ProtectedRoute
-            allowedRoles={["ADMIN"]}
+            allowedRoles={[
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
           >
             <MainLayout>
               <User />

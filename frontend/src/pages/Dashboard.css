@@ -1,126 +1,476 @@
- .dashboard {
-  padding: 30px;
-  background: #f5f7fb;
+.dashboard {
+  width: 100%;
   min-height: 100vh;
+  padding: 28px;
+  background: #f5f7fb;
   font-family: "Segoe UI", Arial, sans-serif;
+  box-sizing: border-box;
 }
 
+/* =========================
+   HEADER
+   ========================= */
 
-/* Dashboard Heading */
-.dashboard h2 {
-  color: #1f2937;
-  margin-bottom: 25px;
+.dashboard-header {
+  margin-bottom: 28px;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  color: #172033;
   font-size: 28px;
   font-weight: 700;
 }
 
+.dashboard-header p {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
 
-/* Cards Section */
+
+/* =========================
+   SUMMARY CARDS
+   ========================= */
+
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 25px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(210px, 1fr)
+  );
+
+  gap: 18px;
+  margin-bottom: 24px;
 }
 
-
-/* Individual Cards */
 .card {
-  background: white;
-  padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+  background: #ffffff;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  padding: 22px;
 
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.05);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
-
-.card h3 {
-  color: #6b7280;
-  font-size: 16px;
-  margin-bottom: 15px;
+.card-label {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 
-
-.card p {
-  font-size: 32px;
+.card-value {
+  display: block;
+  color: #172033;
+  font-size: 30px;
   font-weight: 700;
-  color: #111827;
-  margin: 0;
 }
 
 
-/* Heatmap Section */
-.dashboard table {
-  background: white;
-  border-collapse: collapse;
-  border-radius: 12px;
+/* =========================
+   SECTIONS
+   ========================= */
+
+.dashboard-section {
+  background: #ffffff;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+
+  margin-bottom: 24px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.section-header {
+  padding: 20px 22px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 15px;
+
+  border-bottom: 1px solid #edf1f7;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 19px;
+}
+
+.section-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
 }
 
 
-.dashboard th {
-  background: #1f2937;
-  color: white;
-  padding: 15px;
-  text-align: center;
-  font-size: 15px;
+/* =========================
+   TABLE
+   ========================= */
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.util-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.util-table th {
+  padding: 14px 16px;
+  background: #f8fafc;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.util-table td {
+  padding: 15px 16px;
+
+  color: #475569;
+  font-size: 13px;
+
+  border-bottom: 1px solid #eef2f7;
+}
+
+.util-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.equipment-name {
+  color: #172033 !important;
+  font-weight: 600;
+}
+
+.empty-state {
+  text-align: center !important;
+  padding: 35px !important;
+  color: #94a3b8 !important;
 }
 
 
-.dashboard td {
-  padding: 14px;
-  text-align: center;
-  border-bottom: 1px solid #e5e7eb;
-  color: #374151;
+/* =========================
+   UTILIZATION BAR
+   ========================= */
+
+.utilization-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.utilization-bar {
+  width: 90px;
+  height: 7px;
+
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.utilization-fill {
+  height: 100%;
+  border-radius: 10px;
 }
 
 
-.dashboard tr:hover {
-  background: #f9fafb;
-}
+/* =========================
+   CATEGORY
+   ========================= */
 
+.category-badge {
+  display: inline-flex;
 
-/* Utilization Percentage Cell */
-.dashboard td:nth-child(4) {
-  border-radius: 8px;
+  padding: 5px 9px;
+  border-radius: 20px;
+
+  font-size: 11px;
   font-weight: 700;
 }
 
+.category-badge.high {
+  background: #dcfce7;
+  color: #15803d;
+}
 
-/* Chart Container */
-.dashboard .chart-container {
-  background: white;
-  padding: 25px;
-  margin-top: 40px;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+.category-badge.medium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.category-badge.low {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 
-/* Responsive */
-@media(max-width:768px){
+/* =========================
+   HEATMAP
+   ========================= */
+
+.heatmap-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.heatmap-grid {
+  min-width: 720px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(180px, 1.5fr)
+    repeat(5, 1fr);
+
+  gap: 6px;
+}
+
+.heatmap-header {
+  padding: 11px 8px;
+
+  text-align: center;
+
+  background: #f1f5f9;
+  color: #475569;
+
+  border-radius: 7px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.equipment-column {
+  text-align: left;
+  padding-left: 14px;
+}
+
+.heatmap-row {
+  display: contents;
+}
+
+.heat-cell {
+  min-height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  transition: transform 0.2s ease;
+}
+
+.heat-cell:hover {
+  transform: scale(1.03);
+}
+
+
+/* Heatmap levels */
+
+.heat-high {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.heat-medium {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.heat-low {
+  background: #fbbf24;
+  color: #78350f;
+}
+
+.heat-idle {
+  background: #e5e7eb;
+  color: #64748b;
+}
+
+
+/* =========================
+   HEATMAP LEGEND
+   ========================= */
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.heatmap-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.legend-box {
+  width: 11px;
+  height: 11px;
+
+  display: inline-block;
+
+  border-radius: 3px;
+}
+
+
+/* =========================
+   IDLE EQUIPMENT
+   ========================= */
+
+.idle-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(250px, 1fr));
+
+  gap: 14px;
+
+  padding: 20px;
+}
+
+.idle-card {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 16px;
+
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+
+  background: #fffafa;
+}
+
+.idle-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fee2e2;
+  border-radius: 10px;
+
+  font-size: 20px;
+}
+
+.idle-card h3 {
+  margin: 0 0 5px;
+
+  color: #172033;
+  font-size: 14px;
+}
+
+.idle-card p {
+  margin: 0 0 4px;
+
+  color: #64748b;
+  font-size: 12px;
+}
+
+.idle-card span {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.empty-card {
+  padding: 30px;
+
+  text-align: center;
+
+  color: #64748b;
+  font-size: 13px;
+}
+
+
+/* =========================
+   CHART
+   ========================= */
+
+.chart-container {
+  width: 100%;
+  padding: 20px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
 
   .dashboard {
-    padding: 15px;
+    padding: 20px;
   }
 
-  .dashboard h2 {
-    font-size: 22px;
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .dashboard {
+    padding: 14px;
+  }
+
+  .dashboard-header h2 {
+    font-size: 23px;
   }
 
   .cards {
     grid-template-columns: 1fr;
   }
 
-  .dashboard table {
-    font-size: 13px;
+  .dashboard-section {
+    border-radius: 10px;
+  }
+
+  .heatmap-legend {
+    gap: 8px;
   }
 
 }

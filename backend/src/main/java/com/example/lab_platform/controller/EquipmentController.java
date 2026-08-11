@@ -5,6 +5,7 @@ import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.EquipmentService;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,25 +22,49 @@ public class EquipmentController {
             EquipmentRepository equipmentRepository,
             EquipmentService equipmentService) {
 
-        this.equipmentRepository =
-                equipmentRepository;
-
-        this.equipmentService =
-                equipmentService;
+        this.equipmentRepository = equipmentRepository;
+        this.equipmentService = equipmentService;
     }
 
+    // =========================================================
+    // GET ALL EQUIPMENT
+    // All authenticated Milestone 2 roles can view equipment
+    // =========================================================
+
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+        """)
     @GetMapping
-    public ResponseEntity<List<Equipment>>
-    getAllEquipment() {
+    public ResponseEntity<List<Equipment>> getAllEquipment() {
 
         return ResponseEntity.ok(
                 equipmentService.getAllEquipment()
         );
     }
 
+    // =========================================================
+    // GET EQUIPMENT BY ID
+    // =========================================================
+
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+        """)
     @GetMapping("/{id}")
-    public ResponseEntity<Equipment>
-    getEquipmentById(
+    public ResponseEntity<Equipment> getEquipmentById(
             @PathVariable Integer id) {
 
         try {
@@ -54,9 +79,21 @@ public class EquipmentController {
         }
     }
 
+    // =========================================================
+    // CREATE EQUIPMENT
+    // Technician / Manager / Institution Admin / System Admin
+    // =========================================================
+
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+        """)
     @PostMapping
-    public ResponseEntity<Equipment>
-    createEquipment(
+    public ResponseEntity<Equipment> createEquipment(
             @RequestBody Equipment equipment) {
 
         if (equipment.getStatus() == null
@@ -73,9 +110,21 @@ public class EquipmentController {
         );
     }
 
+    // =========================================================
+    // UPDATE EQUIPMENT
+    // Technician / Manager / Institution Admin / System Admin
+    // =========================================================
+
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+        """)
     @PutMapping("/{id}")
-    public ResponseEntity<Equipment>
-    updateEquipment(
+    public ResponseEntity<Equipment> updateEquipment(
             @PathVariable Integer id,
             @RequestBody Equipment updatedEquipment) {
 
@@ -114,9 +163,20 @@ public class EquipmentController {
                 );
     }
 
+    // =========================================================
+    // DELETE EQUIPMENT
+    // Manager / Institution Admin / System Admin
+    // =========================================================
+
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_MANAGER',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+        """)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void>
-    deleteEquipment(
+    public ResponseEntity<Void> deleteEquipment(
             @PathVariable Integer id) {
 
         if (equipmentRepository.existsById(id)) {
