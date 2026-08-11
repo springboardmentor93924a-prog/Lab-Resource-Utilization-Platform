@@ -1,8 +1,10 @@
- import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import "./Sidebar.css";
 
 function Sidebar() {
-
   const navigate = useNavigate();
+  const location = useLocation();
+
   const role = localStorage.getItem("role");
 
   const handleLogout = () => {
@@ -10,44 +12,150 @@ function Sidebar() {
     navigate("/");
   };
 
+  const isActive = (path) => {
+    return location.pathname === path
+      ? "sidebar-link active"
+      : "sidebar-link";
+  };
+
   return (
-    <div style={{
-      width: "220px",
-      background: "#f8fafc",
-      minHeight: "100vh",
-      padding: "20px"
-    }}>
+    <aside className="sidebar">
 
-      <h3>Menu</h3>
+      {/* Navigation */}
+      <nav className="sidebar-nav">
 
-      {/* Dashboard - sabko */}
-      <p><Link to="/dashboard">Dashboard</Link></p>
+        <div className="sidebar-section-title">
+          MAIN MENU
+        </div>
 
-      {/* Equipment - sab roles */}
-      {["ADMIN","FACULTY","STUDENT","LAB_TECHNICIAN"].includes(role) && (
-        <p><Link to="/equipment">Equipment</Link></p>
-      )}
 
-      {/* Reservations - no technician */}
-      {["ADMIN","FACULTY","STUDENT"].includes(role) && (
-        <p><Link to="/reservations">Reservations</Link></p>
-      )}
+        {/* Dashboard */}
+        <Link
+          to="/dashboard"
+          className={isActive("/dashboard")}
+        >
+          <span className="sidebar-icon">
+            🏠
+          </span>
 
-      {/* Reports - no student */}
-      {["ADMIN","FACULTY","LAB_TECHNICIAN"].includes(role) && (
-        <p><Link to="/reports">Reports</Link></p>
-      )}
+          <span>
+            Dashboard
+          </span>
+        </Link>
 
-      {/* User Management - only admin */}
-      {role === "ADMIN" && (
-        <p><Link to="/users">User Management</Link></p>
-      )}
 
-      <hr />
+        {/* Equipment */}
+        {[
+          "ADMIN",
+          "FACULTY",
+          "STUDENT",
+          "LAB_TECHNICIAN",
+        ].includes(role) && (
 
-      <button onClick={handleLogout}>Logout</button>
+          <Link
+            to="/equipment"
+            className={isActive("/equipment")}
+          >
+            <span className="sidebar-icon">
+              ⚙️
+            </span>
 
-    </div>
+            <span>
+              Equipment
+            </span>
+          </Link>
+
+        )}
+
+
+        {/* Reservations */}
+        {[
+          "ADMIN",
+          "FACULTY",
+          "STUDENT",
+        ].includes(role) && (
+
+          <Link
+            to="/reservations"
+            className={isActive("/reservations")}
+          >
+            <span className="sidebar-icon">
+              📅
+            </span>
+
+            <span>
+              Reservations
+            </span>
+          </Link>
+
+        )}
+
+
+        {/* Reports */}
+        {[
+          "ADMIN",
+          "FACULTY",
+          "LAB_TECHNICIAN",
+        ].includes(role) && (
+
+          <Link
+            to="/reports"
+            className={isActive("/reports")}
+          >
+            <span className="sidebar-icon">
+              📊
+            </span>
+
+            <span>
+              Reports
+            </span>
+          </Link>
+
+        )}
+
+
+        {/* User Management */}
+        {role === "ADMIN" && (
+
+          <Link
+            to="/users"
+            className={isActive("/users")}
+          >
+            <span className="sidebar-icon">
+              👥
+            </span>
+
+            <span>
+              User Management
+            </span>
+          </Link>
+
+        )}
+
+      </nav>
+
+
+      {/* Bottom section */}
+      <div className="sidebar-bottom">
+
+        <div className="sidebar-divider"></div>
+
+        <button
+          className="logout-button"
+          onClick={handleLogout}
+        >
+          <span className="sidebar-icon">
+            ↪
+          </span>
+
+          <span>
+            Logout
+          </span>
+        </button>
+
+      </div>
+
+    </aside>
   );
 }
 

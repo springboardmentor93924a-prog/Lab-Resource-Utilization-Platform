@@ -3,47 +3,39 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
-
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-
   const handleLogin = async (e) => {
-
     e.preventDefault();
 
     setError("");
     setLoading(true);
 
     try {
-
       const response = await fetch(
         "http://localhost:8080/api/auth/login",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
-            email: email,
-            password: password,
+            email,
+            password,
           }),
         }
       );
 
-
       const data = await response.json();
 
-
       if (!response.ok) {
-
         throw new Error(
           typeof data === "string"
             ? data
@@ -51,146 +43,234 @@ function Login() {
         );
       }
 
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("fullName", data.fullName);
+      localStorage.setItem("email", data.email);
+      localStorage.setItem("role", data.role);
 
-      // Save authentication information
-      localStorage.setItem(
-        "token",
-        data.token
-      );
-
-      localStorage.setItem(
-        "userId",
-        data.userId
-      );
-
-      localStorage.setItem(
-        "fullName",
-        data.fullName
-      );
-
-      localStorage.setItem(
-        "email",
-        data.email
-      );
-
-      localStorage.setItem(
-        "role",
-        data.role
-      );
-
-
-      // Go to dashboard
       navigate("/dashboard");
-
-
     } catch (error) {
-
-      setError(
-        error.message || "Login failed"
-      );
-
+      setError(error.message || "Login failed");
     } finally {
-
       setLoading(false);
-
     }
   };
 
-
   return (
+    <main className="login-page">
 
-    <div className="login-container">
+      {/* LEFT SIDE */}
+      <section className="login-brand">
 
-      <div className="login-card">
+        <div className="brand-content">
 
-        <h1 className="title">
-          Lab Resource Utilization Platform
-        </h1>
+          <div className="brand-logo">
+            <span>⌘</span>
+          </div>
 
-        <p className="subtitle">
-          Sign in to continue
-        </p>
+          <h1>
+            Lab Resource
+            <br />
+            Utilization
+            <br />
+            Platform
+          </h1>
 
-
-        {error && (
-          <p className="login-error">
-            {error}
+          <p>
+            Smart management of laboratory
+            equipment, bookings and resources.
           </p>
-        )}
 
+          <div className="brand-features">
 
-        <form onSubmit={handleLogin}>
+            <div className="brand-feature">
+              <span>✓</span>
+              <p>Real-time equipment tracking</p>
+            </div>
 
-          <div className="form-group">
+            <div className="brand-feature">
+              <span>✓</span>
+              <p>Easy resource booking</p>
+            </div>
 
-            <label>Email</label>
-
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              required
-            />
-
-          </div>
-
-
-          <div className="form-group">
-
-            <label>Password</label>
-
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              required
-            />
+            <div className="brand-feature">
+              <span>✓</span>
+              <p>Utilization insights</p>
+            </div>
 
           </div>
 
+        </div>
 
-          <div className="options">
+        <div className="decor-circle circle-one"></div>
+        <div className="decor-circle circle-two"></div>
 
-            <label className="remember">
+      </section>
 
-              <input
-                type="checkbox"
-              />
 
-              Remember Me
+      {/* RIGHT SIDE */}
+      <section className="login-section">
 
-            </label>
+        <div className="login-content">
 
-            <Link to="/register">
-              Register
-            </Link>
-
+          {/* Mobile logo */}
+          <div className="mobile-logo">
+            <div className="brand-logo">
+              <span>⌘</span>
+            </div>
           </div>
 
 
-          <button
-            className="login-btn"
-            type="submit"
-            disabled={loading}
+          <header className="login-header">
+
+            <h2>Welcome back</h2>
+
+            <p>
+              Sign in to access your laboratory dashboard.
+            </p>
+
+          </header>
+
+
+          {error && (
+            <div className="login-error">
+              <span>!</span>
+              <p>{error}</p>
+            </div>
+          )}
+
+
+          <form
+            className="login-form"
+            onSubmit={handleLogin}
           >
 
-            {loading
-              ? "LOGGING IN..."
-              : "LOGIN"}
+            {/* EMAIL */}
+            <div className="form-group">
 
-          </button>
+              <label htmlFor="email">
+                Email address
+              </label>
 
-        </form>
+              <div className="input-wrapper">
 
-      </div>
+                <span className="input-icon">
+                  @
+                </span>
 
-    </div>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  autoComplete="email"
+                  required
+                />
+
+              </div>
+
+            </div>
+
+
+            {/* PASSWORD */}
+            <div className="form-group">
+
+              <label htmlFor="password">
+                Password
+              </label>
+
+              <div className="input-wrapper">
+
+                <span className="input-icon password-icon">
+                  •
+                </span>
+
+                <input
+                  id="password"
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  autoComplete="current-password"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() =>
+                    setShowPassword(!showPassword)
+                  }
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* OPTIONS */}
+            <div className="login-options">
+
+              <label className="remember-me">
+
+                <input type="checkbox" />
+
+                <span>Remember me</span>
+
+              </label>
+
+              <Link to="/register">
+                Create account
+              </Link>
+
+            </div>
+
+
+            {/* BUTTON */}
+            <button
+              className="login-btn"
+              type="submit"
+              disabled={loading}
+            >
+
+              {loading ? (
+                <>
+                  <span className="spinner"></span>
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <span className="arrow">→</span>
+                </>
+              )}
+
+            </button>
+
+          </form>
+
+
+          <footer className="login-footer">
+            Laboratory Resource Management System
+          </footer>
+
+        </div>
+
+      </section>
+
+    </main>
   );
 }
 

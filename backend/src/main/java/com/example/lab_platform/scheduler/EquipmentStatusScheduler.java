@@ -20,7 +20,6 @@ public class EquipmentStatusScheduler {
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceRepository maintenanceRepository;
 
-
     public EquipmentStatusScheduler(
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
@@ -31,84 +30,146 @@ public class EquipmentStatusScheduler {
         this.maintenanceRepository = maintenanceRepository;
     }
 
-
-    @Scheduled(fixedRate = 60000) // Runs every 60 seconds
+    /*
+     * Run immediately after application startup,
+     * then every 60 seconds.
+     */
+    @Scheduled(
+            initialDelay = 1000,
+            fixedRate = 60000
+    )
     public void updateEquipmentStatus() {
 
         LocalDateTime now = LocalDateTime.now();
 
+        List<Equipment> equipmentList =
+                equipmentRepository.findAll();
 
-        // 1. Maintenance has highest priority
-        List<Maintenance> maintenanceList =
-                maintenanceRepository.findByMaintenanceStatus("Active");
+        for (Equipment equipment : equipmentList) {
 
+            String newStatus =
+                    calculateStatus(equipment, now);
 
-        for (Maintenance maintenance : maintenanceList) {
+            if (!newStatus.equalsIgnoreCase(
+                    equipment.getStatus())) {
 
-            Equipment equipment = maintenance.getEquipment();
-
-            if (equipment != null) {
-
-                equipment.setStatus("Under Maintenance");
+                equipment.setStatus(newStatus);
 
                 equipmentRepository.save(equipment);
             }
         }
+    }
 
+    private String calculateStatus(
+            Equipment equipment,
+            LocalDateTime now) {
 
+        Integer equipmentId =
+                equipment.getEquipmentId();
 
-        // 2. Update status based on confirmed bookings
+        /*
+         * ------------------------------------------------
+         * 1. MAINTENANCE HAS HIGHEST PRIORITY
+         * ------------------------------------------------
+         */
+        List<Maintenance> maintenanceList =
+                maintenanceRepository
+                        .findByEquipment_EquipmentId(
+                                equipmentId
+                        );
+
+        for (Maintenance maintenance : maintenanceList) {
+
+            String maintenanceStatus =
+                    maintenance.getMaintenanceStatus();
+
+            if (maintenanceStatus == null) {
+                continue;
+            }
+
+            /*
+             * Accept both statuses currently used
+             * in the project/database.
+             */
+            if (maintenanceStatus.equalsIgnoreCase("Active")
+                    || maintenanceStatus.equalsIgnoreCase("In Progress")) {
+
+                return "Under Maintenance";
+            }
+        }
+
+        /*
+         * ------------------------------------------------
+         * 2. CHECK CONFIRMED BOOKINGS
+         * ------------------------------------------------
+         */
         List<Booking> bookings =
-                bookingRepository.findByBookingStatus("Confirmed");
+                bookingRepository
+                        .findByEquipment_EquipmentId(
+                                equipmentId
+                        );
 
+        boolean futureBooking = false;
 
         for (Booking booking : bookings) {
 
-
-            Equipment equipment = booking.getEquipment();
-
-
-            if (equipment == null) {
+            if (booking.getStartTime() == null
+                    || booking.getEndTime() == null) {
                 continue;
             }
 
+            String bookingStatus =
+                    booking.getBookingStatus();
 
-            // Do not overwrite maintenance status
-            if ("Under Maintenance".equalsIgnoreCase(
-                    equipment.getStatus())) {
-
+            if (bookingStatus == null) {
                 continue;
             }
 
-
-
-            // Before booking start time
-            if (now.isBefore(booking.getStartTime())) {
-
-                equipment.setStatus("Booked");
-
+            /*
+             * Only confirmed bookings affect
+             * equipment availability.
+             */
+            if (!bookingStatus.equalsIgnoreCase("Confirmed")) {
+                continue;
             }
 
-            // Booking currently running
-            else if ((now.isEqual(booking.getStartTime())
-                    || now.isAfter(booking.getStartTime()))
-                    && now.isBefore(booking.getEndTime())) {
+            LocalDateTime start =
+                    booking.getStartTime();
 
+            LocalDateTime end =
+                    booking.getEndTime();
 
-                equipment.setStatus("In Use");
+            /*
+             * ------------------------------------------------
+             * CURRENT BOOKING → IN USE
+             * ------------------------------------------------
+             */
+            if (!now.isBefore(start)
+                    && now.isBefore(end)) {
 
+                return "In Use";
             }
 
-            // Booking completed
-            else if (now.isAfter(booking.getEndTime())
-                    || now.isEqual(booking.getEndTime())) {
+            /*
+             * ------------------------------------------------
+             * FUTURE BOOKING → BOOKED
+             * ------------------------------------------------
+             */
+            if (now.isBefore(start)) {
 
-
-                equipment.setStatus("Available");
+                futureBooking = true;
             }
-
-
-            equipmentRepository.save(equipment);
         }
+
+        if (futureBooking) {
+            return "Booked";
+        }
+
+        /*
+         * ------------------------------------------------
+         * 3. NO MAINTENANCE / NO ACTIVE BOOKING
+         * ------------------------------------------------
+         */
+        return "Available";
     }
 }

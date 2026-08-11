@@ -1,65 +1,60 @@
- import { Link } from "react-router-dom";
+import "./Navbar.css";
 
 function Navbar() {
+  const fullName =
+    localStorage.getItem("fullName") || "User";
 
-  const role = localStorage.getItem("role");
+  const role =
+    localStorage.getItem("role") || "USER";
 
   return (
-    <nav style={navContainerStyle}>
+    <header className="top-navbar">
 
-      <div style={logoStyle}>
-        🔬 Lab Platform
-      </div>
+      {/* Brand */}
+      <div className="navbar-brand">
 
-      <div style={menuItemsStyle}>
+        <div className="navbar-logo">
+          🔬
+        </div>
 
-        <Link to="/dashboard" style={linkStyle}>🏠 Dashboard</Link>
+        <div className="navbar-title">
 
-        {["ADMIN","FACULTY","STUDENT","LAB_TECHNICIAN"].includes(role) && (
-          <Link to="/equipment" style={linkStyle}>⚙️ Equipment</Link>
-        )}
+          <h1>
+            Lab Resource Utilization Platform
+          </h1>
 
-        {["ADMIN","FACULTY","STUDENT"].includes(role) && (
-          <Link to="/reservations" style={linkStyle}>📅 Reservations</Link>
-        )}
+          <span>
+            Laboratory Resource Management System
+          </span>
 
-        {["ADMIN","FACULTY","LAB_TECHNICIAN"].includes(role) && (
-          <Link to="/reports" style={linkStyle}>📊 Reports</Link>
-        )}
-
-        {role === "ADMIN" && (
-          <Link to="/users" style={linkStyle}>👥 Users</Link>
-        )}
+        </div>
 
       </div>
-    </nav>
+
+
+      {/* User information */}
+      <div className="navbar-user">
+
+        <div className="user-info">
+
+          <strong>
+            {fullName}
+          </strong>
+
+          <span>
+            {role.replace("_", " ")}
+          </span>
+
+        </div>
+
+        <div className="user-avatar">
+          {fullName.charAt(0).toUpperCase()}
+        </div>
+
+      </div>
+
+    </header>
   );
 }
-
-/* CSS */
-const navContainerStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "15px 30px",
-  background: "#ffffff",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
-};
-
-const logoStyle = {
-  fontWeight: "700",
-  fontSize: "18px"
-};
-
-const menuItemsStyle = {
-  display: "flex",
-  gap: "20px"
-};
-
-const linkStyle = {
-  textDecoration: "none",
-  color: "#334155",
-  fontWeight: "600"
-};
 
 export default Navbar;

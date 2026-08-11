@@ -1,0 +1,210 @@
+/* =========================================
+   TOP NAVBAR
+========================================= */
+
+.top-navbar {
+  width: 100%;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 clamp(18px, 3vw, 40px);
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  position: sticky;
+  top: 0;
+
+  z-index: 100;
+}
+
+
+/* =========================================
+   BRAND
+========================================= */
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  min-width: 0;
+}
+
+
+.navbar-logo {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #eef2ff;
+
+  font-size: 20px;
+}
+
+
+.navbar-title {
+  min-width: 0;
+}
+
+
+.navbar-title h1 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: clamp(15px, 1.4vw, 19px);
+
+  line-height: 1.2;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+.navbar-title span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   USER
+========================================= */
+
+.navbar-user {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-left: 20px;
+}
+
+
+.user-info {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+
+.user-info strong {
+  color: #334155;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+.user-info span {
+  color: #94a3b8;
+
+  font-size: 10px;
+
+  text-transform: capitalize;
+}
+
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #4f46e5;
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 700;
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 800px) {
+
+  .navbar-title span {
+    display: none;
+  }
+
+  .navbar-user .user-info {
+    display: none;
+  }
+
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 500px) {
+
+  .top-navbar {
+    height: 64px;
+
+    padding:
+      0 16px;
+  }
+
+
+  .navbar-logo {
+    width: 36px;
+    height: 36px;
+
+    font-size: 18px;
+  }
+
+
+  .navbar-title h1 {
+    font-size: 14px;
+  }
+
+
+  .user-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+}
