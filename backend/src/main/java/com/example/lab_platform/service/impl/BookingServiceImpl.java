@@ -1,4 +1,4 @@
- package com.example.lab_platform.service.impl;
+package com.example.lab_platform.service.impl;
 
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
@@ -36,15 +36,42 @@ public class BookingServiceImpl implements BookingService {
         return user.getRole().getRoleName();
     }
 
+    /*
+     * Roles that act as managers/admins for booking purposes:
+     * can update, delete, or act on ANY booking, not just their own.
+     */
+    private boolean isManagerOrAbove(String role) {
+        return role.equalsIgnoreCase("LAB_MANAGER")
+                || role.equalsIgnoreCase("DEPARTMENT_HEAD")
+                || role.equalsIgnoreCase("INSTITUTION_ADMIN")
+                || role.equalsIgnoreCase("SYSTEM_ADMIN");
+    }
+
+    /*
+     * Roles allowed to approve / reject / complete bookings.
+     * Matches BookingController's @PreAuthorize on those endpoints.
+     */
+    private boolean canProcessBookings(String role) {
+        return role.equalsIgnoreCase("LAB_TECHNICIAN")
+                || isManagerOrAbove(role);
+    }
+
     @Override
     public Booking createBooking(Booking booking) {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        if (role.equalsIgnoreCase("Student") || role.equalsIgnoreCase("Faculty")) {
+        if (role.equalsIgnoreCase("STUDENT")) {
+            // Students always book for themselves.
             booking.setUser(loggedInUser);
+        } else if (isManagerOrAbove(role)) {
+            // Managers/Admins may book on behalf of a user if provided,
+            // otherwise the booking is attributed to themselves.
+            if (booking.getUser() == null) {
+                booking.setUser(loggedInUser);
+            }
         } else {
-            throw new RuntimeException("Only Student and Faculty can create bookings");
+            throw new RuntimeException("You are not allowed to create bookings");
         }
 
         // --- DOUBLE BOOKING PREVENTION CHECK ---
@@ -53,7 +80,7 @@ public class BookingServiceImpl implements BookingService {
             List<Booking> overlappingBookings = bookingRepository.findOverlappingBookings(
                 eqId, booking.getStartTime(), booking.getEndTime()
             );
-            
+
             if (!overlappingBookings.isEmpty()) {
                 throw new RuntimeException("This equipment is already booked for the selected time slot!");
             }
@@ -82,9 +109,10 @@ public class BookingServiceImpl implements BookingService {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        // Admin can update any booking
-        if (!role.equalsIgnoreCase("Admin")) {
-            if (!role.equalsIgnoreCase("Student") && !role.equalsIgnoreCase("Faculty")) {
+        // Managers/Admins can update any booking
+        if (!isManagerOrAbove(role)) {
+
+            if (!role.equalsIgnoreCase("STUDENT")) {
                 throw new RuntimeException("You are not allowed to update bookings");
             }
 
@@ -103,8 +131,8 @@ public class BookingServiceImpl implements BookingService {
         existingBooking.setEndTime(booking.getEndTime());
         existingBooking.setPurpose(booking.getPurpose());
 
-        // Only Admin can change status
-        if (role.equalsIgnoreCase("Admin") && booking.getBookingStatus() != null) {
+        // Only Managers/Admins can directly change status via update
+        if (isManagerOrAbove(role) && booking.getBookingStatus() != null) {
             existingBooking.setBookingStatus(booking.getBookingStatus());
         }
 
@@ -119,14 +147,14 @@ public class BookingServiceImpl implements BookingService {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        // Admin can delete any booking
-        if (role.equalsIgnoreCase("Admin")) {
+        // Managers/Admins can delete any booking
+        if (isManagerOrAbove(role)) {
             bookingRepository.delete(existingBooking);
             return;
         }
 
-        // Student and Faculty can delete only their own
-        if (!role.equalsIgnoreCase("Student") && !role.equalsIgnoreCase("Faculty")) {
+        // Students can only cancel (delete) their own Pending booking
+        if (!role.equalsIgnoreCase("STUDENT")) {
             throw new RuntimeException("You are not allowed to delete bookings");
         }
 
@@ -149,8 +177,8 @@ public class BookingServiceImpl implements BookingService {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        if (!role.equalsIgnoreCase("Admin") && !role.equalsIgnoreCase("Lab_Technician")) {
-            throw new RuntimeException("Only Admin and Lab Technician can approve");
+        if (!canProcessBookings(role)) {
+            throw new RuntimeException("You are not allowed to approve bookings");
         }
 
         if (!"Pending".equalsIgnoreCase(booking.getBookingStatus())) {
@@ -163,10 +191,8 @@ public class BookingServiceImpl implements BookingService {
 
         if (equipment != null) {
 
-            // Existing logic
             equipment.setStatus("Booked");
 
-            // 🔥 NEW LOGIC ADDED (last_used_date update)
             if (booking.getEndTime() != null) {
                 equipment.setLastUsedDate(
                         booking.getEndTime().toLocalDate()
@@ -187,8 +213,8 @@ public class BookingServiceImpl implements BookingService {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        if (!role.equalsIgnoreCase("Admin") && !role.equalsIgnoreCase("Lab_Technician")) {
-            throw new RuntimeException("Only Admin and Lab Technician can reject");
+        if (!canProcessBookings(role)) {
+            throw new RuntimeException("You are not allowed to reject bookings");
         }
 
         if (!"Pending".equalsIgnoreCase(booking.getBookingStatus())) {
@@ -207,13 +233,12 @@ public class BookingServiceImpl implements BookingService {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        if (!role.equalsIgnoreCase("Admin") && !role.equalsIgnoreCase("Lab_Technician")) {
-            throw new RuntimeException("Only Admin and Lab Technician can mark bookings as completed");
+        if (!canProcessBookings(role)) {
+            throw new RuntimeException("You are not allowed to mark bookings as completed");
         }
 
         booking.setBookingStatus("Completed");
-        
-        // Free up the equipment status once the booking is completed
+
         Equipment equipment = booking.getEquipment();
         if (equipment != null) {
             equipment.setStatus("Available");

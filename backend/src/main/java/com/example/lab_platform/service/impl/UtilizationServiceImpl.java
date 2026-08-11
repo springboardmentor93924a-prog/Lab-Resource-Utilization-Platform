@@ -1,4 +1,4 @@
- package com.example.lab_platform.service.impl;
+package com.example.lab_platform.service.impl;
 
 import com.example.lab_platform.dto.UtilizationDTO;
 import com.example.lab_platform.entity.Booking;
@@ -7,22 +7,28 @@ import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.UtilizationService;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
-public class UtilizationServiceImpl extends UtilizationService {
+public class UtilizationServiceImpl implements UtilizationService {
 
-    @Autowired
-    private EquipmentRepository equipmentRepository;
+    private final EquipmentRepository equipmentRepository;
+    private final BookingRepository bookingRepository;
 
-    @Autowired
-    private BookingRepository bookingRepository;
+    public UtilizationServiceImpl(
+            EquipmentRepository equipmentRepository,
+            BookingRepository bookingRepository) {
+
+        this.equipmentRepository = equipmentRepository;
+        this.bookingRepository = bookingRepository;
+    }
 
     @Override
     public List<UtilizationDTO> getUtilizationData() {
@@ -32,76 +38,330 @@ public class UtilizationServiceImpl extends UtilizationService {
 
         List<UtilizationDTO> result = new ArrayList<>();
 
+        /*
+         * Task 2 analysis period:
+         * Last 7 days including today.
+         */
+        LocalDate today = LocalDate.now();
+        LocalDate periodStart = today.minusDays(6);
+
+        LocalDateTime periodStartDateTime =
+                periodStart.atStartOfDay();
+
+        LocalDateTime periodEndDateTime =
+                today.plusDays(1).atStartOfDay();
+
+        /*
+         * Total available hours during the 7-day period.
+         */
+        double totalPeriodHours = Duration.between(
+                periodStartDateTime,
+                periodEndDateTime
+        ).toMinutes() / 60.0;
+
         for (Equipment equipment : equipments) {
 
-            double usedHours = 0;
+            double usedHours = 0.0;
+
+            double mondayHours = 0.0;
+            double tuesdayHours = 0.0;
+            double wednesdayHours = 0.0;
+            double thursdayHours = 0.0;
+            double fridayHours = 0.0;
+
             LocalDate latestUsedDate = null;
 
             for (Booking booking : bookings) {
 
-                if (booking.getEquipment() == null) continue;
+                if (booking.getEquipment() == null) {
+                    continue;
+                }
 
-                if (!booking.getEquipment().getEquipmentId()
-                        .equals(equipment.getEquipmentId())) continue;
-
-                String status = booking.getBookingStatus();
-                if (status == null) continue;
-
-                status = status.toLowerCase();
-
-                // ✅ valid bookings
-                if (!(status.equals("completed") || status.equals("confirmed"))) continue;
+                if (!booking.getEquipment()
+                        .getEquipmentId()
+                        .equals(equipment.getEquipmentId())) {
+                    continue;
+                }
 
                 if (booking.getStartTime() == null ||
-                    booking.getEndTime() == null) continue;
+                    booking.getEndTime() == null) {
+                    continue;
+                }
 
-                // ✅ used hours
-                long hours = Duration.between(
-                        booking.getStartTime(),
-                        booking.getEndTime()
-                ).toHours();
+                String status = booking.getBookingStatus();
 
-                usedHours += hours;
+                if (status == null) {
+                    continue;
+                }
 
-                // ✅ latest used date
-                LocalDate bookingDate = booking.getStartTime().toLocalDate();
-                if (latestUsedDate == null || bookingDate.isAfter(latestUsedDate)) {
+                status = status.trim().toLowerCase();
+
+                /*
+                 * Only actual/valid bookings contribute to utilization.
+                 */
+                if (!(status.equals("completed")
+                        || status.equals("confirmed")
+                        || status.equals("approved"))) {
+                    continue;
+                }
+
+                LocalDateTime bookingStart = booking.getStartTime();
+                LocalDateTime bookingEnd = booking.getEndTime();
+
+                /*
+                 * Ignore bookings completely outside our
+                 * seven-day analysis period.
+                 */
+                if (!bookingEnd.isAfter(periodStartDateTime)
+                        || !bookingStart.isBefore(periodEndDateTime)) {
+                    continue;
+                }
+
+                /*
+                 * Clip booking to the seven-day analysis period.
+                 */
+                LocalDateTime effectiveStart =
+                        bookingStart.isBefore(periodStartDateTime)
+                                ? periodStartDateTime
+                                : bookingStart;
+
+                LocalDateTime effectiveEnd =
+                        bookingEnd.isAfter(periodEndDateTime)
+                                ? periodEndDateTime
+                                : bookingEnd;
+
+                if (!effectiveEnd.isAfter(effectiveStart)) {
+                    continue;
+                }
+
+                double bookingHours =
+                        Duration.between(
+                                effectiveStart,
+                                effectiveEnd
+                        ).toMinutes() / 60.0;
+
+                usedHours += bookingHours;
+
+                /*
+                 * Latest date used.
+                 */
+                LocalDate bookingDate =
+                        effectiveStart.toLocalDate();
+
+                if (latestUsedDate == null
+                        || bookingDate.isAfter(latestUsedDate)) {
+
                     latestUsedDate = bookingDate;
+                }
+
+                /*
+                 * Daily heatmap data.
+                 *
+                 * Only Monday-Friday are required by
+                 * the existing DTO.
+                 */
+                LocalDate currentDate =
+                        effectiveStart.toLocalDate();
+
+                while (!currentDate.isAfter(
+                        effectiveEnd.toLocalDate())) {
+
+                    LocalDateTime dayStart =
+                            currentDate.atStartOfDay();
+
+                    LocalDateTime dayEnd =
+                            currentDate.plusDays(1)
+                                    .atStartOfDay();
+
+                    LocalDateTime overlapStart =
+                            effectiveStart.isAfter(dayStart)
+                                    ? effectiveStart
+                                    : dayStart;
+
+                    LocalDateTime overlapEnd =
+                            effectiveEnd.isBefore(dayEnd)
+                                    ? effectiveEnd
+                                    : dayEnd;
+
+                    if (overlapEnd.isAfter(overlapStart)) {
+
+                        double dailyHours =
+                                Duration.between(
+                                        overlapStart,
+                                        overlapEnd
+                                ).toMinutes() / 60.0;
+
+                        DayOfWeek day =
+                                currentDate.getDayOfWeek();
+
+                        switch (day) {
+
+                            case MONDAY:
+                                mondayHours += dailyHours;
+                                break;
+
+                            case TUESDAY:
+                                tuesdayHours += dailyHours;
+                                break;
+
+                            case WEDNESDAY:
+                                wednesdayHours += dailyHours;
+                                break;
+
+                            case THURSDAY:
+                                thursdayHours += dailyHours;
+                                break;
+
+                            case FRIDAY:
+                                fridayHours += dailyHours;
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+
+                    currentDate =
+                            currentDate.plusDays(1);
                 }
             }
 
-            double totalHours = 24;
-            double idleHours = totalHours - usedHours;
-            if (idleHours < 0) idleHours = 0;
-
-            double utilizationPercent = (usedHours / totalHours) * 100;
-
-            // ✅ Idle Days (MAIN FEATURE)
-            long idleDays = 0;
-            if (latestUsedDate != null) {
-                idleDays = ChronoUnit.DAYS.between(
-                        latestUsedDate,
-                        LocalDate.now()
-                );
+            /*
+             * Prevent impossible utilization values.
+             */
+            if (usedHours > totalPeriodHours) {
+                usedHours = totalPeriodHours;
             }
 
-            // ✅ Category
-            String category;
-            if (utilizationPercent < 30) category = "LOW";
-            else if (utilizationPercent < 70) category = "MEDIUM";
-            else category = "HIGH";
+            double idleHours =
+                    Math.max(
+                            0.0,
+                            totalPeriodHours - usedHours
+                    );
 
-            UtilizationDTO dto = new UtilizationDTO();
-            dto.setEquipmentName(equipment.getEquipmentName());
-            dto.setUsedHours(usedHours);
-            dto.setIdleHours(idleHours);
-            dto.setUtilizationPercentage(utilizationPercent);
+            double utilizationPercentage =
+                    totalPeriodHours > 0
+                            ? (usedHours / totalPeriodHours) * 100.0
+                            : 0.0;
+
+            /*
+             * High / Medium / Low classification.
+             */
+            String category;
+
+            if (utilizationPercentage >= 70) {
+                category = "HIGH";
+            } else if (utilizationPercentage >= 30) {
+                category = "MEDIUM";
+            } else {
+                category = "LOW";
+            }
+
+            /*
+             * Idle days.
+             */
+            long idleDays = 0;
+
+            if (latestUsedDate != null) {
+
+                idleDays = Duration.between(
+                        latestUsedDate.atStartOfDay(),
+                        LocalDateTime.now()
+                ).toDays();
+
+                if (idleDays < 0) {
+                    idleDays = 0;
+                }
+
+            } else {
+
+                /*
+                 * If equipment has never been used
+                 * during the period, consider the entire
+                 * seven-day period idle.
+                 */
+                idleDays = 7;
+            }
+
+            UtilizationDTO dto =
+                    new UtilizationDTO();
+
+            dto.setEquipmentName(
+                    equipment.getEquipmentName()
+            );
+
+            dto.setUsedHours(
+                    round(usedHours)
+            );
+
+            dto.setIdleHours(
+                    round(idleHours)
+            );
+
+            dto.setUtilizationPercentage(
+                    round(utilizationPercentage)
+            );
+
             dto.setCategory(category);
+
             dto.setIdleDays(idleDays);
+
+            /*
+             * Heatmap values.
+             */
+            dto.setMonday(
+                    getHeatmapLevel(mondayHours)
+            );
+
+            dto.setTuesday(
+                    getHeatmapLevel(tuesdayHours)
+            );
+
+            dto.setWednesday(
+                    getHeatmapLevel(wednesdayHours)
+            );
+
+            dto.setThursday(
+                    getHeatmapLevel(thursdayHours)
+            );
+
+            dto.setFriday(
+                    getHeatmapLevel(fridayHours)
+            );
 
             result.add(dto);
         }
 
         return result;
+    }
+
+    /*
+     * Heatmap classification:
+     *
+     * 0 hours       = IDLE
+     * < 2 hours     = LOW
+     * 2-4 hours     = MEDIUM
+     * > 4 hours     = HIGH
+     */
+    private String getHeatmapLevel(double hours) {
+
+        if (hours <= 0) {
+            return "IDLE";
+        }
+
+        if (hours < 2) {
+            return "LOW";
+        }
+
+        if (hours <= 4) {
+            return "MEDIUM";
+        }
+
+        return "HIGH";
+    }
+
+    private double round(double value) {
+
+        return Math.round(value * 100.0) / 100.0;
     }
 }

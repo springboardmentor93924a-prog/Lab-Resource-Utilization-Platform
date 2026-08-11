@@ -361,51 +361,77 @@ function Reservations() {
 
                 <td style={cellStyle}>
 
-  {/* Student / Faculty / Admin can edit pending bookings */}
-  {booking.bookingStatus === "Pending" &&
-   (role === "STUDENT" ||
-    role === "FACULTY" ||
-    role === "ADMIN") && (
-    <>
-      <button
-        onClick={() => handleEdit(booking)}
-        style={smallButtonStyle}
-      >
-        Edit
-      </button>
+                  {/* Student can edit/delete their own pending bookings */}
+                  {booking.bookingStatus === "Pending" &&
+                   role === "STUDENT" && (
+                    <>
+                      <button
+                        onClick={() => handleEdit(booking)}
+                        style={smallButtonStyle}
+                      >
+                        Edit
+                      </button>
 
-      <button
-        onClick={() => handleDelete(booking.bookingId)}
-        style={smallButtonStyle}
-      >
-        Delete
-      </button>
-    </>
-  )}
+                      <button
+                        onClick={() => handleDelete(booking.bookingId)}
+                        style={smallButtonStyle}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
 
 
-  {/* Only Technician and Admin can approve/reject */}
-  {booking.bookingStatus === "Pending" &&
-   (role === "LAB_TECHNICIAN" ||
-    role === "ADMIN") && (
-    <>
-      <button
-        onClick={() => handleApprove(booking.bookingId)}
-        style={smallButtonStyle}
-      >
-        Approve
-      </button>
+                  {/* Lab Manager / Department Head / Institution Admin /
+                      System Admin can also edit or delete any pending booking */}
+                  {booking.bookingStatus === "Pending" &&
+                   (role === "LAB_MANAGER" ||
+                    role === "DEPARTMENT_HEAD" ||
+                    role === "INSTITUTION_ADMIN" ||
+                    role === "SYSTEM_ADMIN") && (
+                    <>
+                      <button
+                        onClick={() => handleEdit(booking)}
+                        style={smallButtonStyle}
+                      >
+                        Edit
+                      </button>
 
-      <button
-        onClick={() => handleReject(booking.bookingId)}
-        style={smallButtonStyle}
-      >
-        Reject
-      </button>
-    </>
-  )}
+                      <button
+                        onClick={() => handleDelete(booking.bookingId)}
+                        style={smallButtonStyle}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
 
-</td>
+
+                  {/* Lab Technician and Manager-tier roles can approve/reject */}
+                  {booking.bookingStatus === "Pending" &&
+                   (role === "LAB_TECHNICIAN" ||
+                    role === "LAB_MANAGER" ||
+                    role === "DEPARTMENT_HEAD" ||
+                    role === "INSTITUTION_ADMIN" ||
+                    role === "SYSTEM_ADMIN") && (
+                    <>
+                      <button
+                        onClick={() => handleApprove(booking.bookingId)}
+                        style={smallButtonStyle}
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        onClick={() => handleReject(booking.bookingId)}
+                        style={smallButtonStyle}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                </td>
               </tr>
             ))}
         </tbody>

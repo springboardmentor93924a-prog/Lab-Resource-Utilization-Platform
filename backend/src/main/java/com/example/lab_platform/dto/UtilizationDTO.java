@@ -1,24 +1,39 @@
- package com.example.lab_platform.dto;
+package com.example.lab_platform.dto;
 
 public class UtilizationDTO {
 
     private String equipmentName;
+
     private double usedHours;
+
     private double idleHours;
+
     private double utilizationPercentage;
+
     private String category;
 
-    // 🔥 NEW FIELDS (ADD किए गए)
     private long idleDays;
 
     private String monday;
+
     private String tuesday;
+
     private String wednesday;
+
     private String thursday;
+
     private String friday;
 
-    // ✅ OLD CONSTRUCTOR (UNCHANGED)
-    public UtilizationDTO(String equipmentName, double usedHours, double idleHours, double utilizationPercentage, String category) {
+    public UtilizationDTO() {
+    }
+
+    public UtilizationDTO(
+            String equipmentName,
+            double usedHours,
+            double idleHours,
+            double utilizationPercentage,
+            String category) {
+
         this.equipmentName = equipmentName;
         this.usedHours = usedHours;
         this.idleHours = idleHours;
@@ -26,33 +41,45 @@ public class UtilizationDTO {
         this.category = category;
     }
 
-    // 🔥 NEW EMPTY CONSTRUCTOR (IMPORTANT)
-    public UtilizationDTO() {
-    }
-
-    // ✅ OLD GETTERS (UNCHANGED)
-
     public String getEquipmentName() {
         return equipmentName;
+    }
+
+    public void setEquipmentName(String equipmentName) {
+        this.equipmentName = equipmentName;
     }
 
     public double getUsedHours() {
         return usedHours;
     }
 
+    public void setUsedHours(double usedHours) {
+        this.usedHours = usedHours;
+    }
+
     public double getIdleHours() {
         return idleHours;
+    }
+
+    public void setIdleHours(double idleHours) {
+        this.idleHours = idleHours;
     }
 
     public double getUtilizationPercentage() {
         return utilizationPercentage;
     }
 
+    public void setUtilizationPercentage(double utilizationPercentage) {
+        this.utilizationPercentage = utilizationPercentage;
+    }
+
     public String getCategory() {
         return category;
     }
 
-    // 🔥 NEW GETTERS & SETTERS
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
     public long getIdleDays() {
         return idleDays;
@@ -100,26 +127,5 @@ public class UtilizationDTO {
 
     public void setFriday(String friday) {
         this.friday = friday;
-    }
-
-    // OPTIONAL (अगर future में setters चाहिए)
-    public void setEquipmentName(String equipmentName) {
-        this.equipmentName = equipmentName;
-    }
-
-    public void setUsedHours(double usedHours) {
-        this.usedHours = usedHours;
-    }
-
-    public void setIdleHours(double idleHours) {
-        this.idleHours = idleHours;
-    }
-
-    public void setUtilizationPercentage(double utilizationPercentage) {
-        this.utilizationPercentage = utilizationPercentage;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 }

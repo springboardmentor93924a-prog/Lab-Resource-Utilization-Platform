@@ -212,22 +212,12 @@ function Register() {
                 Select Role
               </option>
 
-              <option value="1">
-                Admin
-              </option>
-
-              <option value="2">
-                Faculty
-              </option>
-
-              <option value="3">
-                Student
-              </option>
-
-              <option value="4">
-                Lab Technician
-              </option>
-
+              <option value="1">Researcher / Student</option>
+  <option value="2">Lab Technician</option>
+  <option value="3">Lab Manager</option>
+  <option value="4">Department Head</option>
+  <option value="5">Institution Administrator</option>
+  <option value="6">System Administrator</option>
             </select>
 
           </div>
