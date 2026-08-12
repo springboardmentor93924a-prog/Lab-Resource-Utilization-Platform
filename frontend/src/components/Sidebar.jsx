@@ -15,7 +15,6 @@ function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   const canAccessEquipment = [
-    "RESEARCHER",
     "STUDENT",
     "LAB_TECHNICIAN",
     "LAB_MANAGER",
@@ -25,7 +24,6 @@ function Sidebar() {
   ].includes(role);
 
   const canAccessBookings = [
-    "RESEARCHER",
     "STUDENT",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
