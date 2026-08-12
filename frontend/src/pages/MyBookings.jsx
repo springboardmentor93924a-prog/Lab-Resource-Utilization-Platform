@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { getBookingsByUser, cancelBooking } from "../services/bookingService";
 import { getCurrentUserId } from "../utils/auth";
+import "./MyBookings.css";
 
 export default function MyBookings() {
+  const navigate = useNavigate();
+
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  
-    useEffect(() => {
+  useEffect(() => {
     fetchBookings();
   }, []);
 
@@ -27,6 +30,7 @@ export default function MyBookings() {
 
   async function handleCancel(id) {
     if (!window.confirm("Cancel this booking?")) return;
+
     try {
       await cancelBooking(id);
       alert("Booking cancelled.");
@@ -37,74 +41,126 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="wrapper" style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="my-bookings-wrapper">
+
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
-      <main className="content" style={{ flex: 1, padding: "30px" }}>
-        <h4 style={{ marginBottom: "20px" }}>My bookings</h4>
+      <main className="my-bookings-content">
 
-        {loading && <p>Loading bookings...</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* HEADER */}
+        <header className="my-bookings-header">
+          <h2>My bookings</h2>
 
-        {!loading && !error && bookings.length === 0 && <p>You have no bookings yet.</p>}
+          <div className="my-bookings-header-right">
 
-        {!loading && !error && bookings.length > 0 && (
-          <div style={{ background: "#fff", borderRadius: "12px", padding: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
-            {bookings.map((b) => (
-              <div
-                key={b.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "15px",
-                  borderBottom: "1px solid #eee",
-                }}
-              >
-                <div>
-                  <strong>{b.equipmentName}</strong>
-                  <div style={{ fontSize: "14px", color: "#666" }}>
-                    {b.bookingDate}, {b.startTime}–{b.endTime}
-                    {b.priorityBooking && <span style={{ marginLeft: "8px", color: "#0F766E" }}>• Priority</span>}
-                  </div>
-                  <div style={{ fontSize: "13px", color: "#999" }}>{b.purpose}</div>
-                </div>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="my-bookings-search"
+            />
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <span
-                    className="badge rounded-pill"
-                    style={{
-                      background:
-                        b.bookingStatus === "CANCELLED"
-                          ? "#e5e7eb"
-                          : b.bookingStatus === "CONFIRMED"
-                          ? "#22c55e"
-                          : b.bookingStatus === "COMPLETED"
-                          ? "#94a3b8"
-                          : "#f59e0b",
-                      color: "#fff",
-                      padding: "6px 14px",
-                    }}
-                  >
-                    {b.bookingStatus}
-                  </span>
+            <button
+              className="profile-circle"
+              onClick={() => navigate("/profile")}
+              title="My Profile"
+              aria-label="My Profile"
+            >
+              👤
+            </button>
 
-                  {(b.bookingStatus === "PENDING" || b.bookingStatus === "CONFIRMED") && (
-                    <button
-                      className="btn btn-outline-dark"
-                      onClick={() => handleCancel(b.id)}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
-        )}
+        </header>
+
+        <div className="my-bookings-body">
+
+          {loading && (
+            <p className="loading-text">Loading bookings...</p>
+          )}
+
+          {error && (
+            <p className="error-text">{error}</p>
+          )}
+
+          {!loading && !error && bookings.length === 0 && (
+            <p className="empty-text">
+              You have no bookings yet.
+            </p>
+          )}
+
+          {!loading && !error && bookings.length > 0 && (
+            <div className="booking-list">
+
+              {bookings.map((b) => (
+
+                <div className="booking-item" key={b.id}>
+
+                  <div className="booking-info">
+
+                    <strong className="equipment-name">
+                      {b.equipmentName}
+                    </strong>
+
+                    <div className="booking-time">
+                      {b.bookingDate}, {b.startTime}–{b.endTime}
+
+                      {b.priorityBooking && (
+                        <span className="priority">
+                          • Priority
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="booking-purpose">
+                      {b.purpose}
+                    </div>
+
+                  </div>
+
+                  <div className="booking-actions">
+
+                    <span
+                      className="booking-status"
+                      style={{
+                        background:
+                          b.bookingStatus === "CANCELLED"
+                            ? "#64748b"
+                            : b.bookingStatus === "CONFIRMED"
+                            ? "#16a34a"
+                            : b.bookingStatus === "COMPLETED"
+                            ? "#475569"
+                            : "#f59e0b",
+                      }}
+                    >
+                      {b.bookingStatus}
+                    </span>
+
+                    {(b.bookingStatus === "PENDING" ||
+                      b.bookingStatus === "CONFIRMED") && (
+
+                      <button
+                        className="cancel-booking-btn"
+                        onClick={() => handleCancel(b.id)}
+                      >
+                        Cancel
+                      </button>
+
+                    )}
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+          )}
+
+        </div>
+
       </main>
+
     </div>
   );
 }

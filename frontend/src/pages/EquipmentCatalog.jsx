@@ -7,9 +7,11 @@ import { isAdmin } from "../utils/auth";
 
 export default function EquipmentCatalog() {
   const navigate = useNavigate();
+
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const userIsAdmin = isAdmin();
 
   useEffect(() => {
@@ -18,11 +20,14 @@ export default function EquipmentCatalog() {
         const data = await getAllEquipment();
         setEquipmentList(data);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load equipment");
+        setError(
+          err.response?.data?.message || "Failed to load equipment"
+        );
       } finally {
         setLoading(false);
       }
     }
+
     fetchEquipment();
   }, []);
 
@@ -40,21 +45,56 @@ export default function EquipmentCatalog() {
 
   return (
     <div className="wrapper">
+
+      {/* SIDEBAR */}
       <div className="sidebar">
         <Sidebar />
       </div>
 
+      {/* MAIN CONTENT */}
       <div className="main-content">
+
+        {/* =====================================================
+            TOP NAVBAR
+        ===================================================== */}
+
         <nav className="navbar">
+
           <h4>Equipment catalog</h4>
+
           <div className="nav-right">
-            <input type="text" className="form-control search-top" placeholder="Search..." />
-            <div className="profile-circle"></div>
+
+            <input
+              type="text"
+              className="form-control search-top"
+              placeholder="Search..."
+            />
+
+            <button
+              className="profile-circle"
+              onClick={() => navigate("/profile")}
+              title="My Profile"
+              aria-label="My Profile"
+            >
+              👤
+            </button>
+
           </div>
+
         </nav>
 
+
+        {/* =====================================================
+            FILTERS
+        ===================================================== */}
+
         <div className="filters">
-          <input type="text" className="form-control search-box" placeholder="Search equipment" />
+
+          <input
+            type="text"
+            className="form-control search-box"
+            placeholder="Search equipment"
+          />
 
           <select className="form-select">
             <option>All categories</option>
@@ -77,37 +117,119 @@ export default function EquipmentCatalog() {
             <option>Physics</option>
           </select>
 
-          <button className="btn btn-outline-dark" onClick={handleViewCalendar}>
+
+          {/* VIEW CALENDAR */}
+
+          <button
+            className="view-calendar-btn"
+            onClick={handleViewCalendar}
+          >
             View calendar
           </button>
+
+
+          {/* ADD EQUIPMENT */}
+
           {userIsAdmin && (
-  <button className="btn btn-dark add-btn" onClick={handleAddEquipment}>
-    + Add equipment
-  </button>
-)}
+            <button
+              className="add-btn"
+              onClick={handleAddEquipment}
+            >
+              + Add equipment
+            </button>
+          )}
+
         </div>
 
-        {loading && <p>Loading equipment...</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        {/* =====================================================
+            LOADING / ERROR
+        ===================================================== */}
+
+        {loading && (
+          <p className="loading-message">
+            Loading equipment...
+          </p>
+        )}
+
+        {error && (
+          <p className="error-message">
+            {error}
+          </p>
+        )}
+
+
+        {/* =====================================================
+            EQUIPMENT CATALOGUE
+        ===================================================== */}
 
         {!loading && !error && (
           <div className="equipment-grid">
+
             {equipmentList.map((item) => (
-              <div className="equipment-card" key={item.id}>
+
+              <div
+                className="equipment-card"
+                key={item.id}
+              >
+
+                {/* IMAGE */}
+
                 <div className="image-placeholder">
-                  <img src={item.imageUrl} alt={item.equipmentName} />
+
+                  <img
+                    src={item.imageUrl}
+                    alt={item.equipmentName}
+                  />
+
                 </div>
-                <h6>{item.equipmentName}</h6>
-                <p>{item.category} — {item.department}</p>
-                <div className={`status ${item.status?.toLowerCase()}`}></div>
-                <button className="btn btn-outline-dark w-100" onClick={() => handleView(item.id)}>
+
+
+                {/* EQUIPMENT NAME */}
+
+                <h6>
+                  {item.equipmentName}
+                </h6>
+
+
+                {/* CATEGORY + DEPARTMENT */}
+
+                <p>
+                  {item.category} — {item.department}
+                </p>
+
+
+                {/* STATUS */}
+
+                <div
+                  className={`status ${
+                    item.status?.toLowerCase() || ""
+                  }`}
+                >
+                  <span>
+                    {item.status?.replace("_", " ")}
+                  </span>
+                </div>
+
+
+                {/* VIEW BUTTON */}
+
+                <button
+                  className="view-equipment-btn"
+                  onClick={() => handleView(item.id)}
+                >
                   View
                 </button>
+
               </div>
+
             ))}
+
           </div>
         )}
+
       </div>
+
     </div>
   );
 }

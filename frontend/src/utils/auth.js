@@ -22,8 +22,14 @@ export function getCurrentUserRole() {
 
 export function isAdmin() {
   const role = getCurrentUserRole();
-  return role === "INSTITUTION_ADMIN" || role === "SYSTEM_ADMIN";
+  return (
+    role === "INSTITUTION_ADMIN" ||
+    role === "SYSTEM_ADMIN" ||
+    role === "LAB_MANAGER" ||
+    role === "DEPARTMENT_HEAD"
+  );
 }
+
 
 export function canMakePriorityBooking() {
   const role = getCurrentUserRole();

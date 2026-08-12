@@ -49,8 +49,12 @@ public class BookingService {
 
     private boolean isAdmin(User user) {
         String role = user.getRole().getName();
-        return role.equals("INSTITUTION_ADMIN") || role.equals("SYSTEM_ADMIN");
+        return role.equals("INSTITUTION_ADMIN")
+                || role.equals("SYSTEM_ADMIN")
+                || role.equals("LAB_MANAGER")
+                || role.equals("DEPARTMENT_HEAD");
     }
+
 
     public BookingResponse createBooking(BookingRequest request, String requesterEmail) {
         User currentUser = resolveCurrentUser(requesterEmail);

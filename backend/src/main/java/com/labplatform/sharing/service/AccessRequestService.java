@@ -44,9 +44,12 @@ public class AccessRequestService {
 
     private boolean isAdmin(User user) {
         String role = user.getRole().getName();
-        return role.equals("INSTITUTION_ADMIN") || role.equals("SYSTEM_ADMIN");
-    }
 
+        return role.equals("INSTITUTION_ADMIN")
+                || role.equals("SYSTEM_ADMIN")
+                || role.equals("LAB_MANAGER")
+                || role.equals("DEPARTMENT_HEAD");
+    }
     public AccessRequestResponse createRequest(AccessRequestCreateRequest request, String requesterEmail) {
         User currentUser = resolveCurrentUser(requesterEmail);
 
@@ -165,7 +168,8 @@ public class AccessRequestService {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Only institution admins can review access requests");
         }
-        if (reviewer.getRole().getName().equals("INSTITUTION_ADMIN")) {
+        if (reviewer.getRole().getName().equals("INSTITUTION_ADMIN") || reviewer.getRole().getName().equals("LAB_MANAGER")
+                || reviewer.getRole().getName().equals("DEPARTMENT_HEAD")) {
             boolean sameInstitution = reviewer.getInstitution() != null
                     && reviewer.getInstitution().getId().equals(accessRequest.getOwningInstitution().getId());
             if (!sameInstitution) {

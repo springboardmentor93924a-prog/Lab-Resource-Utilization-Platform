@@ -10,7 +10,7 @@
 .sidebar {
   width: 220px;
   min-height: 100vh;
-  background: #0F1B2D;
+  background: #0F1B2D !important;
   border-right: 1px solid #16243A;
 }
 
@@ -31,7 +31,7 @@
 .sidebar li {
   padding: 14px 25px;
   cursor: pointer;
-  color: #16243A !important;
+  color: #ffffff !important;
   background: transparent !important;
   transition: 0.3s;
 }

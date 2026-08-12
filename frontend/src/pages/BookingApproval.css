@@ -1,0 +1,228 @@
+/* =========================================================
+   BOOKING APPROVAL PAGE
+========================================================= */
+
+.booking-approval-page {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background: #020b1c;
+}
+
+.booking-approval-content {
+    flex: 1;
+    min-width: 0;
+    padding: 30px;
+    background: #020b1c;
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.booking-approval-title {
+    margin-bottom: 25px;
+
+    color: #ffffff;
+
+    font-size: 22px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   TABLE CONTAINER
+========================================================= */
+
+.booking-table-container {
+    width: 100%;
+
+    background: #071a32;
+
+    border: 1px solid #24476b;
+
+    border-radius: 12px;
+
+    overflow-x: auto;
+
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.30);
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.booking-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 800px;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+.booking-table thead th {
+    padding: 14px 16px;
+
+    text-align: left;
+
+    background: #0f1b2d;
+
+    color: #ffffff;
+
+    border: 1px solid #263f5d;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   TABLE BODY
+========================================================= */
+
+.booking-table tbody td {
+    padding: 14px 16px;
+
+    background: #f8fafc;
+
+    color: #111827;
+
+    border: 1px solid #d5dee9;
+
+    font-size: 14px;
+
+    vertical-align: middle;
+}
+
+
+/* Make sure every booking value is visible */
+
+.booking-table tbody td strong {
+    color: #111827;
+}
+
+
+/* Hover */
+
+.booking-table tbody tr:hover td {
+    background: #eef4fb;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.booking-status {
+    display: inline-block;
+
+    padding: 6px 13px;
+
+    border-radius: 999px;
+
+    color: #ffffff !important;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.approve-button {
+    margin-right: 8px;
+
+    padding: 8px 15px;
+
+    border: 1px solid #1d4ed8;
+
+    border-radius: 7px;
+
+    background: #172033;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+.approve-button:hover {
+    background: #1e40af;
+
+    border-color: #3b82f6;
+}
+
+
+.reject-button {
+    padding: 8px 15px;
+
+    border: 1px solid #64748b;
+
+    border-radius: 7px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+.reject-button:hover {
+    background: #e2e8f0;
+
+    border-color: #475569;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.booking-loading {
+    color: #e2e8f0;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .booking-approval-content {
+        padding: 20px 15px;
+    }
+
+    .booking-approval-title {
+        font-size: 19px;
+    }
+
+    .booking-table-container {
+        overflow-x: auto;
+    }
+}

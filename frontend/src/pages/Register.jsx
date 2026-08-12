@@ -5,8 +5,12 @@ import { useAuth } from "../context/AuthContext";
 const ROLES = [
   { value: "STUDENT", label: "Student" },
   { value: "RESEARCHER", label: "Researcher" },
+  { value: "LAB_TECHNICIAN", label: "Lab Technician" },
+  { value: "LAB_MANAGER", label: "Lab Manager" },
+  { value: "DEPARTMENT_HEAD", label: "Department Head" },
   { value: "INSTITUTION_ADMIN", label: "Institution Administrator" },
 ];
+
 export default function Register() {
   const [form, setForm] = useState({
     fullName: "",

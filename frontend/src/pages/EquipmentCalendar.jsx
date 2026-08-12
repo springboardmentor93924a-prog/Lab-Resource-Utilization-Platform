@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./EquipmentCalendar.css";
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const dayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 // Each entry corresponds to one column (Mon..Sun). null = no event that day.
 const initialEvents = [
   { label: "Rao — Microscope", color: "blue", top: 50 },
   { label: "Iyer — HPLC", color: "blue", top: 115 },
-  { label: "Lab maint.", color: "orange", top: 250 },
+  null,
   { label: "Singh — UV-Vis", color: "blue", top: 75 },
   { label: "Rao — Microscope", color: "blue", top: 180 },
   { label: "Open slot", color: "blue", top: 145 },
@@ -17,6 +18,8 @@ const initialEvents = [
 ];
 
 export default function EquipmentCalendar() {
+  const navigate = useNavigate();
+
   const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 22)); // 22 Jul 2026
   const [currentWeek, setCurrentWeek] = useState(22);
   const [searchValue, setSearchValue] = useState("");
@@ -94,7 +97,14 @@ export default function EquipmentCalendar() {
                 onChange={(e) => setSearchValue(e.target.value)}
               />
             </div>
-            <div className="profile"></div>
+            <button
+  className="profile-circle"
+  onClick={() => navigate("/profile")}
+  title="My Profile"
+  aria-label="My Profile"
+>
+  👤
+</button>
           </div>
         </header>
 
@@ -122,11 +132,7 @@ export default function EquipmentCalendar() {
             {dayLabels.map((day, index) => (
               <div
                 key={day}
-                style={
-                  index === todayIndex
-                    ? { background: "#dbe8ff", fontWeight: 700 }
-                    : undefined
-                }
+                style={{ fontWeight: 700 }}
               >
                 {day}
               </div>
@@ -135,7 +141,18 @@ export default function EquipmentCalendar() {
 
           <div className="calendar-grid">
             {initialEvents.map((event, index) => (
-              <div className="day" key={dayLabels[index]} onDoubleClick={handleDayDoubleClick}>
+              <div
+  className="day"
+  key={dayLabels[index]}
+  onDoubleClick={handleDayDoubleClick}
+  style={
+    index === todayIndex
+      ? {
+          background: "#f0f6ff",
+        }
+      : undefined
+  }
+>
                 {event && isEventVisible(event.label) && (
                   <div
                     className={`event ${event.color} ${activeEvent === event.label ? "active-event" : ""}`}

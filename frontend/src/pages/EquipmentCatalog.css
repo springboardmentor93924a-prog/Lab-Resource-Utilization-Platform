@@ -1,216 +1,758 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-body{
-    background:#f8f8f8;
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-.wrapper{
-    display:flex;
-    min-height:100vh;
+body {
+    background: #020b1c;
+    color: #ffffff;
 }
 
-.sidebar{
-    width:220px;
-    background:#ffffff;
-    border-right:1px solid #ddd;
+
+/* =========================================================
+   MAIN LAYOUT
+========================================================= */
+
+.wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background: #020b1c;
 }
 
-.logo{
-    padding:20px;
-    border-bottom:1px solid #ddd;
-    font-weight:bold;
+.main-content {
+    flex: 1;
+    min-width: 0;
+    min-height: 100vh;
+
+    background: #020b1c;
+    color: #ffffff;
 }
 
-.sidebar ul{
-    list-style:none;
-    padding:15px 0;
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+    width: 220px;
+    min-width: 220px;
+    min-height: 100vh;
+
+    background: #0f1b2d;
+
+    border-right: 1px solid #1e3150;
+
+    flex-shrink: 0;
 }
 
-.sidebar ul li{
-    padding:14px 25px;
-    color:#555;
-    cursor:pointer;
-    transition:.3s;
-    display:flex;
-    align-items:center;
-    gap:10px;
+
+/* =========================================================
+   TOP NAVBAR
+========================================================= */
+
+.navbar {
+    height: 80px;
+    width: 100%;
+
+    background: #03132d;
+
+    border-bottom: 1px solid #1e4770;
+
+    padding: 18px 28px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
 }
 
-.sidebar ul li:hover{
-    background:#f3f3f3;
+.navbar h2,
+.navbar h3,
+.navbar h4 {
+    color: #ffffff;
+
+    font-weight: 700;
+
+    font-size: 21px;
+
+    text-shadow:
+        0 0 8px rgba(56, 189, 248, 0.25);
 }
 
-.sidebar ul li.active{
-    background:#eaf2ff;
-    border-left:4px solid #3b82f6;
-    color:#000;
-    font-weight:600;
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-.main-content{
-    flex:1;
+
+/* =========================================================
+   TOP SEARCH
+========================================================= */
+
+.search-top {
+    width: 205px;
+    height: 42px;
+
+    border: 1px solid #24527d;
+
+    border-radius: 8px;
+
+    padding: 0 15px;
+
+    outline: none;
+
+    background: #071a36;
+
+    color: #ffffff;
+
+    transition: 0.25s;
 }
 
-.navbar{
-    background:white;
-    border-bottom:1px solid #ddd;
-    padding:18px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.search-top::placeholder {
+    color: #94a3b8;
 }
 
-.nav-right{
-    display:flex;
-    align-items:center;
-    gap:15px;
+.search-top:focus {
+    border-color: #38bdf8;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.15),
+        0 0 15px rgba(56, 189, 248, 0.15);
 }
 
-.search-top{
-    width:180px;
-    border-radius:20px;
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+.profile-circle {
+    width: 38px;
+    height: 38px;
+
+    border-radius: 50%;
+
+    background: #dbe7f7;
+
+    border: 2px solid #8bbcff;
+
+    color: #4c2a85;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    padding: 0;
+
+    transition: all 0.25s ease;
+
+    box-shadow:
+        0 0 10px rgba(59, 130, 246, 0.25);
 }
 
-.profile-circle{
-    width:34px;
-    height:34px;
-    background:#ddd;
-    border-radius:50%;
+.profile-circle:hover {
+    background: #2563eb;
+
+    border-color: #38bdf8;
+
+    color: #ffffff;
+
+    transform: scale(1.08);
 }
 
-.filters{
-    padding:25px;
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
+
+/* =========================================================
+   FILTER AREA
+========================================================= */
+
+.filters {
+    padding: 26px 28px 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    align-items: stretch;
 }
 
-.search-box{
-    width:260px;
+
+/* =========================================================
+   SEARCH EQUIPMENT
+========================================================= */
+
+.search-box {
+    width: 100%;
+    height: 44px;
+
+    border: 1px solid #294b70;
+
+    border-radius: 7px;
+
+    padding: 0 13px;
+
+    background: #071a36;
+
+    color: #ffffff;
+
+    outline: none;
+
+    transition: 0.25s;
 }
 
-.form-select{
-    width:170px;
+.search-box::placeholder {
+    color: #94a3b8;
 }
 
-.add-btn{
-    margin-left:auto;
-    width:170px;
+.search-box:focus {
+    border-color: #38bdf8;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.12),
+        0 0 15px rgba(56, 189, 248, 0.12);
 }
 
-.equipment-grid{
-    padding:0 25px 25px;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:20px;
+
+/* =========================================================
+   SELECT BOXES
+========================================================= */
+
+.form-select {
+    width: 100%;
+    height: 40px;
+
+    border: 1px solid #294b70;
+
+    border-radius: 7px;
+
+    padding: 0 12px;
+
+    background: #071a36;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    outline: none;
+
+    transition: 0.25s;
 }
 
-.equipment-card{
-    background:#fff;
-    border:1px solid #ddd;
-    border-radius:10px;
-    padding:14px;
-    transition:.3s;
+.form-select option {
+    background: #071a36;
+    color: #ffffff;
 }
 
-.equipment-card:hover{
-    transform:translateY(-4px);
-    box-shadow:0 6px 15px rgba(0,0,0,.1);
+.form-select:focus {
+    border-color: #38bdf8;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.image-placeholder{
-    height:110px;
-    background:#ececec;
-    border-radius:8px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#777;
-    margin-bottom:15px;
+
+/* =========================================================
+   VIEW CALENDAR
+========================================================= */
+
+.view-calendar-btn {
+    width: 100%;
+    height: 42px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1e88e5 !important;
+
+    color: #ffffff !important;
+
+    font-weight: 700;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+
+    box-shadow:
+        0 0 12px rgba(56, 189, 248, 0.25);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.equipment-card h6{
-    margin-bottom:5px;
-    font-weight:bold;
+.view-calendar-btn:hover {
+    background: #2196f3 !important;
+
+    border-color: #7dd3fc;
+
+    transform: translateY(-1px);
 }
 
-.equipment-card p{
-    color:#777;
-    font-size:14px;
-    margin-bottom:12px;
+
+/* =========================================================
+   ADD EQUIPMENT
+========================================================= */
+
+.add-btn {
+    align-self: flex-end;
+
+    width: 170px;
+    height: 42px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1557a8;
+
+    color: #ffffff;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
 }
 
-.status{
-    width:100%;
-    height:7px;
-    border-radius:20px;
-    margin-bottom:12px;
+.add-btn:hover {
+    background: #1d4ed8;
+
+    border-color: #38bdf8;
+
+    transform: translateY(-1px);
 }
 
-.green{
-    background:#3bb54a;
+
+/* =========================================================
+   LOADING / ERROR
+========================================================= */
+
+.loading-message {
+    color: #ffffff;
+
+    padding: 0 28px;
+
+    font-size: 15px;
 }
 
-.blue{
-    background:#4285f4;
+.error-message {
+    color: #f87171;
+
+    padding: 0 28px;
+
+    font-size: 15px;
 }
 
-.orange{
-    background:#ff9800;
+
+/* =========================================================
+   EQUIPMENT GRID
+   EXACTLY 4 CARDS PER ROW
+========================================================= */
+
+.equipment-grid {
+    width: 100%;
+
+    padding: 20px 28px 40px;
+
+    display: grid !important;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr)) !important;
+
+    gap: 28px !important;
+
+    align-items: start;
 }
 
-.red{
-    background:#ef4444;
+
+/* =========================================================
+   EQUIPMENT CARD
+   SAME WHITE STYLE AS SHARING PAGE
+========================================================= */
+
+.equipment-card {
+    width: 100% !important;
+
+    min-width: 0;
+
+    background: #ffffff !important;
+
+    border: 1px solid #dbe5f3 !important;
+
+    border-radius: 12px !important;
+
+    padding: 14px !important;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.18);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+
+    color: #0f172a !important;
 }
 
-.btn-outline-dark{
-    border-radius:6px;
+.equipment-card:hover {
+    transform: translateY(-4px);
+
+    border-color: #38bdf8 !important;
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.22);
 }
 
-.image-placeholder img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    border-radius:8px;
+
+/* =========================================================
+   IMAGE AREA
+   WHITE LIKE SHARING PAGE
+========================================================= */
+
+.image-placeholder {
+    width: 100%;
+
+    height: 150px;
+
+    background: #ffffff !important;
+
+    border-radius: 8px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    margin-bottom: 12px;
+
+    border: 1px solid #dbe5f3;
 }
 
-@media(max-width:1100px){
+.image-placeholder img {
+    width: 100%;
+    height: 100%;
 
-.equipment-grid{
-grid-template-columns:repeat(2,1fr);
+    object-fit: cover;
+
+    border-radius: 8px;
+
+    display: block;
 }
 
+
+/* =========================================================
+   EQUIPMENT NAME
+========================================================= */
+
+.equipment-card h6 {
+    margin: 8px 0 6px;
+
+    color: #14529a !important;
+
+    font-size: 17px;
+
+    line-height: 1.35;
+
+    font-weight: 700 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
 }
 
-@media(max-width:768px){
 
-.sidebar{
-display:none;
+/* =========================================================
+   CATEGORY + DEPARTMENT
+========================================================= */
+
+.equipment-card p {
+    margin: 0 0 12px;
+
+    color: #475569 !important;
+
+    font-size: 14px;
+
+    line-height: 1.4;
+
+    font-weight: 500;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
 }
 
-.filters{
-flex-direction:column;
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
+    width: 100%;
+
+    height: 34px;
+
+    border-radius: 7px;
+
+    margin-bottom: 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    overflow: hidden;
 }
 
-.search-box,
-.form-select,
-.add-btn{
-width:100%;
+.status span {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
 }
 
-.equipment-grid{
-grid-template-columns:1fr;
+
+/* Available */
+
+.status.available {
+    background: #16a34a !important;
+
+    border: 1px solid #15803d;
 }
 
-.navbar{
-flex-direction:column;
-gap:15px;
-align-items:flex-start;
+
+/* Busy */
+
+.status.busy,
+.status.in_use {
+    background: #2563eb !important;
+
+    border: 1px solid #1d4ed8;
 }
 
+
+/* Maintenance */
+
+.status.maintenance {
+    background: #f59e0b !important;
+
+    border: 1px solid #d97706;
+}
+
+
+/* Retired */
+
+.status.retired {
+    background: #64748b !important;
+
+    border: 1px solid #475569;
+}
+
+
+/* Out of service */
+
+.status.out_of_service {
+    background: #dc2626 !important;
+
+    border: 1px solid #b91c1c;
+}
+
+
+/* =========================================================
+   VIEW BUTTON
+   SAME STYLE AS SHARING REQUEST ACCESS BUTTON
+========================================================= */
+
+.view-equipment-btn {
+    width: 100%;
+
+    height: 41px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1557a8 !important;
+
+    color: #ffffff !important;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.view-equipment-btn:hover {
+    background: #1d4ed8 !important;
+
+    border-color: #38bdf8;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 0 15px rgba(37, 99, 235, 0.3);
+}
+
+.view-equipment-btn:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   FORCE CARD TEXT VISIBILITY
+========================================================= */
+
+.equipment-card h6,
+.equipment-card p,
+.equipment-card span {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+
+/* =========================================================
+   LARGE SCREEN
+   ALWAYS 4 CARDS
+========================================================= */
+
+@media (min-width: 1200px) {
+
+    .equipment-grid {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+
+/* =========================================================
+   MEDIUM SCREEN
+========================================================= */
+
+@media (max-width: 1199px) {
+
+    .equipment-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .equipment-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+        display: none;
+    }
+
+    .equipment-grid {
+        grid-template-columns: 1fr !important;
+
+        padding: 15px;
+    }
+
+    .navbar {
+        flex-direction: column;
+
+        height: auto;
+
+        gap: 15px;
+
+        align-items: flex-start;
+    }
+
+    .nav-right {
+        width: 100%;
+    }
+
+    .search-top {
+        width: 100%;
+    }
+
+    .profile-circle {
+        flex-shrink: 0;
+    }
+
+    .add-btn {
+        align-self: stretch;
+
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .equipment-grid {
+        padding: 12px;
+    }
+
+    .equipment-card {
+        padding: 12px !important;
+    }
+
+    .image-placeholder {
+        height: 170px;
+    }
 }

@@ -16,6 +16,8 @@ import UtilizationDashboard from "./pages/UtilizationDashboard";
 import UtilizationHeatmap from "./pages/UtilizationHeatmap";
 import BookingApproval from "./pages/BookingApproval";
 import MyWaitlist from "./pages/MyWaitlist";
+import Profile from "./pages/Profile";
+
 
 
 function ComingSoon({ title }) {
@@ -152,7 +154,7 @@ export default function App() {
 />
 
 
-
+           <Route path="/profile" element={<Profile />} />
           <Route path="/maintenance" element={<ProtectedRoute><ComingSoon title="Maintenance" /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><ComingSoon title="Analytics" /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><ComingSoon title="Notifications" /></ProtectedRoute>} />

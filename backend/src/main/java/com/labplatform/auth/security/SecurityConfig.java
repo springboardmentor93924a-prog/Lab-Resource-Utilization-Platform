@@ -51,22 +51,52 @@ public class SecurityConfig {
                         .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
 
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/equipment/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
 
                         .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/equipment/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN", "LAB_MANAGER", "DEPARTMENT_HEAD")
 
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/equipment/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN", "LAB_MANAGER", "DEPARTMENT_HEAD")
 
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/bookings")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
 
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/bookings/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
 
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/files/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
+                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
+
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/bookings/**")
+                        .hasAnyRole(
+                                "STUDENT",
+                                "RESEARCHER",
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER",
+                                "DEPARTMENT_HEAD"
+                        )
+
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/equipment/utilization")
+                        .hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER",
+                                "DEPARTMENT_HEAD"
+                        )
+
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.PUT,
+                                "/api/access-requests/*/approve",
+                                "/api/access-requests/*/reject"
+                        )
+                        .hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER",
+                                "DEPARTMENT_HEAD"
+                        )
 
                         .anyRequest().authenticated()
                 )

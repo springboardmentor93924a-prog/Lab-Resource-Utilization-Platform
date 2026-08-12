@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { getAllEquipment } from "../services/equipmentService";
+
 import {
   getCurrentUserInfo,
   createAccessRequest,
@@ -10,6 +11,7 @@ import {
   rejectAccessRequest,
 } from "../services/sharingService";
 import { isAdmin } from "../utils/auth";
+import "./Sharing.css";
 
 export default function Sharing() {
   const [me, setMe] = useState(null);
@@ -108,21 +110,21 @@ export default function Sharing() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="sharing-wrapper">
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
       <main style={{ flex: 1, padding: "30px" }}>
         <h4 style={{ marginBottom: "8px" }}>Inter-institution sharing</h4>
-        <p style={{ color: "#666", marginBottom: "25px" }}>
+        <p style={{ color: "#ffffff", marginBottom: "25px" }}>
           Your institution: <strong>{me?.institutionName || "—"}</strong>
         </p>
 
         {userIsAdmin && (
           <section style={{ marginBottom: "35px" }}>
             <h5 style={{ marginBottom: "15px" }}>Pending requests to review</h5>
-            <div style={{ background: "#fff", borderRadius: "12px", padding: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+            <div style={{ background: "#2fd158", borderRadius: "12px", padding: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
               {pendingRequests.length === 0 && <p style={{ padding: "15px" }}>No pending requests.</p>}
               {pendingRequests.map((r) => (
                 <div
@@ -155,7 +157,7 @@ export default function Sharing() {
         )}
 
         <section style={{ marginBottom: "35px" }}>
-          <h5 style={{ marginBottom: "15px" }}>Equipment from other institutions</h5>
+          <h6 style={{ marginBottom: "15px" }}>Equipments from other Institutions</h6>
           <div className="equipment-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "20px" }}>
             {otherInstitutionEquipment.length === 0 && <p>No equipment from other institutions found.</p>}
             {otherInstitutionEquipment.map((eq) => {
@@ -202,8 +204,8 @@ export default function Sharing() {
         </section>
 
         <section>
-          <h5 style={{ marginBottom: "15px" }}>My requests</h5>
-          <div style={{ background: "#fff", borderRadius: "12px", padding: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+          <h6 style={{ marginBottom: "20px" }}>My requests</h6>
+          <div style={{ background: "#26bb49", borderRadius: "12px", padding: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
             {myRequests.length === 0 && <p style={{ padding: "15px" }}>You haven't requested access to anything yet.</p>}
             {myRequests.map((r) => (
               <div

@@ -120,7 +120,13 @@ export default function EquipmentDetail() {
           <h4>Equipment detail</h4>
           <div className="right">
             <input type="text" className="form-control search" placeholder="Search..." />
-            <div className="profile"></div>
+            <div
+  className="profile"
+  onClick={() => navigate("/profile")}
+  title="My Profile"
+>
+  👤
+</div>
           </div>
         </div>
 

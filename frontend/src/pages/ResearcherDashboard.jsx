@@ -56,29 +56,66 @@ export default function ResearcherDashboard() {
         <div className="topbar">
           <h4>Researcher dashboard</h4>
           <div className="top-right">
-            <input type="text" placeholder="Search..." className="form-control search" />
-            <div className="profile"></div>
-          </div>
+    <input
+        type="text"
+        placeholder="Search..."
+        className="form-control search"
+    />
+
+    <button
+        className="profile-circle"
+        onClick={() => navigate("/profile")}
+        title="My Profile"
+        aria-label="My Profile"
+    >
+        👤
+    </button>
+</div>
         </div>
 
         <div className="stats">
-          <div className="card stat blue">
-            <small>My bookings</small>
-            <h2>{upcomingBookings.length} upcoming</h2>
-          </div>
-          <div className="card stat green">
-            <small>Available now</small>
-            <h2>{availableCount} items</h2>
-          </div>
-          <div className="card stat orange">
-            <small>Waitlisted</small>
-            <h2>0 items</h2>
-          </div>
-          <div className="card stat gray">
-            <small>Notifications</small>
-            <h2>5 new</h2>
-          </div>
-        </div>
+
+  {/* MY BOOKINGS */}
+  <div
+    className="card stat blue"
+    onClick={() => navigate("/my-bookings")}
+    style={{ cursor: "pointer" }}
+  >
+    <big><b>My bookings</b></big>
+    <h2>{upcomingBookings.length} upcoming</h2>
+  </div>
+
+  {/* AVAILABLE EQUIPMENT */}
+  <div
+    className="card stat green"
+    onClick={() => navigate("/equipment?status=AVAILABLE")}
+    style={{ cursor: "pointer" }}
+  >
+    <big><b>Available now</b></big>
+    <h2>{availableCount} items</h2>
+  </div>
+
+  {/* WAITLIST */}
+  <div
+    className="card stat orange"
+    onClick={() => navigate("/my-waitlist")}
+    style={{ cursor: "pointer" }}
+  >
+    <big><b>Waitlisted</b></big>
+    <h2>0 items</h2>
+  </div>
+
+  {/* NOTIFICATIONS */}
+  <div
+    className="card stat gray"
+    onClick={() => navigate("/notifications")}
+    style={{ cursor: "pointer" }}
+  >
+    <big><b>Notifications</b></big>
+    <h2>5 new</h2>
+  </div>
+
+</div>
 
         <h5 className="section-title">Upcoming reservations</h5>
         <div className="reservation-box">

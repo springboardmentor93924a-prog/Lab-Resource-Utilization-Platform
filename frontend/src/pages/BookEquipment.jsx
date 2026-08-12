@@ -177,7 +177,14 @@ async function handleWaitlist() {
               <i className="fa-solid fa-magnifying-glass"></i>
               <input type="text" placeholder="Search..." />
             </div>
-            <div className="profile"></div>
+            <div
+  className="profile"
+  onClick={() => navigate("/profile")}
+  title="My Profile"
+  aria-label="My Profile"
+>
+  <i className="fa-solid fa-user"></i>
+</div>
           </div>
         </header>
 

@@ -129,9 +129,14 @@ export default function AddEquipment() {
           <h2>Add equipment</h2>
           <div className="right">
             <input type="text" placeholder="Search..." />
-            <div className="profile">
-              <i className="fa-solid fa-user"></i>
-            </div>
+            <button
+    className="profile-circle"
+    onClick={() => navigate("/profile")}
+    title="My Profile"
+    aria-label="My Profile"
+>
+    👤
+</button>
           </div>
         </header>
 
