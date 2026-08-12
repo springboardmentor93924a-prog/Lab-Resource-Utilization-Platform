@@ -31,6 +31,49 @@ public class EquipmentController {
     @Autowired private DepartmentRepository departmentRepository;
     @Autowired private InstitutionRepository institutionRepository;
 
+    @GetMapping("/shared")
+    public List<Equipment> sharedEquipment() {
+        return equipmentRepository.findAll().stream()
+                .filter(e -> Boolean.TRUE.equals(e.getSharedAvailable()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @PutMapping("/{id}/share")
+    @PreAuthorize("hasRole('LAB_MANAGER') or hasRole('INSTITUTION_ADMINISTRATOR') or hasRole('SYSTEM_ADMINISTRATOR')")
+    public ResponseEntity<?> toggleShare(@PathVariable Integer id, @RequestBody Map<String, Boolean> body) {
+        if (!equipmentRepository.existsById(id)) {
+            return ResponseEntity.status(404).body(Map.of("error", "Equipment not found"));
+        }
+        Equipment eq = equipmentRepository.findById(id).get();
+        eq.setSharedAvailable(body.get("shared"));
+        eq.setUpdatedAt(LocalDateTime.now());
+        return ResponseEntity.ok(equipmentRepository.save(eq));
+    }
+
+    @GetMapping("/idle-report")
+    public List<Map<String, Object>> idleReport() {
+        return equipmentRepository.findAll().stream()
+                .filter(e -> "Available".equals(e.getStatus()))
+                .sorted((a, b) -> a.getUpdatedAt().compareTo(b.getUpdatedAt()))
+                .map(e -> {
+                    long idleHours = java.time.Duration.between(e.getUpdatedAt(), java.time.LocalDateTime.now()).toHours();
+                    Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("equipmentId", e.getEquipmentId());
+                    row.put("name", e.getName());
+                    row.put("category", e.getCategory().getCategoryName());
+                    row.put("idleHours", idleHours);
+                    return row;
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @GetMapping("/status-summary")
+    public Map<String, Long> statusSummary() {
+        return equipmentRepository.findAll().stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        Equipment::getStatus, java.util.stream.Collectors.counting()));
+    }
+
     @GetMapping
     public List<Equipment> getAll() {
         return equipmentRepository.findAll();
@@ -90,3 +133,5 @@ public class EquipmentController {
         return ResponseEntity.ok(Map.of("message", "Equipment deleted"));
     }
 }
+
+

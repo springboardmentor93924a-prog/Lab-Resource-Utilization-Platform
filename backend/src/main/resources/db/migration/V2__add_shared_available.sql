@@ -1,0 +1,1 @@
+ALTER TABLE equipment ADD COLUMN shared_available BOOLEAN NOT NULL DEFAULT false;
