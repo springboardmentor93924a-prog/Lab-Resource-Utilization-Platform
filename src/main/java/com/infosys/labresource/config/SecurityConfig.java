@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/auth/login",
                                 "/api/institutions",
                                 "/api/departments/name/**",
-                                "/api/departments/institution/**"
+                                "/api/departments/institution/**",
+                                "/api/waitlist/**"
                         ).permitAll()
 
                         .requestMatchers("/api/equipment/**","/api/bookings/**","/api/utilization/**").authenticated()

@@ -4,16 +4,18 @@ import com.infosys.labresource.Equipment.Repository.EquipmentRepository;
 import com.infosys.labresource.Equipment.entity.Equipment;
 import com.infosys.labresource.Equipment.entity.EquipmentStatus;
 import com.infosys.labresource.booking.Repository.BookingRepository;
+import com.infosys.labresource.booking.Repository.BookingWaitlistRepository;
 import com.infosys.labresource.booking.dtos.BookingRequestDTO;
 import com.infosys.labresource.booking.dtos.BookingResponseDTO;
 import com.infosys.labresource.booking.entity.Booking;
 import com.infosys.labresource.booking.entity.BookingStatus;
-import com.infosys.labresource.user.Repository.InstitutionRepo;
+import com.infosys.labresource.booking.entity.BookingWaitlist;
 import com.infosys.labresource.user.Repository.UserRepository;
 import com.infosys.labresource.user.entites.Role;
 import com.infosys.labresource.user.entites.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,12 +23,15 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class BookingServiceImpl implements BookingService{
+public class BookingServiceImpl implements BookingService {
+
     private final BookingRepository bookingRepo;
     private final EquipmentRepository equipRepo;
     private final UserRepository userRepo;
-    //private final InstitutionRepo institutionRepo;
+    private final BookingWaitlistRepository bookingWaitlistRepo;
+
     @Override
+    @Transactional
     public BookingResponseDTO createBooking(BookingRequestDTO requestDTO) {
 
         UserEntity user = userRepo.findById(requestDTO.getRequestedById())
@@ -41,17 +46,30 @@ public class BookingServiceImpl implements BookingService{
 
         if (requestDTO.getStartTime() == null ||
                 requestDTO.getEndTime() == null) {
-            throw new RuntimeException("Start time and end time are required.");
+
+            throw new RuntimeException(
+                    "Start time and end time are required."
+            );
         }
 
         if (!requestDTO.getStartTime().isBefore(requestDTO.getEndTime())) {
-            throw new RuntimeException("Start time must be before end time.");
+
+            throw new RuntimeException(
+                    "Start time must be before end time."
+            );
         }
 
         if (requestDTO.getStartTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Booking cannot be created for past time.");
+
+            throw new RuntimeException(
+                    "Booking cannot be created for past time."
+            );
         }
 
+        /*
+         * Equipment which cannot be used at all
+         * should not be added to the waitlist.
+         */
         if (equip.getStatus() == EquipmentStatus.UNDER_MAINTENANCE ||
                 equip.getStatus() == EquipmentStatus.OUT_OF_SERVICE ||
                 equip.getStatus() == EquipmentStatus.RETIRED) {
@@ -61,6 +79,10 @@ public class BookingServiceImpl implements BookingService{
             );
         }
 
+        /*
+         * Check whether the requested time slot is already occupied
+         * by another booking.
+         */
         boolean alreadyBooked =
                 bookingRepo
                         .existsByEquipmentAndStartTimeLessThanAndEndTimeGreaterThan(
@@ -68,12 +90,6 @@ public class BookingServiceImpl implements BookingService{
                                 requestDTO.getEndTime(),
                                 requestDTO.getStartTime()
                         );
-
-        if (alreadyBooked) {
-            throw new RuntimeException(
-                    "Equipment already booked for selected time."
-            );
-        }
 
         /*
          * Internal / External booking is derived from
@@ -102,6 +118,21 @@ public class BookingServiceImpl implements BookingService{
 
         Booking savedBooking = bookingRepo.save(booking);
 
+        /*
+         * If the requested equipment/time slot is already occupied,
+         * the booking is added to the waitlist instead of being rejected.
+         */
+        if (alreadyBooked) {
+
+            BookingWaitlist waitlist = new BookingWaitlist();
+
+            waitlist.setBooking(savedBooking);
+            waitlist.setAddedAt(LocalDateTime.now());
+            waitlist.setActive(true);
+
+            bookingWaitlistRepo.save(waitlist);
+        }
+
         return convertToDTO(savedBooking);
     }
 
@@ -121,6 +152,7 @@ public class BookingServiceImpl implements BookingService{
 
     @Override
     public BookingResponseDTO getBookingById(Long bookingId) {
+
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
@@ -128,14 +160,28 @@ public class BookingServiceImpl implements BookingService{
     }
 
     @Override
-    public BookingResponseDTO updateBooking(Long bookingId, BookingRequestDTO requestDTO) {
+    public BookingResponseDTO updateBooking(
+            Long bookingId,
+            BookingRequestDTO requestDTO) {
+
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         Equipment equip = booking.getEquipment();
 
-        if (requestDTO.getStartTime().isAfter(requestDTO.getEndTime())) {
-            throw new RuntimeException("Invalid booking time.");
+        if (requestDTO.getStartTime() == null ||
+                requestDTO.getEndTime() == null) {
+
+            throw new RuntimeException(
+                    "Start time and end time are required."
+            );
+        }
+
+        if (!requestDTO.getStartTime().isBefore(requestDTO.getEndTime())) {
+
+            throw new RuntimeException(
+                    "Start time must be before end time."
+            );
         }
 
         boolean alreadyBooked = bookingRepo
@@ -148,7 +194,9 @@ public class BookingServiceImpl implements BookingService{
                 !(booking.getStartTime().equals(requestDTO.getStartTime())
                         && booking.getEndTime().equals(requestDTO.getEndTime()))) {
 
-            throw new RuntimeException("Selected slot is already booked.");
+            throw new RuntimeException(
+                    "Selected slot is already booked."
+            );
         }
 
         booking.setStartTime(requestDTO.getStartTime());
@@ -160,7 +208,9 @@ public class BookingServiceImpl implements BookingService{
     }
 
     @Override
+    @Transactional
     public void cancelBooking(Long bookingId) {
+
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
@@ -170,16 +220,31 @@ public class BookingServiceImpl implements BookingService{
 
         equipRepo.save(booking.getEquipment());
 
+        /*
+         * If this booking was present in the waitlist,
+         * deactivate its waitlist entry.
+         */
+        bookingWaitlistRepo.findByBooking(booking)
+                .ifPresent(waitlist -> {
+
+                    waitlist.setActive(false);
+
+                    bookingWaitlistRepo.save(waitlist);
+                });
+
         bookingRepo.save(booking);
     }
 
     @Override
-    public BookingResponseDTO approveBooking(Long bookingId, String approverEmail) {
+    public BookingResponseDTO approveBooking(
+            Long bookingId,
+            String approverEmail) {
 
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         if (booking.getStatus() != BookingStatus.PENDING_APPROVAL) {
+
             throw new RuntimeException(
                     "Only pending bookings can be approved."
             );
@@ -214,6 +279,7 @@ public class BookingServiceImpl implements BookingService{
                 && equipmentDepartmentId.equals(requesterDepartmentId)) {
 
             if (approver.getRole() != Role.LAB_MANAGER) {
+
                 throw new RuntimeException(
                         "Only the Lab Manager can approve this booking."
                 );
@@ -246,6 +312,7 @@ public class BookingServiceImpl implements BookingService{
         else if (equipmentInstitutionId.equals(requesterInstitutionId)) {
 
             if (approver.getRole() != Role.DEPARTMENT_HEAD) {
+
                 throw new RuntimeException(
                         "Only the Department Head can approve this booking."
                 );
@@ -270,6 +337,7 @@ public class BookingServiceImpl implements BookingService{
         else {
 
             if (approver.getRole() != Role.INSTITUTION_ADMIN) {
+
                 throw new RuntimeException(
                         "Only the Institution Admin can approve this booking."
                 );
@@ -296,21 +364,46 @@ public class BookingServiceImpl implements BookingService{
 
         Booking updatedBooking = bookingRepo.save(booking);
 
+        /*
+         * Once a waitlisted booking is approved,
+         * its waitlist entry is no longer active.
+         */
+        bookingWaitlistRepo.findByBooking(booking)
+                .ifPresent(waitlist -> {
+
+                    waitlist.setActive(false);
+
+                    bookingWaitlistRepo.save(waitlist);
+                });
+
         return convertToDTO(updatedBooking);
     }
 
     @Override
     public BookingResponseDTO rejectBooking(Long bookingId) {
+
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         booking.setStatus(BookingStatus.REJECTED);
 
+        /*
+         * If the booking was in the waitlist,
+         * deactivate its waitlist entry.
+         */
+        bookingWaitlistRepo.findByBooking(booking)
+                .ifPresent(waitlist -> {
+
+                    waitlist.setActive(false);
+
+                    bookingWaitlistRepo.save(waitlist);
+                });
+
         Booking updatedBooking = bookingRepo.save(booking);
 
         return convertToDTO(updatedBooking);
-
     }
+
     private BookingResponseDTO convertToDTO(Booking booking) {
 
         BookingResponseDTO dto = new BookingResponseDTO();

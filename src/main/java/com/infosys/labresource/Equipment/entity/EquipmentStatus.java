@@ -10,6 +10,6 @@ public enum EquipmentStatus {
     UNDER_MAINTENANCE,
 
     OUT_OF_SERVICE,
-
+    UNAVAILBALE,
     RETIRED
 }
