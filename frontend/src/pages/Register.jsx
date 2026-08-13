@@ -1,9 +1,8 @@
 import "./Register.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 function Register() {
-
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -15,38 +14,46 @@ function Register() {
     departmentId: "",
   });
 
+  const [roles, setRoles] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Fetch roles and departments dynamically from backend to avoid hardcoded ID mismatch
+  useEffect(() => {
+    const token = localStorage.getItem("token"); // Optional if endpoints are public, but safe to include if needed
+
+    fetch("http://localhost:8080/api/roles")
+      .then((res) => res.json())
+      .then((data) => setRoles(data))
+      .catch((err) => console.error("Error fetching roles:", err));
+
+    fetch("http://localhost:8080/api/departments")
+      .then((res) => res.json())
+      .then((data) => setDepartments(data))
+      .catch((err) => console.error("Error fetching departments:", err));
+  }, []);
 
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-
   };
 
-
   const handleRegister = async (e) => {
-
     e.preventDefault();
-
     setError("");
     setLoading(true);
 
     try {
-
       const response = await fetch(
         "http://localhost:8080/api/auth/register",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             fullName: formData.fullName,
             email: formData.email,
@@ -58,9 +65,7 @@ function Register() {
         }
       );
 
-
       const text = await response.text();
-
       let data;
 
       try {
@@ -69,9 +74,7 @@ function Register() {
         data = text;
       }
 
-
       if (!response.ok) {
-
         throw new Error(
           typeof data === "string"
             ? data
@@ -79,40 +82,27 @@ function Register() {
         );
       }
 
-
       alert("Registration successful! Please login.");
-
       navigate("/");
 
-
     } catch (error) {
-
       setError(
         error.message || "Registration failed."
       );
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
-
   return (
-
     <div className="login-container">
-
       <div className="login-card">
-
         <h1 className="title">
           Lab Resource Utilization Platform
         </h1>
-
         <p className="subtitle">
           Create your account
         </p>
-
 
         {error && (
           <p className="login-error">
@@ -120,15 +110,10 @@ function Register() {
           </p>
         )}
 
-
         <form onSubmit={handleRegister}>
-
           {/* Full Name */}
-
           <div className="form-group">
-
             <label>Full Name</label>
-
             <input
               type="text"
               name="fullName"
@@ -137,16 +122,11 @@ function Register() {
               onChange={handleChange}
               required
             />
-
           </div>
 
-
           {/* Email */}
-
           <div className="form-group">
-
             <label>Email</label>
-
             <input
               type="email"
               name="email"
@@ -155,16 +135,11 @@ function Register() {
               onChange={handleChange}
               required
             />
-
           </div>
 
-
           {/* Password */}
-
           <div className="form-group">
-
             <label>Password</label>
-
             <input
               type="password"
               name="password"
@@ -173,123 +148,79 @@ function Register() {
               onChange={handleChange}
               required
             />
-
           </div>
 
-
           {/* Phone */}
-
           <div className="form-group">
-
             <label>Phone</label>
-
             <input
               type="text"
               name="phone"
               placeholder="Enter your phone number"
               value={formData.phone}
-              onChange={handleChange
-              }
+              onChange={handleChange}
             />
-
           </div>
 
-
-          {/* Role */}
-
+          {/* Role (Dynamic Mapping) */}
           <div className="form-group">
-
             <label>Role</label>
-
             <select
               name="roleId"
               value={formData.roleId}
               onChange={handleChange}
               required
             >
-
               <option value="">
                 Select Role
               </option>
-
-              <option value="1">Researcher / Student</option>
-  <option value="2">Lab Technician</option>
-  <option value="3">Lab Manager</option>
-  <option value="4">Department Head</option>
-  <option value="5">Institution Administrator</option>
-  <option value="6">System Administrator</option>
+              {roles.map((role) => (
+                <option key={role.roleId} value={role.roleId}>
+                  {role.roleName}
+                </option>
+              ))}
             </select>
-
           </div>
 
-
-          {/* Department */}
-
+          {/* Department (Dynamic Mapping) */}
           <div className="form-group">
-
             <label>Department</label>
-
             <select
               name="departmentId"
               value={formData.departmentId}
               onChange={handleChange}
               required
             >
-
               <option value="">
                 Select Department
               </option>
-
-              <option value="1">
-                Computer Science and Business Systems
-              </option>
-
-              <option value="2">
-                Computer Science and Engineering
-              </option>
-
-              <option value="3">
-                Electronics and Communication Engineering
-              </option>
-
-              <option value="4">
-                Information Technology
-              </option>
-
+              {departments.map((dept) => (
+                <option key={dept.departmentId} value={dept.departmentId}>
+                  {dept.departmentName}
+                </option>
+              ))}
             </select>
-
           </div>
 
-
           {/* Register Button */}
-
           <button
             className="login-btn"
             type="submit"
             disabled={loading}
           >
-
             {loading
               ? "REGISTERING..."
               : "REGISTER"}
-
           </button>
-
         </form>
 
-
         <p style={{ marginTop: "15px" }}>
-
           Already have an account?{" "}
-
           <Link to="/">
             Login
           </Link>
-
         </p>
-
       </div>
-
     </div>
   );
 }
