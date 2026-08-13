@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./Waitlist.css";
 
 function Waitlist() {
   const [entries, setEntries] = useState([]);
@@ -77,13 +78,14 @@ function Waitlist() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to join waitlist");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to join waitlist");
       }
 
       resetForm();
       fetchMyWaitlist();
     } catch (error) {
-      console.error("Join waitlist error:", error);
+      alert(error.message);
     }
   };
 
@@ -100,89 +102,135 @@ function Waitlist() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to cancel waitlist entry");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to cancel waitlist entry");
       }
 
       fetchMyWaitlist();
     } catch (error) {
-      console.error("Cancel waitlist error:", error);
+      alert(error.message);
     }
   };
 
-  if (loading) return <p>Loading waitlist...</p>;
+  const statusClass = (status) => {
+    switch (status) {
+      case "WAITING":
+        return "waitlist-status pending";
+      case "NOTIFIED":
+        return "waitlist-status notified";
+      case "FULFILLED":
+        return "waitlist-status confirmed";
+      case "CANCELLED":
+        return "waitlist-status cancelled";
+      default:
+        return "waitlist-status";
+    }
+  };
+
+  if (loading) {
+    return <div className="waitlist-container">Loading waitlist...</div>;
+  }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>My Waitlist</h2>
-
-      <button onClick={() => setShowForm(!showForm)}>
-        {showForm ? "Cancel" : "Join Waitlist"}
-      </button>
+    <div className="waitlist-container">
+      <div className="waitlist-header">
+        <div>
+          <h2>My Waitlist</h2>
+          <p>Track equipment you're waiting on, or join a new waitlist.</p>
+        </div>
+        <button
+          className="add-waitlist-btn"
+          onClick={() => setShowForm(!showForm)}
+        >
+          {showForm ? "Cancel" : "+ Join Waitlist"}
+        </button>
+      </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} style={{ margin: "16px 0" }}>
-          <div>
-            <label>Equipment ID:</label>
-            <input
-              type="number"
-              name="equipmentId"
-              value={formData.equipmentId}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Requested Start Time:</label>
-            <input
-              type="datetime-local"
-              name="requestedStartTime"
-              value={formData.requestedStartTime}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Requested End Time:</label>
-            <input
-              type="datetime-local"
-              name="requestedEndTime"
-              value={formData.requestedEndTime}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <button type="submit">Submit</button>
-        </form>
+        <div className="waitlist-form-card">
+          <form onSubmit={handleSubmit} className="waitlist-form">
+            <div className="waitlist-form-group">
+              <label>Equipment ID</label>
+              <input
+                type="number"
+                name="equipmentId"
+                value={formData.equipmentId}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="waitlist-form-group">
+              <label>Requested Start Time</label>
+              <input
+                type="datetime-local"
+                name="requestedStartTime"
+                value={formData.requestedStartTime}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="waitlist-form-group">
+              <label>Requested End Time</label>
+              <input
+                type="datetime-local"
+                name="requestedEndTime"
+                value={formData.requestedEndTime}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <button type="submit" className="submit-waitlist-btn">
+              Submit
+            </button>
+          </form>
+        </div>
       )}
 
-      <table border="1" cellPadding="8" style={{ marginTop: "16px" }}>
-        <thead>
-          <tr>
-            <th>Equipment</th>
-            <th>Requested Start</th>
-            <th>Requested End</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr key={entry.waitlistId}>
-              <td>{entry.equipment?.equipmentName}</td>
-              <td>{entry.requestedStartTime}</td>
-              <td>{entry.requestedEndTime}</td>
-              <td>{entry.waitlistStatus}</td>
-              <td>
-                {entry.waitlistStatus === "WAITING" && (
-                  <button onClick={() => handleCancel(entry.waitlistId)}>
-                    Cancel
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="waitlist-table-card">
+        {entries.length === 0 ? (
+          <div className="waitlist-empty">
+            You're not on any waitlists right now.
+          </div>
+        ) : (
+          <table className="waitlist-table">
+            <thead>
+              <tr>
+                <th>Equipment</th>
+                <th>Requested Start</th>
+                <th>Requested End</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry) => (
+                <tr key={entry.waitlistId}>
+                  <td className="equipment-name">
+                    {entry.equipment?.equipmentName}
+                  </td>
+                  <td>{entry.requestedStartTime?.replace("T", " ")}</td>
+                  <td>{entry.requestedEndTime?.replace("T", " ")}</td>
+                  <td>
+                    <span className={statusClass(entry.waitlistStatus)}>
+                      {entry.waitlistStatus}
+                    </span>
+                  </td>
+                  <td>
+                    {entry.waitlistStatus === "WAITING" && (
+                      <button
+                        className="cancel-waitlist-btn"
+                        onClick={() => handleCancel(entry.waitlistId)}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
