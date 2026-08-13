@@ -4,6 +4,7 @@ import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.service.MaintenanceService;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/maintenance")
 @CrossOrigin(origins = "http://localhost:5173")
+@PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
 public class MaintenanceController {
 
 

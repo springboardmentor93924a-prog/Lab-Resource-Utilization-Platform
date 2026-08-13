@@ -1,0 +1,125 @@
+package com.example.lab_platform.controller;
+
+import com.example.lab_platform.entity.Waitlist;
+import com.example.lab_platform.service.WaitlistService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/waitlist")
+@CrossOrigin(origins = "http://localhost:5173")
+public class WaitlistController {
+
+    private final WaitlistService waitlistService;
+
+    public WaitlistController(WaitlistService waitlistService) {
+        this.waitlistService = waitlistService;
+    }
+
+    // =========================================================
+    // JOIN WAITLIST
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @PostMapping
+    public ResponseEntity<Waitlist> joinWaitlist(
+            @RequestBody Waitlist waitlist) {
+
+        return ResponseEntity.ok(
+                waitlistService.joinWaitlist(waitlist)
+        );
+    }
+
+    // =========================================================
+    // GET ALL WAITLIST ENTRIES (managers/admins only)
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @GetMapping
+    public ResponseEntity<List<Waitlist>> getAllWaitlistEntries() {
+
+        return ResponseEntity.ok(
+                waitlistService.getAllWaitlistEntries()
+        );
+    }
+
+    // =========================================================
+    // GET WAITLIST FOR A SPECIFIC EQUIPMENT
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @GetMapping("/equipment/{equipmentId}")
+    public ResponseEntity<List<Waitlist>> getWaitlistForEquipment(
+            @PathVariable Integer equipmentId) {
+
+        return ResponseEntity.ok(
+                waitlistService.getWaitlistForEquipment(equipmentId)
+        );
+    }
+
+    // =========================================================
+    // GET MY OWN WAITLIST ENTRIES
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @GetMapping("/my")
+    public ResponseEntity<List<Waitlist>> getMyWaitlistEntries() {
+
+        return ResponseEntity.ok(
+                waitlistService.getMyWaitlistEntries()
+        );
+    }
+
+    // =========================================================
+    // CANCEL WAITLIST ENTRY
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancelWaitlistEntry(
+            @PathVariable Integer id) {
+
+        waitlistService.cancelWaitlistEntry(id);
+
+        return ResponseEntity.noContent().build();
+    }
+}

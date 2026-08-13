@@ -8,6 +8,7 @@ import Equipment from "../pages/Equipment";
 import Reservations from "../pages/Reservations";
 import Reports from "../pages/Reports";
 import User from "../pages/User";
+import Waitlist from "../pages/Waitlist";
 
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -76,6 +77,25 @@ function AppRoutes() {
           >
             <MainLayout>
               <Reservations />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      {/* Waitlist - Task 6 */}
+      <Route
+        path="/waitlist"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "STUDENT",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Waitlist />
             </MainLayout>
           </ProtectedRoute>
         }
