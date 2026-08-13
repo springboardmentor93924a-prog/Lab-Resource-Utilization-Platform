@@ -6,6 +6,8 @@ import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.BookingService;
+import com.example.lab_platform.entity.Waitlist;
+import com.example.lab_platform.repository.WaitlistRepository;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,17 +15,103 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Service
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final EquipmentRepository equipmentRepository;
+    private final WaitlistRepository waitlistRepository;
 
     public BookingServiceImpl(BookingRepository bookingRepository,
-                              EquipmentRepository equipmentRepository) {
+                              EquipmentRepository equipmentRepository,
+                              WaitlistRepository waitlistRepository) {
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
+        this.waitlistRepository = waitlistRepository;
+    }
+
+    /*
+     * When equipment becomes available, try to allocate it
+     * to the next person in line on the waitlist.
+     *
+     * - If their requested time window is still valid (in the future,
+     *   end after start) and doesn't overlap anything else, we
+     *   auto-create a Confirmed booking for them and mark the
+     *   waitlist entry FULFILLED.
+     * - Otherwise, we just mark them NOTIFIED so they can book manually.
+     */
+    private void notifyNextWaitlistedUser(Equipment equipment) {
+        if (equipment == null) {
+            return;
+        }
+
+        List<Waitlist> waitingEntries =
+                waitlistRepository.findByEquipment_EquipmentIdAndWaitlistStatusOrderByCreatedAtAsc(
+                        equipment.getEquipmentId(),
+                        "WAITING"
+                );
+
+        if (waitingEntries.isEmpty()) {
+            return;
+        }
+
+        Waitlist nextInLine = waitingEntries.get(0);
+
+        boolean allocated = tryAutoAllocate(nextInLine, equipment);
+
+        if (allocated) {
+            nextInLine.setWaitlistStatus("FULFILLED");
+        } else {
+            nextInLine.setWaitlistStatus("NOTIFIED");
+        }
+
+        waitlistRepository.save(nextInLine);
+    }
+
+    /*
+     * Attempts to create a Confirmed booking for the waitlisted user
+     * using their originally requested time window. Returns true if
+     * the booking was created, false if the window is no longer valid.
+     */
+    private boolean tryAutoAllocate(Waitlist entry, Equipment equipment) {
+        LocalDateTime start = entry.getRequestedStartTime();
+        LocalDateTime end = entry.getRequestedEndTime();
+
+        if (start == null || end == null) {
+            return false;
+        }
+
+        // Window must still be in the future and well-formed
+        if (!end.isAfter(start) || start.isBefore(LocalDateTime.now())) {
+            return false;
+        }
+
+        // Make sure nothing else booked that slot in the meantime
+        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
+                equipment.getEquipmentId(), start, end
+        );
+
+        if (!overlapping.isEmpty()) {
+            return false;
+        }
+
+        Booking autoBooking = new Booking();
+        autoBooking.setUser(entry.getUser());
+        autoBooking.setEquipment(equipment);
+        autoBooking.setBookingDate(start.toLocalDate());
+        autoBooking.setStartTime(start);
+        autoBooking.setEndTime(end);
+        autoBooking.setPurpose("Auto-allocated from waitlist");
+        autoBooking.setBookingStatus("Confirmed");
+
+        bookingRepository.save(autoBooking);
+
+        equipment.setStatus("Booked");
+        equipmentRepository.save(equipment);
+
+        return true;
     }
 
     private User getLoggedInUser() {
@@ -222,7 +310,14 @@ public class BookingServiceImpl implements BookingService {
         }
 
         booking.setBookingStatus("Rejected");
-        return bookingRepository.save(booking);
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        if (booking.getEquipment() != null) {
+            notifyNextWaitlistedUser(booking.getEquipment());
+        }
+
+        return savedBooking;
     }
 
     @Override
@@ -243,6 +338,8 @@ public class BookingServiceImpl implements BookingService {
         if (equipment != null) {
             equipment.setStatus("Available");
             equipmentRepository.save(equipment);
+
+            notifyNextWaitlistedUser(equipment);
         }
 
         return bookingRepository.save(booking);

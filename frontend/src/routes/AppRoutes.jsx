@@ -2,11 +2,13 @@ import { Routes, Route } from "react-router-dom";
 
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Maintenance from "../pages/Maintenance";
 import Dashboard from "../pages/Dashboard";
 import Equipment from "../pages/Equipment";
 import Reservations from "../pages/Reservations";
 import Reports from "../pages/Reports";
 import User from "../pages/User";
+import Waitlist from "../pages/Waitlist";
 
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -24,7 +26,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute
             allowedRoles={[
-              "RESEARCHER",
               "STUDENT",
               "LAB_TECHNICIAN",
               "LAB_MANAGER",
@@ -46,7 +47,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute
             allowedRoles={[
-              "RESEARCHER",
               "STUDENT",
               "LAB_TECHNICIAN",
               "LAB_MANAGER",
@@ -68,7 +68,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute
             allowedRoles={[
-              "RESEARCHER",
               "STUDENT",
               "LAB_MANAGER",
               "DEPARTMENT_HEAD",
@@ -82,7 +81,47 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
+      {/* Waitlist - Task 6 */}
+      <Route
+        path="/waitlist"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "STUDENT",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Waitlist />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+{/* =====================================================
+                MAINTENANCE
+                LAB TECHNICIAN + MANAGEMENT ROLES
+            ====================================================== */}
+            <Route
+                path="/maintenance"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={[
+                            "LAB_TECHNICIAN",
+                            "LAB_MANAGER",
+                            "DEPARTMENT_HEAD",
+                            "INSTITUTION_ADMIN",
+                            "SYSTEM_ADMIN"
+                        ]}
+                    >
+                        <MainLayout>
+                            <Maintenance />
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
       {/* Utilization - Task 2 */}
       <Route
         path="/utilization"
