@@ -1,0 +1,301 @@
+.waitlist-page {
+  min-height: 100%;
+  padding: 30px 34px;
+  background: #f7f9fc;
+  color: #172033;
+}
+
+
+/* HEADER */
+
+.waitlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.waitlist-header h1 {
+  margin: 0;
+  font-size: 27px;
+}
+
+.waitlist-header p {
+  margin: 7px 0 0;
+  color: #7b8798;
+  font-size: 13px;
+}
+
+.waitlist-role-badge {
+  padding: 9px 15px;
+  border-radius: 18px;
+  background: #edf4ff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+/* SUMMARY */
+
+.waitlist-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.waitlist-summary-card {
+  min-height: 95px;
+  padding: 17px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  background: white;
+  border: 1px solid #e2e7ee;
+  border-radius: 11px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+}
+
+.summary-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.summary-icon.blue {
+  background: #edf4ff;
+  color: #2563eb;
+}
+
+.summary-icon.orange {
+  background: #fff4df;
+  color: #d97706;
+}
+
+.summary-icon.green {
+  background: #eaf8f0;
+  color: #159669;
+}
+
+.waitlist-summary-card small {
+  display: block;
+  color: #7b8798;
+  font-size: 10px;
+}
+
+.waitlist-summary-card strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 23px;
+}
+
+
+/* MAIN */
+
+.my-waitlist-container {
+  background: white;
+  border: 1px solid #e2e7ee;
+  border-radius: 12px;
+  overflow: hidden;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+}
+
+.waitlist-section-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.waitlist-section-header h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.waitlist-section-header p {
+  margin: 5px 0 0;
+  color: #8a96a8;
+  font-size: 10px;
+}
+
+
+/* ROW */
+
+.my-waitlist-row {
+  min-height: 88px;
+  padding: 0 22px;
+
+  display: grid;
+  grid-template-columns:
+    2fr
+    1fr
+    1.4fr
+    1.4fr
+    1.2fr
+    0.8fr;
+
+  align-items: center;
+  gap: 15px;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+.my-waitlist-row:last-child {
+  border-bottom: none;
+}
+
+
+/* EQUIPMENT */
+
+.waitlist-equipment {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.waitlist-equipment-icon {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #edf4ff;
+  color: #2563eb;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.waitlist-equipment strong {
+  display: block;
+  font-size: 11px;
+}
+
+.waitlist-equipment small {
+  display: block;
+  margin-top: 4px;
+  color: #9aa6b7;
+  font-size: 8px;
+}
+
+
+/* DETAILS */
+
+.waitlist-position span,
+.waitlist-date span {
+  display: block;
+  color: #9aa6b7;
+  font-size: 8px;
+}
+
+.waitlist-position strong,
+.waitlist-date strong {
+  display: block;
+  margin-top: 4px;
+  color: #53657d;
+  font-size: 9px;
+}
+
+
+/* STATUS */
+
+.my-waitlist-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 10px;
+  border-radius: 15px;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.my-waitlist-status span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.my-waitlist-status.waiting {
+  background: #fff4df;
+  color: #c26b00;
+}
+
+.my-waitlist-status.soon {
+  background: #eaf8f0;
+  color: #15803d;
+}
+
+
+/* CANCEL */
+
+.cancel-waitlist-btn {
+  height: 32px;
+  padding: 0 12px;
+
+  border: 1px solid #e0e5eb;
+  border-radius: 7px;
+
+  background: white;
+  color: #64748b;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.cancel-waitlist-btn:hover {
+  background: #fff4f4;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+
+  .my-waitlist-row {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    padding: 15px 20px;
+  }
+
+}
+
+@media (max-width: 650px) {
+
+  .waitlist-page {
+    padding: 20px;
+  }
+
+  .waitlist-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .waitlist-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .my-waitlist-row {
+    grid-template-columns: 1fr;
+  }
+
+}

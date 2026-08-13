@@ -1,0 +1,536 @@
+/* =========================
+   EQUIPMENT PAGE
+========================= */
+
+.equipment-page {
+    width: 100%;
+    min-height: 100%;
+    padding: 28px 32px;
+    box-sizing: border-box;
+    background: #f5f7fb;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.equipment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.equipment-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #172b4d;
+}
+
+.equipment-header p {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: #718096;
+}
+
+.add-equipment-btn {
+    border: none;
+    background: #2563eb;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.add-equipment-btn:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================
+   STATISTICS
+========================= */
+
+.equipment-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.equipment-stat-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eaf2ff;
+    color: #2563eb;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.available-icon {
+    background: #eafaf3;
+    color: #16a34a;
+}
+
+.use-icon {
+    background: #fff5e8;
+    color: #ea8a00;
+}
+
+.maintenance-icon {
+    background: #fff0f0;
+    color: #dc2626;
+}
+
+.equipment-stat-card p {
+    margin: 0 0 4px;
+    color: #718096;
+    font-size: 12px;
+}
+
+.equipment-stat-card h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 24px;
+}
+
+
+/* =========================
+   MAIN CONTENT CARD
+========================= */
+
+.equipment-content-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+
+/* =========================
+   SEARCH + FILTERS
+========================= */
+
+.equipment-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #e8edf3;
+}
+
+.search-box {
+    flex: 1;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #d8dee8;
+    border-radius: 6px;
+    padding: 0 11px;
+    box-sizing: border-box;
+}
+
+.search-box span {
+    color: #94a3b8;
+    font-size: 17px;
+    margin-right: 7px;
+}
+
+.search-box input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    color: #334155;
+}
+
+.search-box input::placeholder {
+    color: #94a3b8;
+}
+
+.filter-select {
+    height: 38px;
+    min-width: 145px;
+    border: 1px solid #d8dee8;
+    border-radius: 6px;
+    padding: 0 10px;
+    background: white;
+    color: #475569;
+    font-size: 13px;
+    outline: none;
+}
+
+
+/* =========================
+   TABLE
+========================= */
+
+.equipment-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.professional-equipment-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.professional-equipment-table thead {
+    background: #f8fafc;
+}
+
+.professional-equipment-table th {
+    padding: 13px 16px;
+    text-align: left;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.professional-equipment-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf1f5;
+    color: #475569;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.professional-equipment-table tbody tr:hover {
+    background: #fafcff;
+}
+
+
+/* =========================
+   EQUIPMENT NAME
+========================= */
+
+.equipment-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.equipment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    background: #eaf2ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.equipment-name span {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.equipment-id {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+/* =========================
+   CATEGORY
+========================= */
+
+.category-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 5px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-badge.available {
+    color: #15803d;
+    background: #ecfdf3;
+}
+
+.status-badge.in-use {
+    color: #c2410c;
+    background: #fff7ed;
+}
+
+.status-badge.maintenance {
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+
+/* =========================
+   ACTIONS
+========================= */
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-btn,
+.edit-btn {
+    border: 1px solid #d8dee8;
+    background: white;
+    padding: 5px 9px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.view-btn {
+    color: #2563eb;
+}
+
+.edit-btn {
+    color: #64748b;
+}
+
+.view-btn:hover,
+.edit-btn:hover {
+    background: #f8fafc;
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+.equipment-footer {
+    padding: 12px 18px;
+    background: #fafbfc;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+
+/* =========================
+   EMPTY STATE
+========================= */
+
+.empty-equipment {
+    padding: 45px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+
+/* =========================
+   MODAL
+========================= */
+
+.equipment-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.equipment-modal {
+    width: 600px;
+    max-width: calc(100% - 30px);
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 22px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 20px;
+}
+
+.modal-header p {
+    margin: 5px 0 0;
+    color: #718096;
+    font-size: 12px;
+}
+
+.modal-close {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.modal-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-field label {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.form-field input,
+.form-field select {
+    width: 100%;
+    height: 39px;
+    box-sizing: border-box;
+    border: 1px solid #d8dee8;
+    border-radius: 6px;
+    padding: 0 10px;
+    font-size: 13px;
+    outline: none;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    border-color: #2563eb;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.cancel-btn,
+.save-equipment-btn {
+    height: 38px;
+    padding: 0 15px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    border: 1px solid #d8dee8;
+    background: white;
+    color: #64748b;
+}
+
+.save-equipment-btn {
+    border: none;
+    background: #2563eb;
+    color: white;
+}
+
+.save-equipment-btn:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .equipment-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .equipment-page {
+        padding: 20px;
+    }
+
+    .equipment-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .equipment-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .equipment-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        flex-basis: 100%;
+    }
+
+    .modal-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
