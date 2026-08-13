@@ -15,7 +15,6 @@ function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   const canAccessEquipment = [
-    "RESEARCHER",
     "STUDENT",
     "LAB_TECHNICIAN",
     "LAB_MANAGER",
@@ -24,8 +23,15 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  const canAccessWaitlist = [
+    "STUDENT",
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
   const canAccessBookings = [
-    "RESEARCHER",
     "STUDENT",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
@@ -109,6 +115,18 @@ function Sidebar() {
           >
             <span>📅</span>
             Bookings
+          </Link>
+        )}
+        
+        {canAccessWaitlist && (
+          <Link
+            to="/waitlist"
+            className={`sidebar-link ${
+              isActive("/waitlist") ? "active" : ""
+            }`}
+          >
+            <span>⏳</span>
+            Waitlist
           </Link>
         )}
 

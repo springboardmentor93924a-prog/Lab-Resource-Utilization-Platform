@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/maintenance")
 @CrossOrigin(origins = "http://localhost:5173")
+@PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
 public class MaintenanceController {
 
     private final MaintenanceService maintenanceService;
