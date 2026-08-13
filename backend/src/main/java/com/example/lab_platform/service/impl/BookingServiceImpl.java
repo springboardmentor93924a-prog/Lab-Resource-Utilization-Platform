@@ -8,6 +8,8 @@ import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.entity.Waitlist;
 import com.example.lab_platform.repository.WaitlistRepository;
+import com.example.lab_platform.entity.Maintenance;
+import com.example.lab_platform.repository.MaintenanceRepository;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,13 +25,16 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final EquipmentRepository equipmentRepository;
     private final WaitlistRepository waitlistRepository;
+    private final MaintenanceRepository maintenanceRepository;
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               EquipmentRepository equipmentRepository,
-                              WaitlistRepository waitlistRepository) {
+                              WaitlistRepository waitlistRepository,
+                              MaintenanceRepository maintenanceRepository) {
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.waitlistRepository = waitlistRepository;
+        this.maintenanceRepository = maintenanceRepository;
     }
 
     /*
@@ -94,6 +99,10 @@ public class BookingServiceImpl implements BookingService {
         );
 
         if (!overlapping.isEmpty()) {
+            return false;
+        }
+
+        if (isUnderMaintenanceDuring(equipment.getEquipmentId(), start, end)) {
             return false;
         }
 
@@ -172,11 +181,55 @@ public class BookingServiceImpl implements BookingService {
             if (!overlappingBookings.isEmpty()) {
                 throw new RuntimeException("This equipment is already booked for the selected time slot!");
             }
+
+            if (isUnderMaintenanceDuring(eqId, booking.getStartTime(), booking.getEndTime())) {
+                throw new RuntimeException("This equipment is scheduled for maintenance during the selected time!");
+            }
         }
         // ----------------------------------------
 
         booking.setBookingStatus("Pending");
         return bookingRepository.save(booking);
+    }
+
+    /*
+     * Blocks bookings that fall on a date where this equipment
+     * has a Scheduled or Active maintenance record. Maintenance
+     * is stored per-day (no time range), so this checks whether
+     * the maintenance date falls anywhere within the booking's
+     * start-to-end date span.
+     */
+    private boolean isUnderMaintenanceDuring(Integer equipmentId,
+                                              LocalDateTime start,
+                                              LocalDateTime end) {
+
+        List<Maintenance> maintenanceList =
+                maintenanceRepository.findByEquipment_EquipmentId(equipmentId);
+
+        for (Maintenance maintenance : maintenanceList) {
+
+            String status = maintenance.getMaintenanceStatus();
+            if (status == null) {
+                continue;
+            }
+
+            boolean blocksBooking =
+                    status.equalsIgnoreCase("Scheduled")
+                            || status.equalsIgnoreCase("Active");
+
+            if (!blocksBooking || maintenance.getMaintenanceDate() == null) {
+                continue;
+            }
+
+            java.time.LocalDate maintenanceDate = maintenance.getMaintenanceDate();
+
+            if (!maintenanceDate.isBefore(start.toLocalDate())
+                    && !maintenanceDate.isAfter(end.toLocalDate())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

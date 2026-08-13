@@ -15,27 +15,22 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
 public class MaintenanceController {
 
-
     private final MaintenanceService maintenanceService;
-
 
     public MaintenanceController(MaintenanceService maintenanceService) {
         this.maintenanceService = maintenanceService;
     }
 
-
-
-    // Get all maintenance records
+    // Get all maintenance records (Restricted to technical and administrative roles)
     @GetMapping
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public List<Maintenance> getAllMaintenanceRecords() {
-
         return maintenanceService.getAllMaintenance();
     }
 
-
-
-    // Create a new maintenance record
+    // Create a new maintenance record (Restricted to technicians and managers)
     @PostMapping
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> createMaintenance(
             @RequestBody Maintenance maintenance) {
 
@@ -45,10 +40,9 @@ public class MaintenanceController {
         return ResponseEntity.ok(savedMaintenance);
     }
 
-
-
     // Get maintenance record by ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> getMaintenanceById(
             @PathVariable Long id) {
 

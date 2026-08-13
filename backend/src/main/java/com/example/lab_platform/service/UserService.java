@@ -9,6 +9,7 @@ import com.example.lab_platform.repository.DepartmentRepository;
 import com.example.lab_platform.repository.RoleRepository;
 import com.example.lab_platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +26,9 @@ public class UserService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Added BCrypt Password Encoder for security audit
 
 
     // =========================
@@ -55,7 +59,10 @@ public class UserService {
 
         user.setFullName(registerRequest.getFullName());
         user.setEmail(registerRequest.getEmail());
-        user.setPassword(registerRequest.getPassword());
+        
+        // Encode password using BCrypt instead of storing in plain text
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        
         user.setPhone(registerRequest.getPhone());
 
         // Set role and department
@@ -88,8 +95,8 @@ public class UserService {
             throw new RuntimeException("User account is inactive!");
         }
 
-        // Check password
-        if (!user.getPassword().equals(loginRequest.getPassword())) {
+        // Check password using passwordEncoder matches for hashed passwords
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid credentials!");
         }
 

@@ -1,5 +1,5 @@
- import { useEffect, useState } from "react";
-import "./Reports.css"; // यहाँ CSS फाइल को इम्पोर्ट किया गया है
+import { useEffect, useState } from "react";
+import "./Reports.css"; 
 
 function Reports() {
   const [equipment, setEquipment] = useState([]);
@@ -41,12 +41,14 @@ function Reports() {
     (item) => item.status === "Available"
   ).length;
 
+  // Backend sets "Booked" instead of "Reserved"
   const reserved = equipment.filter(
-    (item) => item.status === "Reserved"
+    (item) => item.status === "Booked" || item.status === "Reserved"
   ).length;
 
+  // Backend sets "Under Maintenance" instead of "Maintenance"
   const maintenance = equipment.filter(
-    (item) => item.status === "Maintenance"
+    (item) => item.status === "Under Maintenance" || item.status === "Maintenance"
   ).length;
 
   const confirmedBookings = bookings.filter(
