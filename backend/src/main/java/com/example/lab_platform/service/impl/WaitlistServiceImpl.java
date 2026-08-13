@@ -8,7 +8,10 @@ import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.service.WaitlistService;
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.repository.BookingRepository;
+import com.example.lab_platform.entity.Maintenance;
+import com.example.lab_platform.repository.MaintenanceRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,13 +25,16 @@ public class WaitlistServiceImpl implements WaitlistService {
     private final WaitlistRepository waitlistRepository;
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;
+    private final MaintenanceRepository maintenanceRepository;
 
     public WaitlistServiceImpl(WaitlistRepository waitlistRepository,
                                 EquipmentRepository equipmentRepository,
-                                BookingRepository bookingRepository) {
+                                BookingRepository bookingRepository,
+                                MaintenanceRepository maintenanceRepository) {
         this.waitlistRepository = waitlistRepository;
         this.equipmentRepository = equipmentRepository;
         this.bookingRepository = bookingRepository;
+        this.maintenanceRepository = maintenanceRepository;
     }
 
     private User getLoggedInUser() {
@@ -102,19 +108,62 @@ public class WaitlistServiceImpl implements WaitlistService {
             if (candidate.getEquipmentId().equals(requestedEquipment.getEquipmentId())) {
                 continue;
             }
-
             List<Booking> overlapping = bookingRepository.findOverlappingBookings(
                     candidate.getEquipmentId(),
                     waitlist.getRequestedStartTime(),
                     waitlist.getRequestedEndTime()
             );
 
-            if (overlapping.isEmpty()) {
+            boolean underMaintenance = isUnderMaintenanceDuring(
+                    candidate.getEquipmentId(),
+                    waitlist.getRequestedStartTime(),
+                    waitlist.getRequestedEndTime()
+            );
+
+            if (overlapping.isEmpty() && !underMaintenance) {
                 return candidate;
             }
         }
 
         return null;
+    }
+
+    /*
+     * Same maintenance-blocking rule as BookingServiceImpl —
+     * a Scheduled or Active maintenance record on a date within
+     * the requested window disqualifies the equipment.
+     */
+    private boolean isUnderMaintenanceDuring(Integer equipmentId,
+                                              LocalDateTime start,
+                                              LocalDateTime end) {
+
+        List<Maintenance> maintenanceList =
+                maintenanceRepository.findByEquipment_EquipmentId(equipmentId);
+
+        for (Maintenance maintenance : maintenanceList) {
+
+            String status = maintenance.getMaintenanceStatus();
+            if (status == null) {
+                continue;
+            }
+
+            boolean blocksBooking =
+                    status.equalsIgnoreCase("Scheduled")
+                            || status.equalsIgnoreCase("Active");
+
+            if (!blocksBooking || maintenance.getMaintenanceDate() == null) {
+                continue;
+            }
+
+            java.time.LocalDate maintenanceDate = maintenance.getMaintenanceDate();
+
+            if (!maintenanceDate.isBefore(start.toLocalDate())
+                    && !maintenanceDate.isAfter(end.toLocalDate())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

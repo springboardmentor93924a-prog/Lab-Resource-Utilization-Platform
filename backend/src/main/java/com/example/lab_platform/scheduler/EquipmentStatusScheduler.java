@@ -10,6 +10,7 @@ import com.example.lab_platform.repository.MaintenanceRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -42,6 +43,8 @@ public class EquipmentStatusScheduler {
 
         LocalDateTime now = LocalDateTime.now();
 
+        activateDueMaintenance();
+
         List<Equipment> equipmentList =
                 equipmentRepository.findAll();
 
@@ -60,6 +63,37 @@ public class EquipmentStatusScheduler {
         }
     }
 
+    /*
+     * Auto-transition: any maintenance record still marked
+     * "Scheduled" whose maintenanceDate has arrived (today
+     * or already passed) is flipped to "Active", so the
+     * equipment correctly shows Under Maintenance starting
+     * on the scheduled day.
+     */
+    private void activateDueMaintenance() {
+
+        LocalDate today = LocalDate.now();
+
+        List<Maintenance> scheduledMaintenance =
+                maintenanceRepository.findByMaintenanceStatus("Scheduled");
+
+        for (Maintenance maintenance : scheduledMaintenance) {
+
+            LocalDate maintenanceDate = maintenance.getMaintenanceDate();
+
+            if (maintenanceDate == null) {
+                continue;
+            }
+
+            if (!maintenanceDate.isAfter(today)) {
+
+                maintenance.setMaintenanceStatus("Active");
+
+                maintenanceRepository.save(maintenance);
+            }
+        }
+    }
+    
     private String calculateStatus(
             Equipment equipment,
             LocalDateTime now) {
