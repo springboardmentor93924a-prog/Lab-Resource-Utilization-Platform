@@ -32,25 +32,34 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Booking booking) {
+    public ResponseEntity<?> create(@RequestBody Booking booking, java.security.Principal principal) {
         if (booking.getBookingStart() == null || booking.getBookingEnd() == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "bookingStart and bookingEnd are required"));
         }
         if (!booking.getBookingEnd().isAfter(booking.getBookingStart())) {
             return ResponseEntity.badRequest().body(Map.of("error", "bookingEnd must be after bookingStart"));
         }
+        if (booking.getEquipment() == null || booking.getEquipment().getEquipmentId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "equipment.equipmentId is required"));
+        }
+        com.example.demo.entity.User requestingUser = userRepository.findByEmail(principal.getName()).orElse(null);
+        if (requestingUser == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Could not identify logged-in user"));
+        }
+        booking.setUser(requestingUser);
+
         Equipment targetEq = equipmentRepository.findById(booking.getEquipment().getEquipmentId()).orElse(null);
-        if (targetEq != null && booking.getUser() != null && booking.getUser().getUserId() != null) {
-            com.example.demo.entity.User requestingUser = userRepository.findById(booking.getUser().getUserId()).orElse(null);
-            if (requestingUser != null && requestingUser.getDepartment() != null) {
-                Integer userInstitutionId = requestingUser.getDepartment().getInstitution().getInstitutionId();
-                Integer eqInstitutionId = targetEq.getInstitution().getInstitutionId();
-                if (!userInstitutionId.equals(eqInstitutionId) && !Boolean.TRUE.equals(targetEq.getSharedAvailable())) {
-                    return ResponseEntity.status(403).body(Map.of("error", "This equipment is not shared for external institution booking"));
-                }
+        if (targetEq == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Equipment not found"));
+        }
+        if (requestingUser.getDepartment() != null) {
+            Integer userInstitutionId = requestingUser.getDepartment().getInstitution().getInstitutionId();
+            Integer eqInstitutionId = targetEq.getInstitution().getInstitutionId();
+            if (!userInstitutionId.equals(eqInstitutionId) && !Boolean.TRUE.equals(targetEq.getSharedAvailable())) {
+                return ResponseEntity.status(403).body(Map.of("error", "This equipment is not shared for external institution booking"));
             }
         }
-        if (targetEq != null && "Booked".equals(targetEq.getStatus())) {
+        if ("Booked".equals(targetEq.getStatus())) {
             booking.setStatus("Waitlisted");
         } else {
             booking.setStatus("Pending Approval");
@@ -107,8 +116,7 @@ public class BookingController {
         if (!bookingRepository.existsById(id)) {
             return ResponseEntity.status(404).body(Map.of("error", "Booking not found"));
         }
-        Booking b = bookingRepository.findById(id).get();
-        b.setStatus("Completed");
+        Booking b = bookingRepository.findById(id).get();        b.setStatus("Completed");
         b.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(b);
 
@@ -120,6 +128,3 @@ public class BookingController {
         return ResponseEntity.ok(b);
     }
 }
-
-
-
