@@ -30,7 +30,8 @@ export default function ResourceSharing() {
         equipmentId: parseInt(equipmentId),
         equipmentName,
         senderInstitution,
-        receiverInstitution
+        receiverInstitution,
+        status: 'PENDING' // Explicitly setting default status for backend sync
       });
       setEquipmentName('');
       setSenderInstitution('');
