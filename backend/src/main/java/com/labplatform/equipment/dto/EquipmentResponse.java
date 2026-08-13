@@ -22,6 +22,7 @@ public class EquipmentResponse {
     private LocalDateTime createdAt;
     private Integer institutionId;
     private String institutionName;
+    private java.math.BigDecimal hourlyRate;
 
     public EquipmentResponse() {
     }
@@ -162,5 +163,12 @@ public class EquipmentResponse {
 
     public void setInstitutionName(String institutionName) {
         this.institutionName = institutionName;
+    }
+    public java.math.BigDecimal getHourlyRate() {
+        return hourlyRate;
+    }
+
+    public void setHourlyRate(java.math.BigDecimal hourlyRate) {
+        this.hourlyRate = hourlyRate;
     }
 }

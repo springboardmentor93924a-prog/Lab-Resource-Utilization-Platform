@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAllEquipment } from "../services/equipmentService";
 import { isAdmin } from "../utils/auth";
+import { getCalibrationAlerts } from "../services/equipmentService";
 
 export default function EquipmentCatalog() {
   const navigate = useNavigate();
@@ -11,25 +12,26 @@ export default function EquipmentCatalog() {
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [overdueIds, setOverdueIds] = useState([]);
 
   const userIsAdmin = isAdmin();
 
   useEffect(() => {
-    async function fetchEquipment() {
-      try {
-        const data = await getAllEquipment();
-        setEquipmentList(data);
-      } catch (err) {
-        setError(
-          err.response?.data?.message || "Failed to load equipment"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
+  async function fetchEquipment() {
+    try {
+      const data = await getAllEquipment();
+      setEquipmentList(data);
 
-    fetchEquipment();
-  }, []);
+      const alerts = await getCalibrationAlerts();
+      setOverdueIds(alerts.filter((a) => a.urgency === "OVERDUE").map((a) => a.equipmentId));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load equipment");
+    } finally {
+      setLoading(false);
+    }
+  }
+  fetchEquipment();
+}, []);
 
   function handleView(id) {
     navigate(`/equipment/${id}`);
@@ -168,60 +170,22 @@ export default function EquipmentCatalog() {
 
             {equipmentList.map((item) => (
 
-              <div
-                className="equipment-card"
-                key={item.id}
-              >
-
-                {/* IMAGE */}
-
-                <div className="image-placeholder">
-
-                  <img
-                    src={item.imageUrl}
-                    alt={item.equipmentName}
-                  />
-
-                </div>
-
-
-                {/* EQUIPMENT NAME */}
-
-                <h6>
-                  {item.equipmentName}
-                </h6>
-
-
-                {/* CATEGORY + DEPARTMENT */}
-
-                <p>
-                  {item.category} — {item.department}
-                </p>
-
-
-                {/* STATUS */}
-
-                <div
-                  className={`status ${
-                    item.status?.toLowerCase() || ""
-                  }`}
-                >
-                  <span>
-                    {item.status?.replace("_", " ")}
-                  </span>
-                </div>
-
-
-                {/* VIEW BUTTON */}
-
-                <button
-                  className="view-equipment-btn"
-                  onClick={() => handleView(item.id)}
-                >
-                  View
-                </button>
-
-              </div>
+         <div className="equipment-card" key={item.id}>
+  <div className="image-placeholder">
+    <img src={item.imageUrl} alt={item.equipmentName} />
+  </div>
+  <h6>{item.equipmentName}</h6>
+  <p>{item.category} — {item.department}</p>
+  {overdueIds.includes(item.id) && (
+    <span style={{ background: "#ef4444", color: "#fff", padding: "3px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 600 }}>
+      Calibration overdue
+    </span>
+  )}
+  <div className={`status ${item.status?.toLowerCase()}`}></div>
+  <button className="btn btn-outline-dark w-100" onClick={() => handleView(item.id)}>
+    View
+  </button>
+</div>
 
             ))}
 

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import { getEquipmentUtilization } from "../services/equipmentService";
+
+import {
+  getEquipmentUtilization,
+  getCalibrationAlerts,
+} from "../services/equipmentService";
 
 import {
   Chart as ChartJS,
@@ -68,6 +72,7 @@ export default function UtilizationDashboard() {
   const [equipment, setEquipment] = useState([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [loading, setLoading] = useState(true);
+  const [calibrationAlerts, setCalibrationAlerts] = useState([]);
 
 
   // =======================================================
@@ -90,8 +95,11 @@ export default function UtilizationDashboard() {
 
       setEquipment(data);
 
-      // REAL CURRENT TIME
       setLastUpdated(new Date().toLocaleTimeString());
+
+      const alerts = await getCalibrationAlerts();
+
+      setCalibrationAlerts(alerts);
     } catch (err) {
       console.error(err);
     } finally {
@@ -164,6 +172,7 @@ export default function UtilizationDashboard() {
       legend: {
         labels: {
           color: "#0f1b2d",
+
           font: {
             size: 13,
           },
@@ -176,7 +185,9 @@ export default function UtilizationDashboard() {
 
       tooltip: {
         titleColor: "#ffffff",
+
         bodyColor: "#ffffff",
+
         backgroundColor: "#0f1b2d",
       },
     },
@@ -185,8 +196,11 @@ export default function UtilizationDashboard() {
       x: {
         ticks: {
           color: "#334155",
+
           maxRotation: 45,
+
           minRotation: 45,
+
           font: {
             size: 11,
           },
@@ -266,7 +280,6 @@ export default function UtilizationDashboard() {
 
         {/* =================================================
             LAST UPDATED
-            THIS REMAINS REAL-TIME
         ================================================= */}
 
         <p
@@ -643,6 +656,145 @@ export default function UtilizationDashboard() {
 
 
             {/* =================================================
+                CALIBRATION ALERTS
+            ================================================= */}
+
+            <div
+              style={{
+                background: "#ffffff",
+                borderRadius: "12px",
+                padding: "20px",
+                marginBottom: "25px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+              }}
+            >
+
+              <h5
+                style={{
+                  color: "#0F1B2D",
+                  marginBottom: "15px",
+                  fontSize: "17px",
+                  fontWeight: 700,
+                }}
+              >
+                Calibration alerts
+              </h5>
+
+
+              {calibrationAlerts.length === 0 && (
+                <p
+                  style={{
+                    color: "#475569",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                  }}
+                >
+                  No equipment due for calibration in the next 30 days.
+                </p>
+              )}
+
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+
+                {calibrationAlerts.map((a) => (
+
+                  <div
+                    key={a.equipmentId}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px 15px",
+
+                      background:
+                        a.urgency === "OVERDUE"
+                          ? "#FEF2F2"
+                          : "#FFFBEB",
+
+                      borderRadius: "8px",
+
+                      borderLeft:
+                        `4px solid ${
+                          a.urgency === "OVERDUE"
+                            ? "#ef4444"
+                            : "#f59e0b"
+                        }`,
+                    }}
+                  >
+
+                    {/* EQUIPMENT INFORMATION */}
+
+                    <div>
+
+                      <strong
+                        style={{
+                          color: "#0F172A",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          display: "block",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {a.equipmentName}
+                      </strong>
+
+
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#475569",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {a.category} — due {a.calibrationDueDate}
+                      </div>
+
+                    </div>
+
+
+                    {/* URGENCY BADGE */}
+
+                    <span
+                      style={{
+                        background:
+                          a.urgency === "OVERDUE"
+                            ? "#ef4444"
+                            : "#f59e0b",
+
+                        color: "#ffffff",
+
+                        padding: "6px 12px",
+
+                        borderRadius: "999px",
+
+                        fontSize: "12px",
+
+                        fontWeight: 700,
+
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {a.urgency === "OVERDUE"
+                        ? `${Math.abs(a.daysUntilDue)} days overdue`
+                        : `Due in ${a.daysUntilDue} days`}
+                    </span>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
                 EQUIPMENT USAGE HOURS CHART
             ================================================= */}
 
@@ -674,10 +826,12 @@ export default function UtilizationDashboard() {
                   height: "430px",
                 }}
               >
+
                 <Bar
                   data={chartData}
                   options={chartOptions}
                 />
+
               </div>
 
             </div>
@@ -686,6 +840,7 @@ export default function UtilizationDashboard() {
         )}
 
       </main>
+
     </div>
   );
 }
