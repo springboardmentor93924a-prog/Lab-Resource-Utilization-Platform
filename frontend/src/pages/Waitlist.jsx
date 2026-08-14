@@ -5,6 +5,7 @@ function Waitlist() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [equipmentList, setEquipmentList] = useState([]);
 
   const [formData, setFormData] = useState({
     equipmentId: "",
@@ -36,8 +37,18 @@ function Waitlist() {
       });
   };
 
+  const fetchEquipmentList = () => {
+    fetch("http://localhost:8080/api/equipment", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then(setEquipmentList)
+      .catch((err) => console.error("Equipment list error:", err));
+  };
+
   useEffect(() => {
     fetchMyWaitlist();
+    fetchEquipmentList();
   }, []);
 
   const handleChange = (e) => {
@@ -150,14 +161,23 @@ function Waitlist() {
         <div className="waitlist-form-card">
           <form onSubmit={handleSubmit} className="waitlist-form">
             <div className="waitlist-form-group">
-              <label>Equipment ID</label>
-              <input
-                type="number"
+              <label>Equipment</label>
+              <select
                 name="equipmentId"
                 value={formData.equipmentId}
                 onChange={handleChange}
                 required
-              />
+              >
+                <option value="">-- Select Equipment --</option>
+                {equipmentList.map((item) => (
+                  <option key={item.equipmentId} value={item.equipmentId}>
+                    {item.equipmentName} ({item.status})
+                    {item.department?.institution?.institutionName
+                      ? ` — ${item.department.institution.institutionName}`
+                      : ""}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="waitlist-form-group">
               <label>Requested Start Time</label>

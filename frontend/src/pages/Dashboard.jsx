@@ -15,14 +15,26 @@ function Dashboard() {
   const [equipment, setEquipment] = useState([]);
   const [users, setUsers] = useState([]);
   const [utilData, setUtilData] = useState([]);
+  const [myBookings, setMyBookings] = useState([]);
+  const [myWaitlist, setMyWaitlist] = useState([]);
+  const [maintenanceRecords, setMaintenanceRecords] = useState([]);
 
   const role = localStorage.getItem("role");
+
   const canViewUtilization = [
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN",
   ].includes(role);
+
+  const canViewUsers = [
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN",
+  ].includes(role);
+
+  const isStudent = role === "STUDENT";
+  const isTechnician = role === "LAB_TECHNICIAN";
 
   const getUtilColor = (value) => {
     if (value >= 70) return "#22c55e";
@@ -45,6 +57,7 @@ function Dashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
 
     const fetchData = () => {
       fetch("http://localhost:8080/api/equipment", {
@@ -56,14 +69,17 @@ function Dashboard() {
         .then(setEquipment)
         .catch(console.error);
 
-      fetch("http://localhost:8080/api/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => res.json())
-        .then(setUsers)
-        .catch(console.error);
+      // ===== FIX: gated behind canViewUsers (was unconditional before) =====
+      if (canViewUsers) {
+        fetch("http://localhost:8080/api/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((res) => res.json())
+          .then(setUsers)
+          .catch(console.error);
+      }
 
       fetch("http://localhost:8080/api/utilization", {
         headers: {
@@ -83,6 +99,35 @@ function Dashboard() {
           setUtilData(fixedData);
         })
         .catch(console.error);
+
+      if (role === "STUDENT") {
+        fetch("http://localhost:8080/api/bookings", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) =>
+            setMyBookings(
+              data.filter((b) => String(b.user?.userId) === String(userId))
+            )
+          )
+          .catch(console.error);
+
+        fetch("http://localhost:8080/api/waitlist/my", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then(setMyWaitlist)
+          .catch(console.error);
+      }
+
+      if (role === "LAB_TECHNICIAN") {
+        fetch("http://localhost:8080/api/maintenance", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then(setMaintenanceRecords)
+          .catch(console.error);
+      }
     };
 
     fetchData();
@@ -90,7 +135,7 @@ function Dashboard() {
     const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [role]);
 
   const totalEquipment = equipment.length;
 
@@ -105,6 +150,17 @@ function Dashboard() {
   const idleEquipment = utilData.filter(
     (item) => item.idleDays >= 3
   );
+
+  const highDemandEquipment = utilData
+    .filter(
+      (item) =>
+        (item.bookingCount || 0) >= 3 || (item.waitlistCount || 0) >= 1
+    )
+    .sort(
+      (a, b) =>
+        (b.bookingCount || 0) + (b.waitlistCount || 0) -
+        ((a.bookingCount || 0) + (a.waitlistCount || 0))
+    );
 
   return (
     <div className="dashboard">
@@ -161,18 +217,171 @@ function Dashboard() {
           </strong>
         </div>
 
+        {canViewUsers && (
+          <div className="card">
+            <span className="card-label">
+              Total Users
+            </span>
 
-        <div className="card">
-          <span className="card-label">
-            Total Users
-          </span>
-
-          <strong className="card-value">
-            {users.length}
-          </strong>
-        </div>
+            <strong className="card-value">
+              {users.length}
+            </strong>
+          </div>
+        )}
 
       </div>
+
+
+      {/* =========================
+          STUDENT: MY BOOKINGS
+         ========================= */}
+
+      {isStudent && (
+        <div className="dashboard-section">
+
+          <div className="section-header">
+            <div>
+              <h2>My Bookings</h2>
+              <p>Your recent and upcoming equipment bookings</p>
+            </div>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="util-table">
+              <thead>
+                <tr>
+                  <th>Equipment</th>
+                  <th>Date</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="empty-state">
+                      You have no bookings yet.
+                    </td>
+                  </tr>
+                ) : (
+                  myBookings.slice(0, 5).map((b) => (
+                    <tr key={b.bookingId}>
+                      <td className="equipment-name">
+                        {b.equipment?.equipmentName}
+                      </td>
+                      <td>{b.bookingDate}</td>
+                      <td>{b.startTime?.replace("T", " ")}</td>
+                      <td>{b.endTime?.replace("T", " ")}</td>
+                      <td>{b.bookingStatus}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+
+      {/* =========================
+          STUDENT: MY WAITLIST
+         ========================= */}
+
+      {isStudent && (
+        <div className="dashboard-section">
+
+          <div className="section-header">
+            <div>
+              <h2>My Waitlist</h2>
+              <p>Equipment you're currently waiting on</p>
+            </div>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="util-table">
+              <thead>
+                <tr>
+                  <th>Equipment</th>
+                  <th>Requested Start</th>
+                  <th>Requested End</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myWaitlist.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="empty-state">
+                      You're not on any waitlists right now.
+                    </td>
+                  </tr>
+                ) : (
+                  myWaitlist.slice(0, 5).map((w) => (
+                    <tr key={w.waitlistId}>
+                      <td className="equipment-name">
+                        {w.equipment?.equipmentName}
+                      </td>
+                      <td>{w.requestedStartTime?.replace("T", " ")}</td>
+                      <td>{w.requestedEndTime?.replace("T", " ")}</td>
+                      <td>{w.waitlistStatus}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+
+      {/* =========================
+          TECHNICIAN: MAINTENANCE TASKS
+         ========================= */}
+
+      {isTechnician && (
+        <div className="dashboard-section">
+
+          <div className="section-header">
+            <div>
+              <h2>Maintenance Tasks</h2>
+              <p>Scheduled and active maintenance records</p>
+            </div>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="util-table">
+              <thead>
+                <tr>
+                  <th>Equipment</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {maintenanceRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="empty-state">
+                      No maintenance records found.
+                    </td>
+                  </tr>
+                ) : (
+                  maintenanceRecords.slice(0, 8).map((m) => (
+                    <tr key={m.maintenanceId}>
+                      <td className="equipment-name">
+                        {m.equipment?.equipmentName}
+                      </td>
+                      <td>{m.maintenanceType}</td>
+                      <td>{m.maintenanceDate}</td>
+                      <td>{m.maintenanceStatus}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
 
       {/* =========================
@@ -494,6 +703,80 @@ function Dashboard() {
                         item.utilizationPercentage
                       ).toFixed(1)}
                       %
+                    </span>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+        </div>
+      )}
+
+
+      {/* =========================
+          HIGH-DEMAND EQUIPMENT
+         ========================= */}
+
+      {canViewUtilization && (
+        <div className="dashboard-section">
+
+          <div className="section-header">
+
+            <div>
+              <h2>High-Demand Equipment</h2>
+
+              <p>
+                Equipment with heavy bookings or an active waitlist
+              </p>
+            </div>
+
+          </div>
+
+
+          {highDemandEquipment.length === 0 ? (
+
+            <div className="empty-card">
+              No equipment is currently in high demand.
+            </div>
+
+          ) : (
+
+            <div className="idle-grid">
+
+              {highDemandEquipment.map((item, index) => (
+
+                <div
+                  className="idle-card"
+                  key={index}
+                >
+
+                  <div className="idle-icon">
+                    🔥
+                  </div>
+
+                  <div>
+
+                    <h3>
+                      {item.equipmentName}
+                    </h3>
+
+                    <p>
+                      <strong>
+                        {item.bookingCount || 0}
+                      </strong>{" "}
+                      bookings this week
+                    </p>
+
+                    <span>
+                      {(item.waitlistCount || 0) > 0
+                        ? `${item.waitlistCount} waiting`
+                        : "No one waiting"}
                     </span>
 
                   </div>

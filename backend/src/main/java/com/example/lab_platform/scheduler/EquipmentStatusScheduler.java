@@ -51,7 +51,10 @@ public class EquipmentStatusScheduler {
         for (Equipment equipment : equipmentList) {
 
             String newStatus =
-                    calculateStatus(equipment, now);
+                    calculateStatus(
+                            equipment,
+                            now
+                    );
 
             if (!newStatus.equalsIgnoreCase(
                     equipment.getStatus())) {
@@ -72,14 +75,20 @@ public class EquipmentStatusScheduler {
      */
     private void activateDueMaintenance() {
 
-        LocalDate today = LocalDate.now();
+        LocalDate today =
+                LocalDate.now();
 
         List<Maintenance> scheduledMaintenance =
-                maintenanceRepository.findByMaintenanceStatus("Scheduled");
+                maintenanceRepository
+                        .findByMaintenanceStatus(
+                                "Scheduled"
+                        );
 
-        for (Maintenance maintenance : scheduledMaintenance) {
+        for (Maintenance maintenance :
+                scheduledMaintenance) {
 
-            LocalDate maintenanceDate = maintenance.getMaintenanceDate();
+            LocalDate maintenanceDate =
+                    maintenance.getMaintenanceDate();
 
             if (maintenanceDate == null) {
                 continue;
@@ -87,16 +96,38 @@ public class EquipmentStatusScheduler {
 
             if (!maintenanceDate.isAfter(today)) {
 
-                maintenance.setMaintenanceStatus("Active");
+                maintenance.setMaintenanceStatus(
+                        "Active"
+                );
 
-                maintenanceRepository.save(maintenance);
+                maintenanceRepository.save(
+                        maintenance
+                );
             }
         }
     }
-    
+
     private String calculateStatus(
             Equipment equipment,
             LocalDateTime now) {
+
+        /*
+         * ==========================================
+         * 0. MANUAL / PERMANENT STATUS
+         * ==========================================
+         *
+         * Out of Service and Retired should not be
+         * automatically changed to another status.
+         */
+        String existingStatus =
+                equipment.getStatus();
+
+        if (existingStatus != null
+                && (existingStatus.equalsIgnoreCase("Out of Service")
+                || existingStatus.equalsIgnoreCase("Retired"))) {
+
+            return existingStatus;
+        }
 
         Integer equipmentId =
                 equipment.getEquipmentId();
@@ -112,7 +143,8 @@ public class EquipmentStatusScheduler {
                                 equipmentId
                         );
 
-        for (Maintenance maintenance : maintenanceList) {
+        for (Maintenance maintenance :
+                maintenanceList) {
 
             String maintenanceStatus =
                     maintenance.getMaintenanceStatus();
@@ -126,7 +158,8 @@ public class EquipmentStatusScheduler {
              * in the project/database.
              */
             if (maintenanceStatus.equalsIgnoreCase("Active")
-                    || maintenanceStatus.equalsIgnoreCase("In Progress")) {
+                    || maintenanceStatus.equalsIgnoreCase(
+                            "In Progress")) {
 
                 return "Under Maintenance";
             }
@@ -149,6 +182,7 @@ public class EquipmentStatusScheduler {
 
             if (booking.getStartTime() == null
                     || booking.getEndTime() == null) {
+
                 continue;
             }
 
@@ -163,7 +197,9 @@ public class EquipmentStatusScheduler {
              * Only confirmed bookings affect
              * equipment availability.
              */
-            if (!bookingStatus.equalsIgnoreCase("Confirmed")) {
+            if (!bookingStatus.equalsIgnoreCase(
+                    "Confirmed")) {
+
                 continue;
             }
 

@@ -13,8 +13,14 @@ public class ResourceSharingRequest {
 
     private Long equipmentId;
     private String equipmentName;
-    private String senderInstitution;
-    private String receiverInstitution;
+
+    @ManyToOne
+    @JoinColumn(name = "sender_institution_id")
+    private Institution senderInstitution;
+
+    @ManyToOne
+    @JoinColumn(name = "receiver_institution_id")
+    private Institution receiverInstitution;
     
     private String status = "PENDING"; // PENDING, APPROVED, REJECTED
     
@@ -22,7 +28,7 @@ public class ResourceSharingRequest {
 
     public ResourceSharingRequest() {}
 
-    public ResourceSharingRequest(Long equipmentId, String equipmentName, String senderInstitution, String receiverInstitution) {
+    public ResourceSharingRequest(Long equipmentId, String equipmentName, Institution senderInstitution, Institution receiverInstitution) {
         this.equipmentId = equipmentId;
         this.equipmentName = equipmentName;
         this.senderInstitution = senderInstitution;
@@ -41,11 +47,11 @@ public class ResourceSharingRequest {
     public String getEquipmentName() { return equipmentName; }
     public void setEquipmentName(String equipmentName) { this.equipmentName = equipmentName; }
 
-    public String getSenderInstitution() { return senderInstitution; }
-    public void setSenderInstitution(String senderInstitution) { this.senderInstitution = senderInstitution; }
+    public Institution getSenderInstitution() { return senderInstitution; }
+    public void setSenderInstitution(Institution senderInstitution) { this.senderInstitution = senderInstitution; }
 
-    public String getReceiverInstitution() { return receiverInstitution; }
-    public void setReceiverInstitution(String receiverInstitution) { this.receiverInstitution = receiverInstitution; }
+    public Institution getReceiverInstitution() { return receiverInstitution; }
+    public void setReceiverInstitution(Institution receiverInstitution) { this.receiverInstitution = receiverInstitution; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

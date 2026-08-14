@@ -19,6 +19,20 @@ function Equipment() {
   });
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  const canManageEquipment = [
+    "LAB_TECHNICIAN",
+    "LAB_MANAGER",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN",
+  ].includes(role);
+
+  const canDeleteEquipment = [
+    "LAB_MANAGER",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN",
+  ].includes(role);
 
   // Fetch all equipment
   const fetchEquipment = () => {
@@ -135,9 +149,11 @@ function Equipment() {
     <div style={{ padding: "20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2>Equipment Management</h2>
-        <button onClick={handleAddNew} style={btnPrimary}>
-          + Add Equipment
-        </button>
+        {canManageEquipment && (
+          <button onClick={handleAddNew} style={btnPrimary}>
+            + Add Equipment
+          </button>
+        )}
       </div>
 
       <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
@@ -150,7 +166,7 @@ function Equipment() {
             <th style={cellStyle}>Location</th>
             <th style={cellStyle}>Status</th>
             <th style={cellStyle}>Purchase Date</th>
-            <th style={cellStyle}>Actions</th>
+            {canManageEquipment && <th style={cellStyle}>Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -164,19 +180,23 @@ function Equipment() {
                 <td style={cellStyle}>{item.location}</td>
                 <td style={cellStyle}>{item.status}</td>
                 <td style={cellStyle}>{item.purchaseDate}</td>
-                <td style={cellStyle}>
-                  <button onClick={() => handleEdit(item)} style={btnEdit}>
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(item.equipmentId)} style={btnDelete}>
-                    Delete
-                  </button>
-                </td>
+                {canManageEquipment && (
+                  <td style={cellStyle}>
+                    <button onClick={() => handleEdit(item)} style={btnEdit}>
+                      Edit
+                    </button>
+                    {canDeleteEquipment && (
+                      <button onClick={() => handleDelete(item.equipmentId)} style={btnDelete}>
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="8" style={{ ...cellStyle, textAlign: "center" }}>
+              <td colSpan={canManageEquipment ? 8 : 7} style={{ ...cellStyle, textAlign: "center" }}>
                 No equipment found.
               </td>
             </tr>
@@ -245,7 +265,7 @@ function Equipment() {
                   <option value="Available">Available</option>
                   <option value="In Use">In Use</option>
                   <option value="Under Maintenance">Under Maintenance</option>
-                <option value="Booked">Booked</option>
+                  <option value="Booked">Booked</option>
                 </select>
               </div>
               <div style={formGroup}>

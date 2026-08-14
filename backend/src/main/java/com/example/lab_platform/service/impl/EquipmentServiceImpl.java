@@ -118,6 +118,25 @@ public class EquipmentServiceImpl
             Equipment equipment,
             LocalDateTime now) {
 
+        /*
+         * ==========================================
+         * 0. MANUAL / PERMANENT STATUS
+         * ==========================================
+         *
+         * Out of Service and Retired should not be
+         * automatically changed to Available/Booked/
+         * In Use by the scheduler or status calculation.
+         */
+        String existingStatus =
+                equipment.getStatus();
+
+        if (existingStatus != null
+                && (existingStatus.equalsIgnoreCase("Out of Service")
+                || existingStatus.equalsIgnoreCase("Retired"))) {
+
+            return existingStatus;
+        }
+
         Integer equipmentId =
                 equipment.getEquipmentId();
 
