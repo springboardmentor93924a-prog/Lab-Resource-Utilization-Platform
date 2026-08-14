@@ -170,7 +170,7 @@ export default function EquipmentCatalog() {
 
               <div
                 className="equipment-card"
-                key={item.id}
+                key={item.equipmentId}
               >
 
                 {/* IMAGE */}
@@ -178,8 +178,8 @@ export default function EquipmentCatalog() {
                 <div className="image-placeholder">
 
                   <img
-                    src={item.imageUrl}
-                    alt={item.equipmentName}
+                    src={item.imageUrl || ""}
+                    alt={item.name}
                   />
 
                 </div>
@@ -188,14 +188,14 @@ export default function EquipmentCatalog() {
                 {/* EQUIPMENT NAME */}
 
                 <h6>
-                  {item.equipmentName}
+                  {item.name}
                 </h6>
 
 
                 {/* CATEGORY + DEPARTMENT */}
 
                 <p>
-                  {item.category} — {item.department}
+                  {item.category?.categoryName} — {item.department?.departmentName}
                 </p>
 
 
@@ -216,7 +216,7 @@ export default function EquipmentCatalog() {
 
                 <button
                   className="view-equipment-btn"
-                  onClick={() => handleView(item.id)}
+                  onClick={() => handleView(item.equipmentId)}
                 >
                   View
                 </button>

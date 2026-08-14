@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import { getMyWaitlistEntries } from "../services/waitlistService";
+import { getBookingsByUser } from "../services/bookingService";
+import { getCurrentUserId } from "../utils/auth";
 
 
 function statusColor(status) {
@@ -29,8 +30,10 @@ export default function MyWaitlist() {
 
   async function loadEntries() {
     try {
-      const data = await getMyWaitlistEntries();
-      setEntries(data);
+      const userId = getCurrentUserId();
+      const data = await getBookingsByUser(userId);
+      const waitlisted = data.filter((b) => b.bookingStatus === "WAITLISTED");
+      setEntries(waitlisted);
     } catch (err) {
       console.error(err);
     } finally {
@@ -186,14 +189,14 @@ export default function MyWaitlist() {
                       fontWeight: 500,
                     }}
                   >
-                    {entry.requestedDate}, {entry.startTime}–
+                   {entry.bookingDate}, {entry.startTime}–
                     {entry.endTime}
                   </div>
 
 
                   {/* NOTIFICATION MESSAGE */}
 
-                  {entry.status === "NOTIFIED" && (
+                 {entry.bookingStatus === "NOTIFIED" && (
                     <div
                       style={{
                         fontSize: "13px",
@@ -213,7 +216,7 @@ export default function MyWaitlist() {
 
                 <span
                   style={{
-                    background: statusColor(entry.status),
+                    background: statusColor(entry.bookingStatus),
                     color: "#ffffff",
                     padding: "7px 15px",
                     borderRadius: "999px",
@@ -223,7 +226,7 @@ export default function MyWaitlist() {
                     boxShadow: "0 2px 5px rgba(0,0,0,0.12)",
                   }}
                 >
-                  {entry.status}
+                 {entry.bookingStatus}
                 </span>
 
               </div>
