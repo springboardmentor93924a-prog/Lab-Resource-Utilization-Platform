@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +55,29 @@ public class AuthController {
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
-        String token = jwtUtil.generateToken(user.getEmail());
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+        String token = jwtUtil.generateToken(user.getEmail(), user.getUserId(), roleName);
         return ResponseEntity.ok(Map.of("token", token));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(java.security.Principal principal) {
+        User user = userRepository.findByEmail(principal.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", user.getUserId());
+        response.put("fullName", user.getFirstName() + " " + user.getLastName());
+        response.put("email", user.getEmail());
+        response.put("role", user.getRole() != null ? user.getRole().getRoleName() : null);
+        if (user.getDepartment() != null && user.getDepartment().getInstitution() != null) {
+            response.put("institutionName", user.getDepartment().getInstitution().getInstitutionName());
+            response.put("institutionId", user.getDepartment().getInstitution().getInstitutionId());
+        } else {
+            response.put("institutionName", null);
+            response.put("institutionId", null);
+        }
+        return ResponseEntity.ok(response);
     }
 }
