@@ -9,6 +9,11 @@ import Reservations from "../pages/Reservations";
 import Reports from "../pages/Reports";
 import User from "../pages/User";
 import Waitlist from "../pages/Waitlist";
+import ResourceSharing from "../pages/ResourceSharing";
+
+// Task 2
+import Utilization from "../pages/Utilization";
+import Heatmap from "../pages/Heatmap";
 
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -81,6 +86,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       {/* Waitlist - Task 6 */}
       <Route
         path="/waitlist"
@@ -100,29 +106,49 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-{/* =====================================================
-                MAINTENANCE
-                LAB TECHNICIAN + MANAGEMENT ROLES
-            ====================================================== */}
-            <Route
-                path="/maintenance"
-                element={
-                    <ProtectedRoute
-                        allowedRoles={[
-                            "LAB_TECHNICIAN",
-                            "LAB_MANAGER",
-                            "DEPARTMENT_HEAD",
-                            "INSTITUTION_ADMIN",
-                            "SYSTEM_ADMIN"
-                        ]}
-                    >
-                        <MainLayout>
-                            <Maintenance />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-      {/* Utilization - Task 2 */}
+
+      {/* Resource Sharing - Task 3 */}
+      <Route
+        path="/resource-sharing"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <ResourceSharing />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Maintenance */}
+      <Route
+        path="/maintenance"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_TECHNICIAN",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Maintenance />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =====================================================
+          UTILIZATION - TASK 2
+          ===================================================== */}
       <Route
         path="/utilization"
         element={
@@ -135,13 +161,15 @@ function AppRoutes() {
             ]}
           >
             <MainLayout>
-              <Dashboard />
+              <Utilization />
             </MainLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* Heatmap - Task 2 */}
+      {/* =====================================================
+          HEATMAP - TASK 2
+          ===================================================== */}
       <Route
         path="/heatmap"
         element={
@@ -154,7 +182,7 @@ function AppRoutes() {
             ]}
           >
             <MainLayout>
-              <Dashboard />
+              <Heatmap />
             </MainLayout>
           </ProtectedRoute>
         }

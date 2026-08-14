@@ -27,36 +27,30 @@ public class BookingServiceImpl implements BookingService {
     private final WaitlistRepository waitlistRepository;
     private final MaintenanceRepository maintenanceRepository;
 
-    public BookingServiceImpl(BookingRepository bookingRepository,
-                              EquipmentRepository equipmentRepository,
-                              WaitlistRepository waitlistRepository,
-                              MaintenanceRepository maintenanceRepository) {
+    public BookingServiceImpl(
+            BookingRepository bookingRepository,
+            EquipmentRepository equipmentRepository,
+            WaitlistRepository waitlistRepository,
+            MaintenanceRepository maintenanceRepository) {
+
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.waitlistRepository = waitlistRepository;
         this.maintenanceRepository = maintenanceRepository;
     }
 
-    /*
-     * When equipment becomes available, try to allocate it
-     * to the next person in line on the waitlist.
-     *
-     * - If their requested time window is still valid (in the future,
-     *   end after start) and doesn't overlap anything else, we
-     *   auto-create a Confirmed booking for them and mark the
-     *   waitlist entry FULFILLED.
-     * - Otherwise, we just mark them NOTIFIED so they can book manually.
-     */
     private void notifyNextWaitlistedUser(Equipment equipment) {
+
         if (equipment == null) {
             return;
         }
 
         List<Waitlist> waitingEntries =
-                waitlistRepository.findByEquipment_EquipmentIdAndWaitlistStatusOrderByCreatedAtAsc(
-                        equipment.getEquipmentId(),
-                        "WAITING"
-                );
+                waitlistRepository
+                        .findByEquipment_EquipmentIdAndWaitlistStatusOrderByCreatedAtAsc(
+                                equipment.getEquipmentId(),
+                                "WAITING"
+                        );
 
         if (waitingEntries.isEmpty()) {
             return;
@@ -64,7 +58,8 @@ public class BookingServiceImpl implements BookingService {
 
         Waitlist nextInLine = waitingEntries.get(0);
 
-        boolean allocated = tryAutoAllocate(nextInLine, equipment);
+        boolean allocated =
+                tryAutoAllocate(nextInLine, equipment);
 
         if (allocated) {
             nextInLine.setWaitlistStatus("FULFILLED");
@@ -75,38 +70,47 @@ public class BookingServiceImpl implements BookingService {
         waitlistRepository.save(nextInLine);
     }
 
-    /*
-     * Attempts to create a Confirmed booking for the waitlisted user
-     * using their originally requested time window. Returns true if
-     * the booking was created, false if the window is no longer valid.
-     */
-    private boolean tryAutoAllocate(Waitlist entry, Equipment equipment) {
-        LocalDateTime start = entry.getRequestedStartTime();
-        LocalDateTime end = entry.getRequestedEndTime();
+    private boolean tryAutoAllocate(
+            Waitlist entry,
+            Equipment equipment) {
+
+        LocalDateTime start =
+                entry.getRequestedStartTime();
+
+        LocalDateTime end =
+                entry.getRequestedEndTime();
 
         if (start == null || end == null) {
             return false;
         }
 
-        // Window must still be in the future and well-formed
-        if (!end.isAfter(start) || start.isBefore(LocalDateTime.now())) {
+        if (!end.isAfter(start)
+                || start.isBefore(LocalDateTime.now())) {
+
             return false;
         }
 
-        // Make sure nothing else booked that slot in the meantime
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
-                equipment.getEquipmentId(), start, end
-        );
+        List<Booking> overlapping =
+                bookingRepository.findOverlappingBookings(
+                        equipment.getEquipmentId(),
+                        start,
+                        end
+                );
 
         if (!overlapping.isEmpty()) {
             return false;
         }
 
-        if (isUnderMaintenanceDuring(equipment.getEquipmentId(), start, end)) {
+        if (isUnderMaintenanceDuring(
+                equipment.getEquipmentId(),
+                start,
+                end)) {
+
             return false;
         }
 
         Booking autoBooking = new Booking();
+
         autoBooking.setUser(entry.getUser());
         autoBooking.setEquipment(equipment);
         autoBooking.setBookingDate(start.toLocalDate());
@@ -124,8 +128,12 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private User getLoggedInUser() {
+
         Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
         return (User) authentication.getPrincipal();
     }
 
@@ -133,82 +141,97 @@ public class BookingServiceImpl implements BookingService {
         return user.getRole().getRoleName();
     }
 
-    /*
-     * Roles that act as managers/admins for booking purposes:
-     * can update, delete, or act on ANY booking, not just their own.
-     */
     private boolean isManagerOrAbove(String role) {
+
         return role.equalsIgnoreCase("LAB_MANAGER")
                 || role.equalsIgnoreCase("DEPARTMENT_HEAD")
                 || role.equalsIgnoreCase("INSTITUTION_ADMIN")
                 || role.equalsIgnoreCase("SYSTEM_ADMIN");
     }
 
-    /*
-     * Roles allowed to approve / reject / complete bookings.
-     * Matches BookingController's @PreAuthorize on those endpoints.
-     */
     private boolean canProcessBookings(String role) {
+
         return role.equalsIgnoreCase("LAB_TECHNICIAN")
                 || isManagerOrAbove(role);
     }
 
     @Override
     public Booking createBooking(Booking booking) {
+
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
         if (role.equalsIgnoreCase("STUDENT")) {
-            // Students always book for themselves.
+
             booking.setUser(loggedInUser);
+
         } else if (isManagerOrAbove(role)) {
-            // Managers/Admins may book on behalf of a user if provided,
-            // otherwise the booking is attributed to themselves.
+
             if (booking.getUser() == null) {
                 booking.setUser(loggedInUser);
             }
+
         } else {
-            throw new RuntimeException("You are not allowed to create bookings");
+
+            throw new RuntimeException(
+                    "You are not allowed to create bookings"
+            );
         }
 
-        // --- DOUBLE BOOKING PREVENTION CHECK ---
-        if (booking.getEquipment() != null && booking.getStartTime() != null && booking.getEndTime() != null) {
-            Integer eqId = booking.getEquipment().getEquipmentId();
-            List<Booking> overlappingBookings = bookingRepository.findOverlappingBookings(
-                eqId, booking.getStartTime(), booking.getEndTime()
-            );
+        if (booking.getEquipment() != null
+                && booking.getStartTime() != null
+                && booking.getEndTime() != null) {
+
+            Integer eqId =
+                    booking.getEquipment().getEquipmentId();
+
+            List<Booking> overlappingBookings =
+                    bookingRepository.findOverlappingBookings(
+                            eqId,
+                            booking.getStartTime(),
+                            booking.getEndTime()
+                    );
 
             if (!overlappingBookings.isEmpty()) {
-                throw new RuntimeException("This equipment is already booked for the selected time slot!");
+
+                throw new RuntimeException(
+                        "This equipment is already booked for the selected time slot!"
+                );
             }
 
-            if (isUnderMaintenanceDuring(eqId, booking.getStartTime(), booking.getEndTime())) {
-                throw new RuntimeException("This equipment is scheduled for maintenance during the selected time!");
+            if (isUnderMaintenanceDuring(
+                    eqId,
+                    booking.getStartTime(),
+                    booking.getEndTime())) {
+
+                throw new RuntimeException(
+                        "This equipment is scheduled for maintenance during the selected time!"
+                );
             }
         }
-        // ----------------------------------------
 
         booking.setBookingStatus("Pending");
+
         return bookingRepository.save(booking);
     }
 
-    /*
-     * Blocks bookings that fall on a date where this equipment
-     * has a Scheduled or Active maintenance record. Maintenance
-     * is stored per-day (no time range), so this checks whether
-     * the maintenance date falls anywhere within the booking's
-     * start-to-end date span.
-     */
-    private boolean isUnderMaintenanceDuring(Integer equipmentId,
-                                              LocalDateTime start,
-                                              LocalDateTime end) {
+    private boolean isUnderMaintenanceDuring(
+            Integer equipmentId,
+            LocalDateTime start,
+            LocalDateTime end) {
 
         List<Maintenance> maintenanceList =
-                maintenanceRepository.findByEquipment_EquipmentId(equipmentId);
+                maintenanceRepository
+                        .findByEquipment_EquipmentId(
+                                equipmentId
+                        );
 
-        for (Maintenance maintenance : maintenanceList) {
+        for (Maintenance maintenance :
+                maintenanceList) {
 
-            String status = maintenance.getMaintenanceStatus();
+            String status =
+                    maintenance.getMaintenanceStatus();
+
             if (status == null) {
                 continue;
             }
@@ -217,14 +240,18 @@ public class BookingServiceImpl implements BookingService {
                     status.equalsIgnoreCase("Scheduled")
                             || status.equalsIgnoreCase("Active");
 
-            if (!blocksBooking || maintenance.getMaintenanceDate() == null) {
+            if (!blocksBooking
+                    || maintenance.getMaintenanceDate() == null) {
+
                 continue;
             }
 
-            java.time.LocalDate maintenanceDate = maintenance.getMaintenanceDate();
+            java.time.LocalDate maintenanceDate =
+                    maintenance.getMaintenanceDate();
 
             if (!maintenanceDate.isBefore(start.toLocalDate())
                     && !maintenanceDate.isAfter(end.toLocalDate())) {
+
                 return true;
             }
         }
@@ -243,68 +270,191 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Booking updateBooking(Integer id, Booking booking) {
-        Booking existingBooking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+public Booking updateBooking(
+        Integer id,
+        Booking booking) {
 
-        User loggedInUser = getLoggedInUser();
-        String role = getRole(loggedInUser);
+    Booking existingBooking =
+            bookingRepository.findById(id)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Booking not found"
+                            )
+                    );
 
-        // Managers/Admins can update any booking
-        if (!isManagerOrAbove(role)) {
+    User loggedInUser = getLoggedInUser();
+    String role = getRole(loggedInUser);
 
-            if (!role.equalsIgnoreCase("STUDENT")) {
-                throw new RuntimeException("You are not allowed to update bookings");
-            }
+    if (!isManagerOrAbove(role)) {
 
-            if (!existingBooking.getUser().getUserId().equals(loggedInUser.getUserId())) {
-                throw new RuntimeException("You can update only your own booking");
-            }
-
-            if (!"Pending".equalsIgnoreCase(existingBooking.getBookingStatus())) {
-                throw new RuntimeException("Only Pending bookings can be updated");
-            }
+        if (!role.equalsIgnoreCase("STUDENT")) {
+            throw new RuntimeException(
+                    "You are not allowed to update bookings"
+            );
         }
 
-        existingBooking.setEquipment(booking.getEquipment());
-        existingBooking.setBookingDate(booking.getBookingDate());
-        existingBooking.setStartTime(booking.getStartTime());
-        existingBooking.setEndTime(booking.getEndTime());
-        existingBooking.setPurpose(booking.getPurpose());
+        if (!existingBooking.getUser()
+                .getUserId()
+                .equals(loggedInUser.getUserId())) {
 
-        // Only Managers/Admins can directly change status via update
-        if (isManagerOrAbove(role) && booking.getBookingStatus() != null) {
-            existingBooking.setBookingStatus(booking.getBookingStatus());
+            throw new RuntimeException(
+                    "You can update only your own booking"
+            );
         }
 
-        return bookingRepository.save(existingBooking);
+        if (!"Pending".equalsIgnoreCase(
+                existingBooking.getBookingStatus())) {
+
+            throw new RuntimeException(
+                    "Only Pending bookings can be updated"
+            );
+        }
     }
 
+    /*
+     * Validate equipment and time before updating.
+     */
+    if (booking.getEquipment() == null
+            || booking.getEquipment().getEquipmentId() == null
+            || booking.getStartTime() == null
+            || booking.getEndTime() == null) {
+
+        throw new RuntimeException(
+                "Equipment, start time and end time are required"
+        );
+    }
+
+    if (!booking.getEndTime()
+            .isAfter(booking.getStartTime())) {
+
+        throw new RuntimeException(
+                "End time must be after start time"
+        );
+    }
+
+    Integer equipmentId =
+            booking.getEquipment().getEquipmentId();
+
+    /*
+     * Check double booking.
+     */
+    List<Booking> overlappingBookings =
+            bookingRepository.findOverlappingBookings(
+                    equipmentId,
+                    booking.getStartTime(),
+                    booking.getEndTime()
+            );
+
+    /*
+     * Remove the booking currently being edited
+     * from the overlap result.
+     */
+    overlappingBookings.removeIf(
+            existing ->
+                    existing.getBookingId()
+                            .equals(existingBooking.getBookingId())
+    );
+
+    if (!overlappingBookings.isEmpty()) {
+
+        throw new RuntimeException(
+                "This equipment is already booked for the selected time slot!"
+        );
+    }
+
+    /*
+     * Check maintenance.
+     */
+    if (isUnderMaintenanceDuring(
+            equipmentId,
+            booking.getStartTime(),
+            booking.getEndTime())) {
+
+        throw new RuntimeException(
+                "This equipment is scheduled for maintenance during the selected time!"
+        );
+    }
+
+    /*
+     * Update booking details.
+     */
+    existingBooking.setEquipment(
+            booking.getEquipment()
+    );
+
+    existingBooking.setBookingDate(
+            booking.getBookingDate()
+    );
+
+    existingBooking.setStartTime(
+            booking.getStartTime()
+    );
+
+    existingBooking.setEndTime(
+            booking.getEndTime()
+    );
+
+    existingBooking.setPurpose(
+            booking.getPurpose()
+    );
+
+    /*
+     * Only managers/admins can directly change status.
+     */
+    if (isManagerOrAbove(role)
+            && booking.getBookingStatus() != null) {
+
+        existingBooking.setBookingStatus(
+                booking.getBookingStatus()
+        );
+    }
+
+    return bookingRepository.save(
+            existingBooking
+    );
+}
     @Override
     public void deleteBooking(Integer id) {
-        Booking existingBooking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        Booking existingBooking =
+                bookingRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking not found"
+                                )
+                        );
 
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
-        // Managers/Admins can delete any booking
         if (isManagerOrAbove(role)) {
+
             bookingRepository.delete(existingBooking);
             return;
         }
 
-        // Students can only cancel (delete) their own Pending booking
         if (!role.equalsIgnoreCase("STUDENT")) {
-            throw new RuntimeException("You are not allowed to delete bookings");
+
+            throw new RuntimeException(
+                    "You are not allowed to delete bookings"
+            );
         }
 
-        if (!existingBooking.getUser().getUserId().equals(loggedInUser.getUserId())) {
-            throw new RuntimeException("You can delete only your own booking");
+        if (!existingBooking.getUser()
+                .getUserId()
+                .equals(loggedInUser.getUserId())) {
+
+            throw new RuntimeException(
+                    "You can delete only your own booking"
+            );
         }
 
-        if (!"Pending".equalsIgnoreCase(existingBooking.getBookingStatus())) {
-            throw new RuntimeException("Only Pending bookings can be deleted");
+        if (!"Pending".equalsIgnoreCase(
+                existingBooking.getBookingStatus())) {
+
+            throw new RuntimeException(
+                    "Only Pending bookings can be deleted"
+            );
         }
 
         bookingRepository.delete(existingBooking);
@@ -312,62 +462,165 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Booking approveBooking(Integer id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        Booking booking =
+                bookingRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking not found"
+                                )
+                        );
 
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
         if (!canProcessBookings(role)) {
-            throw new RuntimeException("You are not allowed to approve bookings");
+
+            throw new RuntimeException(
+                    "You are not allowed to approve bookings"
+            );
         }
 
-        if (!"Pending".equalsIgnoreCase(booking.getBookingStatus())) {
-            throw new RuntimeException("Only Pending bookings can be approved");
+        if (!"Pending".equalsIgnoreCase(
+                booking.getBookingStatus())) {
+
+            throw new RuntimeException(
+                    "Only Pending bookings can be approved"
+            );
+        }
+
+        Equipment equipment =
+                booking.getEquipment();
+
+        if (equipment == null
+                || booking.getStartTime() == null
+                || booking.getEndTime() == null) {
+
+            throw new RuntimeException(
+                    "Booking equipment and time are required"
+            );
+        }
+
+        Integer equipmentId =
+                equipment.getEquipmentId();
+
+        LocalDateTime start =
+                booking.getStartTime();
+
+        LocalDateTime end =
+                booking.getEndTime();
+
+        /*
+         * Re-check double booking during approval.
+         */
+        List<Booking> overlappingBookings =
+                bookingRepository.findOverlappingBookings(
+                        equipmentId,
+                        start,
+                        end
+                );
+
+        overlappingBookings.removeIf(
+                existing ->
+                        existing.getBookingId()
+                                .equals(booking.getBookingId())
+        );
+
+        if (!overlappingBookings.isEmpty()) {
+
+            throw new RuntimeException(
+                    "This equipment is already booked for the selected time slot!"
+            );
+        }
+
+        /*
+         * Re-check maintenance during approval.
+         */
+        if (isUnderMaintenanceDuring(
+                equipmentId,
+                start,
+                end)) {
+
+            throw new RuntimeException(
+                    "This equipment is scheduled for maintenance during the selected time!"
+            );
         }
 
         booking.setBookingStatus("Confirmed");
 
-        Equipment equipment = booking.getEquipment();
+        /*
+         * If the approved booking is already in progress,
+         * the equipment should immediately be In Use.
+         * Otherwise it is Booked for a future reservation.
+         */
+        LocalDateTime now =
+                LocalDateTime.now();
 
-        if (equipment != null) {
+        if (!now.isBefore(start)
+                && now.isBefore(end)) {
+
+            equipment.setStatus("In Use");
+
+        } else if (now.isBefore(start)) {
 
             equipment.setStatus("Booked");
 
-            if (booking.getEndTime() != null) {
-                equipment.setLastUsedDate(
-                        booking.getEndTime().toLocalDate()
-                );
-            }
+        } else {
 
-            equipmentRepository.save(equipment);
+            equipment.setStatus("Available");
         }
+
+        if (booking.getEndTime() != null) {
+
+            equipment.setLastUsedDate(
+                    booking.getEndTime().toLocalDate()
+            );
+        }
+
+        equipmentRepository.save(equipment);
 
         return bookingRepository.save(booking);
     }
 
     @Override
     public Booking rejectBooking(Integer id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        Booking booking =
+                bookingRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking not found"
+                                )
+                        );
 
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
         if (!canProcessBookings(role)) {
-            throw new RuntimeException("You are not allowed to reject bookings");
+
+            throw new RuntimeException(
+                    "You are not allowed to reject bookings"
+            );
         }
 
-        if (!"Pending".equalsIgnoreCase(booking.getBookingStatus())) {
-            throw new RuntimeException("Only Pending bookings can be rejected");
+        if (!"Pending".equalsIgnoreCase(
+                booking.getBookingStatus())) {
+
+            throw new RuntimeException(
+                    "Only Pending bookings can be rejected"
+            );
         }
 
         booking.setBookingStatus("Rejected");
 
-        Booking savedBooking = bookingRepository.save(booking);
+        Booking savedBooking =
+                bookingRepository.save(booking);
 
         if (booking.getEquipment() != null) {
-            notifyNextWaitlistedUser(booking.getEquipment());
+
+            notifyNextWaitlistedUser(
+                    booking.getEquipment()
+            );
         }
 
         return savedBooking;
@@ -375,24 +628,39 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Booking completeBooking(Integer id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        Booking booking =
+                bookingRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking not found"
+                                )
+                        );
 
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
         if (!canProcessBookings(role)) {
-            throw new RuntimeException("You are not allowed to mark bookings as completed");
+
+            throw new RuntimeException(
+                    "You are not allowed to mark bookings as completed"
+            );
         }
 
         booking.setBookingStatus("Completed");
 
-        Equipment equipment = booking.getEquipment();
+        Equipment equipment =
+                booking.getEquipment();
+
         if (equipment != null) {
+
             equipment.setStatus("Available");
+
             equipmentRepository.save(equipment);
 
-            notifyNextWaitlistedUser(equipment);
+            notifyNextWaitlistedUser(
+                    equipment
+            );
         }
 
         return bookingRepository.save(booking);

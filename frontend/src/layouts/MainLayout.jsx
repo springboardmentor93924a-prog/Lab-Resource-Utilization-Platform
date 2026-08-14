@@ -31,6 +31,15 @@ function MainLayout({ children }) {
       title: "User Management",
       subtitle: "Manage users and access permissions",
     },
+    "/utilization": {
+  title: "Equipment Utilization",
+  subtitle: "Monitor equipment usage, idle time and utilization rates",
+},
+
+"/heatmap": {
+  title: "Utilization Heatmap",
+  subtitle: "View equipment usage intensity by weekday",
+},
   };
 
   const currentPage = pageTitles[location.pathname] || {

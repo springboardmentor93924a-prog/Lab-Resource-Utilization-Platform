@@ -17,6 +17,18 @@ function Reservations() {
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+
+  const [equipmentList, setEquipmentList] = useState([]);
+
+  const fetchEquipmentList = () => {
+    fetch("http://localhost:8080/api/equipment", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then(setEquipmentList)
+      .catch((err) => console.error("Equipment list error:", err));
+  };
+
   const fetchBookings = () => {
     fetch("http://localhost:8080/api/bookings", {
       headers: {
@@ -41,6 +53,7 @@ function Reservations() {
 
   useEffect(() => {
     fetchBookings();
+    fetchEquipmentList();
   }, []);
 
   const handleChange = (e) => {
@@ -94,10 +107,12 @@ function Reservations() {
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
         throw new Error(
-          editingId
-            ? "Failed to update booking"
-            : "Failed to create booking"
+          errorData?.message ||
+            (editingId
+              ? "Failed to update booking"
+              : "Failed to create booking")
         );
       }
 
@@ -145,7 +160,8 @@ function Reservations() {
       );
 
       if (!response.ok) {
-        throw new Error("You are not allowed to delete this booking");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "You are not allowed to delete this booking");
       }
 
       alert("Booking deleted successfully");
@@ -168,7 +184,8 @@ function Reservations() {
       );
 
       if (!response.ok) {
-        throw new Error("You are not allowed to approve this booking");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "You are not allowed to approve this booking");
       }
 
       alert("Booking approved");
@@ -191,7 +208,8 @@ function Reservations() {
       );
 
       if (!response.ok) {
-        throw new Error("You are not allowed to reject this booking");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "You are not allowed to reject this booking");
       }
 
       alert("Booking rejected");
@@ -223,15 +241,23 @@ function Reservations() {
         <form onSubmit={handleSubmit} style={formStyle}>
           <h3>{editingId ? "Update Booking" : "Create Booking"}</h3>
 
-          <input
-            type="number"
+          <select
             name="equipmentId"
-            placeholder="Equipment ID"
             value={formData.equipmentId}
             onChange={handleChange}
             required
             style={inputStyle}
-          />
+          >
+            <option value="">-- Select Equipment --</option>
+            {equipmentList.map((item) => (
+              <option key={item.equipmentId} value={item.equipmentId}>
+                {item.equipmentName} ({item.status})
+                {item.department?.institution?.institutionName
+                  ? ` — ${item.department.institution.institutionName}`
+                  : ""}
+              </option>
+            ))}
+          </select>
 
           <input
             type="date"
