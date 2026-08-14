@@ -10,4 +10,8 @@ import java.util.List;
 public interface ResourceSharingRepository extends JpaRepository<ResourceSharingRequest, Long> {
     List<ResourceSharingRequest> findByReceiverInstitution_InstitutionId(Integer institutionId);
     List<ResourceSharingRequest> findBySenderInstitution_InstitutionId(Integer institutionId);
+    List<ResourceSharingRequest> findBySenderInstitution_InstitutionIdOrReceiverInstitution_InstitutionId(
+            Integer senderInstitutionId,
+            Integer receiverInstitutionId
+    );
 }
