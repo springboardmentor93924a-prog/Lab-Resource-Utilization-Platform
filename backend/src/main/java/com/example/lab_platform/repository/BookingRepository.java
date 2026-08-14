@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface BookingRepository
         extends JpaRepository<Booking, Integer> {
-
+List<Booking> findByUser_UserId(Integer userId);
     List<Booking> findByBookingStatus(
             String bookingStatus
     );
