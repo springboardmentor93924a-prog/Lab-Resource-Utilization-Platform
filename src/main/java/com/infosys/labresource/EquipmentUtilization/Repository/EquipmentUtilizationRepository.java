@@ -6,6 +6,7 @@ import com.infosys.labresource.EquipmentUtilization.Entity.UtilizationStatus;
 import com.infosys.labresource.booking.entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +14,5 @@ public interface EquipmentUtilizationRepository extends JpaRepository<Utilizatio
     List<Utilization> findByEquipment(Equipment equipment);
     Optional<Utilization> findByBooking(Booking booking);
     List<Utilization> findByStatus(UtilizationStatus status);
+    List<Utilization> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 }

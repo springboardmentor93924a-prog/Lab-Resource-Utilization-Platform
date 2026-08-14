@@ -1,5 +1,6 @@
 package com.infosys.labresource.EquipmentUtilization.Controller;
 
+import com.infosys.labresource.EquipmentUtilization.DTOs.UtilizationAnalyticsDTO;
 import com.infosys.labresource.EquipmentUtilization.DTOs.UtilizationResponseDTO;
 import com.infosys.labresource.EquipmentUtilization.Service.UtilizationService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,12 @@ public class Utilizationcontroller {
     public ResponseEntity<List<UtilizationResponseDTO>> getAllUtilization() {
 
         return ResponseEntity.ok(utilService.getAllUtilization());
+    }
+    @GetMapping("/analytics")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','INSTITUTION_ADMIN','DEPARTMENT_HEAD','LAB_MANAGER','LAB_TECHNICIAN')")
+    public ResponseEntity<List<UtilizationAnalyticsDTO>> getUtilizationAnalytics() {
+
+        return ResponseEntity.ok(utilService.getUtilizationAnalytics());
     }
 
     @GetMapping("/{utilizationId}")

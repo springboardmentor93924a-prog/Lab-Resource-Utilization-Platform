@@ -3,6 +3,7 @@ package com.infosys.labresource.EquipmentUtilization.Service;
 import com.infosys.labresource.Equipment.Repository.EquipmentRepository;
 import com.infosys.labresource.Equipment.entity.Equipment;
 import com.infosys.labresource.Equipment.entity.EquipmentStatus;
+import com.infosys.labresource.EquipmentUtilization.DTOs.UtilizationAnalyticsDTO;
 import com.infosys.labresource.EquipmentUtilization.DTOs.UtilizationResponseDTO;
 import com.infosys.labresource.EquipmentUtilization.Entity.Utilization;
 import com.infosys.labresource.EquipmentUtilization.Entity.UtilizationStatus;
@@ -30,12 +31,25 @@ public class UtilizationServiceImpl implements UtilizationService{
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+
+            throw new RuntimeException("Only confirmed bookings can start utilization.");
+        }
+
         Equipment equip = booking.getEquipment();
 
         if (equip.getStatus() != EquipmentStatus.BOOKED) {
+
             throw new RuntimeException("Equipment is not ready for utilization.");
         }
+        LocalDateTime now = LocalDateTime.now();
 
+        if (now.isBefore(booking.getStartTime())) {
+
+            throw new RuntimeException(
+                    "Equipment utilization cannot start before booking start time."
+            );
+        }
         Optional<Utilization> oldRecord = utilRepo.findByBooking(booking);
 
         if (oldRecord.isPresent()) {
@@ -129,5 +143,108 @@ public class UtilizationServiceImpl implements UtilizationService{
         dto.setStatus(util.getStatus());
         dto.setLastUpdated(util.getLastUpdated());
         return dto;
+    }
+
+    @Override
+    public List<UtilizationAnalyticsDTO> getUtilizationAnalytics() {
+
+        List<Equipment> equipList = equipRepo.findAll();
+
+        List<UtilizationAnalyticsDTO> responseList = new ArrayList<>();
+
+        for (Equipment equip : equipList) {
+
+            /*
+             * Get all bookings for this equipment.
+             */
+            List<Booking> bookingList = bookingRepo.findByEquipment(equip);
+
+            long bookingCount = 0;
+
+            for (Booking booking : bookingList) {
+
+                if (booking.getStatus() == BookingStatus.CONFIRMED ||
+                        booking.getStatus() == BookingStatus.COMPLETED) {
+
+                    bookingCount++;
+                }
+            }
+
+            /*
+             * Get all utilization records for this equipment.
+             */
+            List<Utilization> utilList = utilRepo.findByEquipment(equip);
+
+            double usageHours = 0;
+
+            for (Utilization util : utilList) {
+
+                /*
+                 * Completed utilization already has usageHours.
+                 */
+                if (util.getUsageHours() != null) {
+
+                    usageHours += util.getUsageHours();
+
+                }
+
+                /*
+                 * Active utilization has not been ended yet.
+                 * Calculate its current usage dynamically.
+                 */
+                else if (util.getStatus() == UtilizationStatus.ACTIVE) {
+
+                    LocalDateTime endTime = LocalDateTime.now();
+
+                    /*
+                     * Do not calculate beyond the booking end time.
+                     */
+                    if (endTime.isAfter(util.getBooking().getEndTime())) {
+
+                        endTime = util.getBooking().getEndTime();
+                    }
+
+                    long minutes = Duration.between(
+                            util.getStartTime(),
+                            endTime
+                    ).toMinutes();
+
+                    if (minutes > 0) {
+
+                        usageHours += minutes / 60.0;
+                    }
+                }
+            }
+
+            /*
+             * Calculate utilization for a 24-hour period.
+             */
+            double utilizationPercentage =
+                    (usageHours / 24.0) * 100;
+
+            /*
+             * Idle time cannot be negative.
+             */
+            double idleHours = 24.0 - usageHours;
+
+            if (idleHours < 0) {
+
+                idleHours = 0;
+            }
+
+            UtilizationAnalyticsDTO dto =
+                    new UtilizationAnalyticsDTO();
+
+            dto.setEquipId(equip.getEquipId());
+            dto.setEquipName(equip.getEquipName());
+            dto.setUtilizationPercentage(utilizationPercentage);
+            dto.setTotalUsageHours(usageHours);
+            dto.setIdleHours(idleHours);
+            dto.setBookingCount(bookingCount);
+
+            responseList.add(dto);
+        }
+
+        return responseList;
     }
 }
