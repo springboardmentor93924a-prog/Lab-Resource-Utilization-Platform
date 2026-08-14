@@ -17,6 +17,8 @@ const navItems = [
   { label: "Maintenance", icon: "bi-tools", path: "/maintenance" },
   { label: "Analytics", icon: "bi-bar-chart", path: "/analytics" },
   { label: "Notifications", icon: "bi-bell", path: "/notifications" },
+  { label: "Billing", icon: "bi-cash-coin", path: "/billing", adminOnly: true },
+  { label: "Reports", icon: "bi-file-earmark-bar-graph", path: "/reports", adminOnly: true },
 ];
 
 export default function Sidebar() {

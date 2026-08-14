@@ -363,17 +363,17 @@ small {
 /* FREE */
 
 .slot.free {
-    background: #063d2a;
+    background: #0a130c;
     border-color: #22c55e;
-    color: #86efac;
+    color: #ffffff;
 }
 
 /* CONFLICT */
 
 .slot.conflict {
-    background: #431b24;
+    background: #090602;
     border-color: #ef4444;
-    color: #fca5a5;
+    color: #ffffff;
 }
 
 .slot:hover {
@@ -632,9 +632,9 @@ small {
 
 /* Make the selected/free slot text remain clear */
 .slot.free {
-    color: #16a34a;
+    color: #ffffff;
 }
 
 .slot.conflict {
-    color: #dc2626;
+    color: #ffffff;
 }

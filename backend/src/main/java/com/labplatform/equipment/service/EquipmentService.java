@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import com.labplatform.equipment.dto.CalibrationAlertResponse;
 import java.time.temporal.ChronoUnit;
+import com.labplatform.equipment.dto.UtilizationCostReportRow;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -96,7 +97,43 @@ public class EquipmentService {
                 .sorted((a, b) -> a.getDaysUntilDue().compareTo(b.getDaysUntilDue()))
                 .collect(Collectors.toList());
     }
+    public List<UtilizationCostReportRow> generateUtilizationCostReport(LocalDate from, LocalDate to) {
+        List<Equipment> allEquipment = equipmentRepository.findAll();
+        List<UtilizationCostReportRow> rows = new ArrayList<>();
 
+        for (Equipment equipment : allEquipment) {
+            List<Booking> bookingsInRange = bookingRepository.findByEquipmentId(equipment.getId()).stream()
+                    .filter(b -> !b.getBookingDate().isBefore(from) && !b.getBookingDate().isAfter(to))
+                    .filter(b -> b.getBookingStatus() == BookingStatus.CONFIRMED || b.getBookingStatus() == BookingStatus.COMPLETED)
+                    .collect(Collectors.toList());
+
+            int totalBookings = bookingsInRange.size();
+            int usageHours = bookingsInRange.stream()
+                    .mapToInt(b -> b.getDurationHours() != null ? b.getDurationHours() : 0)
+                    .sum();
+
+            long daysInRange = ChronoUnit.DAYS.between(from, to) + 1;
+            double maxHours = daysInRange * 8;
+            double utilizationRate = maxHours > 0 ? Math.min((usageHours / maxHours) * 100, 100.0) : 0;
+            utilizationRate = Math.round(utilizationRate * 10.0) / 10.0;
+
+            java.math.BigDecimal totalCost = equipment.getHourlyRate() != null
+                    ? equipment.getHourlyRate().multiply(java.math.BigDecimal.valueOf(usageHours))
+                    : java.math.BigDecimal.ZERO;
+
+            rows.add(new UtilizationCostReportRow(
+                    equipment.getId(),
+                    equipment.getEquipmentName(),
+                    equipment.getCategory(),
+                    totalBookings,
+                    usageHours,
+                    utilizationRate,
+                    totalCost
+            ));
+        }
+
+        return rows;
+    }
     public void deleteEquipment(Long id) {
         if (!equipmentRepository.existsById(id)) {
             throw new ResponseStatusException(

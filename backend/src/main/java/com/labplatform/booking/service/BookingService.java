@@ -12,6 +12,7 @@ import com.labplatform.equipment.repository.EquipmentRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.labplatform.billing.service.BillingService;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -28,17 +29,22 @@ public class BookingService {
     private final EquipmentRepository equipmentRepository;
     private final EquipmentAccessGrantRepository grantRepository;
     private final WaitlistService waitlistService;
+    private final BillingService billingService;
+// add to constructor parameters and assignment, same pattern as WaitlistService
 
     public BookingService(BookingRepository bookingRepository,
                           UserRepository userRepository,
                           EquipmentRepository equipmentRepository,
                           EquipmentAccessGrantRepository grantRepository,
-                          WaitlistService waitlistService) {
+                          WaitlistService waitlistService,
+                          BillingService billingService) {
+
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.equipmentRepository = equipmentRepository;
         this.grantRepository = grantRepository;
         this.waitlistService = waitlistService;
+        this.billingService = billingService;
     }
 
     private User resolveCurrentUser(String email) {
@@ -110,6 +116,7 @@ public class BookingService {
         booking.setIsPriorityBooking(requestedPriority);
 
         Booking saved = bookingRepository.save(booking);
+        billingService.generateBillingRecordIfApplicable(saved, currentUser);
         return new BookingResponse(saved);
     }
 

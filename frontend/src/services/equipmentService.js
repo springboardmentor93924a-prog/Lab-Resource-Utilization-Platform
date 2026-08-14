@@ -46,6 +46,26 @@ export async function getCalibrationAlerts() {
   const { data } = await api.get("/calibration-alerts");
   return data;
 }
+export async function getUtilizationCostReport(from, to) {
+  const { data } = await api.get(`/reports/utilization-cost?from=${from}&to=${to}`);
+  return data;
+}
 
+export function getUtilizationCostReportCsvUrl(from, to) {
+  return `${API_BASE_URL}/reports/utilization-cost/csv?from=${from}&to=${to}`;
+}
+export async function downloadUtilizationCostReportCsv(from, to) {
+  const response = await api.get(`/reports/utilization-cost/csv?from=${from}&to=${to}`, {
+    responseType: "blob",
+  });
+  const blobUrl = window.URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = "utilization_cost_report.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(blobUrl);
+}
 
 export default api;

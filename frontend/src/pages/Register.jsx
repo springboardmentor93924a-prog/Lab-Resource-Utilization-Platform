@@ -57,7 +57,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   }
 
   const inputClass =
-    "w-full h-12 px-4 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition";
+  "w-full h-12 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition";
   const labelClass = "block text-sm font-medium text-gray-700 mb-2";
 
   return (

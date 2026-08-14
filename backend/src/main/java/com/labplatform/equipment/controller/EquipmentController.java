@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.labplatform.equipment.dto.CalibrationAlertResponse;
+import com.labplatform.equipment.dto.UtilizationCostReportRow;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -40,6 +43,34 @@ public class EquipmentController {
     @GetMapping("/calibration-alerts")
     public ResponseEntity<List<CalibrationAlertResponse>> getCalibrationAlerts() {
         return ResponseEntity.ok(equipmentService.getCalibrationAlerts());
+    }
+    @GetMapping("/reports/utilization-cost")
+    public ResponseEntity<List<UtilizationCostReportRow>> getUtilizationCostReport(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+        return ResponseEntity.ok(equipmentService.generateUtilizationCostReport(from, to));
+    }
+
+    @GetMapping("/reports/utilization-cost/csv")
+    public ResponseEntity<byte[]> downloadUtilizationCostReportCsv(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+        List<UtilizationCostReportRow> rows = equipmentService.generateUtilizationCostReport(from, to);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Equipment,Category,Total Bookings,Usage Hours,Utilization Rate (%),Total Cost\n");
+        for (UtilizationCostReportRow row : rows) {
+            csv.append(String.format("%s,%s,%d,%d,%.1f,%s\n",
+                    row.getEquipmentName(), row.getCategory(), row.getTotalBookings(),
+                    row.getUsageHours(), row.getUtilizationRate(), row.getTotalCost()));
+        }
+
+        byte[] csvBytes = csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"utilization_cost_report.csv\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv"))
+                .body(csvBytes);
     }
     @GetMapping("/{id}")
     public ResponseEntity<EquipmentResponse> getEquipmentById(@PathVariable Long id) {

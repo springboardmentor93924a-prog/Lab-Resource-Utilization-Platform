@@ -19,6 +19,9 @@ import MyWaitlist from "./pages/MyWaitlist";
 import Profile from "./pages/Profile";
 import MyTasks from "./pages/MyTasks";
 import Maintenance from "./pages/Maintenance";
+import Billing from "./pages/Billing";
+import Analytics from "./pages/Analytics";
+import Reports from "./pages/Reports";
 
 
 
@@ -170,11 +173,34 @@ export default function App() {
     </ProtectedRoute>
   }
 />
-
+<Route
+  path="/billing"
+  element={
+    <ProtectedRoute>
+      <Billing />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/analytics"
+  element={
+    <ProtectedRoute>
+      <Analytics />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/reports"
+  element={
+    <ProtectedRoute>
+      <Reports />
+    </ProtectedRoute>
+  }
+/>
 
            <Route path="/profile" element={<Profile />} />
          
-          <Route path="/analytics" element={<ProtectedRoute><ComingSoon title="Analytics" /></ProtectedRoute>} />
+          
           <Route path="/notifications" element={<ProtectedRoute><ComingSoon title="Notifications" /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
