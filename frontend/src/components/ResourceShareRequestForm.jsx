@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 
 function ResourceShareRequestForm({ equipmentId, onSuccess }) {
   const [purpose, setPurpose] = useState("");
