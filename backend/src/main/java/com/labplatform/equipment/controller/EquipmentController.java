@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.labplatform.equipment.dto.CalibrationAlertResponse;
 
 import java.util.List;
 
@@ -36,7 +37,10 @@ public class EquipmentController {
     public ResponseEntity<List<EquipmentUtilizationResponse>> getUtilizationData() {
         return ResponseEntity.ok(equipmentService.getUtilizationData());
     }
-
+    @GetMapping("/calibration-alerts")
+    public ResponseEntity<List<CalibrationAlertResponse>> getCalibrationAlerts() {
+        return ResponseEntity.ok(equipmentService.getCalibrationAlerts());
+    }
     @GetMapping("/{id}")
     public ResponseEntity<EquipmentResponse> getEquipmentById(@PathVariable Long id) {
         return ResponseEntity.ok(equipmentService.getEquipmentById(id));

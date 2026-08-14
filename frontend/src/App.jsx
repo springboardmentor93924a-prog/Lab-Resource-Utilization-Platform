@@ -17,6 +17,8 @@ import UtilizationHeatmap from "./pages/UtilizationHeatmap";
 import BookingApproval from "./pages/BookingApproval";
 import MyWaitlist from "./pages/MyWaitlist";
 import Profile from "./pages/Profile";
+import MyTasks from "./pages/MyTasks";
+import Maintenance from "./pages/Maintenance";
 
 
 
@@ -152,10 +154,26 @@ export default function App() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/my-tasks"
+  element={
+    <ProtectedRoute>
+      <MyTasks />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/maintenance"
+  element={
+    <ProtectedRoute>
+      <Maintenance />
+    </ProtectedRoute>
+  }
+/>
 
 
            <Route path="/profile" element={<Profile />} />
-          <Route path="/maintenance" element={<ProtectedRoute><ComingSoon title="Maintenance" /></ProtectedRoute>} />
+         
           <Route path="/analytics" element={<ProtectedRoute><ComingSoon title="Analytics" /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><ComingSoon title="Notifications" /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/login" replace />} />

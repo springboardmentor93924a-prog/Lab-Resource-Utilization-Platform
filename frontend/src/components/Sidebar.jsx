@@ -13,6 +13,7 @@ const navItems = [
   { label: "Heatmap", icon: "bi-grid-3x3-gap", path: "/heatmap" },
   { label: "Booking approval", icon: "bi-check2-square", path: "/booking-approval", adminOnly: true },
   { label: "My waitlist", icon: "bi-hourglass-split", path: "/my-waitlist" },
+  { label: "My tasks", icon: "bi-clipboard-check", path: "/my-tasks" },
   { label: "Maintenance", icon: "bi-tools", path: "/maintenance" },
   { label: "Analytics", icon: "bi-bar-chart", path: "/analytics" },
   { label: "Notifications", icon: "bi-bell", path: "/notifications" },

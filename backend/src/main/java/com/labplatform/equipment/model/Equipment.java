@@ -32,6 +32,8 @@ public class Equipment {
     private String assetTag;
 
     private String category;
+    @Column(name = "hourly_rate")
+    private java.math.BigDecimal hourlyRate;
 
     private String department;
     @ManyToOne(fetch = FetchType.LAZY)
@@ -194,4 +196,13 @@ public class Equipment {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public java.math.BigDecimal getHourlyRate() {
+        return hourlyRate;
+    }
+
+    public void setHourlyRate(java.math.BigDecimal hourlyRate) {
+        this.hourlyRate = hourlyRate;
+    }
 }
+

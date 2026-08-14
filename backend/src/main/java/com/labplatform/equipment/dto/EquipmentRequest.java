@@ -31,6 +31,7 @@ public class EquipmentRequest {
     private String calibrationCertificate;
 
     private Integer institutionId;
+    private java.math.BigDecimal hourlyRate;
 
     public EquipmentRequest() {
     }
@@ -130,4 +131,7 @@ public class EquipmentRequest {
     public void setInstitutionId(Integer institutionId) {
         this.institutionId = institutionId;
     }
+
+    public java.math.BigDecimal getHourlyRate() { return hourlyRate; }
+    public void setHourlyRate(java.math.BigDecimal hourlyRate) { this.hourlyRate = hourlyRate; }
 }

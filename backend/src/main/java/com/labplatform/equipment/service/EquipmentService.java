@@ -14,6 +14,8 @@ import com.labplatform.institution.repository.InstitutionRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.labplatform.equipment.dto.CalibrationAlertResponse;
+import java.time.temporal.ChronoUnit;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -68,6 +70,31 @@ public class EquipmentService {
 
         Equipment updated = equipmentRepository.save(equipment);
         return new EquipmentResponse(updated);
+    }
+    public List<CalibrationAlertResponse> getCalibrationAlerts() {
+        List<Equipment> allEquipment = equipmentRepository.findAll();
+        LocalDate today = LocalDate.now();
+
+        return allEquipment.stream()
+                .filter(e -> e.getCalibrationDueDate() != null)
+                .filter(e -> {
+                    long daysUntilDue = ChronoUnit.DAYS.between(today, e.getCalibrationDueDate());
+                    return daysUntilDue <= 30;
+                })
+                .map(e -> {
+                    long daysUntilDue = ChronoUnit.DAYS.between(today, e.getCalibrationDueDate());
+                    String urgency = daysUntilDue < 0 ? "OVERDUE" : "DUE_SOON";
+                    return new CalibrationAlertResponse(
+                            e.getId(),
+                            e.getEquipmentName(),
+                            e.getCategory(),
+                            e.getCalibrationDueDate(),
+                            (int) daysUntilDue,
+                            urgency
+                    );
+                })
+                .sorted((a, b) -> a.getDaysUntilDue().compareTo(b.getDaysUntilDue()))
+                .collect(Collectors.toList());
     }
 
     public void deleteEquipment(Long id) {
@@ -172,6 +199,7 @@ public class EquipmentService {
         equipment.setCalibrationDueDate(request.getCalibrationDueDate());
         equipment.setManualDocument(request.getManualDocument());
         equipment.setCalibrationCertificate(request.getCalibrationCertificate());
+        equipment.setHourlyRate(request.getHourlyRate());
 
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             try {

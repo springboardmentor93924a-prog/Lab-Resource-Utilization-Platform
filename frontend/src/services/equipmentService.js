@@ -44,6 +44,10 @@ export async function getEquipmentUtilization() {
   });
   return data;
 }
+export async function getCalibrationAlerts() {
+  const { data } = await api.get("/calibration-alerts");
+  return data;
+}
 
 
 export default api;

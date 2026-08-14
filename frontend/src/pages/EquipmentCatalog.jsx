@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAllEquipment } from "../services/equipmentService";
 import { isAdmin } from "../utils/auth";
+import { getCalibrationAlerts } from "../services/equipmentService";
 
 export default function EquipmentCatalog() {
   const navigate = useNavigate();
@@ -11,25 +12,26 @@ export default function EquipmentCatalog() {
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [overdueIds, setOverdueIds] = useState([]);
 
   const userIsAdmin = isAdmin();
 
   useEffect(() => {
-    async function fetchEquipment() {
-      try {
-        const data = await getAllEquipment();
-        setEquipmentList(data);
-      } catch (err) {
-        setError(
-          err.response?.data?.message || "Failed to load equipment"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
+  async function fetchEquipment() {
+    try {
+      const data = await getAllEquipment();
+      setEquipmentList(data);
 
-    fetchEquipment();
-  }, []);
+      const alerts = await getCalibrationAlerts();
+      setOverdueIds(alerts.filter((a) => a.urgency === "OVERDUE").map((a) => a.equipmentId));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load equipment");
+    } finally {
+      setLoading(false);
+    }
+  }
+  fetchEquipment();
+}, []);
 
   function handleView(id) {
     navigate(`/equipment/${id}`);
@@ -168,7 +170,8 @@ export default function EquipmentCatalog() {
 
             {equipmentList.map((item) => (
 
-              <div
+
+<div
                 className="equipment-card"
                 key={item.equipmentId}
               >
@@ -197,6 +200,15 @@ export default function EquipmentCatalog() {
                 <p>
                   {item.category?.categoryName} — {item.department?.departmentName}
                 </p>
+
+
+                {/* CALIBRATION OVERDUE BADGE */}
+
+                {overdueIds.includes(item.equipmentId) && (
+                  <span style={{ background: "#ef4444", color: "#fff", padding: "3px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 600 }}>
+                    Calibration overdue
+                  </span>
+                )}
 
 
                 {/* STATUS */}
