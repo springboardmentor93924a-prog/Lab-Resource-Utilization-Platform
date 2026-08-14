@@ -17,8 +17,8 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
     @Override
     public ResourceSharingRequest createRequest(ResourceSharingRequest request) {
         request.setStatus("PENDING");
-        if(request.getSenderInstitution() != null) request.setSenderInstitution(request.getSenderInstitution().trim());
-        if(request.getReceiverInstitution() != null) request.setReceiverInstitution(request.getReceiverInstitution().trim());
+        if(request.getSenderInstitution() != null) request.setSenderInstitution(request.getSenderInstitution());
+        if(request.getReceiverInstitution() != null) request.setReceiverInstitution(request.getReceiverInstitution());
         return repository.save(request);
     }
 
