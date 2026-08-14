@@ -52,18 +52,13 @@ export default function Billing() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAdmin()) {
-      alert("You don't have permission to view billing.");
-      navigate("/dashboard");
-      return;
-    }
+  if (!isAdmin()) {
+    alert("You don't have permission to view billing.");
+    navigate("/dashboard");
+    return;
+  }
 
-    loadData();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function loadData() {
+  async function loadBillingData() {
     try {
       const [owe, owed] = await Promise.all([
         getWhatWeOwe(),
@@ -79,18 +74,29 @@ export default function Billing() {
     }
   }
 
-  async function handleMarkPaid(id) {
-    try {
-      await markPaid(id);
-      alert("Marked as paid.");
-      loadData();
-    } catch (err) {
-      alert(
-        err.response?.data?.message ||
-          "Failed to mark as paid."
-      );
-    }
+  loadBillingData();
+}, [navigate]);
+
+async function handleMarkPaid(id) {
+  try {
+    await markPaid(id);
+    alert("Marked as paid.");
+
+    // Refresh billing data
+    const [owe, owed] = await Promise.all([
+      getWhatWeOwe(),
+      getWhatIsOwedToUs(),
+    ]);
+
+    setWeOwe(owe);
+    setOwedToUs(owed);
+  } catch (err) {
+    alert(
+      err.response?.data?.message ||
+        "Failed to mark as paid."
+    );
   }
+}
 
   function renderTable(records, showAction) {
     return (

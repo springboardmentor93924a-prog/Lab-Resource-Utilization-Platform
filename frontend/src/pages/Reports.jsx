@@ -85,7 +85,7 @@ export default function Reports() {
 
     try {
       await downloadUtilizationCostReportCsv(from, to);
-    } catch (err) {
+    } catch  {
       alert("Failed to download CSV.");
     }
   }

@@ -34,7 +34,7 @@ export default function Sharing() {
 
       const allEquipment = await getAllEquipment();
       const outside = allEquipment.filter(
-        (eq) => eq.institution?.institutionId !== meData.institutionId
+        (eq) => eq.institutionId !== meData.institutionId
       );
       setOtherInstitutionEquipment(outside);
 
@@ -116,11 +116,9 @@ export default function Sharing() {
       </aside>
 
       <main style={{ flex: 1, padding: "30px" }}>
-        <h2 style={{ marginBottom: "6px", fontSize: "24px", fontWeight: 700, color: "#fff" }}>
-          Inter-institution sharing
-        </h2>
-        <p style={{ color: "#94a3b8", marginBottom: "28px", fontSize: "14px" }}>
-          Your institution: <strong style={{ color: "#fff" }}>{me?.institutionName || "—"}</strong>
+        <h4 style={{ marginBottom: "8px" }}>Inter-institution sharing</h4>
+        <p style={{ color: "#ffffff", marginBottom: "25px" }}>
+          Your institution: <strong>{me?.institutionName || "—"}</strong>
         </p>
 
         {userIsAdmin && (
@@ -159,17 +157,16 @@ export default function Sharing() {
         )}
 
         <section style={{ marginBottom: "35px" }}>
-          <h3 style={{ marginBottom: "16px", fontSize: "15px", fontWeight: 600, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-            Equipment from other institutions
-          </h3>
+          <h6 style={{ marginBottom: "15px" }}>Equipments from other Institutions</h6>
           <div className="equipment-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "20px" }}>
-            {otherInstitutionEquipment.length === 0 && <p style={{ color: "#94a3b8" }}>No equipment from other institutions found.</p>}
+            {otherInstitutionEquipment.length === 0 && <p>No equipment from other institutions found.</p>}
             {otherInstitutionEquipment.map((eq) => {
-              const status = getRequestStatusFor(eq.equipmentId);
+              const status = getRequestStatusFor(eq.id);
               return (
-                <div key={eq.equipmentId} className="sharing-equipment-card" style={{ background: "#111827", borderRadius: "12px", padding: "18px", border: "1px solid #1f2937" }}>
-                  <h6 style={{ marginTop: "0", color: "#fff", fontSize: "16px" }}>{eq.name}</h6>
-                  <p style={{ fontSize: "13px", color: "#94a3b8" }}>{eq.institution?.institutionName}</p>
+                <div key={eq.id} className="equipment-card" style={{ background: "#fff", borderRadius: "12px", padding: "15px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+                  <img src={eq.imageUrl} alt={eq.equipmentName} style={{ width: "100%", height: "130px", objectFit: "cover", borderRadius: "8px" }} />
+                  <h6 style={{ marginTop: "10px" }}>{eq.equipmentName}</h6>
+                  <p style={{ fontSize: "13px", color: "#666" }}>{eq.institutionName}</p>
 
                   {status === "APPROVED" && (
                     <span className="badge bg-success rounded-pill">Access granted</span>
@@ -194,7 +191,7 @@ export default function Sharing() {
                       />
                       <button
                         className="btn btn-dark w-100 mt-2"
-                        onClick={() => handleRequestAccess(eq.equipmentId)}
+                        onClick={() => handleRequestAccess(eq.id)}
                       >
                         Request access
                       </button>
@@ -206,12 +203,10 @@ export default function Sharing() {
           </div>
         </section>
 
-       <section>
-          <h3 style={{ marginBottom: "16px", fontSize: "15px", fontWeight: 600, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-            My requests
-          </h3>
-          <div style={{ background: "#111827", borderRadius: "12px", padding: "6px", border: "1px solid #1f2937" }}>
-            {myRequests.length === 0 && <p style={{ padding: "15px", color: "#94a3b8" }}>You haven't requested access to anything yet.</p>}
+        <section>
+          <h6 style={{ marginBottom: "20px" }}>My requests</h6>
+          <div style={{ background: "#26bb49", borderRadius: "12px", padding: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+            {myRequests.length === 0 && <p style={{ padding: "15px" }}>You haven't requested access to anything yet.</p>}
             {myRequests.map((r) => (
               <div
                 key={r.id}

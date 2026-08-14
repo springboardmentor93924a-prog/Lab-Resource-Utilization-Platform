@@ -39,9 +39,7 @@ export async function deleteEquipment(id) {
   return data;
 }
 export async function getEquipmentUtilization() {
-  const { data } = await axios.get("http://localhost:8080/api/utilization/summary", {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  const { data } = await api.get("/utilization");
   return data;
 }
 export async function getCalibrationAlerts() {

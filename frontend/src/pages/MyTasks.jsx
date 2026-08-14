@@ -23,9 +23,6 @@ export default function MyTasks() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTasks();
-  }, []);
-
   async function loadTasks() {
     try {
       const data = await getMyAssignedWorkOrders();
@@ -37,19 +34,24 @@ export default function MyTasks() {
     }
   }
 
-  async function handleComplete(id) {
-    try {
-      await markComplete(id);
-      alert("Marked as complete.");
-      loadTasks();
-    } catch (err) {
-      alert(
-        err.response?.data?.message ||
-          "Failed to mark complete."
-      );
-    }
-  }
+  loadTasks();
+}, []);
 
+async function handleComplete(id) {
+  try {
+    await markComplete(id);
+    alert("Marked as complete.");
+
+    // Reload tasks after completing the work order
+    const data = await getMyAssignedWorkOrders();
+    setTasks(data);
+  } catch (err) {
+    alert(
+      err.response?.data?.message ||
+        "Failed to mark complete."
+    );
+  }
+}
   return (
     <div
       style={{

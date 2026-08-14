@@ -16,9 +16,7 @@ api.interceptors.request.use((config) => {
 });
 
 export async function getCurrentUserInfo() {
-  const { data } = await axios.get("http://localhost:8080/auth/me", {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  const { data } = await api.get("/auth/me");
   return data;
 }
 
