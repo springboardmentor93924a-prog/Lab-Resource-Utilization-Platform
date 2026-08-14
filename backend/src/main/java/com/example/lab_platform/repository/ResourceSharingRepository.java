@@ -8,7 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ResourceSharingRepository extends JpaRepository<ResourceSharingRequest, Long> {
-    // Custom query to find requests by receiver or sender institution if needed
-    List<ResourceSharingRequest> findByReceiverInstitution(String receiverInstitution);
-    List<ResourceSharingRequest> findBySenderInstitution(String senderInstitution);
+    List<ResourceSharingRequest> findByReceiverInstitution_InstitutionId(Integer institutionId);
+    List<ResourceSharingRequest> findBySenderInstitution_InstitutionId(Integer institutionId);
 }

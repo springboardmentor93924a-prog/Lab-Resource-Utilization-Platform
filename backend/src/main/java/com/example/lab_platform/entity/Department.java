@@ -17,6 +17,10 @@ public class Department {
     @Column(name = "description")
     private String description;
 
+    @ManyToOne
+    @JoinColumn(name = "institution_id")
+    private Institution institution;
+
     public Department() {
     }
 
@@ -42,5 +46,13 @@ public class Department {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Institution getInstitution() {
+        return institution;
+    }
+
+    public void setInstitution(Institution institution) {
+        this.institution = institution;
     }
 }

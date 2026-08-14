@@ -5,6 +5,7 @@ import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
+import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.service.UtilizationService;
 
 import org.springframework.stereotype.Service;
@@ -21,13 +22,16 @@ public class UtilizationServiceImpl implements UtilizationService {
 
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;
+    private final WaitlistRepository waitlistRepository;
 
     public UtilizationServiceImpl(
             EquipmentRepository equipmentRepository,
-            BookingRepository bookingRepository) {
+            BookingRepository bookingRepository,
+            WaitlistRepository waitlistRepository) {
 
         this.equipmentRepository = equipmentRepository;
         this.bookingRepository = bookingRepository;
+        this.waitlistRepository = waitlistRepository;
     }
 
     @Override
@@ -70,6 +74,9 @@ public class UtilizationServiceImpl implements UtilizationService {
             double fridayHours = 0.0;
 
             LocalDate latestUsedDate = null;
+
+            // ===== NEW: demand analysis counter =====
+            long bookingCount = 0;
 
             for (Booking booking : bookings) {
 
@@ -116,6 +123,9 @@ public class UtilizationServiceImpl implements UtilizationService {
                         || !bookingStart.isBefore(periodEndDateTime)) {
                     continue;
                 }
+
+                // ===== NEW: this booking counts toward demand =====
+                bookingCount++;
 
                 /*
                  * Clip booking to the seven-day analysis period.
@@ -283,6 +293,15 @@ public class UtilizationServiceImpl implements UtilizationService {
                 idleDays = 7;
             }
 
+            // ===== NEW: active waitlist size for this equipment =====
+            long waitlistCount =
+                    waitlistRepository
+                            .findByEquipment_EquipmentIdAndWaitlistStatusOrderByCreatedAtAsc(
+                                    equipment.getEquipmentId(),
+                                    "WAITING"
+                            )
+                            .size();
+
             UtilizationDTO dto =
                     new UtilizationDTO();
 
@@ -328,6 +347,11 @@ public class UtilizationServiceImpl implements UtilizationService {
             dto.setFriday(
                     getHeatmapLevel(fridayHours)
             );
+
+            // ===== NEW: demand analysis fields =====
+            dto.setBookingCount(bookingCount);
+
+            dto.setWaitlistCount(waitlistCount);
 
             result.add(dto);
         }

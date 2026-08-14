@@ -1,54 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './Register.css'; // You can use common or create a specific CSS if needed
+import './Register.css';
 
 export default function ResourceSharing() {
   const [requests, setRequests] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [equipmentName, setEquipmentName] = useState('');
-  const [senderInstitution, setSenderInstitution] = useState('');
-  const [receiverInstitution, setReceiverInstitution] = useState('');
+  const [senderInstitutionId, setSenderInstitutionId] = useState('');
+  const [receiverInstitutionId, setReceiverInstitutionId] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
 
-  // Fetch all sharing requests on load
+  const token = localStorage.getItem('token');
+  const authHeader = { Authorization: `Bearer ${token}` };
+
   useEffect(() => {
     fetchRequests();
+    fetchInstitutions();
   }, []);
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/resource-sharing/requests');
+      const response = await axios.get(
+        'http://localhost:8080/api/resource-sharing/requests',
+        { headers: authHeader }
+      );
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching sharing requests:', error);
     }
   };
 
+  const fetchInstitutions = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/institutions');
+      setInstitutions(response.data);
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+    }
+  };
+
   const handleSendRequest = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8080/api/resource-sharing/requests', {
-        equipmentId: parseInt(equipmentId),
-        equipmentName,
-        senderInstitution,
-        receiverInstitution,
-        status: 'PENDING' // Explicitly setting default status for backend sync
-      });
+      await axios.post(
+        'http://localhost:8080/api/resource-sharing/requests',
+        {
+          equipmentId: parseInt(equipmentId),
+          equipmentName,
+          senderInstitution: { institutionId: Number(senderInstitutionId) },
+          receiverInstitution: { institutionId: Number(receiverInstitutionId) },
+        },
+        { headers: authHeader }
+      );
       setEquipmentName('');
-      setSenderInstitution('');
-      setReceiverInstitution('');
+      setSenderInstitutionId('');
+      setReceiverInstitutionId('');
       setEquipmentId('');
       fetchRequests();
       alert('Resource sharing request sent successfully!');
     } catch (error) {
+      const message = error.response?.data?.message || 'Error sending request';
+      alert(message);
       console.error('Error sending request:', error);
     }
   };
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:8080/api/resource-sharing/requests/${id}/status?status=${status}`);
+      await axios.put(
+        `http://localhost:8080/api/resource-sharing/requests/${id}/status?status=${status}`,
+        {},
+        { headers: authHeader }
+      );
       fetchRequests();
     } catch (error) {
+      const message = error.response?.data?.message || 'Error updating status';
+      alert(message);
       console.error('Error updating status:', error);
     }
   };
@@ -57,7 +84,6 @@ export default function ResourceSharing() {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h2>Inter-Institution Resource Sharing</h2>
 
-      {/* Request Form */}
       <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px', marginBottom: '20px', maxWidth: '500px' }}>
         <h3>Send Sharing Request</h3>
         <form onSubmit={handleSendRequest}>
@@ -71,17 +97,30 @@ export default function ResourceSharing() {
           </div>
           <div style={{ marginBottom: '10px' }}>
             <label>Sender Institution: </label><br/>
-            <input type="text" value={senderInstitution} onChange={(e) => setSenderInstitution(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            <select value={senderInstitutionId} onChange={(e) => setSenderInstitutionId(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+              <option value="">-- Select Institution --</option>
+              {institutions.map((inst) => (
+                <option key={inst.institutionId} value={inst.institutionId}>
+                  {inst.institutionName}
+                </option>
+              ))}
+            </select>
           </div>
           <div style={{ marginBottom: '10px' }}>
             <label>Receiver Institution: </label><br/>
-            <input type="text" value={receiverInstitution} onChange={(e) => setReceiverInstitution(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            <select value={receiverInstitutionId} onChange={(e) => setReceiverInstitutionId(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+              <option value="">-- Select Institution --</option>
+              {institutions.map((inst) => (
+                <option key={inst.institutionId} value={inst.institutionId}>
+                  {inst.institutionName}
+                </option>
+              ))}
+            </select>
           </div>
           <button type="submit" style={{ background: '#007bff', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Send Request</button>
         </form>
       </div>
 
-      {/* Requests Table */}
       <h3>Active Sharing Requests</h3>
       <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
         <thead>
@@ -100,8 +139,8 @@ export default function ResourceSharing() {
               <tr key={req.id}>
                 <td>{req.id}</td>
                 <td>{req.equipmentName} (ID: {req.equipmentId})</td>
-                <td>{req.senderInstitution}</td>
-                <td>{req.receiverInstitution}</td>
+                <td>{req.senderInstitution?.institutionName}</td>
+                <td>{req.receiverInstitution?.institutionName}</td>
                 <td>
                   <span style={{ fontWeight: 'bold', color: req.status === 'APPROVED' ? 'green' : req.status === 'REJECTED' ? 'red' : 'orange' }}>
                     {req.status}
