@@ -170,22 +170,70 @@ export default function EquipmentCatalog() {
 
             {equipmentList.map((item) => (
 
-         <div className="equipment-card" key={item.id}>
-  <div className="image-placeholder">
-    <img src={item.imageUrl} alt={item.equipmentName} />
-  </div>
-  <h6>{item.equipmentName}</h6>
-  <p>{item.category} — {item.department}</p>
-  {overdueIds.includes(item.id) && (
-    <span style={{ background: "#ef4444", color: "#fff", padding: "3px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 600 }}>
-      Calibration overdue
-    </span>
-  )}
-  <div className={`status ${item.status?.toLowerCase()}`}></div>
-  <button className="btn btn-outline-dark w-100" onClick={() => handleView(item.id)}>
-    View
-  </button>
-</div>
+
+<div
+                className="equipment-card"
+                key={item.equipmentId}
+              >
+
+                {/* IMAGE */}
+
+                <div className="image-placeholder">
+
+                  <img
+                    src={item.imageUrl || ""}
+                    alt={item.name}
+                  />
+
+                </div>
+
+
+                {/* EQUIPMENT NAME */}
+
+                <h6>
+                  {item.name}
+                </h6>
+
+
+                {/* CATEGORY + DEPARTMENT */}
+
+                <p>
+                  {item.category?.categoryName} — {item.department?.departmentName}
+                </p>
+
+
+                {/* CALIBRATION OVERDUE BADGE */}
+
+                {overdueIds.includes(item.equipmentId) && (
+                  <span style={{ background: "#ef4444", color: "#fff", padding: "3px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 600 }}>
+                    Calibration overdue
+                  </span>
+                )}
+
+
+                {/* STATUS */}
+
+                <div
+                  className={`status ${
+                    item.status?.toLowerCase() || ""
+                  }`}
+                >
+                  <span>
+                    {item.status?.replace("_", " ")}
+                  </span>
+                </div>
+
+
+                {/* VIEW BUTTON */}
+
+                <button
+                  className="view-equipment-btn"
+                  onClick={() => handleView(item.equipmentId)}
+                >
+                  View
+                </button>
+
+              </div>
 
             ))}
 

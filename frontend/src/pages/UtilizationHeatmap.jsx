@@ -92,7 +92,7 @@ export default function UtilizationHeatmap() {
 
             return (
               <div
-                key={item.id}
+               key={item.equipmentId}
                 style={{
                   background: "#ffffff",
                   borderRadius: "12px",
@@ -118,7 +118,7 @@ export default function UtilizationHeatmap() {
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
-                      alt={item.equipmentName}
+                      alt={item.name}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -167,7 +167,7 @@ export default function UtilizationHeatmap() {
                       flex: 1,
                     }}
                   >
-                    {item.equipmentName}
+                    {item.name}
                   </h4>
 
                   {/* BADGES */}
@@ -234,30 +234,16 @@ export default function UtilizationHeatmap() {
                 >
                   <p style={{ margin: "4px 0" }}>
                     <strong style={{ color: "#0f1b2d" }}>
-                      Category:
-                    </strong>{" "}
-                    {item.category}
-                  </p>
-
-                  <p style={{ margin: "4px 0" }}>
-                    <strong style={{ color: "#0f1b2d" }}>
-                      Status:
-                    </strong>{" "}
-                    {item.status}
-                  </p>
-
-                  <p style={{ margin: "4px 0" }}>
-                    <strong style={{ color: "#0f1b2d" }}>
                       Usage hours:
                     </strong>{" "}
-                    {item.usageHours}
+                    {item.totalHoursUsed}
                   </p>
 
                   <p style={{ margin: "4px 0" }}>
                     <strong style={{ color: "#0f1b2d" }}>
                       Total bookings:
                     </strong>{" "}
-                    {item.totalBookings}
+                    {item.bookingCount}
                   </p>
                 </div>
 
