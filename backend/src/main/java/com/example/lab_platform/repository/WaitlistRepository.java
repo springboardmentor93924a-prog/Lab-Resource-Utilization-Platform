@@ -19,4 +19,12 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Integer> {
 
     // All entries for a specific equipment (any status) — useful for admins/managers
     List<Waitlist> findByEquipment_EquipmentId(Integer equipmentId);
+
+    boolean existsByUser_UserIdAndEquipment_EquipmentIdAndRequestedStartTimeAndRequestedEndTimeAndWaitlistStatusIn(
+        Integer userId,
+        Integer equipmentId,
+        java.time.LocalDateTime requestedStartTime,
+        java.time.LocalDateTime requestedEndTime,
+        java.util.List<String> statuses
+);
 }

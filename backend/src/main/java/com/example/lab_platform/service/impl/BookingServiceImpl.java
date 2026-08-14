@@ -210,7 +210,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        booking.setBookingStatus("Pending");
+        booking.setBookingStatus("Pending Approval");
 
         return bookingRepository.save(booking);
     }
@@ -321,13 +321,9 @@ public Booking updateBooking(
             );
         }
 
-        if (!"Pending".equalsIgnoreCase(
-                existingBooking.getBookingStatus())) {
-
-            throw new RuntimeException(
-                    "Only Pending bookings can be updated"
-            );
-        }
+        if (!isPendingApproval(existingBooking.getBookingStatus())) {
+    throw new RuntimeException("Only Pending Approval bookings can be updated");
+}
     }
 
     /*
@@ -468,13 +464,9 @@ public Booking updateBooking(
             );
         }
 
-        if (!"Pending".equalsIgnoreCase(
-                existingBooking.getBookingStatus())) {
-
-            throw new RuntimeException(
-                    "Only Pending bookings can be deleted"
-            );
-        }
+        if (!isPendingApproval(existingBooking.getBookingStatus())) {
+    throw new RuntimeException("Only Pending Approval bookings can be deleted");
+}
 
         bookingRepository.delete(existingBooking);
     }
@@ -500,13 +492,9 @@ public Booking updateBooking(
             );
         }
 
-        if (!"Pending".equalsIgnoreCase(
-                booking.getBookingStatus())) {
-
-            throw new RuntimeException(
-                    "Only Pending bookings can be approved"
-            );
-        }
+        if (!isPendingApproval(booking.getBookingStatus())) {
+    throw new RuntimeException("Only Pending Approval bookings can be approved");
+}
 
         Equipment equipment =
                 booking.getEquipment();
@@ -622,13 +610,9 @@ public Booking updateBooking(
             );
         }
 
-        if (!"Pending".equalsIgnoreCase(
-                booking.getBookingStatus())) {
-
-            throw new RuntimeException(
-                    "Only Pending bookings can be rejected"
-            );
-        }
+        if (!isPendingApproval(booking.getBookingStatus())) {
+    throw new RuntimeException("Only Pending Approval bookings can be rejected");
+}
 
         booking.setBookingStatus("Rejected");
 
@@ -684,4 +668,24 @@ public Booking updateBooking(
 
         return bookingRepository.save(booking);
     }
+
+    private String normalizeBookingStatus(String status) {
+    if (status == null) return "";
+    String s = status.trim().toLowerCase();
+    if (s.equals("pending") || s.equals("pending approval") || s.equals("pending_approval")) {
+        return "pending approval";
+    }
+    if (s.equals("confirmed")) return "confirmed";
+    if (s.equals("in use") || s.equals("in_use")) return "in use";
+    if (s.equals("rejected")) return "rejected";
+    if (s.equals("completed")) return "completed";
+    if (s.equals("cancelled") || s.equals("canceled")) return "cancelled";
+    if (s.equals("no show") || s.equals("no_show")) return "no show";
+    return s;
+}
+
+private boolean isPendingApproval(String status) {
+    return "pending approval".equals(normalizeBookingStatus(status));
+}
+
 }

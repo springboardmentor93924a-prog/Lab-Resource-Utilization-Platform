@@ -87,7 +87,7 @@ function Reservations() {
       startTime: formData.startTime,
       endTime: formData.endTime,
       purpose: formData.purpose,
-      bookingStatus: "Pending",
+      bookingStatus: "Pending Approval",
     };
 
     try {
@@ -370,14 +370,14 @@ function Reservations() {
 
                 <td style={cellStyle}>
                   <strong>
-                    {booking.bookingStatus === "Pending" &&
-                      "⏳ Pending"}
-
-                    {booking.bookingStatus === "Confirmed" &&
-                      "✅ Confirmed"}
-
-                    {booking.bookingStatus === "Rejected" &&
-                      "❌ Rejected"}
+                    {booking.bookingStatus === "Pending" && "⏳ Pending"}
+{booking.bookingStatus === "Pending Approval" && "⏳ Pending Approval"}
+{booking.bookingStatus === "Confirmed" && "✅ Confirmed"}
+{booking.bookingStatus === "In Use" && "🟦 In Use"}
+{booking.bookingStatus === "Rejected" && "❌ Rejected"}
+{booking.bookingStatus === "Cancelled" && "⚪ Cancelled"}
+{booking.bookingStatus === "No Show" && "⚫ No Show"}
+{booking.bookingStatus === "Completed" && "✔ Completed"}
                   </strong>
                 </td>
 
@@ -388,7 +388,7 @@ function Reservations() {
                 <td style={cellStyle}>
 
                   {/* Student can edit/delete their own pending bookings */}
-                  {booking.bookingStatus === "Pending" &&
+                  {booking.bookingStatus === "Pending" || booking.bookingStatus === "Pending Approval" &&
                    role === "STUDENT" && (
                     <>
                       <button
