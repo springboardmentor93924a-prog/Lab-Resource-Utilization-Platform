@@ -258,16 +258,35 @@ public class BookingServiceImpl implements BookingService {
 
         return false;
     }
+@Override
+public List<Booking> getAllBookings() {
+    User loggedInUser = getLoggedInUser();
+    String role = getRole(loggedInUser);
 
-    @Override
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+    if (role.equalsIgnoreCase("STUDENT")) {
+        return bookingRepository.findByUser_UserId(loggedInUser.getUserId());
     }
 
-    @Override
-    public Optional<Booking> getBookingById(Integer id) {
-        return bookingRepository.findById(id);
+    return bookingRepository.findAll();
+}
+
+@Override
+public Optional<Booking> getBookingById(Integer id) {
+    Optional<Booking> bookingOpt = bookingRepository.findById(id);
+    if (bookingOpt.isEmpty()) {
+        return Optional.empty();
     }
+
+    User loggedInUser = getLoggedInUser();
+    String role = getRole(loggedInUser);
+
+    if (role.equalsIgnoreCase("STUDENT")
+            && !bookingOpt.get().getUser().getUserId().equals(loggedInUser.getUserId())) {
+        throw new RuntimeException("You can view only your own booking");
+    }
+
+    return bookingOpt;
+}
 
     @Override
 public Booking updateBooking(
