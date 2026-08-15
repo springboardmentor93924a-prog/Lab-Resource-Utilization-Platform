@@ -10,6 +10,7 @@ import Reports from "../pages/Reports";
 import User from "../pages/User";
 import Waitlist from "../pages/Waitlist";
 import ResourceSharing from "../pages/ResourceSharing";
+import DemandAnalysis from "../pages/DemandAnalysis";
 
 // Task 2
 import Utilization from "../pages/Utilization";
@@ -187,6 +188,26 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      
+        <Route
+  path="/heatmap"
+  
+  path="/demand-analysis"
+  element={
+    <ProtectedRoute
+      allowedRoles={[
+        "LAB_MANAGER",
+        "DEPARTMENT_HEAD",
+        "INSTITUTION_ADMIN",
+        "SYSTEM_ADMIN"
+      ]}
+    >
+      <MainLayout>
+        <DemandAnalysis />
+      </MainLayout>
+    </ProtectedRoute>
+  }
+/>
 
       {/* Reports */}
       <Route

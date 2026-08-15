@@ -1,12 +1,15 @@
 package com.example.lab_platform.service.impl;
 
+import java.util.Comparator;
 import com.example.lab_platform.dto.UtilizationDTO;
+import com.example.lab_platform.dto.UtilizationSummaryDTO;
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.service.UtilizationService;
+
 
 import org.springframework.stereotype.Service;
 
@@ -355,8 +358,13 @@ public class UtilizationServiceImpl implements UtilizationService {
 
             result.add(dto);
         }
+        //logic for summary
+result.sort(
+    Comparator.comparingLong(UtilizationDTO::getBookingCount).reversed()
+);
 
-        return result;
+return result;
+
     }
 
     /*
@@ -388,4 +396,48 @@ public class UtilizationServiceImpl implements UtilizationService {
 
         return Math.round(value * 100.0) / 100.0;
     }
+    //analytic summary
+    @Override
+public UtilizationSummaryDTO getUtilizationSummary() {
+
+    List<UtilizationDTO> utilizationData = getUtilizationData();
+
+    UtilizationSummaryDTO summary = new UtilizationSummaryDTO();
+
+    summary.setTotalEquipment(utilizationData.size());
+
+    if (utilizationData.isEmpty()) {
+        return summary;
+    }
+
+    double averageUtilization = utilizationData.stream()
+            .mapToDouble(UtilizationDTO::getUtilizationPercentage)
+            .average()
+            .orElse(0);
+
+   summary.setAverageUtilization(round(averageUtilization));
+
+    summary.setMostRequestedEquipment(
+            utilizationData.stream()
+                    .max(Comparator.comparingLong(UtilizationDTO::getBookingCount))
+                    .map(UtilizationDTO::getEquipmentName)
+                    .orElse("N/A")
+    );
+
+    summary.setHighestUtilizationEquipment(
+            utilizationData.stream()
+                    .max(Comparator.comparingDouble(UtilizationDTO::getUtilizationPercentage))
+                    .map(UtilizationDTO::getEquipmentName)
+                    .orElse("N/A")
+    );
+
+    summary.setLowestUtilizationEquipment(
+            utilizationData.stream()
+                    .min(Comparator.comparingDouble(UtilizationDTO::getUtilizationPercentage))
+                    .map(UtilizationDTO::getEquipmentName)
+                    .orElse("N/A")
+    );
+
+    return summary;
+}
 }

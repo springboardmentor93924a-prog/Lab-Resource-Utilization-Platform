@@ -42,7 +42,8 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
         request.setSenderInstitution(sender);
         request.setReceiverInstitution(receiver);
         request.setStatus("PENDING");
-
+        if(request.getSenderInstitution() != null) request.setSenderInstitution(request.getSenderInstitution());
+        if(request.getReceiverInstitution() != null) request.setReceiverInstitution(request.getReceiverInstitution());
         return repository.save(request);
     }
 

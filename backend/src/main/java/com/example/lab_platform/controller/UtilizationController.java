@@ -1,6 +1,7 @@
 package com.example.lab_platform.controller;
 
 import com.example.lab_platform.dto.UtilizationDTO;
+import com.example.lab_platform.dto.UtilizationSummaryDTO;
 import com.example.lab_platform.service.UtilizationService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -29,4 +30,17 @@ public class UtilizationController {
     public List<UtilizationDTO> getUtilization() {
         return utilizationService.getUtilizationData();
     }
+    //utilization summary api end point
+    @GetMapping("/utilization/summary")
+@PreAuthorize("""
+    hasAnyRole(
+        'LAB_MANAGER',
+        'DEPARTMENT_HEAD',
+        'INSTITUTION_ADMIN',
+        'SYSTEM_ADMIN'
+    )
+    """)
+public UtilizationSummaryDTO getUtilizationSummary() {
+    return utilizationService.getUtilizationSummary();
+}
 }

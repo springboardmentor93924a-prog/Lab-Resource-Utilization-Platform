@@ -159,6 +159,17 @@ const canAccessResourceSharing = [
             Heatmap
           </Link>
         )}
+        {canAccessUtilization && (
+    <Link
+      to="/demand-analysis"
+      className={`sidebar-link ${
+      isActive("/demand-analysis") ? "active" : ""
+     }`}
+   >
+    <span>📊</span>
+    Demand Analysis
+  </Link>
+)}
 
         {canAccessMaintenance && (
           <Link
