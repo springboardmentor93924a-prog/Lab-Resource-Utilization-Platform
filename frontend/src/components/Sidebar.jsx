@@ -66,6 +66,12 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
+const canAccessResourceSharing = [
+  "LAB_MANAGER",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
+
   return (
     <aside className="sidebar">
 
@@ -165,6 +171,18 @@ function Sidebar() {
             Maintenance
           </Link>
         )}
+
+{canAccessResourceSharing && (
+  <Link
+    to="/resource-sharing"
+    className={`sidebar-link ${
+      isActive("/resource-sharing") ? "active" : ""
+    }`}
+  >
+    <span>🤝</span>
+    Resource Sharing
+  </Link>
+)}
 
         {canAccessReports && (
           <Link
