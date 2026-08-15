@@ -21,47 +21,103 @@ public class FileStorageService {
     private String uploadDir;
 
     private Path resolveUploadPath() {
-        Path path = Paths.get(uploadDir).toAbsolutePath().normalize();
+
+        Path path = Paths.get(uploadDir)
+                .toAbsolutePath()
+                .normalize();
+
         try {
             Files.createDirectories(path);
         } catch (IOException ex) {
             throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Could not create upload directory");
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Could not create upload directory"
+            );
         }
+
         return path;
     }
 
     public String storeFile(MultipartFile file) {
+
         if (file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded file is empty");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Uploaded file is empty"
+            );
         }
 
         String originalFilename = StringUtils.cleanPath(
-                file.getOriginalFilename() != null ? file.getOriginalFilename() : "file");
+                file.getOriginalFilename() != null
+                        ? file.getOriginalFilename()
+                        : "file"
+        );
+
         String extension = "";
+
         int dotIndex = originalFilename.lastIndexOf('.');
+
         if (dotIndex >= 0) {
             extension = originalFilename.substring(dotIndex);
         }
 
         String storedFilename = UUID.randomUUID() + extension;
-        Path targetPath = resolveUploadPath().resolve(storedFilename);
+
+        Path targetPath = resolveUploadPath()
+                .resolve(storedFilename)
+                .normalize();
 
         try {
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            Files.copy(
+                    file.getInputStream(),
+                    targetPath,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
         } catch (IOException ex) {
+
             throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store file: " + ex.getMessage());
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to store file: " + ex.getMessage()
+            );
         }
 
         return storedFilename;
     }
 
     public Path loadFile(String filename) {
-        Path filePath = resolveUploadPath().resolve(filename).normalize();
-        if (!Files.exists(filePath)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + filename);
+
+        String cleanFilename = StringUtils.cleanPath(filename);
+
+        Path uploadPath = resolveUploadPath();
+
+        Path filePath = uploadPath
+                .resolve(cleanFilename)
+                .normalize();
+
+        // Prevent path traversal
+        if (!filePath.startsWith(uploadPath)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid filename"
+            );
         }
+
+        if (!Files.exists(filePath)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "File not found: " + filename
+            );
+        }
+
+        if (!Files.isRegularFile(filePath)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "File not found: " + filename
+            );
+        }
+
         return filePath;
     }
 }

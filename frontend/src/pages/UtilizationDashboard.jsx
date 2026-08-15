@@ -33,21 +33,7 @@ ChartJS.register(
 // STATUS COLORS
 // =========================================================
 
-function getStatusColor(status) {
-  switch (status) {
-    case "AVAILABLE":
-      return "#22c55e";
 
-    case "IN_USE":
-      return "#f59e0b";
-
-    case "MAINTENANCE":
-      return "#ef4444";
-
-    default:
-      return "#94a3b8";
-  }
-}
 
 
 // =========================================================
@@ -80,15 +66,7 @@ export default function UtilizationDashboard() {
   // DO NOT REMOVE THIS
   // =======================================================
 
-  useEffect(() => {
-    loadData();
-
-    const interval = setInterval(loadData, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-
+useEffect(() => {
   async function loadData() {
     try {
       const data = await getEquipmentUtilization();
@@ -107,6 +85,14 @@ export default function UtilizationDashboard() {
     }
   }
 
+  // Load immediately when the page opens
+  loadData();
+
+  // Refresh every 5 seconds
+  const interval = setInterval(loadData, 5000);
+
+  return () => clearInterval(interval);
+}, []);
 
   // =======================================================
   // CALCULATIONS

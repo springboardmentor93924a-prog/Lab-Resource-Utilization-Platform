@@ -22,6 +22,7 @@ import Maintenance from "./pages/Maintenance";
 import Billing from "./pages/Billing";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
 
 
 
@@ -197,11 +198,19 @@ export default function App() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/notifications"
+  element={
+    <ProtectedRoute>
+      <Notifications />
+    </ProtectedRoute>
+  }
+/>
 
            <Route path="/profile" element={<Profile />} />
          
           
-          <Route path="/notifications" element={<ProtectedRoute><ComingSoon title="Notifications" /></ProtectedRoute>} />
+         
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

@@ -129,7 +129,7 @@ export default function EquipmentCalendar() {
 
         <section className="calendar">
           <div className="calendar-header">
-            {dayLabels.map((day, index) => (
+            {dayLabels.map((day) => (
               <div
                 key={day}
                 style={{ fontWeight: 700 }}

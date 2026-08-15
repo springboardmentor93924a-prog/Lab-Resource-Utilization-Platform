@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { getMyWaitlistEntries } from "../services/waitlistService";
 
-
 function statusColor(status) {
   switch (status) {
     case "NOTIFIED":
@@ -16,27 +15,23 @@ function statusColor(status) {
   }
 }
 
-
 export default function MyWaitlist() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
+  // Load waitlist entries when the page opens
   useEffect(() => {
-    loadEntries();
+    getMyWaitlistEntries()
+      .then((data) => {
+        setEntries(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load waitlist entries:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
-
-
-  async function loadEntries() {
-    try {
-      const data = await getMyWaitlistEntries();
-      setEntries(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
 
   return (
@@ -47,20 +42,12 @@ export default function MyWaitlist() {
         background: "#020b1c",
       }}
     >
-
-      {/* =====================================================
-          SIDEBAR
-      ===================================================== */}
-
+      {/* SIDEBAR */}
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
-
-      {/* =====================================================
-          MAIN CONTENT
-      ===================================================== */}
-
+      {/* MAIN CONTENT */}
       <main
         style={{
           flex: 1,
@@ -70,27 +57,23 @@ export default function MyWaitlist() {
           color: "#ffffff",
         }}
       >
-
         {/* PAGE TITLE */}
-
         <h2
           style={{
-            fontWeight: 700,
+            fontWeight: 800,
             color: "#ffffff",
             marginBottom: "25px",
-            fontSize: "22px",
+            fontSize: "24px",
           }}
         >
           My waitlist
         </h2>
 
-
         {/* LOADING */}
-
         {loading && (
           <p
             style={{
-              color: "#ffffff",
+              color: "#cbd5e1",
               fontSize: "15px",
             }}
           >
@@ -98,22 +81,21 @@ export default function MyWaitlist() {
           </p>
         )}
 
-
         {/* EMPTY WAITLIST */}
-
         {!loading && entries.length === 0 && (
           <div
             style={{
-              background: "#ffffff",
+              background: "#071a33",
               borderRadius: "12px",
               padding: "25px",
+              border: "1px solid #183858",
               boxShadow: "0 6px 18px rgba(0,0,0,0.20)",
             }}
           >
             <p
               style={{
                 margin: 0,
-                color: "#0f1b2d",
+                color: "#ffffff",
                 fontSize: "15px",
                 fontWeight: 500,
               }}
@@ -123,20 +105,18 @@ export default function MyWaitlist() {
           </div>
         )}
 
-
         {/* WAITLIST ENTRIES */}
-
         {!loading && entries.length > 0 && (
           <div
             style={{
-              background: "#ffffff",
+              background: "#071a33",
               borderRadius: "12px",
               padding: "10px",
-              boxShadow: "0 6px 18px rgba(0,0,0,0.20)",
+              border: "1px solid #183858",
+              boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
               overflow: "hidden",
             }}
           >
-
             {entries.map((entry, index) => (
               <div
                 key={entry.id}
@@ -148,25 +128,23 @@ export default function MyWaitlist() {
                   borderBottom:
                     index === entries.length - 1
                       ? "none"
-                      : "1px solid #e2e8f0",
+                      : "1px solid #183858",
                   gap: "20px",
+                  background:
+                    entry.status === "NOTIFIED" ? "#0b2942" : "#071a33",
                 }}
               >
-
                 {/* BOOKING INFORMATION */}
-
                 <div
                   style={{
                     flex: 1,
                     minWidth: 0,
                   }}
                 >
-
                   {/* EQUIPMENT NAME */}
-
                   <strong
                     style={{
-                      color: "#0f1b2d",
+                      color: "#ffffff",
                       fontSize: "16px",
                       fontWeight: 700,
                       display: "block",
@@ -176,13 +154,11 @@ export default function MyWaitlist() {
                     {entry.equipmentName}
                   </strong>
 
-
                   {/* DATE AND TIME */}
-
                   <div
                     style={{
                       fontSize: "14px",
-                      color: "#475569",
+                      color: "#cbd5e1",
                       fontWeight: 500,
                     }}
                   >
@@ -190,14 +166,12 @@ export default function MyWaitlist() {
                     {entry.endTime}
                   </div>
 
-
                   {/* NOTIFICATION MESSAGE */}
-
                   {entry.status === "NOTIFIED" && (
                     <div
                       style={{
                         fontSize: "13px",
-                        color: "#15803d",
+                        color: "#2DD4BF",
                         marginTop: "6px",
                         fontWeight: 600,
                       }}
@@ -205,12 +179,9 @@ export default function MyWaitlist() {
                       A slot has opened up — try booking again!
                     </div>
                   )}
-
                 </div>
 
-
                 {/* STATUS */}
-
                 <span
                   style={{
                     background: statusColor(entry.status),
@@ -220,18 +191,15 @@ export default function MyWaitlist() {
                     fontSize: "13px",
                     fontWeight: 700,
                     whiteSpace: "nowrap",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.12)",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.20)",
                   }}
                 >
                   {entry.status}
                 </span>
-
               </div>
             ))}
-
           </div>
         )}
-
       </main>
     </div>
   );

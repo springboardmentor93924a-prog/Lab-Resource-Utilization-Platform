@@ -1,3 +1,7 @@
+/* =========================================================
+   GLOBAL
+========================================================= */
+
 * {
     margin: 0;
     padding: 0;
@@ -19,9 +23,10 @@ body {
     color: #ffffff;
 }
 
-/* =========================
+
+/* =========================================================
    MAIN LAYOUT
-========================= */
+========================================================= */
 
 .container {
     display: flex;
@@ -38,9 +43,10 @@ body {
     border-right: 1px solid #1e3150;
 }
 
-/* =========================
+
+/* =========================================================
    MAIN CONTENT
-========================= */
+========================================================= */
 
 .main {
     flex: 1;
@@ -51,9 +57,10 @@ body {
     color: #ffffff;
 }
 
-/* =========================
+
+/* =========================================================
    TOP BAR
-========================= */
+========================================================= */
 
 .topbar {
     height: 70px;
@@ -78,9 +85,10 @@ body {
     gap: 15px;
 }
 
-/* =========================
+
+/* =========================================================
    SEARCH
-========================= */
+========================================================= */
 
 .search-box {
     display: flex;
@@ -104,21 +112,48 @@ body {
     width: 100%;
     height: 100%;
     background: transparent;
-    color: #ffffff;
+    color: #ffffff !important;
     font-size: 14px;
 }
 
 .search-box input::placeholder {
-    color: #8ca5c0;
+    color: #8ca5c0 !important;
 }
 
-/* =========================
+
+/* =========================================================
+   NOTIFICATION BUTTON
+========================================================= */
+
+.notification-button {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #2dd4bf;
+    background: #081c34;
+    color: #ffffff !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.25s ease;
+}
+
+.notification-button:hover {
+    background: #123252;
+    border-color: #5eead4;
+    transform: scale(1.05);
+}
+
+
+/* =========================================================
    PROFILE
-========================= */
+========================================================= */
 
 .profile {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: #dbe7f7;
     border: 2px solid #b8cce8;
@@ -137,9 +172,10 @@ body {
     transform: scale(1.05);
 }
 
-/* =========================
+
+/* =========================================================
    CLOSE BUTTON
-========================= */
+========================================================= */
 
 .close-row {
     display: flex;
@@ -152,7 +188,7 @@ body {
     height: 36px;
     border: 1px solid #315477;
     background: #081c34;
-    color: #ffffff;
+    color: #ffffff !important;
     border-radius: 8px;
     cursor: pointer;
     font-size: 18px;
@@ -164,24 +200,27 @@ body {
     border-color: #60a5fa;
 }
 
-/* =========================
-   EQUIPMENT CARD
-========================= */
+
+/* =========================================================
+   EQUIPMENT INFORMATION CARD
+========================================================= */
 
 .equipment-card {
     margin: 20px 35px;
-    background: #102b4a;
-    border: 1px solid #315477;
+    background: #f8fafc;
+    border: 1px solid #dbe5f0;
     padding: 18px;
-    border-radius: 10px;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 16px;
+    border-radius: 12px;
+    color: #0f1b2d !important;
+    font-weight: 700;
+    font-size: 17px;
+    box-shadow: 0 4px 12px rgba(15, 27, 45, 0.08);
 }
 
-/* =========================
+
+/* =========================================================
    BOOKING SECTION
-========================= */
+========================================================= */
 
 .booking-section {
     margin: 0 35px;
@@ -201,7 +240,7 @@ body {
 
 .input-group label {
     font-size: 14px;
-    color: #dbeafe;
+    color: #ffffff !important;
     margin-bottom: 8px;
     font-weight: 600;
 }
@@ -215,7 +254,7 @@ body {
     outline: none;
     font-size: 15px;
     background: #081c34;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .input-group input::placeholder {
@@ -233,21 +272,38 @@ body {
     color: #ffffff;
 }
 
-/* =========================
-   RECURRING
-========================= */
+
+/* =========================================================
+   DATE / TIME ICONS
+========================================================= */
+
+.input-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.input-group input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   RECURRING BOOKING
+========================================================= */
 
 .recurring {
     display: flex;
     align-items: center;
     gap: 15px;
     margin-bottom: 25px;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .recurring label {
-    color: #e2e8f0;
+    color: #ffffff !important;
     font-size: 14px;
+    font-weight: 600;
 }
 
 .recurring input[type="checkbox"] {
@@ -262,7 +318,7 @@ body {
     border-radius: 8px;
     text-align: center;
     background: #081c34;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .recurring input[type="number"]:disabled {
@@ -270,12 +326,13 @@ body {
 }
 
 .recurring span {
-    color: #9fb6cf;
+    color: #dbeafe !important;
 }
 
-/* =========================
+
+/* =========================================================
    NOTES
-========================= */
+========================================================= */
 
 .notes {
     display: flex;
@@ -285,7 +342,7 @@ body {
 
 .notes label {
     font-size: 14px;
-    color: #dbeafe;
+    color: #ffffff !important;
     margin-bottom: 8px;
     font-weight: 600;
 }
@@ -300,11 +357,11 @@ body {
     outline: none;
     font-size: 15px;
     background: #081c34;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .notes textarea::placeholder {
-    color: #7891ad;
+    color: #7891ad !important;
 }
 
 .notes textarea:focus {
@@ -312,15 +369,16 @@ body {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
-small {
+.notes small {
     margin-top: 8px;
-    color: #8fb3d9;
+    color: #8fb3d9 !important;
     display: block;
 }
 
-/* =========================
+
+/* =========================================================
    AVAILABILITY
-========================= */
+========================================================= */
 
 .availability {
     margin: 0 35px;
@@ -331,7 +389,7 @@ small {
 .availability h3 {
     font-size: 18px;
     margin-bottom: 18px;
-    color: #ffffff;
+    color: #ffffff !important;
     font-weight: 700;
 }
 
@@ -341,10 +399,15 @@ small {
     flex-wrap: wrap;
 }
 
+
+/* =========================================================
+   AVAILABILITY SLOT
+========================================================= */
+
 .slot {
     width: 150px;
     height: 70px;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -352,45 +415,73 @@ small {
     border: 1px solid;
     font-size: 14px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 8px rgba(15, 27, 45, 0.08);
 }
+
+
+/* =========================================================
+   FREE SLOT
+========================================================= */
+
+.slot.free {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #166534 !important;
+}
+
+
+/* =========================================================
+   CONFLICT SLOT
+========================================================= */
+
+.slot.conflict {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #b91c1c !important;
+}
+
+
+/* =========================================================
+   SLOT TEXT
+========================================================= */
 
 .slot p {
     margin-bottom: 6px;
-    font-weight: 600;
+    font-weight: 700;
+    color: inherit !important;
 }
 
-/* FREE */
-
-.slot.free {
-    background: #0a130c;
-    border-color: #22c55e;
-    color: #ffffff;
+.slot span {
+    color: inherit !important;
+    font-weight: 500;
 }
 
-/* CONFLICT */
 
-.slot.conflict {
-    background: #090602;
-    border-color: #ef4444;
-    color: #ffffff;
-}
+/* =========================================================
+   SLOT HOVER
+========================================================= */
 
 .slot:hover {
     transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(15, 27, 45, 0.12);
 }
 
-/* SELECTED SLOT */
+
+/* =========================================================
+   SELECTED SLOT
+========================================================= */
 
 .selected {
-    border: 3px solid #60a5fa !important;
+    border: 3px solid #3b82f6 !important;
     transform: scale(1.03);
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-/* =========================
+
+/* =========================================================
    BOTTOM BUTTONS
-========================= */
+========================================================= */
 
 .buttons {
     margin: 40px 35px;
@@ -407,14 +498,17 @@ small {
     font-weight: 600;
 }
 
-/* WAITLIST */
+
+/* =========================================================
+   WAITLIST BUTTON
+========================================================= */
 
 .waitlist {
     width: 150px;
     height: 46px;
     background: #081c34;
     border: 1px solid #54708f;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .waitlist:hover {
@@ -422,14 +516,17 @@ small {
     border-color: #60a5fa;
 }
 
-/* CANCEL */
+
+/* =========================================================
+   CANCEL BUTTON
+========================================================= */
 
 .cancel {
     width: 110px;
     height: 46px;
     background: transparent;
     border: 1px solid #54708f;
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .cancel:hover {
@@ -437,13 +534,16 @@ small {
     border-color: #94a3b8;
 }
 
-/* NEXT */
+
+/* =========================================================
+   NEXT BUTTON
+========================================================= */
 
 .next {
     width: 52px;
     height: 46px;
     background: #2563eb;
-    color: #ffffff;
+    color: #ffffff !important;
     border: none;
 }
 
@@ -456,9 +556,10 @@ small {
     cursor: not-allowed;
 }
 
-/* =========================
+
+/* =========================================================
    SCROLLBAR
-========================= */
+========================================================= */
 
 ::-webkit-scrollbar {
     width: 8px;
@@ -473,9 +574,10 @@ small {
     background: #061426;
 }
 
-/* =========================
-   RESPONSIVE
-========================= */
+
+/* =========================================================
+   RESPONSIVE - TABLET
+========================================================= */
 
 @media (max-width: 1024px) {
 
@@ -492,6 +594,11 @@ small {
         justify-content: center;
     }
 }
+
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+========================================================= */
 
 @media (max-width: 768px) {
 
@@ -549,6 +656,11 @@ small {
     }
 }
 
+
+/* =========================================================
+   RESPONSIVE - SMALL MOBILE
+========================================================= */
+
 @media (max-width: 480px) {
 
     .slot {
@@ -562,79 +674,97 @@ small {
     .next {
         width: 100%;
     }
+
+    .notification-button {
+        width: 38px;
+        height: 38px;
+    }
+
+    .profile {
+        width: 38px;
+        height: 38px;
+    }
 }
-/* =========================
-   TEXT VISIBILITY FIX
-========================= */
+/* =========================================================
+   FINAL TEXT VISIBILITY FIX
+   ========================================================= */
+
+/* Main page */
+.main {
+    color: #0f1b2d !important;
+}
 
 /* Form labels */
+.booking-section label,
 .input-group label,
+.recurring label,
 .notes label {
-    color: #111827 !important;
-    font-weight: 600;
+    color: #0f1b2d !important;
 }
 
-/* Recurring / priority booking text */
-.recurring,
-.recurring label {
-    color: #111827 !important;
+/* Recurring booking text */
+.recurring {
+    color: #0f1b2d !important;
 }
 
 .recurring span {
-    color: #374151 !important;
+    color: #334155 !important;
+}
+
+/* Purpose / notes counter */
+.notes small {
+    color: #475569 !important;
 }
 
 /* Availability heading */
 .availability h3 {
-    color: #111827 !important;
-    font-weight: 700;
-}
-
-/* Character counter */
-.notes small,
-small {
-    color: #374151 !important;
+    color: #0f1b2d !important;
 }
 
 /* Equipment information */
 .equipment-card {
+    color: #0f1b2d !important;
+}
+
+/* Input text */
+.input-group input,
+.input-group select,
+.notes textarea {
     color: #ffffff !important;
 }
 
-/* Search text */
-.search-box input {
-    color: #111827;
+/* Input placeholders */
+.input-group input::placeholder,
+.notes textarea::placeholder {
+    color: #94a3b8 !important;
 }
 
-.search-box input::placeholder {
-    color: #6b7280;
-}
-
-/* Date/time/select controls */
-.input-group input,
-.input-group select {
-    color: #ffffff;
-}
-
-/* Checkbox */
-.recurring input[type="checkbox"] {
-    accent-color: #2563eb;
-}
-
-/* Buttons */
-.waitlist {
-    color: #dbdee3;
-}
-
-.cancel {
-    color: #111827;
-}
-
-/* Make the selected/free slot text remain clear */
+/* Availability boxes */
 .slot.free {
-    color: #ffffff;
+    color: #166534 !important;
 }
 
 .slot.conflict {
-    color: #ffffff;
+    color: #b91c1c !important;
+}
+
+.slot p,
+.slot span {
+    color: inherit !important;
+}
+
+/* Bottom buttons */
+.waitlist,
+.cancel,
+.next {
+    color: #ffffff !important;
+}
+
+/* Search */
+.search-box input {
+    color: #ffffff !important;
+}
+
+.search-box input::placeholder {
+    color: #94a3b8 !important;
 }

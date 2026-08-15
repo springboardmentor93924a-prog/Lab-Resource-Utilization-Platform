@@ -632,3 +632,22 @@ body {
 .profile:active {
     transform: scale(0.95);
 }
+.notification-button {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid #00d9ff;
+  background: transparent;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.notification-button:hover {
+  background: rgba(0, 217, 255, 0.12);
+  transform: scale(1.05);
+}

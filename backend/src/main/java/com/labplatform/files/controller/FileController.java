@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.Map;
 
 @RestController
@@ -31,38 +32,64 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadFile(
+            @RequestParam("file") MultipartFile file) {
+
         String storedFilename = fileStorageService.storeFile(file);
-        return ResponseEntity.ok(Map.of(
-                "filename", storedFilename,
-                "originalName", file.getOriginalFilename() != null ? file.getOriginalFilename() : ""
-        ));
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "filename", storedFilename,
+                        "originalName",
+                        file.getOriginalFilename() != null
+                                ? file.getOriginalFilename()
+                                : ""
+                )
+        );
     }
 
-    @GetMapping("/{filename}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+    @GetMapping("/{filename:.+}")
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable String filename) {
+
         Path filePath = fileStorageService.loadFile(filename);
+
         Resource resource;
+
         try {
             resource = new UrlResource(filePath.toUri());
         } catch (MalformedURLException ex) {
             throw new ResponseStatusException(
-                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Error reading file");
+                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error reading file"
+            );
+        }
+
+        if (!resource.exists() || !resource.isReadable()) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND,
+                    "File cannot be read: " + filename
+            );
         }
 
         String contentType;
+
         try {
-            contentType = java.nio.file.Files.probeContentType(filePath);
+            contentType = Files.probeContentType(filePath);
         } catch (IOException ex) {
             contentType = null;
         }
+
         if (contentType == null) {
             contentType = "application/octet-stream";
         }
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + filename + "\""
+                )
                 .body(resource);
     }
 }

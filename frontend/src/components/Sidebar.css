@@ -55,3 +55,21 @@
 .sidebar li.active .sidebar-link {
   color: #2DD4BF !important;
 }
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 25px;
+  margin: 8px 12px;
+  border-radius: 8px;
+  color: #F87171 !important;
+  cursor: pointer;
+  border-top: 1px solid #16243A;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.sidebar-logout:hover {
+  background: #16243A !important;
+  color: #FCA5A5 !important;
+}

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import { getBookingsByUser, cancelBooking } from "../services/bookingService";
+import {
+  getBookingsByUser,
+  cancelBooking,
+} from "../services/bookingService";
 import { getCurrentUserId } from "../utils/auth";
 import "./MyBookings.css";
 
@@ -12,19 +15,35 @@ export default function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Load bookings when the page opens
   useEffect(() => {
-    fetchBookings();
+    const userId = getCurrentUserId();
+
+    getBookingsByUser(userId)
+      .then((data) => {
+        setBookings(data);
+      })
+      .catch((err) => {
+        setError(
+          err.response?.data?.message || "Failed to load bookings"
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  async function fetchBookings() {
+  // Reload bookings after cancelling a booking
+  async function refreshBookings() {
     try {
       const userId = getCurrentUserId();
       const data = await getBookingsByUser(userId);
+
       setBookings(data);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load bookings");
-    } finally {
-      setLoading(false);
+      setError(
+        err.response?.data?.message || "Failed to load bookings"
+      );
     }
   }
 
@@ -33,20 +52,27 @@ export default function MyBookings() {
 
     try {
       await cancelBooking(id);
+
       alert("Booking cancelled.");
-      fetchBookings();
+
+      await refreshBookings();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to cancel booking.");
+      alert(
+        err.response?.data?.message ||
+          "Failed to cancel booking."
+      );
     }
   }
 
   return (
     <div className="my-bookings-wrapper">
 
+      {/* SIDEBAR */}
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
+      {/* MAIN CONTENT */}
       <main className="my-bookings-content">
 
         {/* HEADER */}
@@ -73,29 +99,42 @@ export default function MyBookings() {
           </div>
         </header>
 
+        {/* BODY */}
         <div className="my-bookings-body">
 
+          {/* LOADING */}
           {loading && (
-            <p className="loading-text">Loading bookings...</p>
+            <p className="loading-text">
+              Loading bookings...
+            </p>
           )}
 
+          {/* ERROR */}
           {error && (
-            <p className="error-text">{error}</p>
+            <p className="error-text">
+              {error}
+            </p>
           )}
 
+          {/* EMPTY STATE */}
           {!loading && !error && bookings.length === 0 && (
             <p className="empty-text">
               You have no bookings yet.
             </p>
           )}
 
+          {/* BOOKINGS */}
           {!loading && !error && bookings.length > 0 && (
             <div className="booking-list">
 
               {bookings.map((b) => (
 
-                <div className="booking-item" key={b.id}>
+                <div
+                  className="booking-item"
+                  key={b.id}
+                >
 
+                  {/* BOOKING INFORMATION */}
                   <div className="booking-info">
 
                     <strong className="equipment-name">
@@ -103,7 +142,8 @@ export default function MyBookings() {
                     </strong>
 
                     <div className="booking-time">
-                      {b.bookingDate}, {b.startTime}–{b.endTime}
+                      {b.bookingDate}, {b.startTime}–
+                      {b.endTime}
 
                       {b.priorityBooking && (
                         <span className="priority">
@@ -118,8 +158,10 @@ export default function MyBookings() {
 
                   </div>
 
+                  {/* BOOKING ACTIONS */}
                   <div className="booking-actions">
 
+                    {/* STATUS */}
                     <span
                       className="booking-status"
                       style={{
@@ -136,6 +178,7 @@ export default function MyBookings() {
                       {b.bookingStatus}
                     </span>
 
+                    {/* CANCEL BUTTON */}
                     {(b.bookingStatus === "PENDING" ||
                       b.bookingStatus === "CONFIRMED") && (
 

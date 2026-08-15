@@ -766,3 +766,133 @@ body {
 .gray h2 {
     color: #020817 !important;
 }
+.notification-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #2b5d91;
+  background: #061a33;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 19px;
+  transition: all 0.2s ease;
+}
+
+.notification-circle:hover {
+  background: #0d2a4d;
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: scale(1.05);
+}
+/* =========================================================
+   DASHBOARD SEARCH
+   ========================================================= */
+
+.dashboard-search-wrapper {
+  position: relative;
+  width: 280px;
+}
+
+.dashboard-search-wrapper .search {
+  width: 100%;
+}
+
+
+/* SEARCH RESULTS DROPDOWN */
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border: 1px solid #1e4b73;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+
+/* SECTION TITLE */
+
+.search-section-title {
+  padding: 10px 14px;
+  background: #f1f5f9;
+  color: #0f1b2d;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+
+/* SEARCH RESULT */
+
+.search-result-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f1b2d;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.search-result-item:hover {
+  background: #eff6ff;
+}
+
+
+/* RESULT ICON */
+
+.search-result-icon {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #075985;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+
+/* RESULT TEXT */
+
+.search-result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.search-result-content strong {
+  color: #0f1b2d;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.search-result-content small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+
+/* NO RESULTS */
+
+.search-no-results {
+  padding: 18px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}

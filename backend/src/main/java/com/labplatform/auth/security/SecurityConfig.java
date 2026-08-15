@@ -68,6 +68,19 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/files/**")
                         .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
 
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/files/**")
+                        .hasAnyRole(
+                                "STUDENT",
+                                "RESEARCHER",
+                                "LAB_TECHNICIAN",
+                                "LAB_MANAGER",
+                                "DEPARTMENT_HEAD",
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN"
+                        )
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/files/**")
+                        .authenticated()
+
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/bookings/**")
                         .hasAnyRole(
                                 "STUDENT",

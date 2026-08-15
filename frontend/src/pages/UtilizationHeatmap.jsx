@@ -13,23 +13,26 @@ export default function UtilizationHeatmap() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function loadEquipment() {
+      try {
+        const data = await getEquipmentUtilization();
+        setEquipment(data);
+      } catch (err) {
+        console.error("Failed to load equipment utilization:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Load immediately
     loadEquipment();
 
+    // Refresh every 5 seconds
     const interval = setInterval(loadEquipment, 5000);
 
+    // Cleanup interval when component unmounts
     return () => clearInterval(interval);
   }, []);
-
-  async function loadEquipment() {
-    try {
-      const data = await getEquipmentUtilization();
-      setEquipment(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div
