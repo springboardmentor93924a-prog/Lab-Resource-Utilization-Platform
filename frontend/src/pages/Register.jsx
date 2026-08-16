@@ -11,34 +11,60 @@ function Register() {
     password: "",
     phone: "",
     roleId: "",
+    institutionId: "",
     departmentId: "",
   });
 
   const [roles, setRoles] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Fetch roles and departments dynamically from backend to avoid hardcoded ID mismatch
+  // Fetch roles and institutions once on mount
   useEffect(() => {
-    const token = localStorage.getItem("token"); // Optional if endpoints are public, but safe to include if needed
-
     fetch("http://localhost:8080/api/roles")
       .then((res) => res.json())
       .then((data) => setRoles(data))
       .catch((err) => console.error("Error fetching roles:", err));
 
-    fetch("http://localhost:8080/api/departments")
+    fetch("http://localhost:8080/api/institutions")
+      .then((res) => res.json())
+      .then((data) => setInstitutions(data))
+      .catch((err) => console.error("Error fetching institutions:", err));
+  }, []);
+
+  // Fetch departments only for the selected institution
+  useEffect(() => {
+    if (!formData.institutionId) {
+      setDepartments([]);
+      return;
+    }
+
+    fetch(
+      `http://localhost:8080/api/institutions/${formData.institutionId}/departments`
+    )
       .then((res) => res.json())
       .then((data) => setDepartments(data))
       .catch((err) => console.error("Error fetching departments:", err));
-  }, []);
+  }, [formData.institutionId]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    if (name === "institutionId") {
+      // Changing institution invalidates any previously chosen department
+      setFormData({
+        ...formData,
+        institutionId: value,
+        departmentId: "",
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   const handleRegister = async (e) => {
@@ -60,6 +86,7 @@ function Register() {
             password: formData.password,
             phone: formData.phone,
             roleId: Number(formData.roleId),
+            institutionId: Number(formData.institutionId),
             departmentId: Number(formData.departmentId),
           }),
         }
@@ -182,7 +209,27 @@ function Register() {
             </select>
           </div>
 
-          {/* Department (Dynamic Mapping) */}
+          {/* Institution (Dynamic Mapping) */}
+          <div className="form-group">
+            <label>Institution</label>
+            <select
+              name="institutionId"
+              value={formData.institutionId}
+              onChange={handleChange}
+              required
+            >
+              <option value="">
+                Select Institution
+              </option>
+              {institutions.map((inst) => (
+                <option key={inst.institutionId} value={inst.institutionId}>
+                  {inst.institutionName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Department (Dynamic Mapping, filtered by Institution) */}
           <div className="form-group">
             <label>Department</label>
             <select
@@ -190,9 +237,12 @@ function Register() {
               value={formData.departmentId}
               onChange={handleChange}
               required
+              disabled={!formData.institutionId}
             >
               <option value="">
-                Select Department
+                {formData.institutionId
+                  ? "Select Department"
+                  : "Select an institution first"}
               </option>
               {departments.map((dept) => (
                 <option key={dept.departmentId} value={dept.departmentId}>

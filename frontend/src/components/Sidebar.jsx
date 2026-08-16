@@ -66,11 +66,11 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
-const canAccessResourceSharing = [
-  "LAB_MANAGER",
-  "INSTITUTION_ADMIN",
-  "SYSTEM_ADMIN"
-].includes(role);
+  const canAccessResourceSharing = [
+    "LAB_MANAGER",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
 
   return (
     <aside className="sidebar">
@@ -90,6 +90,7 @@ const canAccessResourceSharing = [
 
       <nav className="sidebar-menu">
 
+        {/* Dashboard */}
         <Link
           to="/dashboard"
           className={`sidebar-link ${
@@ -100,6 +101,7 @@ const canAccessResourceSharing = [
           Dashboard
         </Link>
 
+        {/* Equipment */}
         {canAccessEquipment && (
           <Link
             to="/equipment"
@@ -112,6 +114,7 @@ const canAccessResourceSharing = [
           </Link>
         )}
 
+        {/* Bookings */}
         {canAccessBookings && (
           <Link
             to="/reservations"
@@ -123,7 +126,8 @@ const canAccessResourceSharing = [
             Bookings
           </Link>
         )}
-        
+
+        {/* Waitlist */}
         {canAccessWaitlist && (
           <Link
             to="/waitlist"
@@ -136,6 +140,7 @@ const canAccessResourceSharing = [
           </Link>
         )}
 
+        {/* Utilization */}
         {canAccessUtilization && (
           <Link
             to="/utilization"
@@ -148,6 +153,7 @@ const canAccessResourceSharing = [
           </Link>
         )}
 
+        {/* Heatmap */}
         {canAccessUtilization && (
           <Link
             to="/heatmap"
@@ -159,18 +165,21 @@ const canAccessResourceSharing = [
             Heatmap
           </Link>
         )}
-        {canAccessUtilization && (
-    <Link
-      to="/demand-analysis"
-      className={`sidebar-link ${
-      isActive("/demand-analysis") ? "active" : ""
-     }`}
-   >
-    <span>📊</span>
-    Demand Analysis
-  </Link>
-)}
 
+        {/* Demand Analysis */}
+        {canAccessUtilization && (
+          <Link
+            to="/demand-analysis"
+            className={`sidebar-link ${
+              isActive("/demand-analysis") ? "active" : ""
+            }`}
+          >
+            <span>📊</span>
+            Demand Analysis
+          </Link>
+        )}
+
+        {/* Maintenance */}
         {canAccessMaintenance && (
           <Link
             to="/maintenance"
@@ -183,18 +192,20 @@ const canAccessResourceSharing = [
           </Link>
         )}
 
-{canAccessResourceSharing && (
-  <Link
-    to="/resource-sharing"
-    className={`sidebar-link ${
-      isActive("/resource-sharing") ? "active" : ""
-    }`}
-  >
-    <span>🤝</span>
-    Resource Sharing
-  </Link>
-)}
+        {/* Resource Sharing */}
+        {canAccessResourceSharing && (
+          <Link
+            to="/resource-sharing"
+            className={`sidebar-link ${
+              isActive("/resource-sharing") ? "active" : ""
+            }`}
+          >
+            <span>🤝</span>
+            Resource Sharing
+          </Link>
+        )}
 
+        {/* Reports */}
         {canAccessReports && (
           <Link
             to="/reports"
@@ -207,6 +218,7 @@ const canAccessResourceSharing = [
           </Link>
         )}
 
+        {/* Users */}
         {canAccessUsers && (
           <Link
             to="/users"

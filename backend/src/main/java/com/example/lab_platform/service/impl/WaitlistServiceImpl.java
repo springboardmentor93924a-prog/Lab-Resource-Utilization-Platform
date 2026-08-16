@@ -36,7 +36,16 @@ public class WaitlistServiceImpl implements WaitlistService {
         this.bookingRepository = bookingRepository;
         this.maintenanceRepository = maintenanceRepository;
     }
+private String getRole(User user) {
+    return user.getRole().getRoleName();
+}
 
+private boolean isManagerOrAbove(String role) {
+    return role.equalsIgnoreCase("LAB_MANAGER")
+            || role.equalsIgnoreCase("DEPARTMENT_HEAD")
+            || role.equalsIgnoreCase("INSTITUTION_ADMIN")
+            || role.equalsIgnoreCase("SYSTEM_ADMIN");
+}
     private User getLoggedInUser() {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -220,19 +229,21 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
         User loggedInUser = getLoggedInUser();
         return waitlistRepository.findByUser_UserId(loggedInUser.getUserId());
     }
+@Override
+   public void cancelWaitlistEntry(Integer waitlistId) {
+    Waitlist entry = waitlistRepository.findById(waitlistId)
+            .orElseThrow(() -> new RuntimeException("Waitlist entry not found"));
 
-    @Override
-    public void cancelWaitlistEntry(Integer waitlistId) {
-        Waitlist entry = waitlistRepository.findById(waitlistId)
-                .orElseThrow(() -> new RuntimeException("Waitlist entry not found"));
+    User loggedInUser = getLoggedInUser();
+    String role = getRole(loggedInUser);
 
-        User loggedInUser = getLoggedInUser();
+    boolean isOwnEntry = entry.getUser().getUserId().equals(loggedInUser.getUserId());
 
-        if (!entry.getUser().getUserId().equals(loggedInUser.getUserId())) {
-            throw new RuntimeException("You can only cancel your own waitlist entry");
-        }
-
-        entry.setWaitlistStatus("CANCELLED");
-        waitlistRepository.save(entry);
+    if (!isOwnEntry && !isManagerOrAbove(role)) {
+        throw new RuntimeException("You can only cancel your own waitlist entry");
     }
+
+    entry.setWaitlistStatus("CANCELLED");
+    waitlistRepository.save(entry);
+}
 }

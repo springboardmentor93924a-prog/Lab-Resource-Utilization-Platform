@@ -1,14 +1,18 @@
 package com.example.lab_platform.dto;
 
 public class RegisterRequest {
+
     private String fullName;
     private String email;
     private String password;
     private String phone;
-    private Integer roleId;
-    private Integer departmentId;
 
-    public RegisterRequest() {}
+    private Integer institutionId;
+    private Integer departmentId;
+    private Integer roleId;
+
+    public RegisterRequest() {
+    }
 
     public String getFullName() {
         return fullName;
@@ -42,12 +46,12 @@ public class RegisterRequest {
         this.phone = phone;
     }
 
-    public Integer getRoleId() {
-        return roleId;
+    public Integer getInstitutionId() {
+        return institutionId;
     }
 
-    public void setRoleId(Integer roleId) {
-        this.roleId = roleId;
+    public void setInstitutionId(Integer institutionId) {
+        this.institutionId = institutionId;
     }
 
     public Integer getDepartmentId() {
@@ -56,5 +60,13 @@ public class RegisterRequest {
 
     public void setDepartmentId(Integer departmentId) {
         this.departmentId = departmentId;
+    }
+
+    public Integer getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Integer roleId) {
+        this.roleId = roleId;
     }
 }
