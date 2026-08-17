@@ -59,6 +59,33 @@ function statusColor(status) {
 /* =========================================================
    MAINTENANCE COMPONENT
 ========================================================= */
+function formatDowntime(minutes) {
+
+  if (minutes == null) {
+    return "—";
+  }
+
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours < 24) {
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
+  }
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+
+  return remainingHours > 0
+    ? `${days}d ${remainingHours}h`
+    : `${days}d`;
+}
+
 
 export default function Maintenance() {
   const [workOrders, setWorkOrders] = useState([]);
@@ -169,19 +196,41 @@ export default function Maintenance() {
   ========================================================= */
 
   async function handleComplete(id) {
-    try {
-      await markComplete(id);
 
-      alert("Work order marked complete.");
+  const serviceLog = window.prompt(
+    "Enter the service/repair performed:"
+  );
 
-      loadData();
-    } catch (err) {
-      alert(
-        err.response?.data?.message ||
-          "Failed to mark complete."
-      );
-    }
+  if (serviceLog === null) {
+    return;
   }
+
+  if (!serviceLog.trim()) {
+    alert("Please enter the service/repair details.");
+    return;
+  }
+
+  try {
+
+    await markComplete(
+      id,
+      serviceLog.trim()
+    );
+
+    alert(
+      "Work order completed. Service log saved and equipment is available."
+    );
+
+    loadData();
+
+  } catch (err) {
+
+    alert(
+      err.response?.data?.message ||
+      "Failed to mark complete."
+    );
+  }
+}
 
   /* =========================================================
      UI
@@ -474,38 +523,56 @@ export default function Maintenance() {
               {/* TABLE HEADER */}
 
               <thead>
-                <tr>
-                  <th style={thStyle}>
-                    ID
-                  </th>
+  <tr>
 
-                  <th style={thStyle}>
-                    Equipment
-                  </th>
+    <th style={thStyle}>
+      ID
+    </th>
 
-                  <th style={thStyle}>
-                    Issue
-                  </th>
+    <th style={thStyle}>
+      Equipment
+    </th>
 
-                  <th style={thStyle}>
-                    Priority
-                  </th>
+    <th style={thStyle}>
+      Issue
+    </th>
 
-                  <th style={thStyle}>
-                    Status
-                  </th>
+    <th style={thStyle}>
+      Priority
+    </th>
 
-                  <th style={thStyle}>
-                    Assigned to
-                  </th>
+    <th style={thStyle}>
+      Status
+    </th>
 
-                  {userIsAdmin && (
-                    <th style={thStyle}>
-                      Action
-                    </th>
-                  )}
-                </tr>
-              </thead>
+    <th style={thStyle}>
+      Assigned to
+    </th>
+
+    <th style={thStyle}>
+      Maintenance started
+    </th>
+
+    <th style={thStyle}>
+      Completed
+    </th>
+
+    <th style={thStyle}>
+      Downtime
+    </th>
+
+    <th style={thStyle}>
+      Service log
+    </th>
+
+    {userIsAdmin && (
+      <th style={thStyle}>
+        Action
+      </th>
+    )}
+
+  </tr>
+</thead>
 
               {/* TABLE BODY */}
 
@@ -566,6 +633,51 @@ export default function Maintenance() {
                       {wo.assignedToName ||
                         "—"}
                     </td>
+
+                    {/* MAINTENANCE STARTED */}
+
+<td style={tdStyle}>
+  {wo.maintenanceStartedAt
+    ? new Date(
+        wo.maintenanceStartedAt
+      ).toLocaleString()
+    : "—"}
+</td>
+
+
+{/* COMPLETED */}
+
+<td style={tdStyle}>
+  {wo.completedAt
+    ? new Date(
+        wo.completedAt
+      ).toLocaleString()
+    : "—"}
+</td>
+
+
+{/* DOWNTIME */}
+
+<td style={tdStyle}>
+
+  {wo.downtimeMinutes != null
+    ? formatDowntime(wo.downtimeMinutes)
+    : "—"}
+
+</td>
+
+
+{/* SERVICE LOG */}
+
+<td
+  style={{
+    ...tdStyle,
+    maxWidth: "280px",
+    whiteSpace: "normal",
+  }}
+>
+  {wo.serviceLog || "—"}
+</td>
 
                     {/* ACTION */}
 

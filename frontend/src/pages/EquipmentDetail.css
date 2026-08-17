@@ -651,3 +651,15 @@ body {
   background: rgba(0, 217, 255, 0.12);
   transform: scale(1.05);
 }
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-align: center;
+}

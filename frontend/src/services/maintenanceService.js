@@ -4,14 +4,18 @@ const API_BASE_URL = "http://localhost:8080/api/work-orders";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -31,17 +35,32 @@ export async function getMyAssignedWorkOrders() {
 }
 
 export async function getWorkOrdersByEquipment(equipmentId) {
-  const { data } = await api.get(`/equipment/${equipmentId}`);
+  const { data } = await api.get(
+    `/equipment/${equipmentId}`
+  );
+
   return data;
 }
 
-export async function assignTechnician(workOrderId, technicianUserId) {
-  const { data } = await api.put(`/${workOrderId}/assign`, { technicianUserId });
+export async function assignTechnician(
+  workOrderId,
+  technicianUserId
+) {
+  const { data } = await api.put(
+    `/${workOrderId}/assign`,
+    {
+      technicianUserId,
+    }
+  );
+
   return data;
 }
 
-export async function markComplete(workOrderId) {
-  const { data } = await api.put(`/${workOrderId}/complete`);
+export async function markComplete(workOrderId, serviceLog) {
+  const { data } = await api.put(
+    `/${workOrderId}/complete`,
+    { serviceLog }
+  );
   return data;
 }
 

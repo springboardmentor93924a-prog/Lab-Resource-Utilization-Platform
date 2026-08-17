@@ -38,20 +38,33 @@ export default function MyTasks() {
 }, []);
 
 async function handleComplete(id) {
+  const serviceLog = window.prompt(
+    "Enter the service/maintenance log:"
+  );
+
+  if (!serviceLog || !serviceLog.trim()) {
+    alert("Service log is required.");
+    return;
+  }
+
   try {
-    await markComplete(id);
+    await markComplete(id, serviceLog.trim());
+
     alert("Marked as complete.");
 
-    // Reload tasks after completing the work order
     const data = await getMyAssignedWorkOrders();
     setTasks(data);
   } catch (err) {
+    console.error(err);
+
     alert(
       err.response?.data?.message ||
         "Failed to mark complete."
     );
   }
 }
+
+
   return (
     <div
       style={{

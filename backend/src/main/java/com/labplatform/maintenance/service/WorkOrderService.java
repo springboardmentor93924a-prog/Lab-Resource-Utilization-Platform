@@ -13,13 +13,17 @@ import com.labplatform.maintenance.model.WorkOrderPriority;
 import com.labplatform.maintenance.model.WorkOrderStatus;
 import com.labplatform.maintenance.repository.WorkOrderRepository;
 import com.labplatform.notification.service.NotificationService;
+import com.labplatform.maintenance.dto.WorkOrderCompleteRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,6 +94,7 @@ public class WorkOrderService {
                 wo.setPriority(
                         WorkOrderPriority.valueOf(
                                 request.getPriority().toUpperCase()));
+
             } catch (IllegalArgumentException ex) {
 
                 throw new ResponseStatusException(
@@ -135,7 +140,7 @@ public class WorkOrderService {
 
         WorkOrder saved = workOrderRepository.save(wo);
 
-        // Notify technician that a work order has been assigned
+        // Notify technician
         notificationService.create(
                 technician,
                 "WORK_ORDER_ASSIGNED",
@@ -149,6 +154,7 @@ public class WorkOrderService {
 
     public WorkOrderResponse markComplete(
             Integer workOrderId,
+            WorkOrderCompleteRequest request,
             String requesterEmail) {
 
         User requester = resolveCurrentUser(requesterEmail);
@@ -167,11 +173,17 @@ public class WorkOrderService {
                     "Only the assigned technician or an admin can complete this work order");
         }
 
+        // Mark work order as completed
         wo.setStatus(WorkOrderStatus.COMPLETED);
         wo.setCompletedAt(LocalDateTime.now());
+        wo.setServiceLog(request.getServiceLog());
 
         WorkOrder saved = workOrderRepository.save(wo);
 
+        /*
+         * Check whether there are any other active work orders
+         * for the same equipment.
+         */
         boolean anyOtherOpenWorkOrders =
                 workOrderRepository
                         .findByEquipmentId(
@@ -182,6 +194,10 @@ public class WorkOrderService {
                                         && w.getStatus()
                                         != WorkOrderStatus.COMPLETED);
 
+        /*
+         * If there are no other active maintenance work orders,
+         * make the equipment available again.
+         */
         if (!anyOtherOpenWorkOrders) {
 
             Equipment equipment = wo.getEquipment();
@@ -189,6 +205,48 @@ public class WorkOrderService {
             equipment.setStatus(EquipmentStatus.AVAILABLE);
 
             equipmentRepository.save(equipment);
+        }
+
+        // =========================================================
+        // NEW: NOTIFY LAB MANAGER, DEPARTMENT HEAD AND INSTITUTION ADMIN
+        // =========================================================
+
+        if (wo.getEquipment().getInstitution() != null) {
+
+            Integer institutionId =
+                    wo.getEquipment().getInstitution().getId();
+
+            Set<UUID> notifiedUserIds = new HashSet<>();
+
+            String[] responsibleRoles = {
+                    "LAB_MANAGER",
+                    "DEPARTMENT_HEAD",
+                    "INSTITUTION_ADMIN"
+            };
+
+            for (String roleName : responsibleRoles) {
+
+                List<User> users =
+                        userRepository.findByInstitution_IdAndRole_Name(
+                                institutionId,
+                                roleName
+                        );
+
+                for (User user : users) {
+
+                    // Prevent duplicate notifications
+                    if (notifiedUserIds.add(user.getId())) {
+
+                        notificationService.create(
+                                user,
+                                "WORK_ORDER_COMPLETED",
+                                "Maintenance work order for "
+                                        + wo.getEquipment().getEquipmentName()
+                                        + " has been completed."
+                        );
+                    }
+                }
+            }
         }
 
         return new WorkOrderResponse(saved);

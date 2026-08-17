@@ -147,6 +147,37 @@ public class BookingService {
                 saved,
                 currentUser
         );
+        // Notify admins of the equipment's institution
+// when a user from another institution makes a booking.
+        if (currentUser.getInstitution() != null
+                && equipment.getInstitution() != null
+                && !currentUser.getInstitution().getId()
+                .equals(equipment.getInstitution().getId())) {
+
+            userRepository.findAll().stream()
+                    .filter(user -> user.getInstitution() != null)
+                    .filter(user -> user.getInstitution().getId()
+                            .equals(equipment.getInstitution().getId()))
+                    .filter(user -> user.getRole() != null)
+                    .filter(user -> "INSTITUTION_ADMIN"
+                            .equals(user.getRole().getName()))
+                    .forEach(admin -> {
+
+                        String requesterName = currentUser.getFullName();
+
+                        notificationService.create(
+                                admin,
+                                "EXTERNAL_BOOKING_REQUEST",
+                                "New external booking request for "
+                                        + equipment.getEquipmentName()
+                                        + " from "
+                                        + requesterName
+                                        + " on "
+                                        + booking.getBookingDate()
+                                        + "."
+                        );
+                    });
+        }
 
         return new BookingResponse(saved);
     }
@@ -237,8 +268,10 @@ public class BookingService {
 
         waitlistService.notifyNextInLineIfAny(
                 booking.getEquipment().getId(),
-                booking.getBookingDate());
-
+                booking.getBookingDate(),
+                booking.getStartTime(),
+                booking.getEndTime()
+        );
         return new BookingResponse(saved);
     }
 
@@ -336,7 +369,9 @@ public class BookingService {
 
         waitlistService.notifyNextInLineIfAny(
                 booking.getEquipment().getId(),
-                booking.getBookingDate()
+                booking.getBookingDate(),
+                booking.getStartTime(),
+                booking.getEndTime()
         );
 
         return new BookingResponse(saved);

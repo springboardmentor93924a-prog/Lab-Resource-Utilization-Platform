@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,6 +76,24 @@ public class WaitlistService {
 
         WaitlistEntry saved = waitlistRepository.save(entry);
 
+        /*
+         * Immediately notify the user that they have been
+         * successfully added to the waitlist.
+         */
+        notificationService.create(
+                currentUser,
+                "WAITLIST_JOINED",
+                "You have been added to the waitlist for "
+                        + equipment.getEquipmentName()
+                        + " on "
+                        + request.getRequestedDate()
+                        + " from "
+                        + request.getStartTime()
+                        + " to "
+                        + request.getEndTime()
+                        + "."
+        );
+
         return new WaitlistResponse(saved);
     }
 
@@ -90,13 +109,16 @@ public class WaitlistService {
     }
 
     /**
-     * Called when a booking is cancelled.
-     * Finds the earliest WAITING entry for the same equipment/date
-     * and marks it NOTIFIED so the user can see that a slot has opened.
+     * Called when a booking slot becomes available.
+     *
+     * Finds the earliest WAITING user whose requested time overlaps
+     * with the newly available booking time.
      */
     public void notifyNextInLineIfAny(
             Long equipmentId,
-            LocalDate bookingDate) {
+            LocalDate bookingDate,
+            LocalTime availableStartTime,
+            LocalTime availableEndTime) {
 
         List<WaitlistEntry> waitingEntries =
                 waitlistRepository
@@ -105,23 +127,50 @@ public class WaitlistService {
                                 bookingDate,
                                 WaitlistStatus.WAITING);
 
-        if (!waitingEntries.isEmpty()) {
+        /*
+         * Find the first waiting user whose requested time overlaps
+         * with the available slot.
+         *
+         * Overlap condition:
+         *
+         * requestedStart < availableEnd
+         * AND
+         * availableStart < requestedEnd
+         */
+        WaitlistEntry next = waitingEntries.stream()
+                .filter(entry ->
+                        entry.getStartTime().isBefore(availableEndTime)
+                                && availableStartTime.isBefore(entry.getEndTime())
+                )
+                .findFirst()
+                .orElse(null);
 
-            WaitlistEntry next = waitingEntries.get(0);
-
-            next.setStatus(WaitlistStatus.NOTIFIED);
-
-            waitlistRepository.save(next);
-
-            notificationService.create(
-                    next.getUser(),
-                    "WAITLIST_SLOT_OPEN",
-                    "A slot has opened up for "
-                            + next.getEquipment().getEquipmentName()
-                            + " on "
-                            + next.getRequestedDate()
-                            + ". Try booking it now."
-            );
+        if (next == null) {
+            return;
         }
+
+        /*
+         * Mark this waitlist entry as NOTIFIED.
+         */
+        next.setStatus(WaitlistStatus.NOTIFIED);
+
+        waitlistRepository.save(next);
+
+        /*
+         * Notify the user.
+         */
+        notificationService.create(
+                next.getUser(),
+                "WAITLIST_SLOT_OPEN",
+                "The equipment "
+                        + next.getEquipment().getEquipmentName()
+                        + " is now available on "
+                        + next.getRequestedDate()
+                        + " from "
+                        + availableStartTime
+                        + " to "
+                        + availableEndTime
+                        + ". You are next in the waitlist. Try booking it now."
+        );
     }
 }

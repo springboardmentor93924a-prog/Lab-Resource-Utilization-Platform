@@ -107,6 +107,21 @@ export default function EquipmentCatalog() {
   function handleView(id) {
     navigate(`/equipment/${id}`);
   }
+  function getStatusLabel(status) {
+  switch (status?.toUpperCase()) {
+    case "AVAILABLE":
+      return "AVAILABLE";
+
+    case "IN_USE":
+      return "IN USE";
+
+    case "MAINTENANCE":
+      return "MAINTENANCE";
+
+    default:
+      return status || "UNKNOWN";
+  }
+}
 
   function handleAddEquipment() {
     navigate("/equipment/add");
@@ -527,9 +542,18 @@ export default function EquipmentCatalog() {
                 {filteredEquipment.map((item) => (
 
                   <div
-                    className="equipment-card"
-                    key={item.id}
-                  >
+  className="equipment-card"
+  key={item.id}
+  onClick={() => handleView(item.id)}
+  role="button"
+  tabIndex={0}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      handleView(item.id);
+    }
+  }}
+  style={{ cursor: "pointer" }}
+>
 
                     {/* IMAGE */}
 
@@ -576,25 +600,30 @@ export default function EquipmentCatalog() {
                     )}
 
 
-                    {/* STATUS */}
+                    
 
-                    <div
-                      className={`status ${
-                        item.status?.toLowerCase() || ""
-                      }`}
-                    ></div>
+                   {/* STATUS */}
+
+<div
+  className={`status ${
+    item.status?.toLowerCase() || ""
+  }`}
+>
+  {getStatusLabel(item.status)}
+</div>
 
 
                     {/* VIEW */}
 
                     <button
-                      className="btn btn-outline-dark w-100"
-                      onClick={() =>
-                        handleView(item.id)
-                      }
-                    >
-                      View
-                    </button>
+  className="btn btn-outline-dark w-100"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleView(item.id);
+  }}
+>
+  View
+</button>
 
                   </div>
 

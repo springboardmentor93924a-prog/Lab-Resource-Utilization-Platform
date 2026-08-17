@@ -9,12 +9,25 @@ function typeIcon(type) {
   switch (type) {
     case "BOOKING_APPROVED":
       return "bi-calendar-check";
+
     case "BOOKING_REJECTED":
       return "bi-calendar-x";
+
     case "WAITLIST_SLOT_OPEN":
       return "bi-hourglass-split";
+
     case "WORK_ORDER_ASSIGNED":
       return "bi-tools";
+
+    case "ACCESS_REQUEST":
+      return "bi-share";
+
+    case "ACCESS_REQUEST_APPROVED":
+      return "bi-check-circle";
+
+    case "ACCESS_REQUEST_REJECTED":
+      return "bi-x-circle";
+
     default:
       return "bi-bell";
   }

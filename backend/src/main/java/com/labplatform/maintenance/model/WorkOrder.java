@@ -37,6 +37,18 @@ public class WorkOrder {
     @Column(nullable = false)
     private WorkOrderStatus status;
 
+    /*
+     * Time when the equipment actually entered maintenance.
+     */
+    @Column(name = "maintenance_started_at")
+    private LocalDateTime maintenanceStartedAt;
+
+    /*
+     * Description of the repair/service performed.
+     */
+    @Column(name = "service_log", columnDefinition = "TEXT")
+    private String serviceLog;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -48,35 +60,111 @@ public class WorkOrder {
 
     @PrePersist
     protected void onCreate() {
+
         this.createdAt = LocalDateTime.now();
-        if (this.status == null) this.status = WorkOrderStatus.OPEN;
-        if (this.priority == null) this.priority = WorkOrderPriority.MEDIUM;
+
+        if (this.status == null) {
+            this.status = WorkOrderStatus.OPEN;
+        }
+
+        if (this.priority == null) {
+            this.priority = WorkOrderPriority.MEDIUM;
+        }
+
+        /*
+         * A work order puts the equipment into maintenance.
+         * Therefore maintenance starts when the work order is created.
+         */
+        if (this.maintenanceStartedAt == null) {
+            this.maintenanceStartedAt = LocalDateTime.now();
+        }
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Integer getId() {
+        return id;
+    }
 
-    public Equipment getEquipment() { return equipment; }
-    public void setEquipment(Equipment equipment) { this.equipment = equipment; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public User getReportedBy() { return reportedBy; }
-    public void setReportedBy(User reportedBy) { this.reportedBy = reportedBy; }
+    public Equipment getEquipment() {
+        return equipment;
+    }
 
-    public User getAssignedTo() { return assignedTo; }
-    public void setAssignedTo(User assignedTo) { this.assignedTo = assignedTo; }
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
+    }
 
-    public String getIssueDescription() { return issueDescription; }
-    public void setIssueDescription(String issueDescription) { this.issueDescription = issueDescription; }
+    public User getReportedBy() {
+        return reportedBy;
+    }
 
-    public WorkOrderPriority getPriority() { return priority; }
-    public void setPriority(WorkOrderPriority priority) { this.priority = priority; }
+    public void setReportedBy(User reportedBy) {
+        this.reportedBy = reportedBy;
+    }
 
-    public WorkOrderStatus getStatus() { return status; }
-    public void setStatus(WorkOrderStatus status) { this.status = status; }
+    public User getAssignedTo() {
+        return assignedTo;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setAssignedTo(User assignedTo) {
+        this.assignedTo = assignedTo;
+    }
 
-    public LocalDateTime getCompletedAt() { return completedAt; }
-    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
+    public String getIssueDescription() {
+        return issueDescription;
+    }
+
+    public void setIssueDescription(String issueDescription) {
+        this.issueDescription = issueDescription;
+    }
+
+    public WorkOrderPriority getPriority() {
+        return priority;
+    }
+
+    public void setPriority(WorkOrderPriority priority) {
+        this.priority = priority;
+    }
+
+    public WorkOrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(WorkOrderStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getMaintenanceStartedAt() {
+        return maintenanceStartedAt;
+    }
+
+    public void setMaintenanceStartedAt(LocalDateTime maintenanceStartedAt) {
+        this.maintenanceStartedAt = maintenanceStartedAt;
+    }
+
+    public String getServiceLog() {
+        return serviceLog;
+    }
+
+    public void setServiceLog(String serviceLog) {
+        this.serviceLog = serviceLog;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(LocalDateTime completedAt) {
+        this.completedAt = completedAt;
+    }
 }

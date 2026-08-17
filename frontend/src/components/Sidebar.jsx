@@ -188,8 +188,8 @@ export default function Sidebar() {
     fetchUnread();
 
     // Refresh every 30 seconds
-    const interval = setInterval(fetchUnread, 30000);
-
+    const interval = setInterval(fetchUnread, 5000);
+    
     // Cleanup when Sidebar unmounts
     return () => clearInterval(interval);
   }, []);

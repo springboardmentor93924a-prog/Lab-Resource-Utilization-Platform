@@ -1,47 +1,77 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { useAuth } from "../context/AuthContext";
 import "./ResearcherDashboard.css";
 import { getAllEquipment } from "../services/equipmentService";
 import { getBookingsByUser } from "../services/bookingService";
 import { getCurrentUserId } from "../utils/auth";
+import { getUnreadCount } from "../services/notificationService";
+
 
 export default function ResearcherDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const roleNames = {
+    STUDENT: "Student",
+    RESEARCHER: "Researcher",
+    LAB_TECHNICIAN: "Lab Technician",
+    LAB_MANAGER: "Lab Manager",
+    DEPARTMENT_HEAD: "Department Head",
+    INSTITUTION_ADMIN: "Institution Administrator",
+    SYSTEM_ADMIN: "System Administrator",
+  };
+
+  const roleName = roleNames[user?.role] || "User";
 
   const [equipmentList, setEquipmentList] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Search
   const [searchValue, setSearchValue] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const equipment = await getAllEquipment();
-        setEquipmentList(equipment);
+  async function fetchData() {
+    try {
+      const equipment = await getAllEquipment();
+      setEquipmentList(equipment);
 
-        const userId = getCurrentUserId();
+      const userId = getCurrentUserId();
 
-        if (userId) {
-          try {
-            const bookings = await getBookingsByUser(userId);
-            setMyBookings(bookings);
-          } catch {
-            setMyBookings([]);
-          }
+      if (userId) {
+        try {
+          const bookings = await getBookingsByUser(userId);
+          setMyBookings(bookings);
+        } catch {
+          setMyBookings([]);
         }
-      } catch {
-        setEquipmentList([]);
-      } finally {
-        setLoading(false);
       }
-    }
 
-    fetchData();
-  }, []);
+      // Load unread notification count
+      try {
+        const count = await getUnreadCount();
+        setUnreadCount(count || 0);
+      } catch (error) {
+        console.error(
+          "Failed to fetch unread notifications:",
+          error
+        );
+        setUnreadCount(0);
+      }
+
+    } catch {
+      setEquipmentList([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchData();
+}, []);
 
   function handleBookNow(equipmentId) {
     navigate(`/bookings?equipmentId=${equipmentId}`);
@@ -115,7 +145,7 @@ export default function ResearcherDashboard() {
         {/* TOP BAR */}
         <div className="topbar">
 
-          <h4>Researcher dashboard</h4>
+         <h4>Welcome to {roleName} Dashboard</h4>
 
           <div className="top-right">
 
@@ -220,13 +250,31 @@ export default function ResearcherDashboard() {
 
             {/* NOTIFICATION BELL */}
             <button
-              className="notification-circle"
-              onClick={() => navigate("/notifications")}
-              title="Notifications"
-              aria-label="Notifications"
-            >
-              <i className="bi bi-bell"></i>
-            </button>
+  className="notification-circle"
+  onClick={() => navigate("/notifications")}
+  title="Notifications"
+  aria-label="Notifications"
+  style={{
+    position: "relative",
+  }}
+>
+  <i className="bi bi-bell"></i>
+
+  {unreadCount > 0 && (
+    <span
+      style={{
+        position: "absolute",
+        top: "2px",
+        right: "2px",
+        width: "9px",
+        height: "9px",
+        background: "#ef4444",
+        borderRadius: "50%",
+        border: "2px solid #020d20",
+      }}
+    ></span>
+  )}
+</button>
 
             {/* PROFILE */}
             <button
@@ -299,7 +347,7 @@ export default function ResearcherDashboard() {
               <b>Notifications</b>
             </big>
 
-            <h2>5 new</h2>
+            <h2>{unreadCount} new</h2>
           </div>
 
         </div>

@@ -689,35 +689,39 @@ useEffect(() => {
               >
 
                 {calibrationAlerts.map((a) => (
-
                   <div
                     key={a.equipmentId}
+                    onClick={() => navigate(`/equipment/${a.equipmentId}`)}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                       padding: "12px 15px",
-
                       background:
                         a.urgency === "OVERDUE"
                           ? "#FEF2F2"
                           : "#FFFBEB",
-
                       borderRadius: "8px",
-
-                      borderLeft:
-                        `4px solid ${
-                          a.urgency === "OVERDUE"
-                            ? "#ef4444"
-                            : "#f59e0b"
-                        }`,
+                      borderLeft: `4px solid ${
+                        a.urgency === "OVERDUE"
+                          ? "#ef4444"
+                          : "#f59e0b"
+                      }`,
+                      cursor: "pointer",
+                      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(0,0,0,0.12)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-
                     {/* EQUIPMENT INFORMATION */}
-
                     <div>
-
                       <strong
                         style={{
                           color: "#0F172A",
@@ -730,7 +734,6 @@ useEffect(() => {
                         {a.equipmentName}
                       </strong>
 
-
                       <div
                         style={{
                           fontSize: "13px",
@@ -740,29 +743,20 @@ useEffect(() => {
                       >
                         {a.category} — due {a.calibrationDueDate}
                       </div>
-
                     </div>
 
-
                     {/* URGENCY BADGE */}
-
                     <span
                       style={{
                         background:
                           a.urgency === "OVERDUE"
                             ? "#ef4444"
                             : "#f59e0b",
-
                         color: "#ffffff",
-
                         padding: "6px 12px",
-
                         borderRadius: "999px",
-
                         fontSize: "12px",
-
                         fontWeight: 700,
-
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -770,9 +764,7 @@ useEffect(() => {
                         ? `${Math.abs(a.daysUntilDue)} days overdue`
                         : `Due in ${a.daysUntilDue} days`}
                     </span>
-
                   </div>
-
                 ))}
 
               </div>
