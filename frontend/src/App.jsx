@@ -23,17 +23,12 @@ import Billing from "./pages/Billing";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
+import OAuth2Callback from "./OAuth2Callback";
+import GoogleRegister from "./pages/GoogleRegister";
 
 
 
-function ComingSoon({ title }) {
-  return (
-    <div className="p-8">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="text-gray-500 text-sm mt-1">This module is coming in a future milestone.</p>
-    </div>
-  );
-}
+
 
 export default function App() {
   return (
@@ -42,6 +37,15 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+  path="/google-register"
+  element={<GoogleRegister />}
+/>
+
+          <Route
+  path="/oauth2/callback"
+  element={<OAuth2Callback />}
+/>
 
           <Route
             path="/dashboard"
@@ -206,6 +210,7 @@ export default function App() {
     </ProtectedRoute>
   }
 />
+
 
            <Route path="/profile" element={<Profile />} />
          

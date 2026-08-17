@@ -7,8 +7,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,15 +20,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(
+            JwtAuthFilter jwtAuthFilter,
+            GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler
+    ) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.googleOAuth2SuccessHandler = googleOAuth2SuccessHandler;
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -42,10 +41,12 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/login/oauth2/**").permitAll()
 
                         .requestMatchers("/api/admin/**")
                         .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
@@ -113,7 +114,29 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(googleOAuth2SuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+
+                            System.err.println("========================================");
+                            System.err.println("GOOGLE OAUTH LOGIN FAILED");
+                            System.err.println("Exception: " + exception.getClass().getName());
+                            System.err.println("Message: " + exception.getMessage());
+
+                            if (exception.getCause() != null) {
+                                System.err.println("Cause: " + exception.getCause());
+                            }
+
+                            exception.printStackTrace();
+
+                            System.err.println("========================================");
+
+                            response.sendRedirect(
+                                    "http://localhost:5173/login?error=google"
+                            );
+                        })
+                );
 
         return http.build();
     }

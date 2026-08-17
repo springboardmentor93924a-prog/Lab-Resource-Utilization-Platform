@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import com.labplatform.auth.dto.MeResponse;
 import org.springframework.security.core.Authentication;
 import java.util.Map;
+import com.labplatform.auth.dto.GoogleRegisterRequest;
+import jakarta.servlet.http.HttpSession;
 
 
 @RestController
@@ -28,6 +30,57 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         }
     }
+    @PostMapping("/google/register")
+    public ResponseEntity<?> registerGoogleUser(
+            @Valid @RequestBody GoogleRegisterRequest request,
+            HttpSession session
+    ) {
+        try {
+
+            String email =
+                    (String) session.getAttribute("GOOGLE_EMAIL");
+
+            String fullName =
+                    (String) session.getAttribute("GOOGLE_FULL_NAME");
+
+            if (email == null || email.isBlank()) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of(
+                                "message",
+                                "Google registration session has expired. Please sign in with Google again."
+                        ));
+            }
+
+            if (fullName == null || fullName.isBlank()) {
+                fullName = email.split("@")[0];
+            }
+
+            AuthResponse response =
+                    authService.registerGoogleUser(
+                            email,
+                            fullName,
+                            request
+                    );
+
+            session.removeAttribute("GOOGLE_EMAIL");
+            session.removeAttribute("GOOGLE_FULL_NAME");
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(response);
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "message",
+                            e.getMessage()
+                    ));
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {

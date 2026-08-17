@@ -95,10 +95,8 @@ export default function Login() {
   }
 
   function handleGoogleSignIn() {
-    alert(
-      "Google sign-in isn't set up yet. Please sign in with your email and password."
-    );
-  }
+  window.location.href = "http://localhost:8080/oauth2/authorization/google";
+}
 
   const inputClass =
     "w-full h-12 px-4 bg-[#111c2d] border border-slate-700/80 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-400 transition";

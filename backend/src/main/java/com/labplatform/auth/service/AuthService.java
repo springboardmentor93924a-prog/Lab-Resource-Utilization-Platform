@@ -13,6 +13,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.labplatform.auth.dto.GoogleRegisterRequest;
 
 @Service
 public class AuthService {
@@ -66,6 +67,61 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().getName(), user.getId().toString());
         return new AuthResponse(token, user.getEmail(), user.getFullName(), user.getRole().getName());
+    }
+    public AuthResponse registerGoogleUser(
+            String email,
+            String fullName,
+            GoogleRegisterRequest request
+    ) {
+
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException(
+                    "An account with this email already exists"
+            );
+        }
+
+        Role role = roleRepository
+                .findByName(request.getRole().toUpperCase())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Invalid role: " + request.getRole()
+                        )
+                );
+
+        User user = new User();
+
+        user.setFullName(fullName);
+        user.setEmail(email);
+
+        /*
+         * Google users do not use the normal password login.
+         * User.password is currently mandatory, so store
+         * a random encoded value.
+         */
+        user.setPassword(
+                passwordEncoder.encode(
+                        java.util.UUID.randomUUID().toString()
+                )
+        );
+
+        user.setRole(role);
+        user.setInstitutionId(request.getInstitutionId());
+        user.setDepartmentId(request.getDepartmentId());
+
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole().getName(),
+                user.getId().toString()
+        );
+
+        return new AuthResponse(
+                token,
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole().getName()
+        );
     }
 
     public AuthResponse login(LoginRequest request) {
