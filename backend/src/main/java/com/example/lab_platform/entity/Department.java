@@ -1,5 +1,6 @@
 package com.example.lab_platform.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class Department {
     @Column(name = "department_name", nullable = false, unique = true, length = 100)
     private String departmentName;
 
+    @JsonIgnore
     @OneToMany(
             mappedBy = "department",
             cascade = CascadeType.ALL,

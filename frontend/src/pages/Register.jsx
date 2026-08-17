@@ -21,6 +21,12 @@ function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const selectedRole = roles.find(
+    (r) => r.roleId === Number(formData.roleId)
+  );
+  const selectedRoleName = selectedRole ? selectedRole.roleName : "";
+  const isInstitutionAdmin = selectedRoleName === "INSTITUTION_ADMIN";
+
   // Fetch roles and institutions once on mount
   useEffect(() => {
     fetch("http://localhost:8080/api/roles")
@@ -87,7 +93,9 @@ function Register() {
             phone: formData.phone,
             roleId: Number(formData.roleId),
             institutionId: Number(formData.institutionId),
-            departmentId: Number(formData.departmentId),
+            departmentId: isInstitutionAdmin
+              ? null
+              : Number(formData.departmentId),
           }),
         }
       );
@@ -230,7 +238,8 @@ function Register() {
           </div>
 
           {/* Department (Dynamic Mapping, filtered by Institution) */}
-          <div className="form-group">
+          {!isInstitutionAdmin && (
+            <div className="form-group">
             <label>Department</label>
             <select
               name="departmentId"
@@ -251,6 +260,7 @@ function Register() {
               ))}
             </select>
           </div>
+)}
 
           {/* Register Button */}
           <button

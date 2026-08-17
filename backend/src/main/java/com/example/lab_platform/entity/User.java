@@ -30,8 +30,7 @@ public class User {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-        name = "department_id",
-        nullable = false)
+        name = "department_id")
     private Department department;
 
     @Column(name = "status", length = 20)
