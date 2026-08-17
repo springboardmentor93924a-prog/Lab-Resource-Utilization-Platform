@@ -10,7 +10,6 @@ import com.example.lab_platform.entity.Waitlist;
 import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.repository.MaintenanceRepository;
-import com.example.lab_platform.repository.ResourceSharingRepository;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,20 +26,17 @@ public class BookingServiceImpl implements BookingService {
     private final EquipmentRepository equipmentRepository;
     private final WaitlistRepository waitlistRepository;
     private final MaintenanceRepository maintenanceRepository;
-    private final ResourceSharingRepository resourceSharingRepository;
 
     public BookingServiceImpl(
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
             WaitlistRepository waitlistRepository,
-            MaintenanceRepository maintenanceRepository,
-            ResourceSharingRepository resourceSharingRepository) {
+            MaintenanceRepository maintenanceRepository) {
 
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.waitlistRepository = waitlistRepository;
         this.maintenanceRepository = maintenanceRepository;
-        this.resourceSharingRepository = resourceSharingRepository;
     }
 
     private void notifyNextWaitlistedUser(Equipment equipment) {
@@ -182,53 +178,6 @@ public class BookingServiceImpl implements BookingService {
             );
         }
 
-        if (booking.getEquipment() == null
-                || booking.getEquipment().getEquipmentId() == null) {
-
-            throw new RuntimeException("Equipment is required");
-        }
-
-        /*
-         * The equipment object coming from the request body is often
-         * just a stub with the id set. Load the full record so that
-         * institution, requiresApproval, etc. are all populated.
-         */
-        Equipment fullEquipment =
-                equipmentRepository.findById(
-                                booking.getEquipment().getEquipmentId())
-                        .orElseThrow(() ->
-                                new RuntimeException("Equipment not found"));
-
-        booking.setEquipment(fullEquipment);
-
-        /*
-         * Inter-institution access control: if the equipment belongs
-         * to a different institution than the booker, an APPROVED
-         * resource-sharing request between the two institutions for
-         * this exact equipment must exist first.
-         */
-        if (fullEquipment.getInstitution() != null
-                && loggedInUser.getInstitution() != null
-                && !fullEquipment.getInstitution().getInstitutionId()
-                        .equals(loggedInUser.getInstitution().getInstitutionId())) {
-
-            boolean shared =
-                    resourceSharingRepository
-                            .existsBySenderInstitution_InstitutionIdAndReceiverInstitution_InstitutionIdAndEquipment_EquipmentIdAndStatus(
-                                    fullEquipment.getInstitution().getInstitutionId(),
-                                    loggedInUser.getInstitution().getInstitutionId(),
-                                    fullEquipment.getEquipmentId(),
-                                    "APPROVED"
-                            );
-
-            if (!shared) {
-                throw new RuntimeException(
-                        "This equipment belongs to another institution and is not shared with yours. "
-                                + "Request access via Resource Sharing first."
-                );
-            }
-        }
-
         if (booking.getEquipment() != null
                 && booking.getStartTime() != null
                 && booking.getEndTime() != null) {
@@ -261,18 +210,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        boolean requiresApproval = booking.getEquipment().getRequiresApproval() == null
-        || booking.getEquipment().getRequiresApproval();
-
-if (requiresApproval) {
-    booking.setBookingStatus("Pending Approval");
-} else {
-    booking.setBookingStatus("Confirmed");
-
-    Equipment eq = booking.getEquipment();
-    eq.setStatus("Booked");
-    equipmentRepository.save(eq);
-}
+        booking.setBookingStatus("Pending Approval");
 
         return bookingRepository.save(booking);
     }
@@ -490,55 +428,48 @@ public Booking updateBooking(
             existingBooking
     );
 }
+    @Override
+    public void deleteBooking(Integer id) {
 
-public void deleteBooking(Integer id) {
+        Booking existingBooking =
+                bookingRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking not found"
+                                )
+                        );
 
-    Booking existingBooking =
-            bookingRepository.findById(id)
-                    .orElseThrow(() ->
-                            new RuntimeException("Booking not found")
-                    );
+        User loggedInUser = getLoggedInUser();
+        String role = getRole(loggedInUser);
 
-    User loggedInUser = getLoggedInUser();
-    String role = getRole(loggedInUser);
+        if (isManagerOrAbove(role)) {
 
-    boolean isOwnBooking = existingBooking.getUser()
-            .getUserId()
-            .equals(loggedInUser.getUserId());
-
-    if (!isManagerOrAbove(role)) {
-
-        if (!role.equalsIgnoreCase("STUDENT")) {
-            throw new RuntimeException("You are not allowed to delete bookings");
+            bookingRepository.delete(existingBooking);
+            return;
         }
 
-        if (!isOwnBooking) {
-            throw new RuntimeException("You can delete only your own booking");
+        if (!role.equalsIgnoreCase("STUDENT")) {
+
+            throw new RuntimeException(
+                    "You are not allowed to delete bookings"
+            );
+        }
+
+        if (!existingBooking.getUser()
+                .getUserId()
+                .equals(loggedInUser.getUserId())) {
+
+            throw new RuntimeException(
+                    "You can delete only your own booking"
+            );
         }
 
         if (!isPendingApproval(existingBooking.getBookingStatus())) {
-            throw new RuntimeException("Only Pending Approval bookings can be cancelled");
-        }
-    }
-
-    String previousStatus = existingBooking.getBookingStatus();
-
-    existingBooking.setBookingStatus("Cancelled");
-    bookingRepository.save(existingBooking);
-
-    boolean wasHoldingEquipment =
-            "Confirmed".equalsIgnoreCase(previousStatus)
-                    || "In Use".equalsIgnoreCase(previousStatus);
-
-    if (wasHoldingEquipment && existingBooking.getEquipment() != null) {
-
-        Equipment equipment = existingBooking.getEquipment();
-        equipment.setStatus("Available");
-        equipmentRepository.save(equipment);
-
-        notifyNextWaitlistedUser(equipment);
-    }
+    throw new RuntimeException("Only Pending Approval bookings can be deleted");
 }
+
+        bookingRepository.delete(existingBooking);
+    }
 
     @Override
     public Booking approveBooking(Integer id) {

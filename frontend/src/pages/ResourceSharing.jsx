@@ -5,6 +5,7 @@ import './Register.css';
 export default function ResourceSharing() {
   const [requests, setRequests] = useState([]);
   const [institutions, setInstitutions] = useState([]);
+  const [equipmentName, setEquipmentName] = useState('');
   const [senderInstitutionId, setSenderInstitutionId] = useState('');
   const [receiverInstitutionId, setReceiverInstitutionId] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
@@ -44,12 +45,14 @@ export default function ResourceSharing() {
       await axios.post(
         'http://localhost:8080/api/resource-sharing/requests',
         {
-          equipment: { equipmentId: Number(equipmentId) },
+          equipmentId: parseInt(equipmentId),
+          equipmentName,
           senderInstitution: { institutionId: Number(senderInstitutionId) },
           receiverInstitution: { institutionId: Number(receiverInstitutionId) },
         },
         { headers: authHeader }
       );
+      setEquipmentName('');
       setSenderInstitutionId('');
       setReceiverInstitutionId('');
       setEquipmentId('');
@@ -89,7 +92,11 @@ export default function ResourceSharing() {
             <input type="number" value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
           </div>
           <div style={{ marginBottom: '10px' }}>
-            <label>Sender Institution (must be the equipment's owning institution): </label><br/>
+            <label>Equipment Name: </label><br/>
+            <input type="text" value={equipmentName} onChange={(e) => setEquipmentName(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+          </div>
+          <div style={{ marginBottom: '10px' }}>
+            <label>Sender Institution: </label><br/>
             <select value={senderInstitutionId} onChange={(e) => setSenderInstitutionId(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
               <option value="">-- Select Institution --</option>
               {institutions.map((inst) => (

@@ -190,6 +190,8 @@ function AppRoutes() {
       />
       
         <Route
+  path="/heatmap"
+  
   path="/demand-analysis"
   element={
     <ProtectedRoute

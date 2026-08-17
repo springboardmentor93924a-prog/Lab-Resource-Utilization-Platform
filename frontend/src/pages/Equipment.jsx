@@ -21,14 +21,6 @@ function Equipment() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // NEW: search state + filtered list
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredEquipment = equipment.filter((item) =>
-    item.equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const canManageEquipment = [
     "LAB_TECHNICIAN",
     "LAB_MANAGER",
@@ -164,20 +156,10 @@ function Equipment() {
         )}
       </div>
 
-      {/* NEW: search box */}
-      <input
-        type="text"
-        placeholder="Search equipment by name or category..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={{ ...inputStyle, marginTop: "15px", width: "300px" }}
-      />
-
       <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
         <thead>
           <tr style={{ background: "#f4f4f4" }}>
-            {/* CHANGED: ID header hidden for students */}
-            {role !== "STUDENT" && <th style={cellStyle}>ID</th>}
+            <th style={cellStyle}>ID</th>
             <th style={cellStyle}>Name</th>
             <th style={cellStyle}>Category</th>
             <th style={cellStyle}>Serial Number</th>
@@ -188,11 +170,10 @@ function Equipment() {
           </tr>
         </thead>
         <tbody>
-          {filteredEquipment.length > 0 ? (
-            filteredEquipment.map((item) => (
+          {equipment.length > 0 ? (
+            equipment.map((item) => (
               <tr key={item.equipmentId}>
-                {/* CHANGED: ID cell hidden for students */}
-                {role !== "STUDENT" && <td style={cellStyle}>{item.equipmentId}</td>}
+                <td style={cellStyle}>{item.equipmentId}</td>
                 <td style={cellStyle}>{item.equipmentName}</td>
                 <td style={cellStyle}>{item.category}</td>
                 <td style={cellStyle}>{item.serialNumber}</td>
@@ -215,12 +196,7 @@ function Equipment() {
             ))
           ) : (
             <tr>
-              <td
-                colSpan={
-                  (role !== "STUDENT" ? 1 : 0) + (canManageEquipment ? 7 : 6)
-                }
-                style={{ ...cellStyle, textAlign: "center" }}
-              >
+              <td colSpan={canManageEquipment ? 8 : 7} style={{ ...cellStyle, textAlign: "center" }}>
                 No equipment found.
               </td>
             </tr>

@@ -11,9 +11,8 @@ public class ResourceSharingRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "equipment_id", nullable = false)
-    private Equipment equipment;
+    private Long equipmentId;
+    private String equipmentName;
 
     @ManyToOne
     @JoinColumn(name = "sender_institution_id")
@@ -29,8 +28,9 @@ public class ResourceSharingRequest {
 
     public ResourceSharingRequest() {}
 
-    public ResourceSharingRequest(Equipment equipment, Institution senderInstitution, Institution receiverInstitution) {
-        this.equipment = equipment;
+    public ResourceSharingRequest(Long equipmentId, String equipmentName, Institution senderInstitution, Institution receiverInstitution) {
+        this.equipmentId = equipmentId;
+        this.equipmentName = equipmentName;
         this.senderInstitution = senderInstitution;
         this.receiverInstitution = receiverInstitution;
         this.status = "PENDING";
@@ -41,19 +41,11 @@ public class ResourceSharingRequest {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Equipment getEquipment() { return equipment; }
-    public void setEquipment(Equipment equipment) { this.equipment = equipment; }
+    public Long getEquipmentId() { return equipmentId; }
+    public void setEquipmentId(Long equipmentId) { this.equipmentId = equipmentId; }
 
-    // Convenience read-only fields so the existing frontend
-    // (which reads req.equipmentId / req.equipmentName) keeps working
-    // without a rewrite, now always sourced live from the real record.
-    public Integer getEquipmentId() {
-        return equipment != null ? equipment.getEquipmentId() : null;
-    }
-
-    public String getEquipmentName() {
-        return equipment != null ? equipment.getEquipmentName() : null;
-    }
+    public String getEquipmentName() { return equipmentName; }
+    public void setEquipmentName(String equipmentName) { this.equipmentName = equipmentName; }
 
     public Institution getSenderInstitution() { return senderInstitution; }
     public void setSenderInstitution(Institution senderInstitution) { this.senderInstitution = senderInstitution; }

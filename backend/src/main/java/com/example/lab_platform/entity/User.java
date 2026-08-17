@@ -28,9 +28,8 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-        name = "department_id")
+    @ManyToOne
+    @JoinColumn(name = "department_id")
     private Department department;
 
     @Column(name = "status", length = 20)
@@ -38,13 +37,6 @@ public class User {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(
-        name = "institution_id",
-        nullable = false
-)
-private Institution institution;
 
     public User() {
     }
@@ -125,13 +117,4 @@ private Institution institution;
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-    public Institution getInstitution() {
-    return institution;
-}
-
-public void setInstitution(Institution institution) {
-    this.institution = institution;
-}
-
 }

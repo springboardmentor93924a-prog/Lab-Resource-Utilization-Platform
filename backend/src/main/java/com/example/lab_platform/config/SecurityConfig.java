@@ -81,7 +81,6 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/departments/**",
-                    "/api/institutions/**",
                     "/api/roles/**",
                     "/error"
                 ).permitAll()
