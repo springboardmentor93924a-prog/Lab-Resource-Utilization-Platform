@@ -38,6 +38,7 @@ export function AuthProvider({ children }) {
     persistSession(response);
     return response;
   }
+  
 
   function logout() {
     localStorage.removeItem("token");
