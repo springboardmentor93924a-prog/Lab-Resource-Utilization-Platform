@@ -44,47 +44,86 @@ public class WaitlistServiceImpl implements WaitlistService {
     }
 
     @Override
-    public Waitlist joinWaitlist(Waitlist waitlist) {
-        User loggedInUser = getLoggedInUser();
+public Waitlist joinWaitlist(Waitlist waitlist) {
+    User loggedInUser = getLoggedInUser();
+    waitlist.setUser(loggedInUser);
 
-        waitlist.setUser(loggedInUser);
+    if (waitlist.getEquipment() == null || waitlist.getEquipment().getEquipmentId() == null) {
+        throw new RuntimeException("Equipment must be specified to join a waitlist");
+    }
 
-        if (waitlist.getEquipment() == null || waitlist.getEquipment().getEquipmentId() == null) {
-            throw new RuntimeException("Equipment must be specified to join a waitlist");
-        }
+    if (waitlist.getRequestedStartTime() == null || waitlist.getRequestedEndTime() == null) {
+        throw new RuntimeException("Requested start and end time are required");
+    }
 
-        Equipment equipment = equipmentRepository.findById(waitlist.getEquipment().getEquipmentId())
-                .orElseThrow(() -> new RuntimeException("Equipment not found"));
+    if (!waitlist.getRequestedEndTime().isAfter(waitlist.getRequestedStartTime())) {
+        throw new RuntimeException("End time must be after start time");
+    }
 
-        waitlist.setEquipment(equipment);
+    Integer equipmentId = waitlist.getEquipment().getEquipmentId();
 
-        // --- SCHEDULE OPTIMIZATION ---
-        // Before making the user wait, check if an idle equivalent
-        // (same category, currently Available) can serve them instead.
-        Equipment substitute = findIdleSubstitute(equipment, waitlist);
+    Equipment equipment = equipmentRepository.findById(equipmentId)
+            .orElseThrow(() -> new RuntimeException("Equipment not found"));
 
-        if (substitute != null) {
-            Booking autoBooking = new Booking();
-            autoBooking.setUser(loggedInUser);
-            autoBooking.setEquipment(substitute);
-            autoBooking.setBookingDate(waitlist.getRequestedStartTime().toLocalDate());
-            autoBooking.setStartTime(waitlist.getRequestedStartTime());
-            autoBooking.setEndTime(waitlist.getRequestedEndTime());
-            autoBooking.setPurpose("Auto-assigned idle substitute (schedule optimization)");
-            autoBooking.setBookingStatus("Confirmed");
-            bookingRepository.save(autoBooking);
+    waitlist.setEquipment(equipment);
 
-            substitute.setStatus("Booked");
-            equipmentRepository.save(substitute);
+    boolean duplicateEntry =
+            waitlistRepository
+                    .existsByUser_UserIdAndEquipment_EquipmentIdAndRequestedStartTimeAndRequestedEndTimeAndWaitlistStatusIn(
+                            loggedInUser.getUserId(),
+                            equipmentId,
+                            waitlist.getRequestedStartTime(),
+                            waitlist.getRequestedEndTime(),
+                            List.of("WAITING", "NOTIFIED")
+                    );
 
-            waitlist.setWaitlistStatus("FULFILLED");
-            return waitlistRepository.save(waitlist);
-        }
-        // --- END OPTIMIZATION ---
+    if (duplicateEntry) {
+        throw new RuntimeException("You already have an active waitlist entry for this equipment and time window");
+    }
 
-        waitlist.setWaitlistStatus("WAITING");
+    List<Booking> overlapping = bookingRepository.findOverlappingBookings(
+            equipmentId,
+            waitlist.getRequestedStartTime(),
+            waitlist.getRequestedEndTime()
+    );
+
+    boolean underMaintenance = isUnderMaintenanceDuring(
+            equipmentId,
+            waitlist.getRequestedStartTime(),
+            waitlist.getRequestedEndTime()
+    );
+
+    boolean unavailable = !overlapping.isEmpty()
+            || underMaintenance
+            || !"Available".equalsIgnoreCase(equipment.getStatus());
+
+    if (!unavailable) {
+        throw new RuntimeException("Equipment is available for the selected time. Please create a booking instead.");
+    }
+
+    Equipment substitute = findIdleSubstitute(equipment, waitlist);
+
+    if (substitute != null) {
+        Booking autoBooking = new Booking();
+        autoBooking.setUser(loggedInUser);
+        autoBooking.setEquipment(substitute);
+        autoBooking.setBookingDate(waitlist.getRequestedStartTime().toLocalDate());
+        autoBooking.setStartTime(waitlist.getRequestedStartTime());
+        autoBooking.setEndTime(waitlist.getRequestedEndTime());
+        autoBooking.setPurpose("Auto-assigned idle substitute (schedule optimization)");
+        autoBooking.setBookingStatus("Confirmed");
+        bookingRepository.save(autoBooking);
+
+        substitute.setStatus("Booked");
+        equipmentRepository.save(substitute);
+
+        waitlist.setWaitlistStatus("FULFILLED");
         return waitlistRepository.save(waitlist);
     }
+
+    waitlist.setWaitlistStatus("WAITING");
+    return waitlistRepository.save(waitlist);
+}
 
     /*
      * Looks for an idle (Available) equipment of the same category

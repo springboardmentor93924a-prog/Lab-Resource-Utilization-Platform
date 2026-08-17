@@ -263,9 +263,11 @@ function Equipment() {
                   style={inputStyle}
                 >
                   <option value="Available">Available</option>
-                  <option value="In Use">In Use</option>
-                  <option value="Under Maintenance">Under Maintenance</option>
-                  <option value="Booked">Booked</option>
+<option value="In Use">In Use</option>
+<option value="Booked">Booked</option>
+<option value="Under Maintenance">Under Maintenance</option>
+<option value="Out of Service">Out of Service</option>
+<option value="Retired">Retired</option>
                 </select>
               </div>
               <div style={formGroup}>
