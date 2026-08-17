@@ -65,12 +65,13 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
 
-        } catch (RuntimeException e) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
-        }
+       } catch (RuntimeException e) {
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("message", e.getMessage());
+    return ResponseEntity
+            .badRequest()
+            .body(errorResponse);
+}
     }
 
 
