@@ -1,6 +1,8 @@
 package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "departments")
@@ -11,18 +13,15 @@ public class Department {
     @Column(name = "department_id")
     private Integer departmentId;
 
-    @Column(name = "department_name", nullable = false, length = 100)
+    @Column(name = "department_name", nullable = false, unique = true, length = 100)
     private String departmentName;
 
-    @Column(name = "description")
-    private String description;
-
-    @ManyToOne
-    @JoinColumn(name = "institution_id")
-    private Institution institution;
-
-    public Department() {
-    }
+    @OneToMany(
+            mappedBy = "department",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<InstitutionDepartment> institutionDepartments = new HashSet<>();
 
     public Integer getDepartmentId() {
         return departmentId;
@@ -40,19 +39,12 @@ public class Department {
         this.departmentName = departmentName;
     }
 
-    public String getDescription() {
-        return description;
+    public Set<InstitutionDepartment> getInstitutionDepartments() {
+        return institutionDepartments;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Institution getInstitution() {
-        return institution;
-    }
-
-    public void setInstitution(Institution institution) {
-        this.institution = institution;
+    public void setInstitutionDepartments(
+            Set<InstitutionDepartment> institutionDepartments) {
+        this.institutionDepartments = institutionDepartments;
     }
 }
