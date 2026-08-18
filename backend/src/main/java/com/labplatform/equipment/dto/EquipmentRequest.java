@@ -24,13 +24,31 @@ public class EquipmentRequest {
 
     private String status;
 
+    /*
+     * Existing field - kept for backward compatibility.
+     */
     private LocalDate calibrationDueDate;
+
+    /*
+     * Calibration tracking
+     */
+    private LocalDate lastCalibrationDate;
+
+    private LocalDate nextCalibrationDate;
+
+    /*
+     * Certification tracking
+     */
+    private String certificationDetails;
+
+    private LocalDate certificationExpiryDate;
 
     private String manualDocument;
 
     private String calibrationCertificate;
 
     private Integer institutionId;
+
     private java.math.BigDecimal hourlyRate;
 
     public EquipmentRequest() {
@@ -108,6 +126,38 @@ public class EquipmentRequest {
         this.calibrationDueDate = calibrationDueDate;
     }
 
+    public LocalDate getLastCalibrationDate() {
+        return lastCalibrationDate;
+    }
+
+    public void setLastCalibrationDate(LocalDate lastCalibrationDate) {
+        this.lastCalibrationDate = lastCalibrationDate;
+    }
+
+    public LocalDate getNextCalibrationDate() {
+        return nextCalibrationDate;
+    }
+
+    public void setNextCalibrationDate(LocalDate nextCalibrationDate) {
+        this.nextCalibrationDate = nextCalibrationDate;
+    }
+
+    public String getCertificationDetails() {
+        return certificationDetails;
+    }
+
+    public void setCertificationDetails(String certificationDetails) {
+        this.certificationDetails = certificationDetails;
+    }
+
+    public LocalDate getCertificationExpiryDate() {
+        return certificationExpiryDate;
+    }
+
+    public void setCertificationExpiryDate(LocalDate certificationExpiryDate) {
+        this.certificationExpiryDate = certificationExpiryDate;
+    }
+
     public String getManualDocument() {
         return manualDocument;
     }
@@ -132,6 +182,11 @@ public class EquipmentRequest {
         this.institutionId = institutionId;
     }
 
-    public java.math.BigDecimal getHourlyRate() { return hourlyRate; }
-    public void setHourlyRate(java.math.BigDecimal hourlyRate) { this.hourlyRate = hourlyRate; }
+    public java.math.BigDecimal getHourlyRate() {
+        return hourlyRate;
+    }
+
+    public void setHourlyRate(java.math.BigDecimal hourlyRate) {
+        this.hourlyRate = hourlyRate;
+    }
 }

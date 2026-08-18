@@ -1,538 +1,820 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { getMyAnalytics } from "../services/analyticsService";
 
-// =========================
-// COLORS
-// =========================
-const PAGE_BG = "#0B1730";
-const CARD_BG = "#FFFFFF";
-const DARK_TEXT = "#0F1B2D";
-const SECONDARY_TEXT = "#475569";
-const BORDER = "#E2E8F0";
+import "./Analytics.css";
 
-// =========================
-// WHITE CARD STYLE
-// =========================
-const cardStyle = {
-  background: CARD_BG,
-  borderRadius: "12px",
-  padding: "20px",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-  color: DARK_TEXT,
-};
 
-// =========================
-// STAT CARD STYLE
-// =========================
-const statBox = (color) => ({
-  borderRadius: "12px",
-  padding: "20px",
-  color: "#FFFFFF",
-  background: color,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.20)",
-});
+/* =========================================================
+   ICON HELPER
+========================================================= */
 
-// =========================
-// LIST ITEM STYLE
-// =========================
-const itemStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "10px 0",
-  borderBottom: `1px solid ${BORDER}`,
-  color: DARK_TEXT,
-};
+function Icon({ name }) {
+  return <i className={`bi ${name}`}></i>;
+}
+
+
+/* =========================================================
+   STAT CARD
+========================================================= */
+
+function StatCard({
+  icon,
+  label,
+  value,
+  description,
+  gradient,
+  glow,
+}) {
+  return (
+    <div
+      className="analytics-stat-card"
+      style={{
+        "--card-gradient": gradient,
+        "--card-glow": glow,
+      }}
+    >
+
+      {/* Decorative circles */}
+      <div className="analytics-card-circle circle-one"></div>
+      <div className="analytics-card-circle circle-two"></div>
+
+      {/* ICON */}
+
+      <div className="analytics-stat-icon">
+        <Icon name={icon} />
+      </div>
+
+
+      {/* CONTENT */}
+
+      <div className="analytics-stat-content">
+
+        <span className="analytics-stat-label">
+          {label}
+        </span>
+
+        <strong className="analytics-stat-value">
+          {value}
+        </strong>
+
+        <span className="analytics-stat-description">
+          {description}
+        </span>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   EQUIPMENT CARD
+========================================================= */
+
+function EquipmentCard({
+  equipment,
+  index,
+}) {
+
+  const colors = [
+    {
+      gradient:
+        "linear-gradient(135deg, #2563eb, #4f46e5)",
+      light: "#dbeafe",
+      icon: "bi-microscope",
+    },
+    {
+      gradient:
+        "linear-gradient(135deg, #7c3aed, #9333ea)",
+      light: "#ede9fe",
+      icon: "bi-cpu",
+    },
+    {
+      gradient:
+        "linear-gradient(135deg, #0891b2, #0e7490)",
+      light: "#cffafe",
+      icon: "bi-beaker",
+    },
+    {
+      gradient:
+        "linear-gradient(135deg, #059669, #0f766e)",
+      light: "#d1fae5",
+      icon: "bi-flask",
+    },
+    {
+      gradient:
+        "linear-gradient(135deg, #ea580c, #dc2626)",
+      light: "#ffedd5",
+      icon: "bi-activity",
+    },
+  ];
+
+  const theme =
+    colors[index % colors.length];
+
+
+  return (
+    <div className="analytics-equipment-card">
+
+      {/* RANK */}
+
+      <div
+        className="equipment-rank"
+        style={{
+          background: theme.gradient,
+        }}
+      >
+        #{index + 1}
+      </div>
+
+
+      {/* ICON */}
+
+      <div
+        className="equipment-icon"
+        style={{
+          background: theme.gradient,
+        }}
+      >
+        <Icon name={theme.icon} />
+      </div>
+
+
+      {/* NAME */}
+
+      <div className="equipment-card-info">
+
+        <strong>
+          {equipment.equipmentName}
+        </strong>
+
+        <span>
+          Equipment utilization
+        </span>
+
+      </div>
+
+
+      {/* BOOKINGS */}
+
+      <div className="equipment-booking-count">
+
+        <strong>
+          {equipment.bookingCount}
+        </strong>
+
+        <span>
+          bookings
+        </span>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   ANALYTICS PAGE
+========================================================= */
 
 export default function Analytics() {
+
+  const navigate = useNavigate();
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const result = await getMyAnalytics();
 
-        console.log("Analytics response:", result);
+  /* =======================================================
+     LOAD ANALYTICS
+  ======================================================= */
+
+  useEffect(() => {
+
+    async function load() {
+
+      try {
+
+        const result =
+          await getMyAnalytics();
+
+        console.log(
+          "Analytics response:",
+          result
+        );
 
         setData(result);
+
       } catch (err) {
-        console.error("Analytics error:", err);
+
+        console.error(
+          "Analytics error:",
+          err
+        );
+
       } finally {
+
         setLoading(false);
+
       }
     }
 
     load();
+
   }, []);
 
-  // =========================
-  // LOADING
-  // =========================
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
   if (loading) {
+
     return (
-      <div
-        style={{
-          display: "flex",
-          minHeight: "100vh",
-          background: PAGE_BG,
-        }}
-      >
+
+      <div className="analytics-wrapper">
+
         <aside className="sidebar">
           <Sidebar />
         </aside>
 
-        <main
-          style={{
-            flex: 1,
-            padding: "30px",
-            background: PAGE_BG,
-            minHeight: "100vh",
-            color: "#FFFFFF",
-          }}
-        >
-          <h6
-            style={{
-              fontWeight: 700,
-              color: "#FFFFFF",
-              marginBottom: "25px",
-              fontSize: "22px",
-            }}
-          >
-            Analytics
-          </h6>
+        <main className="analytics-content">
 
-          <p style={{ color: "#CBD5E1" }}>
-            Loading analytics...
-          </p>
+          <div className="analytics-loading">
+
+            <div className="analytics-loading-icon">
+              <Icon name="bi-bar-chart-fill" />
+            </div>
+
+            <h2>
+              Loading Analytics
+            </h2>
+
+            <p>
+              Preparing your laboratory insights...
+            </p>
+
+            <div className="analytics-loader"></div>
+
+          </div>
+
         </main>
+
       </div>
+
     );
   }
 
+
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: PAGE_BG,
-      }}
-    >
-      {/* SIDEBAR */}
+
+    <div className="analytics-wrapper">
+
+
+      {/* ===================================================
+          SIDEBAR
+      =================================================== */}
+
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
-      {/* MAIN ANALYTICS AREA */}
-      <main
-        style={{
-          flex: 1,
-          padding: "30px",
-          background: PAGE_BG,
-          minHeight: "100vh",
-          color: "#FFFFFF",
-        }}
-      >
-        {/* PAGE TITLE */}
-        <h2
-          style={{
-            fontWeight: 700,
-            color: "#FFFFFF",
-            marginBottom: "25px",
-          }}
-        >
-          Analytics
-        </h2>
 
-        {/* ================================================= */}
-        {/* RESEARCHER */}
-        {/* ================================================= */}
-        {data?.viewType === "RESEARCHER" && (
-          <>
-            {/* STAT CARDS */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "20px",
-                marginBottom: "25px",
-              }}
-            >
-              {/* TOTAL BOOKINGS */}
-              <div style={statBox("#2563EB")}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "32px",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {data.myTotalBookings}
-                </h1>
+      {/* ===================================================
+          MAIN CONTENT
+      =================================================== */}
 
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "#FFFFFF",
-                    fontWeight: 500,
-                  }}
-                >
-                  Total bookings
-                </p>
-              </div>
+      <main className="analytics-content">
 
-              {/* HOURS USED */}
-              <div style={statBox("#0F766E")}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "32px",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {data.myTotalUsageHours}
-                </h1>
 
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "#FFFFFF",
-                    fontWeight: 500,
-                  }}
-                >
-                  Hours used
-                </p>
-              </div>
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <header className="analytics-header">
+
+          <div className="analytics-header-left">
+
+            <div className="analytics-header-icon">
+              <Icon name="bi-bar-chart-fill" />
             </div>
 
-            {/* WHITE TABLE/CARD */}
-            <div style={cardStyle}>
-              <h5
-                style={{
-                  color: DARK_TEXT,
-                  marginBottom: "15px",
-                  fontWeight: 600,
-                }}
-              >
-                Your most-booked equipment
-              </h5>
+            <div>
 
-              {data.myFavoriteEquipment?.length === 0 && (
-                <p
-                  style={{
-                    color: SECONDARY_TEXT,
-                    margin: 0,
-                  }}
-                >
-                  No bookings yet.
-                </p>
-              )}
+              <h1>
+                Analytics
+              </h1>
 
-              {data.myFavoriteEquipment?.map((e, i) => (
-                <div key={i} style={itemStyle}>
-                  <span
-                    style={{
-                      color: DARK_TEXT,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {e.equipmentName}
-                  </span>
+              <p>
+                Insights into your laboratory activity
+              </p>
 
-                  <strong
-                    style={{
-                      color: DARK_TEXT,
-                    }}
-                  >
-                    {e.bookingCount} bookings
-                  </strong>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* ================================================= */}
-        {/* LAB MANAGER / ADMIN */}
-        {/* ================================================= */}
-        {data?.viewType === "ADMIN" && (
-          <>
-            {/* STAT CARDS */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "20px",
-                marginBottom: "25px",
-              }}
-            >
-              {/* EQUIPMENT */}
-              <div style={statBox("#2563EB")}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "32px",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {data.institutionTotalEquipment}
-                </h1>
-
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "#FFFFFF",
-                    fontWeight: 500,
-                  }}
-                >
-                  Equipment
-                </p>
-              </div>
-
-              {/* TOTAL BOOKINGS */}
-              <div style={statBox("#0F766E")}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "32px",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {data.institutionTotalBookings}
-                </h1>
-
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "#FFFFFF",
-                    fontWeight: 500,
-                  }}
-                >
-                  Total bookings
-                </p>
-              </div>
-
-              {/* UTILIZATION */}
-              <div style={statBox("#7C3AED")}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "32px",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {data.institutionAvgUtilization}%
-                </h1>
-
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "#FFFFFF",
-                    fontWeight: 500,
-                  }}
-                >
-                  Avg utilization
-                </p>
-              </div>
-
-              {/* WORK ORDERS */}
-              <div style={statBox("#DC2626")}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "32px",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {data.institutionOpenWorkOrders}
-                </h1>
-
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "#FFFFFF",
-                    fontWeight: 500,
-                  }}
-                >
-                  Open work orders
-                </p>
-              </div>
             </div>
 
-            {/* =============================== */}
-            {/* WHITE TABLE/CARD */}
-            {/* =============================== */}
-            <div style={cardStyle}>
-              <h5
-                style={{
-                  color: DARK_TEXT,
-                  marginBottom: "15px",
-                  fontWeight: 600,
-                }}
-              >
-                Top equipment by bookings
-              </h5>
+          </div>
 
-              {data.institutionTopEquipment?.length === 0 && (
-                <p
-                  style={{
-                    color: SECONDARY_TEXT,
-                    margin: 0,
-                  }}
-                >
-                  No bookings yet.
-                </p>
-              )}
 
-              {data.institutionTopEquipment?.map((e, i) => (
-                <div key={i} style={itemStyle}>
-                  <span
-                    style={{
-                      color: DARK_TEXT,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {e.equipmentName}
-                  </span>
+          {/* PROFILE */}
 
-                  <strong
-                    style={{
-                      color: DARK_TEXT,
-                    }}
-                  >
-                    {e.bookingCount} bookings
-                  </strong>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* ================================================= */}
-        {/* SYSTEM ADMIN */}
-        {/* ================================================= */}
-        {data?.viewType === "SYSTEM" && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "20px",
-            }}
+          <button
+            className="analytics-profile"
+            onClick={() =>
+              navigate("/profile")
+            }
+            title="My Profile"
           >
-            {/* INSTITUTIONS */}
-            <div style={statBox("#2563EB")}>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "32px",
-                  color: "#FFFFFF",
-                }}
-              >
-                {data.systemTotalInstitutions}
-              </h1>
+            <Icon name="bi-person-fill" />
+          </button>
 
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  color: "#FFFFFF",
-                  fontWeight: 500,
-                }}
-              >
-                Institutions
+        </header>
+
+
+        {/* =================================================
+            BODY
+        ================================================= */}
+
+        <div className="analytics-body">
+
+
+          {/* =================================================
+              RESEARCHER
+          ================================================= */}
+
+          {data?.viewType === "RESEARCHER" && (
+
+            <>
+
+              {/* PAGE INTRO */}
+
+              <section className="analytics-intro">
+
+                <div>
+
+                  <span>
+                    PERSONAL INSIGHTS
+                  </span>
+
+                  <h2>
+                    Your Laboratory Activity
+                  </h2>
+
+                  <p>
+                    Track your equipment usage and
+                    discover your most frequently
+                    booked laboratory resources.
+                  </p>
+
+                </div>
+
+                <div className="intro-icon purple">
+                  <Icon name="bi-person-workspace" />
+                </div>
+
+              </section>
+
+
+              {/* STAT CARDS */}
+
+              <div className="analytics-stat-grid">
+
+
+                <StatCard
+                  icon="bi-calendar-check-fill"
+                  label="TOTAL BOOKINGS"
+                  value={data.myTotalBookings}
+                  description="Bookings made by you"
+                  gradient="linear-gradient(135deg, #2563eb, #1d4ed8)"
+                  glow="rgba(37,99,235,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-clock-fill"
+                  label="HOURS USED"
+                  value={data.myTotalUsageHours}
+                  description="Total equipment usage"
+                  gradient="linear-gradient(135deg, #059669, #047857)"
+                  glow="rgba(5,150,105,0.35)"
+                />
+
+              </div>
+
+
+              {/* FAVORITE EQUIPMENT */}
+
+              <section className="analytics-panel">
+
+                <div className="analytics-panel-header">
+
+                  <div className="panel-title-icon blue">
+                    <Icon name="bi-star-fill" />
+                  </div>
+
+                  <div>
+
+                    <h3>
+                      Your Most-Booked Equipment
+                    </h3>
+
+                    <p>
+                      Laboratory equipment you use most frequently
+                    </p>
+
+                  </div>
+
+                  <div className="panel-badge">
+                    <Icon name="bi-graph-up-arrow" />
+                    Personal
+                  </div>
+
+                </div>
+
+
+                {data.myFavoriteEquipment?.length === 0 ? (
+
+                  <div className="analytics-empty">
+
+                    <div>
+                      <Icon name="bi-box-seam" />
+                    </div>
+
+                    <h3>
+                      No bookings yet
+                    </h3>
+
+                    <p>
+                      Start booking equipment to see
+                      your analytics here.
+                    </p>
+
+                  </div>
+
+                ) : (
+
+                  <div className="equipment-list">
+
+                    {data.myFavoriteEquipment.map(
+                      (equipment, index) => (
+
+                        <EquipmentCard
+                          key={index}
+                          equipment={equipment}
+                          index={index}
+                        />
+
+                      )
+                    )}
+
+                  </div>
+
+                )}
+
+              </section>
+
+            </>
+
+          )}
+
+
+          {/* =================================================
+              ADMIN / LAB MANAGER
+          ================================================= */}
+
+          {data?.viewType === "ADMIN" && (
+
+            <>
+
+              <section className="analytics-intro">
+
+                <div>
+
+                  <span>
+                    LAB MANAGER INSIGHTS
+                  </span>
+
+                  <h2>
+                    Laboratory Performance
+                  </h2>
+
+                  <p>
+                    Monitor equipment, bookings,
+                    utilization and maintenance activity
+                    across your laboratory.
+                  </p>
+
+                </div>
+
+                <div className="intro-icon teal">
+                  <Icon name="bi-speedometer2" />
+                </div>
+
+              </section>
+
+
+              {/* ADMIN STAT CARDS */}
+
+              <div className="analytics-stat-grid admin-grid">
+
+
+                <StatCard
+                  icon="bi-box-seam-fill"
+                  label="EQUIPMENT"
+                  value={
+                    data.institutionTotalEquipment
+                  }
+                  description="Registered equipment"
+                  gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
+                  glow="rgba(37,99,235,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-calendar-check-fill"
+                  label="TOTAL BOOKINGS"
+                  value={
+                    data.institutionTotalBookings
+                  }
+                  description="Bookings across laboratory"
+                  gradient="linear-gradient(135deg, #059669, #0f766e)"
+                  glow="rgba(5,150,105,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-speedometer"
+                  label="AVG UTILIZATION"
+                  value={
+                    `${data.institutionAvgUtilization}%`
+                  }
+                  description="Equipment utilization"
+                  gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
+                  glow="rgba(124,58,237,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-tools"
+                  label="OPEN WORK ORDERS"
+                  value={
+                    data.institutionOpenWorkOrders
+                  }
+                  description="Maintenance requiring attention"
+                  gradient="linear-gradient(135deg, #dc2626, #ea580c)"
+                  glow="rgba(220,38,38,0.35)"
+                />
+
+              </div>
+
+
+              {/* TOP EQUIPMENT */}
+
+              <section className="analytics-panel">
+
+                <div className="analytics-panel-header">
+
+                  <div className="panel-title-icon orange">
+                    <Icon name="bi-trophy-fill" />
+                  </div>
+
+                  <div>
+
+                    <h3>
+                      Top Equipment by Bookings
+                    </h3>
+
+                    <p>
+                      Most requested equipment across the laboratory
+                    </p>
+
+                  </div>
+
+                  <div className="panel-badge orange-badge">
+                    <Icon name="bi-fire" />
+                    High Demand
+                  </div>
+
+                </div>
+
+
+                {data.institutionTopEquipment?.length ===
+                0 ? (
+
+                  <div className="analytics-empty">
+
+                    <div>
+                      <Icon name="bi-box-seam" />
+                    </div>
+
+                    <h3>
+                      No booking data
+                    </h3>
+
+                    <p>
+                      Equipment booking activity
+                      will appear here.
+                    </p>
+
+                  </div>
+
+                ) : (
+
+                  <div className="equipment-list">
+
+                    {data.institutionTopEquipment.map(
+                      (equipment, index) => (
+
+                        <EquipmentCard
+                          key={index}
+                          equipment={equipment}
+                          index={index}
+                        />
+
+                      )
+                    )}
+
+                  </div>
+
+                )}
+
+              </section>
+
+            </>
+
+          )}
+
+
+          {/* =================================================
+              SYSTEM ADMIN
+          ================================================= */}
+
+          {data?.viewType === "SYSTEM" && (
+
+            <>
+
+              <section className="analytics-intro">
+
+                <div>
+
+                  <span>
+                    SYSTEM OVERVIEW
+                  </span>
+
+                  <h2>
+                    Platform Analytics
+                  </h2>
+
+                  <p>
+                    High-level insights across the
+                    entire laboratory resource platform.
+                  </p>
+
+                </div>
+
+                <div className="intro-icon red">
+                  <Icon name="bi-globe2" />
+                </div>
+
+              </section>
+
+
+              {/* SYSTEM STATS */}
+
+              <div className="analytics-stat-grid system-grid">
+
+
+                <StatCard
+                  icon="bi-buildings-fill"
+                  label="INSTITUTIONS"
+                  value={
+                    data.systemTotalInstitutions
+                  }
+                  description="Connected institutions"
+                  gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
+                  glow="rgba(37,99,235,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-box-seam-fill"
+                  label="TOTAL EQUIPMENT"
+                  value={
+                    data.systemTotalEquipment
+                  }
+                  description="Equipment registered"
+                  gradient="linear-gradient(135deg, #059669, #0f766e)"
+                  glow="rgba(5,150,105,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-calendar2-check-fill"
+                  label="TOTAL BOOKINGS"
+                  value={
+                    data.systemTotalBookings
+                  }
+                  description="Platform-wide bookings"
+                  gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
+                  glow="rgba(124,58,237,0.35)"
+                />
+
+
+                <StatCard
+                  icon="bi-arrow-left-right"
+                  label="CROSS-INSTITUTION"
+                  value={
+                    data.systemCrossInstitutionBookings
+                  }
+                  description="Shared resource bookings"
+                  gradient="linear-gradient(135deg, #dc2626, #ea580c)"
+                  glow="rgba(220,38,38,0.35)"
+                />
+
+              </div>
+
+
+              {/* SYSTEM INSIGHT */}
+
+              <section className="system-insight-panel">
+
+                <div className="system-insight-icon">
+
+                  <Icon name="bi-stars" />
+
+                </div>
+
+                <div>
+
+                  <span>
+                    PLATFORM OVERVIEW
+                  </span>
+
+                  <h3>
+                    Resource sharing at a glance
+                  </h3>
+
+                  <p>
+                    Your platform is currently
+                    connecting{" "}
+                    <strong>
+                      {data.systemTotalInstitutions}
+                    </strong>{" "}
+                    institutions with{" "}
+                    <strong>
+                      {data.systemTotalEquipment}
+                    </strong>{" "}
+                    pieces of laboratory equipment
+                    and{" "}
+                    <strong>
+                      {data.systemTotalBookings}
+                    </strong>{" "}
+                    bookings.
+                  </p>
+
+                </div>
+
+              </section>
+
+            </>
+
+          )}
+
+
+          {/* =================================================
+              NO DATA
+          ================================================= */}
+
+          {!data?.viewType && (
+
+            <div className="analytics-no-data">
+
+              <div className="no-data-icon">
+
+                <Icon name="bi-bar-chart-line" />
+
+              </div>
+
+              <h2>
+                No Analytics Available
+              </h2>
+
+              <p>
+                No analytics data is available
+                for this account.
               </p>
+
             </div>
 
-            {/* EQUIPMENT */}
-            <div style={statBox("#0F766E")}>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "32px",
-                  color: "#FFFFFF",
-                }}
-              >
-                {data.systemTotalEquipment}
-              </h1>
+          )}
 
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  color: "#FFFFFF",
-                  fontWeight: 500,
-                }}
-              >
-                Total equipment
-              </p>
-            </div>
+        </div>
 
-            {/* BOOKINGS */}
-            <div style={statBox("#7C3AED")}>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "32px",
-                  color: "#FFFFFF",
-                }}
-              >
-                {data.systemTotalBookings}
-              </h1>
-
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  color: "#FFFFFF",
-                  fontWeight: 500,
-                }}
-              >
-                Total bookings
-              </p>
-            </div>
-
-            {/* CROSS-INSTITUTION */}
-            <div style={statBox("#DC2626")}>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "32px",
-                  color: "#FFFFFF",
-                }}
-              >
-                {data.systemCrossInstitutionBookings}
-              </h1>
-
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  color: "#FFFFFF",
-                  fontWeight: 500,
-                }}
-              >
-                Cross-institution bookings
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================= */}
-        {/* NO DATA */}
-        {/* ================================================= */}
-        {!data?.viewType && (
-          <div style={cardStyle}>
-            <p
-              style={{
-                color: SECONDARY_TEXT,
-                margin: 0,
-              }}
-            >
-              No analytics data is available for this account.
-            </p>
-          </div>
-        )}
       </main>
+
     </div>
+
   );
 }

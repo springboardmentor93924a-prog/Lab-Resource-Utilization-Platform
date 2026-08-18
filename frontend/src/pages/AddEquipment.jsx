@@ -18,6 +18,15 @@ const initialForm = {
   modelNumber: "",
   notes: "",
   calibrationDate: "",
+
+  // Calibration details
+  lastCalibrationDate: "",
+  nextCalibrationDate: "",
+
+  // Certification details
+  certificationDetails: "",
+  certificationExpiryDate: "",
+
   imageUrl: "",
 };
 
@@ -80,18 +89,40 @@ export default function AddEquipment() {
       }
 
       const payload = {
-        equipmentName: form.equipmentName,
-        assetTag: form.assetId,
-        category: form.category,
-        department: form.department,
-        manufacturer: form.manufacturer,
-        model: form.modelNumber,
-        imageUrl: form.imageUrl || "https://picsum.photos/seed/newequipment/400/300",
-        status: mapStatusToBackend(status),
-        calibrationDueDate: form.calibrationDate || null,
-        manualDocument: manualFilename,
-        calibrationCertificate: certFilename,
-      };
+  equipmentName: form.equipmentName,
+  assetTag: form.assetId,
+  category: form.category,
+  department: form.department,
+  manufacturer: form.manufacturer,
+  model: form.modelNumber,
+
+  imageUrl:
+    form.imageUrl ||
+    "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80",
+
+  status: mapStatusToBackend(status),
+
+  // Calibration
+  calibrationDueDate:
+    form.nextCalibrationDate || null,
+
+  lastCalibrationDate:
+    form.lastCalibrationDate || null,
+
+  nextCalibrationDate:
+    form.nextCalibrationDate || null,
+
+  // Certification
+  certificationDetails:
+    form.certificationDetails || null,
+
+  certificationExpiryDate:
+    form.certificationExpiryDate || null,
+
+  // Documents
+  manualDocument: manualFilename,
+  calibrationCertificate: certFilename,
+};
 
       await addEquipment(payload);
       alert("Equipment saved successfully!");
@@ -226,14 +257,71 @@ export default function AddEquipment() {
           </div>
 
           <div className="section">
-            <label>Calibration due date</label>
-            <input
-              type="date"
-              className="date"
-              value={form.calibrationDate}
-              onChange={(e) => updateField("calibrationDate", e.target.value)}
-            />
-          </div>
+  <h3>Calibration & certification</h3>
+
+  <div className="grid-3">
+
+    <div>
+      <label>Last calibration date</label>
+      <input
+        type="date"
+        className="date"
+        value={form.lastCalibrationDate}
+        onChange={(e) =>
+          updateField(
+            "lastCalibrationDate",
+            e.target.value
+          )
+        }
+      />
+    </div>
+
+    <div>
+      <label>Next calibration date</label>
+      <input
+        type="date"
+        className="date"
+        value={form.nextCalibrationDate}
+        onChange={(e) =>
+          updateField(
+            "nextCalibrationDate",
+            e.target.value
+          )
+        }
+      />
+    </div>
+
+    <div>
+      <label>Certification expiry date</label>
+      <input
+        type="date"
+        className="date"
+        value={form.certificationExpiryDate}
+        onChange={(e) =>
+          updateField(
+            "certificationExpiryDate",
+            e.target.value
+          )
+        }
+      />
+    </div>
+
+    <div style={{ gridColumn: "1 / -1" }}>
+      <label>Certification details</label>
+      <textarea
+        value={form.certificationDetails}
+        onChange={(e) =>
+          updateField(
+            "certificationDetails",
+            e.target.value
+          )
+        }
+        placeholder="Enter certification name, number, issuing authority, etc."
+      />
+    </div>
+
+  </div>
+</div>
 
           <div className="buttons">
             <button className="cancel" onClick={handleCancel}>

@@ -3,15 +3,27 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import "./ResearcherDashboard.css";
+
 import { getAllEquipment } from "../services/equipmentService";
 import { getBookingsByUser } from "../services/bookingService";
 import { getCurrentUserId } from "../utils/auth";
 import { getUnreadCount } from "../services/notificationService";
 
 
+// =========================================================
+// RESEARCHER DASHBOARD
+// =========================================================
+
 export default function ResearcherDashboard() {
+
   const navigate = useNavigate();
+
   const { user } = useAuth();
+
+
+  // =========================================================
+  // ROLE NAMES
+  // =========================================================
 
   const roleNames = {
     STUDENT: "Student",
@@ -23,133 +35,321 @@ export default function ResearcherDashboard() {
     SYSTEM_ADMIN: "System Administrator",
   };
 
-  const roleName = roleNames[user?.role] || "User";
 
-  const [equipmentList, setEquipmentList] = useState([]);
-  const [myBookings, setMyBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const roleName =
+    roleNames[user?.role] || "User";
 
-  // Search
-  const [searchValue, setSearchValue] = useState("");
-  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // =========================================================
+  // STATES
+  // =========================================================
+
+  const [equipmentList, setEquipmentList] =
+    useState([]);
+
+  const [myBookings, setMyBookings] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [unreadCount, setUnreadCount] =
+    useState(0);
+
+
+  // =========================================================
+  // SEARCH
+  // =========================================================
+
+  const [searchValue, setSearchValue] =
+    useState("");
+
+  const [showSearchResults, setShowSearchResults] =
+    useState(false);
+
+
+  // =========================================================
+  // LOAD DATA
+  // =========================================================
 
   useEffect(() => {
-  async function fetchData() {
-    try {
-      const equipment = await getAllEquipment();
-      setEquipmentList(equipment);
 
-      const userId = getCurrentUserId();
+    async function fetchData() {
 
-      if (userId) {
-        try {
-          const bookings = await getBookingsByUser(userId);
-          setMyBookings(bookings);
-        } catch {
-          setMyBookings([]);
-        }
-      }
-
-      // Load unread notification count
       try {
-        const count = await getUnreadCount();
-        setUnreadCount(count || 0);
-      } catch (error) {
-        console.error(
-          "Failed to fetch unread notifications:",
-          error
-        );
-        setUnreadCount(0);
+
+        // ---------------------------------------------
+        // EQUIPMENT
+        // ---------------------------------------------
+
+        const equipment =
+          await getAllEquipment();
+
+        setEquipmentList(equipment);
+
+
+        // ---------------------------------------------
+        // USER BOOKINGS
+        // ---------------------------------------------
+
+        const userId =
+          getCurrentUserId();
+
+        if (userId) {
+
+          try {
+
+            const bookings =
+              await getBookingsByUser(userId);
+
+            setMyBookings(bookings);
+
+          } catch {
+
+            setMyBookings([]);
+
+          }
+
+        }
+
+
+        // ---------------------------------------------
+        // NOTIFICATIONS
+        // ---------------------------------------------
+
+        try {
+
+          const count =
+            await getUnreadCount();
+
+          setUnreadCount(count || 0);
+
+        } catch (error) {
+
+          console.error(
+            "Failed to fetch unread notifications:",
+            error
+          );
+
+          setUnreadCount(0);
+
+        }
+
+      } catch {
+
+        setEquipmentList([]);
+
+      } finally {
+
+        setLoading(false);
+
       }
 
-    } catch {
-      setEquipmentList([]);
-    } finally {
-      setLoading(false);
     }
-  }
 
-  fetchData();
-}, []);
+
+    fetchData();
+
+  }, []);
+
+
+  // =========================================================
+  // BOOK NOW
+  // =========================================================
 
   function handleBookNow(equipmentId) {
-    navigate(`/bookings?equipmentId=${equipmentId}`);
+
+    navigate(
+      `/bookings?equipmentId=${equipmentId}`
+    );
+
   }
+
+
+  // =========================================================
+  // SEARCH
+  // =========================================================
 
   function handleSearchChange(e) {
-    const value = e.target.value;
+
+    const value =
+      e.target.value;
 
     setSearchValue(value);
-    setShowSearchResults(value.trim().length > 0);
+
+    setShowSearchResults(
+      value.trim().length > 0
+    );
+
   }
+
 
   function handleSearchResultClick(path) {
+
     setSearchValue("");
+
     setShowSearchResults(false);
+
     navigate(path);
+
   }
 
-  // Search equipment
-  const matchingEquipment = equipmentList
-    .filter((equipment) => {
-      const search = searchValue.toLowerCase().trim();
 
-      return (
-        equipment.equipmentName?.toLowerCase().includes(search) ||
-        equipment.category?.toLowerCase().includes(search) ||
-        equipment.status?.toLowerCase().includes(search)
-      );
-    })
-    .slice(0, 5);
+  // =========================================================
+  // SEARCH EQUIPMENT
+  // =========================================================
 
-  // Search user's bookings
-  const matchingBookings = myBookings
-    .filter((booking) => {
-      const search = searchValue.toLowerCase().trim();
+  const matchingEquipment =
+    equipmentList
+      .filter((equipment) => {
 
-      return (
-        booking.equipmentName?.toLowerCase().includes(search) ||
-        booking.bookingDate?.toLowerCase().includes(search) ||
-        booking.bookingStatus?.toLowerCase().includes(search)
-      );
-    })
-    .slice(0, 5);
+        const search =
+          searchValue
+            .toLowerCase()
+            .trim();
+
+        return (
+
+          equipment.equipmentName
+            ?.toLowerCase()
+            .includes(search)
+
+          ||
+
+          equipment.category
+            ?.toLowerCase()
+            .includes(search)
+
+          ||
+
+          equipment.status
+            ?.toLowerCase()
+            .includes(search)
+
+        );
+
+      })
+      .slice(0, 5);
+
+
+  // =========================================================
+  // SEARCH BOOKINGS
+  // =========================================================
+
+  const matchingBookings =
+    myBookings
+      .filter((booking) => {
+
+        const search =
+          searchValue
+            .toLowerCase()
+            .trim();
+
+        return (
+
+          booking.equipmentName
+            ?.toLowerCase()
+            .includes(search)
+
+          ||
+
+          booking.bookingDate
+            ?.toLowerCase()
+            .includes(search)
+
+          ||
+
+          booking.bookingStatus
+            ?.toLowerCase()
+            .includes(search)
+
+        );
+
+      })
+      .slice(0, 5);
+
 
   const totalSearchResults =
-    matchingEquipment.length + matchingBookings.length;
+    matchingEquipment.length +
+    matchingBookings.length;
 
-  const availableCount = equipmentList.filter(
-    (e) => e.status === "AVAILABLE"
-  ).length;
 
-  const upcomingBookings = myBookings.filter(
-    (b) =>
-      b.bookingStatus === "PENDING" ||
-      b.bookingStatus === "CONFIRMED"
-  );
+  // =========================================================
+  // DASHBOARD CALCULATIONS
+  // =========================================================
 
-  const recommended = equipmentList.slice(0, 3);
+  const availableCount =
+    equipmentList.filter(
+      (e) =>
+        e.status === "AVAILABLE"
+    ).length;
+
+
+  const upcomingBookings =
+    myBookings.filter(
+      (b) =>
+        b.bookingStatus === "PENDING" ||
+        b.bookingStatus === "CONFIRMED"
+    );
+
+
+  const recommended =
+    equipmentList.slice(0, 3);
+
+
+  // =========================================================
+  // RETURN
+  // =========================================================
 
   return (
-    <div className="container-main">
 
-      {/* SIDEBAR */}
+    <div
+      className="container-main"
+      style={{
+        background: "#020b1c",
+        minHeight: "100vh",
+      }}
+    >
+
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
+
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="content">
 
-        {/* TOP BAR */}
+      {/* =====================================================
+          MAIN CONTENT
+      ===================================================== */}
+
+      <main
+        className="content"
+        style={{
+          background: "#020b1c",
+        }}
+      >
+
+
+        {/* ===================================================
+            TOP BAR
+        =================================================== */}
+
         <div className="topbar">
 
-         <h4>Welcome to {roleName} Dashboard</h4>
+          <h4>
+            Welcome to {roleName} Dashboard
+          </h4>
+
 
           <div className="top-right">
 
-            {/* SEARCH */}
+
+            {/* =================================================
+                SEARCH
+            ================================================= */}
+
             <div className="dashboard-search-wrapper">
 
               <input
@@ -159,285 +359,1552 @@ export default function ResearcherDashboard() {
                 value={searchValue}
                 onChange={handleSearchChange}
                 onFocus={() => {
+
                   if (searchValue.trim()) {
+
                     setShowSearchResults(true);
+
                   }
+
                 }}
               />
 
+
               {/* SEARCH RESULTS */}
+
               {showSearchResults && (
+
                 <div className="search-results">
 
                   {totalSearchResults === 0 && (
+
                     <div className="search-no-results">
                       No results found
                     </div>
+
                   )}
 
+
                   {/* EQUIPMENT RESULTS */}
+
                   {matchingEquipment.length > 0 && (
+
                     <>
+
                       <div className="search-section-title">
                         Equipment
                       </div>
 
-                      {matchingEquipment.map((equipment) => (
-                        <button
-                          key={`equipment-${equipment.id}`}
-                          className="search-result-item"
-                          onClick={() =>
-                            handleSearchResultClick("/equipment")
-                          }
-                        >
-                          <span className="search-result-icon">
-                            <i className="bi bi-box-seam"></i>
-                          </span>
 
-                          <span className="search-result-content">
-                            <strong>
-                              {equipment.equipmentName}
-                            </strong>
+                      {matchingEquipment.map(
+                        (equipment) => (
 
-                            <small>
-                              {equipment.category || "Equipment"} •{" "}
-                              {equipment.status || "Unknown status"}
-                            </small>
-                          </span>
-                        </button>
-                      ))}
+                          <button
+                            key={`equipment-${equipment.id}`}
+                            className="search-result-item"
+                            onClick={() =>
+                              handleSearchResultClick(
+                                "/equipment"
+                              )
+                            }
+                          >
+
+                            <span className="search-result-icon">
+                              <i className="bi bi-box-seam"></i>
+                            </span>
+
+
+                            <span className="search-result-content">
+
+                              <strong>
+                                {equipment.equipmentName}
+                              </strong>
+
+                              <small>
+                                {equipment.category ||
+                                  "Equipment"}{" "}
+                                •{" "}
+                                {equipment.status ||
+                                  "Unknown status"}
+                              </small>
+
+                            </span>
+
+                          </button>
+
+                        )
+                      )}
+
                     </>
+
                   )}
 
+
                   {/* BOOKING RESULTS */}
+
                   {matchingBookings.length > 0 && (
+
                     <>
+
                       <div className="search-section-title">
                         My bookings
                       </div>
 
-                      {matchingBookings.map((booking) => (
-                        <button
-                          key={`booking-${booking.id}`}
-                          className="search-result-item"
-                          onClick={() =>
-                            handleSearchResultClick("/my-bookings")
-                          }
-                        >
-                          <span className="search-result-icon">
-                            <i className="bi bi-calendar-check"></i>
-                          </span>
 
-                          <span className="search-result-content">
-                            <strong>
-                              {booking.equipmentName}
-                            </strong>
+                      {matchingBookings.map(
+                        (booking) => (
 
-                            <small>
-                              {booking.bookingDate} •{" "}
-                              {booking.bookingStatus}
-                            </small>
-                          </span>
-                        </button>
-                      ))}
+                          <button
+                            key={`booking-${booking.id}`}
+                            className="search-result-item"
+                            onClick={() =>
+                              handleSearchResultClick(
+                                "/my-bookings"
+                              )
+                            }
+                          >
+
+                            <span className="search-result-icon">
+                              <i className="bi bi-calendar-check"></i>
+                            </span>
+
+
+                            <span className="search-result-content">
+
+                              <strong>
+                                {booking.equipmentName}
+                              </strong>
+
+                              <small>
+                                {booking.bookingDate}{" "}
+                                •{" "}
+                                {booking.bookingStatus}
+                              </small>
+
+                            </span>
+
+                          </button>
+
+                        )
+                      )}
+
                     </>
+
                   )}
 
                 </div>
+
               )}
 
             </div>
 
-            {/* NOTIFICATION BELL */}
+
+            {/* =================================================
+                NOTIFICATION
+            ================================================= */}
+
             <button
-  className="notification-circle"
-  onClick={() => navigate("/notifications")}
-  title="Notifications"
-  aria-label="Notifications"
-  style={{
-    position: "relative",
-  }}
->
-  <i className="bi bi-bell"></i>
+              className="notification-circle"
+              onClick={() =>
+                navigate("/notifications")
+              }
+              title="Notifications"
+              aria-label="Notifications"
+              style={{
+                position: "relative",
+              }}
+            >
 
-  {unreadCount > 0 && (
-    <span
-      style={{
-        position: "absolute",
-        top: "2px",
-        right: "2px",
-        width: "9px",
-        height: "9px",
-        background: "#ef4444",
-        borderRadius: "50%",
-        border: "2px solid #020d20",
-      }}
-    ></span>
-  )}
-</button>
+              <i className="bi bi-bell"></i>
 
-            {/* PROFILE */}
+
+              {unreadCount > 0 && (
+
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "2px",
+                    right: "2px",
+                    width: "9px",
+                    height: "9px",
+                    background: "#ef4444",
+                    borderRadius: "50%",
+                    border:
+                      "2px solid #020d20",
+                  }}
+                />
+
+              )}
+
+            </button>
+
+
+            {/* =================================================
+                PROFILE
+            ================================================= */}
+
             <button
               className="profile-circle"
-              onClick={() => navigate("/profile")}
+              onClick={() =>
+                navigate("/profile")
+              }
               title="My Profile"
               aria-label="My Profile"
             >
               👤
             </button>
 
+
           </div>
+
         </div>
 
-        {/* STATS */}
-        <div className="stats">
 
-          {/* MY BOOKINGS */}
+        {/* ===================================================
+            PREMIUM STAT CARDS
+        =================================================== */}
+
+        <div
+          className="stats"
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(4, minmax(200px, 1fr))",
+            gap: "20px",
+            marginBottom: "30px",
+          }}
+        >
+
+
+          {/* =================================================
+              MY BOOKINGS
+          ================================================= */}
+
           <div
-            className="card stat blue"
-            onClick={() => navigate("/my-bookings")}
-            style={{ cursor: "pointer" }}
-          >
-            <big>
-              <b>My bookings</b>
-            </big>
-
-            <h2>
-              {upcomingBookings.length} upcoming
-            </h2>
-          </div>
-
-          {/* AVAILABLE EQUIPMENT */}
-          <div
-            className="card stat green"
+            className="dashboard-kpi-card"
             onClick={() =>
-              navigate("/equipment?status=AVAILABLE")
+              navigate("/my-bookings")
             }
-            style={{ cursor: "pointer" }}
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              minHeight: "145px",
+              padding: "24px",
+              borderRadius: "18px",
+              background:
+                "linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #1e40af 100%)",
+              color: "#ffffff",
+              boxShadow:
+                "0 10px 25px rgba(37,99,235,0.25)",
+              cursor: "pointer",
+            }}
           >
-            <big>
-              <b>Available now</b>
-            </big>
 
-            <h2>
-              {availableCount} items
-            </h2>
+            {/* BIG CIRCLE */}
+
+            <div
+              style={{
+                position: "absolute",
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.10)",
+                right: "-35px",
+                top: "-35px",
+              }}
+            />
+
+
+            {/* SMALL CIRCLE */}
+
+            <div
+              style={{
+                position: "absolute",
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.06)",
+                right: "45px",
+                bottom: "-25px",
+              }}
+            />
+
+
+            {/* CONTENT */}
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "flex-start",
+              }}
+            >
+
+              <div>
+
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                    opacity: 0.85,
+                    marginBottom: "10px",
+                  }}
+                >
+                  MY BOOKINGS
+                </div>
+
+
+                <div
+                  style={{
+                    fontSize: "42px",
+                    lineHeight: 1,
+                    fontWeight: 800,
+                  }}
+                >
+                  {upcomingBookings.length}
+                </div>
+
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "12px",
+                    opacity: 0.85,
+                  }}
+                >
+                  Upcoming reservations
+                </div>
+
+              </div>
+
+
+              {/* ICON */}
+
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background:
+                    "rgba(255,255,255,0.16)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  boxShadow:
+                    "0 4px 12px rgba(0,0,0,0.12)",
+                }}
+              >
+
+                <i className="bi bi-calendar-check-fill"></i>
+
+              </div>
+
+            </div>
+
+
+            {/* BOTTOM LABEL */}
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: "14px",
+                left: "24px",
+                fontSize: "10px",
+                opacity: 0.65,
+                letterSpacing: "0.5px",
+              }}
+            >
+              CLICK TO VIEW BOOKINGS
+            </div>
+
           </div>
 
-          {/* WAITLIST */}
+
+          {/* =================================================
+              AVAILABLE NOW
+          ================================================= */}
+
           <div
-            className="card stat orange"
-            onClick={() => navigate("/my-waitlist")}
-            style={{ cursor: "pointer" }}
+            className="dashboard-kpi-card"
+            onClick={() =>
+              navigate(
+                "/equipment?status=AVAILABLE"
+              )
+            }
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              minHeight: "145px",
+              padding: "24px",
+              borderRadius: "18px",
+              background:
+                "linear-gradient(135deg, #16a34a 0%, #15803d 55%, #166534 100%)",
+              color: "#ffffff",
+              boxShadow:
+                "0 10px 25px rgba(22,163,74,0.23)",
+              cursor: "pointer",
+            }}
           >
-            <big>
-              <b>Waitlisted</b>
-            </big>
 
-            <h2>0 items</h2>
+            <div
+              style={{
+                position: "absolute",
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.10)",
+                right: "-35px",
+                top: "-35px",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "absolute",
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.06)",
+                right: "45px",
+                bottom: "-25px",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "flex-start",
+              }}
+            >
+
+              <div>
+
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                    opacity: 0.85,
+                    marginBottom: "10px",
+                  }}
+                >
+                  AVAILABLE NOW
+                </div>
+
+
+                <div
+                  style={{
+                    fontSize: "42px",
+                    lineHeight: 1,
+                    fontWeight: 800,
+                  }}
+                >
+                  {availableCount}
+                </div>
+
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "12px",
+                    opacity: 0.85,
+                  }}
+                >
+                  Equipment ready to book
+                </div>
+
+              </div>
+
+
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background:
+                    "rgba(255,255,255,0.16)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  boxShadow:
+                    "0 4px 12px rgba(0,0,0,0.12)",
+                }}
+              >
+
+                <i className="bi bi-check-circle-fill"></i>
+
+              </div>
+
+            </div>
+
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: "14px",
+                left: "24px",
+                fontSize: "10px",
+                opacity: 0.65,
+                letterSpacing: "0.5px",
+              }}
+            >
+              READY FOR BOOKING
+            </div>
+
           </div>
 
-          {/* NOTIFICATIONS */}
+
+          {/* =================================================
+              WAITLISTED
+          ================================================= */}
+
           <div
-            className="card stat gray"
-            onClick={() => navigate("/notifications")}
-            style={{ cursor: "pointer" }}
+            className="dashboard-kpi-card"
+            onClick={() =>
+              navigate("/my-waitlist")
+            }
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              minHeight: "145px",
+              padding: "24px",
+              borderRadius: "18px",
+              background:
+                "linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%)",
+              color: "#ffffff",
+              boxShadow:
+                "0 10px 25px rgba(245,158,11,0.23)",
+              cursor: "pointer",
+            }}
           >
-            <big>
-              <b>Notifications</b>
-            </big>
 
-            <h2>{unreadCount} new</h2>
+            <div
+              style={{
+                position: "absolute",
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.10)",
+                right: "-35px",
+                top: "-35px",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "absolute",
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.06)",
+                right: "45px",
+                bottom: "-25px",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "flex-start",
+              }}
+            >
+
+              <div>
+
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                    opacity: 0.85,
+                    marginBottom: "10px",
+                  }}
+                >
+                  WAITLISTED
+                </div>
+
+
+                <div
+                  style={{
+                    fontSize: "42px",
+                    lineHeight: 1,
+                    fontWeight: 800,
+                  }}
+                >
+                  0
+                </div>
+
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "12px",
+                    opacity: 0.85,
+                  }}
+                >
+                  Items awaiting availability
+                </div>
+
+              </div>
+
+
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background:
+                    "rgba(255,255,255,0.16)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  boxShadow:
+                    "0 4px 12px rgba(0,0,0,0.12)",
+                }}
+              >
+
+                <i className="bi bi-hourglass-split"></i>
+
+              </div>
+
+            </div>
+
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: "14px",
+                left: "24px",
+                fontSize: "10px",
+                opacity: 0.65,
+                letterSpacing: "0.5px",
+              }}
+            >
+              VIEW MY WAITLIST
+            </div>
+
           </div>
+
+
+          {/* =================================================
+              NOTIFICATIONS
+          ================================================= */}
+
+          <div
+            className="dashboard-kpi-card"
+            onClick={() =>
+              navigate("/notifications")
+            }
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              minHeight: "145px",
+              padding: "24px",
+              borderRadius: "18px",
+              background:
+                "linear-gradient(135deg, #64748b 0%, #475569 55%, #334155 100%)",
+              color: "#ffffff",
+              boxShadow:
+                "0 10px 25px rgba(71,85,105,0.23)",
+              cursor: "pointer",
+            }}
+          >
+
+            <div
+              style={{
+                position: "absolute",
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.10)",
+                right: "-35px",
+                top: "-35px",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "absolute",
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                background:
+                  "rgba(255,255,255,0.06)",
+                right: "45px",
+                bottom: "-25px",
+              }}
+            />
+
+
+            <div
+              style={{
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "flex-start",
+              }}
+            >
+
+              <div>
+
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                    opacity: 0.85,
+                    marginBottom: "10px",
+                  }}
+                >
+                  NOTIFICATIONS
+                </div>
+
+
+                <div
+                  style={{
+                    fontSize: "42px",
+                    lineHeight: 1,
+                    fontWeight: 800,
+                  }}
+                >
+                  {unreadCount}
+                </div>
+
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "12px",
+                    opacity: 0.85,
+                  }}
+                >
+                  Unread notifications
+                </div>
+
+              </div>
+
+
+              <div
+                style={{
+                  position: "relative",
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background:
+                    "rgba(255,255,255,0.16)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  boxShadow:
+                    "0 4px 12px rgba(0,0,0,0.12)",
+                }}
+              >
+
+                <i className="bi bi-bell-fill"></i>
+
+
+                {unreadCount > 0 && (
+
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "5px",
+                      right: "5px",
+                      width: "10px",
+                      height: "10px",
+                      background: "#ef4444",
+                      borderRadius: "50%",
+                      border:
+                        "2px solid rgba(255,255,255,0.8)",
+                    }}
+                  />
+
+                )}
+
+              </div>
+
+            </div>
+
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: "14px",
+                left: "24px",
+                fontSize: "10px",
+                opacity: 0.65,
+                letterSpacing: "0.5px",
+              }}
+            >
+              CLICK TO VIEW ALERTS
+            </div>
+
+          </div>
+
 
         </div>
 
-        {/* UPCOMING RESERVATIONS */}
-        <h5 className="section-title">
-          Upcoming reservations
+
+        {/* ===================================================
+    UPCOMING RESERVATIONS - PREMIUM COLORFUL CARD
+=================================================== */}
+
+<div
+  style={{
+    position: "relative",
+    overflow: "hidden",
+
+    /* REDUCED LEFT + RIGHT WIDTH */
+    width: "calc(100% - 40px)",
+    marginLeft: "20px",
+    marginRight: "20px",
+
+    marginBottom: "30px",
+    padding: "25px",
+
+    borderRadius: "20px",
+
+    /* MAGICAL BLUE/PURPLE GRADIENT */
+    background:
+      "linear-gradient(135deg, #2563eb 0%, #1d4ed8 45%, #4338ca 100%)",
+
+    color: "#ffffff",
+
+    boxShadow:
+      "0 12px 30px rgba(37, 99, 235, 0.25)",
+
+    border:
+      "1px solid rgba(255,255,255,0.12)",
+  }}
+>
+
+  {/* =================================================
+      DECORATIVE LARGE CIRCLE
+  ================================================= */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: "220px",
+      height: "220px",
+      borderRadius: "50%",
+
+      background:
+        "rgba(255,255,255,0.09)",
+
+      right: "-90px",
+      top: "-100px",
+
+      pointerEvents: "none",
+    }}
+  />
+
+
+  {/* =================================================
+      DECORATIVE SMALL CIRCLE
+  ================================================= */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: "100px",
+      height: "100px",
+      borderRadius: "50%",
+
+      background:
+        "rgba(255,255,255,0.07)",
+
+      right: "130px",
+      bottom: "-55px",
+
+      pointerEvents: "none",
+    }}
+  />
+
+
+  {/* =================================================
+      DECORATIVE GLOW
+  ================================================= */}
+
+  <div
+    style={{
+      position: "absolute",
+      width: "180px",
+      height: "180px",
+      borderRadius: "50%",
+
+      background:
+        "rgba(129,140,248,0.16)",
+
+      left: "-100px",
+      bottom: "-100px",
+
+      filter: "blur(5px)",
+
+      pointerEvents: "none",
+    }}
+  />
+
+
+  {/* =================================================
+      HEADER
+  ================================================= */}
+
+  <div
+    style={{
+      position: "relative",
+      zIndex: 2,
+
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+
+      marginBottom: "20px",
+
+      flexWrap: "wrap",
+      gap: "12px",
+    }}
+  >
+
+    {/* LEFT HEADER */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+      }}
+    >
+
+      {/* MAGIC ICON */}
+
+      <div
+        style={{
+          width: "52px",
+          height: "52px",
+
+          borderRadius: "15px",
+
+          background:
+            "rgba(255,255,255,0.16)",
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          fontSize: "23px",
+
+          boxShadow:
+            "0 6px 15px rgba(0,0,0,0.12)",
+
+          backdropFilter: "blur(8px)",
+
+          border:
+            "1px solid rgba(255,255,255,0.18)",
+        }}
+      >
+
+        <i className="bi bi-calendar-event-fill"></i>
+
+      </div>
+
+
+      {/* TITLE */}
+
+      <div>
+
+        <h5
+          style={{
+            margin: 0,
+
+            color: "#ffffff",
+
+            fontSize: "19px",
+
+            fontWeight: 800,
+
+            letterSpacing: "0.2px",
+          }}
+        >
+          Upcoming Reservations
         </h5>
 
-        <div className="reservation-box">
 
-          {upcomingBookings.length === 0 && (
-            <p style={{ padding: "15px" }}>
-              No upcoming reservations.
-            </p>
-          )}
+        <p
+          style={{
+            margin: "5px 0 0",
 
-          {upcomingBookings.map((b) => (
+            color:
+              "rgba(255,255,255,0.78)",
+
+            fontSize: "13px",
+          }}
+        >
+          Your upcoming equipment bookings
+        </p>
+
+      </div>
+
+    </div>
+
+
+    {/* =================================================
+        UPCOMING COUNT
+    ================================================= */}
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+
+        background:
+          "rgba(255,255,255,0.13)",
+
+        color: "#ffffff",
+
+        border:
+          "1px solid rgba(255,255,255,0.22)",
+
+        padding: "8px 14px",
+
+        borderRadius: "999px",
+
+        fontSize: "12px",
+
+        fontWeight: 700,
+
+        backdropFilter: "blur(8px)",
+      }}
+    >
+
+      <i className="bi bi-calendar-check-fill"></i>
+
+      {upcomingBookings.length} Upcoming
+
+    </div>
+
+  </div>
+
+
+  {/* =================================================
+      EMPTY STATE
+  ================================================= */}
+
+  {upcomingBookings.length === 0 && (
+
+    <div
+      style={{
+        position: "relative",
+        zIndex: 2,
+
+        padding: "35px 20px",
+
+        textAlign: "center",
+
+        background:
+          "rgba(255,255,255,0.96)",
+
+        borderRadius: "16px",
+
+        border:
+          "1px solid rgba(255,255,255,0.35)",
+
+        boxShadow:
+          "0 8px 20px rgba(0,0,0,0.10)",
+      }}
+    >
+
+      {/* =================================================
+          MAGIC CALENDAR ICON
+      ================================================= */}
+
+      <div
+        style={{
+          width: "62px",
+          height: "62px",
+
+          margin: "0 auto 14px",
+
+          borderRadius: "18px",
+
+          background:
+            "linear-gradient(135deg, #dbeafe, #c7d2fe)",
+
+          color: "#2563eb",
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          fontSize: "25px",
+
+          boxShadow:
+            "0 7px 16px rgba(37,99,235,0.18)",
+        }}
+      >
+
+        <i className="bi bi-calendar-x-fill"></i>
+
+      </div>
+
+
+      {/* TITLE */}
+
+      <h6
+        style={{
+          margin: "0 0 7px",
+
+          color: "#0f172a",
+
+          fontSize: "16px",
+
+          fontWeight: 800,
+        }}
+      >
+        No upcoming reservations
+      </h6>
+
+
+      {/* DESCRIPTION */}
+
+      <p
+        style={{
+          margin: "0 0 18px",
+
+          color: "#64748b",
+
+          fontSize: "13px",
+        }}
+      >
+        You don't have any upcoming equipment
+        bookings right now.
+      </p>
+
+
+      {/* =================================================
+          BROWSE EQUIPMENT BUTTON
+      ================================================= */}
+
+      <button
+        onClick={() =>
+          navigate(
+            "/equipment?status=AVAILABLE"
+          )
+        }
+        style={{
+          border: "none",
+
+          background:
+            "linear-gradient(135deg, #2563eb, #1d4ed8)",
+
+          color: "#ffffff",
+
+          padding: "10px 19px",
+
+          borderRadius: "11px",
+
+          fontSize: "12px",
+
+          fontWeight: 700,
+
+          cursor: "pointer",
+
+          boxShadow:
+            "0 7px 15px rgba(37,99,235,0.25)",
+
+          transition:
+            "transform 0.2s ease, box-shadow 0.2s ease",
+        }}
+      >
+
+        <i
+          className="bi bi-search"
+          style={{
+            marginRight: "7px",
+          }}
+        ></i>
+
+        Browse Equipment
+
+      </button>
+
+    </div>
+
+  )}
+
+
+  {/* =================================================
+      RESERVATION LIST
+  ================================================= */}
+
+  {upcomingBookings.length > 0 && (
+
+    <div
+      style={{
+        position: "relative",
+        zIndex: 2,
+
+        display: "grid",
+
+        gap: "12px",
+      }}
+    >
+
+      {upcomingBookings.map(
+        (b) => (
+
+          <div
+            className="reservation"
+            key={b.id}
+
+            style={{
+              display: "flex",
+
+              alignItems: "center",
+
+              justifyContent:
+                "space-between",
+
+              gap: "15px",
+
+              padding:
+                "15px 17px",
+
+              borderRadius: "14px",
+
+              background:
+                "rgba(255,255,255,0.96)",
+
+              border:
+                "1px solid rgba(255,255,255,0.45)",
+
+              boxShadow:
+                "0 5px 15px rgba(0,0,0,0.10)",
+
+              flexWrap: "wrap",
+            }}
+          >
+
+            {/* =================================================
+                EQUIPMENT
+            ================================================= */}
+
             <div
-              className="reservation"
-              key={b.id}
+              style={{
+                display: "flex",
+
+                alignItems: "center",
+
+                gap: "12px",
+
+                minWidth: "220px",
+              }}
             >
-              <span>{b.equipmentName}</span>
 
-              <span>
-                {b.bookingDate}, {b.startTime}-
-                {b.endTime}
-              </span>
+              <div
+                style={{
+                  width: "43px",
+                  height: "43px",
 
-              <span className="badge bg-success rounded-pill">
-                {b.bookingStatus}
-              </span>
+                  borderRadius: "12px",
+
+                  background:
+                    "linear-gradient(135deg, #dbeafe, #c7d2fe)",
+
+                  color: "#2563eb",
+
+                  display: "flex",
+
+                  alignItems: "center",
+
+                  justifyContent: "center",
+
+                  fontSize: "18px",
+
+                  flexShrink: 0,
+
+                  boxShadow:
+                    "0 4px 10px rgba(37,99,235,0.12)",
+                }}
+              >
+
+                <i className="bi bi-box-seam-fill"></i>
+
+              </div>
+
+
+              <div>
+
+                <div
+                  style={{
+                    color: "#0f172a",
+
+                    fontSize: "14px",
+
+                    fontWeight: 800,
+                  }}
+                >
+                  {b.equipmentName}
+                </div>
+
+
+                <div
+                  style={{
+                    color: "#64748b",
+
+                    fontSize: "11px",
+
+                    marginTop: "3px",
+                  }}
+                >
+                  Equipment reservation
+                </div>
+
+              </div>
+
             </div>
-          ))}
 
-        </div>
 
-        {/* RECOMMENDED EQUIPMENT */}
-        <h5 className="section-title">
+            {/* =================================================
+                DATE
+            ================================================= */}
+
+            <div
+              style={{
+                display: "flex",
+
+                alignItems: "center",
+
+                gap: "8px",
+
+                color: "#475569",
+
+                fontSize: "12px",
+
+                fontWeight: 600,
+              }}
+            >
+
+              <i
+                className="bi bi-calendar3"
+                style={{
+                  color: "#2563eb",
+                }}
+              ></i>
+
+              {b.bookingDate}
+
+            </div>
+
+
+            {/* =================================================
+                TIME
+            ================================================= */}
+
+            <div
+              style={{
+                display: "flex",
+
+                alignItems: "center",
+
+                gap: "8px",
+
+                color: "#475569",
+
+                fontSize: "12px",
+
+                fontWeight: 600,
+              }}
+            >
+
+              <i
+                className="bi bi-clock-fill"
+                style={{
+                  color: "#0d9488",
+                }}
+              ></i>
+
+              {b.startTime} - {b.endTime}
+
+            </div>
+
+
+            {/* =================================================
+                STATUS
+            ================================================= */}
+
+            <span
+              style={{
+                background:
+                  b.bookingStatus ===
+                  "CONFIRMED"
+                    ? "#dcfce7"
+                    : "#fef3c7",
+
+                color:
+                  b.bookingStatus ===
+                  "CONFIRMED"
+                    ? "#15803d"
+                    : "#b45309",
+
+                border:
+                  b.bookingStatus ===
+                  "CONFIRMED"
+                    ? "1px solid #bbf7d0"
+                    : "1px solid #fde68a",
+
+                padding:
+                  "6px 11px",
+
+                borderRadius:
+                  "999px",
+
+                fontSize:
+                  "10px",
+
+                fontWeight:
+                  800,
+              }}
+            >
+
+              <i
+                className={
+                  b.bookingStatus ===
+                  "CONFIRMED"
+                    ? "bi bi-check-circle-fill"
+                    : "bi bi-hourglass-split"
+                }
+
+                style={{
+                  marginRight: "5px",
+                }}
+              ></i>
+
+              {b.bookingStatus}
+
+            </span>
+
+          </div>
+
+        )
+      )}
+
+    </div>
+
+  )}
+
+</div>
+
+        {/* ===================================================
+            RECOMMENDED EQUIPMENT
+        =================================================== */}
+
+        <h5
+          className="section-title"
+          style={{
+            marginBottom: "15px",
+          }}
+        >
           Recommended equipment
         </h5>
+
 
         <div className="equipment">
 
           {loading && (
-            <p>Loading equipment...</p>
+            <p>
+              Loading equipment...
+            </p>
           )}
 
+
           {!loading &&
-            recommended.map((eq) => (
-              <div
-                className="equipment-card"
-                key={eq.id}
-              >
+            recommended.map(
+              (eq) => (
 
-                <img
-                  src={eq.imageUrl}
-                  alt={eq.equipmentName}
-                  style={{
-                    width: "100%",
-                    height: "140px",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                    marginBottom: "10px",
-                  }}
-                />
-
-                <h6>{eq.equipmentName}</h6>
-
-                <span className="badge bg-success rounded-pill">
-                  {eq.status === "AVAILABLE"
-                    ? "Available"
-                    : eq.status}
-                </span>
-
-                <button
-                  className="btn btn-outline-dark mt-3"
-                  onClick={() =>
-                    handleBookNow(eq.id)
-                  }
+                <div
+                  className="equipment-card"
+                  key={eq.id}
                 >
-                  Book now
-                </button>
 
-              </div>
-            ))}
+                  <img
+                    src={eq.imageUrl}
+                    alt={eq.equipmentName}
+                    style={{
+                      width: "100%",
+                      height: "140px",
+                      objectFit: "cover",
+                      borderRadius: "8px",
+                      marginBottom: "10px",
+                    }}
+                  />
+
+
+                  <h6>
+                    {eq.equipmentName}
+                  </h6>
+
+
+                  <span className="badge bg-success rounded-pill">
+                    {eq.status ===
+                    "AVAILABLE"
+                      ? "Available"
+                      : eq.status}
+                  </span>
+
+
+                  <button
+                    className="btn btn-outline-dark mt-3"
+                    onClick={() =>
+                      handleBookNow(eq.id)
+                    }
+                  >
+                    Book now
+                  </button>
+
+                </div>
+
+              )
+            )}
 
         </div>
 
+
       </main>
+
     </div>
+
   );
+
 }

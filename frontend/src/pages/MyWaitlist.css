@@ -14,13 +14,14 @@ body {
 
 
 /* =========================================================
-   MAIN LAYOUT
+   MAIN
 ========================================================= */
 
-.my-bookings-wrapper {
+.my-waitlist-wrapper {
     display: flex;
     min-height: 100vh;
     width: 100%;
+
     background:
         radial-gradient(
             circle at 80% 10%,
@@ -35,9 +36,10 @@ body {
         #020b1c;
 }
 
-.my-bookings-content {
+.my-waitlist-content {
     flex: 1;
     min-width: 0;
+
     color: #ffffff;
 }
 
@@ -46,7 +48,7 @@ body {
    HEADER
 ========================================================= */
 
-.my-bookings-header {
+.waitlist-header {
     min-height: 82px;
 
     display: flex;
@@ -65,21 +67,22 @@ body {
     border-bottom: 1px solid #173d64;
 
     box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.20);
+        0 8px 25px rgba(0,0,0,0.20);
 }
 
 
 /* =========================================================
-   HEADER TITLE
+   TITLE
 ========================================================= */
 
-.my-bookings-title-area {
+.waitlist-title-area {
     display: flex;
     align-items: center;
+
     gap: 14px;
 }
 
-.my-bookings-title-icon {
+.waitlist-title-icon {
     width: 48px;
     height: 48px;
 
@@ -92,7 +95,7 @@ body {
     background:
         linear-gradient(
             135deg,
-            #2563eb,
+            #7c3aed,
             #4f46e5
         );
 
@@ -101,20 +104,19 @@ body {
     font-size: 22px;
 
     box-shadow:
-        0 8px 20px rgba(37, 99, 235, 0.30);
+        0 8px 20px rgba(124,58,237,0.35);
 }
 
-.my-bookings-header h2 {
+.waitlist-header h2 {
     margin: 0;
 
     color: #ffffff;
 
     font-size: 25px;
     font-weight: 800;
-    letter-spacing: -0.4px;
 }
 
-.my-bookings-header p {
+.waitlist-header p {
     margin: 4px 0 0;
 
     color: #8fb0d0;
@@ -124,81 +126,16 @@ body {
 
 
 /* =========================================================
-   HEADER RIGHT
-========================================================= */
-
-.my-bookings-header-right {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-}
-
-
-/* =========================================================
-   SEARCH
-========================================================= */
-
-.booking-search-wrapper {
-    position: relative;
-}
-
-.booking-search-wrapper > i {
-    position: absolute;
-
-    left: 14px;
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    color: #7fb2df;
-
-    font-size: 14px;
-
-    pointer-events: none;
-}
-
-.my-bookings-search {
-    width: 235px;
-    height: 42px;
-
-    border: 1px solid #28547d;
-    border-radius: 10px;
-
-    padding: 0 15px 0 40px;
-
-    background: #071b35;
-
-    color: #ffffff;
-
-    outline: none;
-
-    transition:
-        border-color 0.25s ease,
-        box-shadow 0.25s ease;
-}
-
-.my-bookings-search::placeholder {
-    color: #7898b8;
-}
-
-.my-bookings-search:focus {
-    border-color: #38bdf8;
-
-    box-shadow:
-        0 0 0 3px rgba(56, 189, 248, 0.12),
-        0 0 18px rgba(56, 189, 248, 0.12);
-}
-
-
-/* =========================================================
    PROFILE
 ========================================================= */
 
-.profile-circle {
+.waitlist-profile {
     width: 42px;
     height: 42px;
 
     border-radius: 50%;
+
+    border: 2px solid #93c5fd;
 
     background:
         linear-gradient(
@@ -206,8 +143,6 @@ body {
             #dbeafe,
             #c7d2fe
         );
-
-    border: 2px solid #93c5fd;
 
     color: #312e81;
 
@@ -220,41 +155,43 @@ body {
     cursor: pointer;
 
     box-shadow:
-        0 0 16px rgba(56, 189, 248, 0.25);
+        0 0 16px rgba(56,189,248,0.25);
 
     transition: all 0.25s ease;
 }
 
-.profile-circle:hover {
+.waitlist-profile:hover {
     background: #2563eb;
 
-    border-color: #38bdf8;
-
     color: #ffffff;
+
+    border-color: #38bdf8;
 
     transform: scale(1.07);
 
     box-shadow:
-        0 0 22px rgba(56, 189, 248, 0.50);
+        0 0 22px rgba(56,189,248,0.50);
 }
 
 
 /* =========================================================
-   PAGE BODY
+   BODY
 ========================================================= */
 
-.my-bookings-body {
+.my-waitlist-body {
     padding: 30px;
+
     max-width: 1550px;
+
     margin: 0 auto;
 }
 
 
 /* =========================================================
-   SUMMARY CARD
+   HERO
 ========================================================= */
 
-.bookings-summary-card {
+.waitlist-hero {
     position: relative;
 
     overflow: hidden;
@@ -263,9 +200,9 @@ body {
     align-items: center;
     justify-content: space-between;
 
-    gap: 30px;
+    gap: 25px;
 
-    padding: 25px 28px;
+    padding: 26px 28px;
 
     margin-bottom: 30px;
 
@@ -274,54 +211,61 @@ body {
     background:
         linear-gradient(
             135deg,
-            #1d4ed8 0%,
-            #2563eb 45%,
-            #4f46e5 100%
+            #6d28d9,
+            #4f46e5 45%,
+            #2563eb
         );
 
     box-shadow:
-        0 15px 35px rgba(37, 99, 235, 0.22);
+        0 15px 35px rgba(79,70,229,0.25);
 }
 
 
-/* Decorative glow */
+/* =========================================================
+   HERO CIRCLES
+========================================================= */
 
-.summary-glow {
+.hero-circle {
     position: absolute;
 
     border-radius: 50%;
 
+    background:
+        rgba(255,255,255,0.08);
+
     pointer-events: none;
 }
 
-.summary-glow-one {
+.hero-circle-one {
     width: 190px;
     height: 190px;
 
     right: -65px;
     top: -90px;
-
-    background:
-        rgba(255, 255, 255, 0.09);
 }
 
-.summary-glow-two {
-    width: 100px;
-    height: 100px;
+.hero-circle-two {
+    width: 90px;
+    height: 90px;
 
-    right: 210px;
-    bottom: -65px;
+    right: 250px;
+    bottom: -50px;
+}
 
-    background:
-        rgba(255, 255, 255, 0.07);
+.hero-circle-three {
+    width: 55px;
+    height: 55px;
+
+    left: 40%;
+    top: -30px;
 }
 
 
 /* =========================================================
-   SUMMARY LEFT
+   HERO LEFT
 ========================================================= */
 
-.summary-left {
+.hero-left {
     position: relative;
     z-index: 2;
 
@@ -331,31 +275,31 @@ body {
     gap: 17px;
 }
 
-.summary-icon {
-    width: 62px;
-    height: 62px;
+.hero-icon {
+    width: 65px;
+    height: 65px;
 
-    border-radius: 17px;
+    border-radius: 18px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background:
-        rgba(255, 255, 255, 0.17);
+        rgba(255,255,255,0.17);
 
     border:
-        1px solid rgba(255, 255, 255, 0.16);
+        1px solid rgba(255,255,255,0.15);
 
     color: #ffffff;
 
-    font-size: 26px;
+    font-size: 28px;
 
     box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.12);
+        0 8px 20px rgba(0,0,0,0.12);
 }
 
-.summary-label {
+.hero-label {
     display: block;
 
     margin-bottom: 5px;
@@ -368,23 +312,23 @@ body {
     opacity: 0.80;
 }
 
-.summary-left h1 {
+.hero-left h1 {
     margin: 0;
 
-    font-size: 34px;
-    font-weight: 800;
+    font-size: 36px;
 
     line-height: 1;
+
+    font-weight: 800;
 }
 
-.summary-left h1 span {
+.hero-left h1 span {
     font-size: 17px;
-    font-weight: 600;
 
     opacity: 0.80;
 }
 
-.summary-left p {
+.hero-left p {
     margin: 9px 0 0;
 
     color: rgba(255,255,255,0.80);
@@ -394,42 +338,42 @@ body {
 
 
 /* =========================================================
-   SUMMARY STATS
+   STATS
 ========================================================= */
 
-.summary-stats {
+.waitlist-stats {
     position: relative;
     z-index: 2;
 
     display: flex;
 
-    gap: 12px;
+    gap: 11px;
 }
 
-.summary-stat {
-    min-width: 125px;
+.waitlist-stat {
+    min-width: 120px;
 
     display: flex;
     align-items: center;
 
-    gap: 10px;
+    gap: 9px;
 
-    padding: 11px 14px;
+    padding: 11px 13px;
 
     border-radius: 13px;
 
     background:
-        rgba(255, 255, 255, 0.12);
+        rgba(255,255,255,0.12);
 
     border:
-        1px solid rgba(255, 255, 255, 0.12);
+        1px solid rgba(255,255,255,0.12);
 }
 
-.summary-stat-icon {
-    width: 38px;
-    height: 38px;
+.stat-icon {
+    width: 37px;
+    height: 37px;
 
-    border-radius: 11px;
+    border-radius: 10px;
 
     display: flex;
     align-items: center;
@@ -440,25 +384,25 @@ body {
 
     color: #ffffff;
 
-    font-size: 16px;
+    font-size: 15px;
 }
 
-.summary-stat div {
+.waitlist-stat div:last-child {
     display: flex;
     flex-direction: column;
 }
 
-.summary-stat strong {
+.waitlist-stat strong {
     font-size: 18px;
     line-height: 1;
 }
 
-.summary-stat small {
+.waitlist-stat small {
     margin-top: 4px;
 
     font-size: 10px;
 
-    opacity: 0.72;
+    opacity: 0.70;
 }
 
 
@@ -466,7 +410,7 @@ body {
    SECTION HEADER
 ========================================================= */
 
-.bookings-section-header {
+.waitlist-section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -474,14 +418,14 @@ body {
     margin-bottom: 17px;
 }
 
-.section-title-row {
+.waitlist-section-title {
     display: flex;
     align-items: center;
 
     gap: 10px;
 }
 
-.section-title-icon {
+.waitlist-section-title span {
     width: 36px;
     height: 36px;
 
@@ -494,26 +438,27 @@ body {
     background:
         linear-gradient(
             135deg,
-            #7c3aed,
-            #4f46e5
+            #0d9488,
+            #14b8a6
         );
 
     color: #ffffff;
 
     box-shadow:
-        0 6px 15px rgba(124, 58, 237, 0.25);
+        0 6px 15px rgba(20,184,166,0.25);
 }
 
-.bookings-section-header h3 {
+.waitlist-section-title h3 {
     margin: 0;
 
     color: #ffffff;
 
     font-size: 19px;
+
     font-weight: 800;
 }
 
-.bookings-section-header p {
+.waitlist-section-header p {
     margin: 5px 0 0 46px;
 
     color: #7899bb;
@@ -521,7 +466,7 @@ body {
     font-size: 12px;
 }
 
-.booking-count-badge {
+.waitlist-count-badge {
     display: flex;
     align-items: center;
 
@@ -532,12 +477,12 @@ body {
     border-radius: 999px;
 
     background:
-        rgba(37, 99, 235, 0.10);
+        rgba(20,184,166,0.10);
 
     border:
-        1px solid rgba(59, 130, 246, 0.35);
+        1px solid rgba(45,212,191,0.35);
 
-    color: #60a5fa;
+    color: #2dd4bf;
 
     font-size: 12px;
     font-weight: 700;
@@ -545,30 +490,30 @@ body {
 
 
 /* =========================================================
-   BOOKING LIST
+   GRID
 ========================================================= */
 
-.booking-list {
-    display: flex;
-    flex-direction: column;
+.waitlist-grid {
+    display: grid;
 
-    gap: 16px;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(470px, 1fr)
+        );
+
+    gap: 17px;
 }
 
 
 /* =========================================================
-   BOOKING CARD
+   WAITLIST CARD
 ========================================================= */
 
-.booking-item {
+.waitlist-card {
     position: relative;
 
     overflow: hidden;
-
-    display: flex;
-    align-items: center;
-
-    gap: 18px;
 
     padding: 21px;
 
@@ -577,17 +522,15 @@ body {
     background:
         linear-gradient(
             135deg,
-            #ffffff 0%,
-            #f8fbff 100%
+            #ffffff,
+            #f8fbff
         );
 
     border:
         1px solid #dbeafe;
 
-    color: #0f172a;
-
     box-shadow:
-        0 8px 25px rgba(15, 23, 42, 0.12);
+        0 8px 25px rgba(15,23,42,0.12);
 
     transition:
         transform 0.25s ease,
@@ -595,13 +538,13 @@ body {
         border-color 0.25s ease;
 }
 
-.booking-item:hover {
-    transform: translateY(-3px);
+.waitlist-card:hover {
+    transform: translateY(-4px);
 
     border-color: #93c5fd;
 
     box-shadow:
-        0 14px 35px rgba(37, 99, 235, 0.16);
+        0 15px 35px rgba(37,99,235,0.16);
 }
 
 
@@ -609,156 +552,161 @@ body {
    CARD GLOW
 ========================================================= */
 
-.booking-card-glow {
+.waitlist-card-glow {
     position: absolute;
 
     width: 170px;
     height: 170px;
 
-    right: -90px;
+    right: -80px;
     top: -100px;
 
     border-radius: 50%;
 
     background:
-        rgba(59, 130, 246, 0.07);
+        rgba(59,130,246,0.07);
 
     pointer-events: none;
 }
 
 
 /* =========================================================
-   EQUIPMENT ICON
+   ACCENT
 ========================================================= */
 
-.booking-equipment-icon {
+.waitlist-card-accent {
+    position: absolute;
+
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    width: 5px;
+}
+
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.waitlist-card-header {
     position: relative;
     z-index: 2;
 
-    width: 60px;
-    height: 60px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 17px;
+}
+
+.equipment-block {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+}
+
+.waitlist-equipment-icon {
+    width: 50px;
+    height: 50px;
 
     flex-shrink: 0;
 
-    border-radius: 16px;
+    border-radius: 14px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #4f46e5
-        );
-
     color: #ffffff;
 
-    font-size: 24px;
+    font-size: 20px;
 
     box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.25);
+        0 7px 16px rgba(37,99,235,0.22);
 }
 
-
-/* =========================================================
-   BOOKING INFO
-========================================================= */
-
-.booking-info {
-    position: relative;
-    z-index: 2;
-
-    flex: 1;
-
-    min-width: 0;
-}
-
-.equipment-heading {
-    display: flex;
-    align-items: center;
-
-    gap: 12px;
-
-    margin-bottom: 14px;
-}
-
-.equipment-name {
-    display: block;
+.equipment-block h3 {
+    margin: 0 0 4px;
 
     color: #0f172a;
 
-    font-size: 17px;
+    font-size: 16px;
+
     font-weight: 800;
 
-    margin-bottom: 3px;
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 }
 
-.booking-number {
+.equipment-block span {
     color: #94a3b8;
 
     font-size: 10px;
+
     font-weight: 600;
 }
 
 
 /* =========================================================
-   PRIORITY
+   STATUS
 ========================================================= */
 
-.priority {
+.waitlist-status {
     display: inline-flex;
+
     align-items: center;
+    justify-content: center;
 
-    gap: 5px;
+    gap: 6px;
 
-    padding: 5px 9px;
+    padding: 7px 11px;
 
     border-radius: 999px;
 
-    background:
-        #fff7ed;
-
-    border:
-        1px solid #fed7aa;
-
-    color: #ea580c;
+    border: 1px solid;
 
     font-size: 10px;
+
     font-weight: 800;
 
     white-space: nowrap;
 }
 
-.priority i {
-    font-size: 9px;
-}
-
 
 /* =========================================================
-   DATE + TIME
+   DETAILS
 ========================================================= */
 
-.booking-details-row {
-    display: flex;
+.waitlist-details {
+    position: relative;
+    z-index: 2;
 
-    flex-wrap: wrap;
+    display: grid;
 
-    gap: 12px;
+    grid-template-columns:
+        1fr 1fr;
 
-    margin-bottom: 12px;
+    gap: 10px;
+
+    margin-bottom: 13px;
 }
 
-.booking-detail {
+.waitlist-detail {
     display: flex;
     align-items: center;
 
     gap: 9px;
 
-    min-width: 175px;
-
-    padding: 9px 11px;
+    padding: 10px;
 
     border-radius: 11px;
 
@@ -767,9 +715,11 @@ body {
     border: 1px solid #e2e8f0;
 }
 
-.detail-icon {
-    width: 31px;
-    height: 31px;
+.waitlist-detail-icon {
+    width: 32px;
+    height: 32px;
+
+    flex-shrink: 0;
 
     border-radius: 9px;
 
@@ -782,7 +732,7 @@ body {
     font-size: 13px;
 }
 
-.detail-icon.blue {
+.waitlist-detail-icon.date {
     background:
         linear-gradient(
             135deg,
@@ -791,7 +741,7 @@ body {
         );
 }
 
-.detail-icon.purple {
+.waitlist-detail-icon.time {
     background:
         linear-gradient(
             135deg,
@@ -800,193 +750,214 @@ body {
         );
 }
 
-.booking-detail div {
+.waitlist-detail div {
     display: flex;
     flex-direction: column;
+
+    min-width: 0;
 }
 
-.booking-detail small {
+.waitlist-detail small {
     color: #94a3b8;
 
     font-size: 9px;
+
     font-weight: 700;
 
     text-transform: uppercase;
-
-    letter-spacing: 0.4px;
 }
 
-.booking-detail strong {
+.waitlist-detail strong {
     margin-top: 2px;
 
     color: #334155;
 
-    font-size: 12px;
-}
-
-
-/* =========================================================
-   PURPOSE
-========================================================= */
-
-.booking-purpose-box {
-    display: flex;
-    align-items: center;
-
-    gap: 9px;
-
-    padding: 9px 11px;
-
-    border-radius: 11px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #f8fafc,
-            #f1f5f9
-        );
-
-    border:
-        1px solid #e2e8f0;
-}
-
-.purpose-icon {
-    width: 31px;
-    height: 31px;
-
-    border-radius: 9px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background:
-        #ede9fe;
-
-    color: #7c3aed;
-
-    font-size: 13px;
-}
-
-.booking-purpose-box div {
-    min-width: 0;
-}
-
-.booking-purpose-box small {
-    display: block;
-
-    color: #94a3b8;
-
-    font-size: 9px;
-    font-weight: 700;
-
-    text-transform: uppercase;
-}
-
-.booking-purpose-box p {
-    margin: 2px 0 0;
-
-    color: #475569;
-
     font-size: 11px;
 
     white-space: nowrap;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
 }
 
 
 /* =========================================================
-   ACTIONS
+   NOTIFICATION
 ========================================================= */
 
-.booking-actions {
+.waitlist-notification {
     position: relative;
     z-index: 2;
 
     display: flex;
-    flex-direction: column;
-
-    align-items: flex-end;
+    align-items: center;
 
     gap: 10px;
 
+    padding: 11px;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ecfdf5,
+            #dcfce7
+        );
+
+    border:
+        1px solid #86efac;
+}
+
+.notification-icon {
+    width: 37px;
+    height: 37px;
+
     flex-shrink: 0;
-}
 
-
-/* =========================================================
-   STATUS
-========================================================= */
-
-.booking-status {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 6px;
-
-    min-width: 110px;
-
-    padding: 8px 12px;
-
-    border-radius: 999px;
-
-    border: 1px solid;
-
-    font-size: 11px;
-    font-weight: 800;
-
-    white-space: nowrap;
-}
-
-.booking-status i {
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   CANCEL BUTTON
-========================================================= */
-
-.cancel-booking-btn {
-    min-width: 110px;
-    height: 36px;
-
-    border: 1px solid #fecaca;
-
-    border-radius: 9px;
-
-    background: #ffffff;
-
-    color: #dc2626;
-
-    font-size: 11px;
-    font-weight: 700;
-
-    cursor: pointer;
+    border-radius: 10px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    gap: 7px;
+    background:
+        #16a34a;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    box-shadow:
+        0 5px 12px rgba(22,163,74,0.20);
+}
+
+.waitlist-notification div:nth-child(2) {
+    flex: 1;
+}
+
+.waitlist-notification strong {
+    color: #166534;
+
+    font-size: 11px;
+}
+
+.waitlist-notification p {
+    margin: 3px 0 0;
+
+    color: #4d7c0f;
+
+    font-size: 10px;
+}
+
+.book-now-btn {
+    height: 34px;
+
+    padding: 0 12px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #16a34a,
+            #15803d
+        );
+
+    color: #ffffff;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    cursor: pointer;
+
+    white-space: nowrap;
 
     transition: all 0.25s ease;
 }
 
-.cancel-booking-btn:hover {
-    background: #dc2626;
-
-    border-color: #dc2626;
-
-    color: #ffffff;
+.book-now-btn:hover {
+    transform: translateY(-2px);
 
     box-shadow:
-        0 6px 15px rgba(220, 38, 38, 0.22);
+        0 6px 15px rgba(22,163,74,0.25);
+}
 
-    transform: translateY(-1px);
+
+/* =========================================================
+   WAITING MESSAGE
+========================================================= */
+
+.waiting-message {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 10px 12px;
+
+    border-radius: 10px;
+
+    background: #fffbeb;
+
+    border: 1px solid #fde68a;
+
+    color: #92400e;
+
+    font-size: 10px;
+
+    font-weight: 600;
+}
+
+.waiting-message i {
+    color: #d97706;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   EXPIRED MESSAGE
+========================================================= */
+
+.expired-message {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 10px 12px;
+
+    border-radius: 10px;
+
+    background: #f8fafc;
+
+    border: 1px solid #cbd5e1;
+
+    color: #64748b;
+
+    font-size: 10px;
+
+    font-weight: 600;
+}
+
+.expired-message i {
+    font-size: 14px;
 }
 
 
@@ -994,14 +965,14 @@ body {
    SPECIAL STATES
 ========================================================= */
 
-.special-state {
+.waitlist-special-state {
     position: relative;
 
     overflow: hidden;
 
     text-align: center;
 
-    padding: 60px 25px;
+    padding: 65px 25px;
 
     border-radius: 20px;
 
@@ -1016,14 +987,14 @@ body {
         1px solid #dbeafe;
 
     box-shadow:
-        0 8px 25px rgba(15, 23, 42, 0.10);
+        0 8px 25px rgba(15,23,42,0.10);
 }
 
-.state-icon {
-    width: 60px;
-    height: 60px;
+.waitlist-state-icon {
+    width: 62px;
+    height: 62px;
 
-    margin: 0 auto 15px;
+    margin: 0 auto 16px;
 
     border-radius: 18px;
 
@@ -1031,24 +1002,24 @@ body {
     align-items: center;
     justify-content: center;
 
-    background:
-        #dbeafe;
+    background: #ede9fe;
 
-    color: #2563eb;
+    color: #7c3aed;
 
-    font-size: 25px;
+    font-size: 26px;
 }
 
-.special-state h3 {
+.waitlist-special-state h3 {
     margin: 0 0 7px;
 
     color: #0f172a;
 
-    font-size: 19px;
+    font-size: 20px;
+
     font-weight: 800;
 }
 
-.special-state p {
+.waitlist-special-state p {
     margin: 0;
 
     color: #64748b;
@@ -1061,25 +1032,23 @@ body {
    EMPTY STATE
 ========================================================= */
 
-.empty-bookings-state {
-    padding: 70px 25px;
-
+.empty-state {
     background:
         radial-gradient(
             circle at 50% 0%,
-            rgba(59, 130, 246, 0.10),
+            rgba(124,58,237,0.10),
             transparent 35%
         ),
         #ffffff;
 }
 
-.empty-booking-icon {
-    width: 76px;
-    height: 76px;
+.empty-waitlist-icon {
+    width: 78px;
+    height: 78px;
 
     margin: 0 auto 18px;
 
-    border-radius: 22px;
+    border-radius: 23px;
 
     display: flex;
     align-items: center;
@@ -1088,24 +1057,20 @@ body {
     background:
         linear-gradient(
             135deg,
-            #dbeafe,
-            #e0e7ff
+            #ede9fe,
+            #dbeafe
         );
 
-    color: #2563eb;
+    color: #7c3aed;
 
     font-size: 31px;
 
     box-shadow:
-        0 10px 25px rgba(37, 99, 235, 0.18);
+        0 10px 25px rgba(124,58,237,0.18);
 }
 
-.empty-bookings-state h3 {
-    font-size: 21px;
-}
-
-.empty-bookings-state p {
-    max-width: 440px;
+.empty-state p {
+    max-width: 430px;
 
     margin: 0 auto;
 
@@ -1114,31 +1079,32 @@ body {
 
 
 /* =========================================================
-   EMPTY DECORATIONS
+   EMPTY DECORATION
 ========================================================= */
 
-.empty-decoration {
+.empty-circle-one,
+.empty-circle-two {
     position: absolute;
 
     border-radius: 50%;
 
     background:
-        rgba(37, 99, 235, 0.05);
+        rgba(124,58,237,0.05);
 }
 
-.empty-one {
+.empty-circle-one {
     width: 180px;
     height: 180px;
 
-    left: -80px;
+    left: -90px;
     top: -90px;
 }
 
-.empty-two {
+.empty-circle-two {
     width: 140px;
     height: 140px;
 
-    right: -60px;
+    right: -70px;
     bottom: -70px;
 }
 
@@ -1147,13 +1113,12 @@ body {
    BROWSE BUTTON
 ========================================================= */
 
-.browse-equipment-btn,
-.retry-btn {
+.browse-equipment-btn {
     margin-top: 20px;
 
-    height: 42px;
+    height: 43px;
 
-    padding: 0 19px;
+    padding: 0 20px;
 
     border: none;
 
@@ -1169,59 +1134,44 @@ body {
     color: #ffffff;
 
     font-size: 12px;
+
     font-weight: 800;
 
     cursor: pointer;
 
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
 
     gap: 8px;
 
     box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.22);
+        0 8px 18px rgba(37,99,235,0.22);
 
     transition: all 0.25s ease;
 }
 
-.browse-equipment-btn:hover,
-.retry-btn:hover {
+.browse-equipment-btn:hover {
     transform: translateY(-2px);
 
     box-shadow:
-        0 12px 25px rgba(37, 99, 235, 0.30);
+        0 12px 25px rgba(37,99,235,0.30);
 }
 
 
 /* =========================================================
-   ERROR STATE
+   LOADING ANIMATION
 ========================================================= */
 
-.error-state .state-icon {
-    background: #fee2e2;
-    color: #dc2626;
+.waitlist-state-icon.loading i {
+    animation:
+        waitlistSpin 1s linear infinite;
 }
 
-.error-state h3 {
-    color: #991b1b;
-}
+@keyframes waitlistSpin {
 
-
-/* =========================================================
-   LOADING
-========================================================= */
-
-.loading-state .state-icon {
-    background: #e0e7ff;
-    color: #4f46e5;
-}
-
-.spinning i {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
     from {
         transform: rotate(0deg);
     }
@@ -1229,6 +1179,7 @@ body {
     to {
         transform: rotate(360deg);
     }
+
 }
 
 
@@ -1238,144 +1189,102 @@ body {
 
 @media (max-width: 1100px) {
 
-    .summary-stats {
+    .waitlist-stats {
         display: none;
     }
 
-    .booking-item {
-        align-items: flex-start;
-    }
-
-    .booking-actions {
-        min-width: 110px;
-    }
 }
 
 
-@media (max-width: 850px) {
+@media (max-width: 800px) {
 
-    .my-bookings-header {
-        padding: 16px 20px;
+    .waitlist-header {
+        padding: 15px 20px;
     }
 
-    .my-bookings-title-icon {
-        display: none;
-    }
-
-    .my-bookings-header h2 {
-        font-size: 21px;
-    }
-
-    .my-bookings-body {
+    .my-waitlist-body {
         padding: 20px;
     }
 
-    .bookings-summary-card {
+    .waitlist-hero {
         padding: 22px;
     }
 
-    .booking-item {
-        flex-wrap: wrap;
+    .waitlist-grid {
+        grid-template-columns: 1fr;
     }
 
-    .booking-actions {
-        width: 100%;
-
-        flex-direction: row;
-
-        justify-content: flex-end;
-
-        align-items: center;
-    }
 }
 
 
-@media (max-width: 650px) {
+@media (max-width: 600px) {
 
-    .my-bookings-header {
+    .waitlist-header {
+        min-height: auto;
+
+        padding: 15px;
+
+    }
+
+    .waitlist-title-icon {
+        display: none;
+    }
+
+    .waitlist-header h2 {
+        font-size: 21px;
+    }
+
+    .my-waitlist-body {
+        padding: 15px;
+    }
+
+    .waitlist-hero {
         flex-direction: column;
 
         align-items: flex-start;
-
-        gap: 14px;
     }
 
-    .my-bookings-header-right {
-        width: 100%;
-    }
-
-    .booking-search-wrapper {
-        flex: 1;
-    }
-
-    .my-bookings-search {
-        width: 100%;
-    }
-
-    .bookings-summary-card {
+    .waitlist-section-header {
         flex-direction: column;
 
-        align-items: flex-start;
-    }
-
-    .summary-left {
-        width: 100%;
-    }
-
-    .bookings-section-header {
         align-items: flex-start;
 
         gap: 10px;
-
-        flex-direction: column;
     }
 
-    .bookings-section-header p {
+    .waitlist-section-header p {
         margin-left: 0;
     }
 
-    .booking-equipment-icon {
-        width: 50px;
-        height: 50px;
+    .waitlist-details {
+        grid-template-columns: 1fr;
     }
 
-    .booking-details-row {
-        flex-direction: column;
+    .waitlist-notification {
+        flex-wrap: wrap;
     }
 
-    .booking-detail {
+    .book-now-btn {
         width: 100%;
+
+        justify-content: center;
     }
 
-    .booking-actions {
-        justify-content: space-between;
-    }
 }
 
 
-@media (max-width: 450px) {
+@media (max-width: 420px) {
 
-    .my-bookings-body {
-        padding: 15px;
+    .waitlist-card {
+        padding: 17px;
     }
 
-    .my-bookings-header {
-        padding: 15px;
-    }
-
-    .equipment-heading {
-        align-items: flex-start;
+    .waitlist-card-header {
         flex-direction: column;
     }
 
-    .booking-actions {
-        flex-direction: column;
-
-        align-items: stretch;
+    .waitlist-status {
+        align-self: flex-start;
     }
 
-    .booking-status,
-    .cancel-booking-btn {
-        width: 100%;
-    }
 }

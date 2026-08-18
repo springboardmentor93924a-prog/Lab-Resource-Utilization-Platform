@@ -56,6 +56,14 @@ public class Equipment {
 
     private String calibrationCertificate;
 
+    private LocalDate lastCalibrationDate;
+
+    private LocalDate nextCalibrationDate;
+
+    private String certificationDetails;
+
+    private LocalDate certificationExpiryDate;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -203,6 +211,38 @@ public class Equipment {
 
     public void setHourlyRate(java.math.BigDecimal hourlyRate) {
         this.hourlyRate = hourlyRate;
+    }
+
+    public LocalDate getLastCalibrationDate() {
+        return lastCalibrationDate;
+    }
+
+    public void setLastCalibrationDate(LocalDate lastCalibrationDate) {
+        this.lastCalibrationDate = lastCalibrationDate;
+    }
+
+    public LocalDate getNextCalibrationDate() {
+        return nextCalibrationDate;
+    }
+
+    public void setNextCalibrationDate(LocalDate nextCalibrationDate) {
+        this.nextCalibrationDate = nextCalibrationDate;
+    }
+
+    public String getCertificationDetails() {
+        return certificationDetails;
+    }
+
+    public void setCertificationDetails(String certificationDetails) {
+        this.certificationDetails = certificationDetails;
+    }
+
+    public LocalDate getCertificationExpiryDate() {
+        return certificationExpiryDate;
+    }
+
+    public void setCertificationExpiryDate(LocalDate certificationExpiryDate) {
+        this.certificationExpiryDate = certificationExpiryDate;
     }
 }
 

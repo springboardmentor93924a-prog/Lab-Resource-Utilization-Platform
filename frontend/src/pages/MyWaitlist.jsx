@@ -1,206 +1,692 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+
 import { getMyWaitlistEntries } from "../services/waitlistService";
 
-function statusColor(status) {
+import "./MyWaitlist.css";
+
+
+/* =========================================================
+   STATUS CONFIGURATION
+========================================================= */
+
+function getStatusConfig(status) {
+
   switch (status) {
+
     case "NOTIFIED":
-      return "#22c55e";
+      return {
+        color: "#16a34a",
+        light: "#dcfce7",
+        border: "#86efac",
+        gradient:
+          "linear-gradient(135deg, #16a34a, #15803d)",
+        icon: "bi-bell-fill",
+        label: "Notified",
+      };
+
 
     case "EXPIRED":
-      return "#94a3b8";
+      return {
+        color: "#64748b",
+        light: "#f1f5f9",
+        border: "#cbd5e1",
+        gradient:
+          "linear-gradient(135deg, #64748b, #475569)",
+        icon: "bi-clock-history",
+        label: "Expired",
+      };
+
 
     default:
-      return "#f59e0b";
+      return {
+        color: "#d97706",
+        light: "#fef3c7",
+        border: "#fcd34d",
+        gradient:
+          "linear-gradient(135deg, #f59e0b, #d97706)",
+        icon: "bi-hourglass-split",
+        label: "Waiting",
+      };
+
   }
 }
 
+
 export default function MyWaitlist() {
+
+  const navigate = useNavigate();
+
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load waitlist entries when the page opens
+
+  /* =======================================================
+     LOAD WAITLIST
+  ======================================================= */
+
   useEffect(() => {
+
     getMyWaitlistEntries()
+
       .then((data) => {
         setEntries(data);
       })
+
       .catch((err) => {
-        console.error("Failed to load waitlist entries:", err);
+        console.error(
+          "Failed to load waitlist entries:",
+          err
+        );
       })
+
       .finally(() => {
         setLoading(false);
       });
+
   }, []);
 
 
+  /* =======================================================
+     COUNTS
+  ======================================================= */
+
+  const notifiedCount =
+    entries.filter(
+      (entry) => entry.status === "NOTIFIED"
+    ).length;
+
+
+  const waitingCount =
+    entries.filter(
+      (entry) =>
+        entry.status !== "NOTIFIED" &&
+        entry.status !== "EXPIRED"
+    ).length;
+
+
+  const expiredCount =
+    entries.filter(
+      (entry) => entry.status === "EXPIRED"
+    ).length;
+
+
+  /* =======================================================
+     RETURN
+  ======================================================= */
+
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#020b1c",
-      }}
-    >
-      {/* SIDEBAR */}
+
+    <div className="my-waitlist-wrapper">
+
+
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
+
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main
-        style={{
-          flex: 1,
-          minWidth: 0,
-          padding: "30px",
-          background: "#020b1c",
-          color: "#ffffff",
-        }}
-      >
-        {/* PAGE TITLE */}
-        <h2
-          style={{
-            fontWeight: 800,
-            color: "#ffffff",
-            marginBottom: "25px",
-            fontSize: "24px",
-          }}
-        >
-          My waitlist
-        </h2>
 
-        {/* LOADING */}
-        {loading && (
-          <p
-            style={{
-              color: "#cbd5e1",
-              fontSize: "15px",
-            }}
-          >
-            Loading...
-          </p>
-        )}
+      {/* =====================================================
+          MAIN
+      ===================================================== */}
 
-        {/* EMPTY WAITLIST */}
-        {!loading && entries.length === 0 && (
-          <div
-            style={{
-              background: "#071a33",
-              borderRadius: "12px",
-              padding: "25px",
-              border: "1px solid #183858",
-              boxShadow: "0 6px 18px rgba(0,0,0,0.20)",
-            }}
-          >
-            <p
-              style={{
-                margin: 0,
-                color: "#ffffff",
-                fontSize: "15px",
-                fontWeight: 500,
-              }}
-            >
-              You're not on any waitlists.
-            </p>
+      <main className="my-waitlist-content">
+
+
+        {/* ===================================================
+            PAGE HEADER
+        =================================================== */}
+
+        <header className="waitlist-header">
+
+          <div className="waitlist-title-area">
+
+            <div className="waitlist-title-icon">
+              <i className="bi bi-hourglass-split"></i>
+            </div>
+
+            <div>
+
+              <h2>My Waitlist</h2>
+
+              <p>
+                Track equipment availability and booking alerts
+              </p>
+
+            </div>
+
           </div>
-        )}
 
-        {/* WAITLIST ENTRIES */}
-        {!loading && entries.length > 0 && (
-          <div
-            style={{
-              background: "#071a33",
-              borderRadius: "12px",
-              padding: "10px",
-              border: "1px solid #183858",
-              boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-              overflow: "hidden",
-            }}
+
+          {/* PROFILE */}
+
+          <button
+            className="waitlist-profile"
+            onClick={() => navigate("/profile")}
+            title="My Profile"
           >
-            {entries.map((entry, index) => (
-              <div
-                key={entry.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "18px 15px",
-                  borderBottom:
-                    index === entries.length - 1
-                      ? "none"
-                      : "1px solid #183858",
-                  gap: "20px",
-                  background:
-                    entry.status === "NOTIFIED" ? "#0b2942" : "#071a33",
-                }}
-              >
-                {/* BOOKING INFORMATION */}
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  {/* EQUIPMENT NAME */}
-                  <strong
-                    style={{
-                      color: "#ffffff",
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      display: "block",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    {entry.equipmentName}
-                  </strong>
+            <i className="bi bi-person-fill"></i>
+          </button>
 
-                  {/* DATE AND TIME */}
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      color: "#cbd5e1",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {entry.requestedDate}, {entry.startTime}–
-                    {entry.endTime}
-                  </div>
+        </header>
 
-                  {/* NOTIFICATION MESSAGE */}
-                  {entry.status === "NOTIFIED" && (
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        color: "#2DD4BF",
-                        marginTop: "6px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      A slot has opened up — try booking again!
-                    </div>
-                  )}
+
+        {/* ===================================================
+            PAGE BODY
+        =================================================== */}
+
+        <div className="my-waitlist-body">
+
+
+          {/* =================================================
+              HERO SUMMARY
+          ================================================= */}
+
+          <section className="waitlist-hero">
+
+            {/* Decorative circles */}
+
+            <div className="hero-circle hero-circle-one"></div>
+
+            <div className="hero-circle hero-circle-two"></div>
+
+            <div className="hero-circle hero-circle-three"></div>
+
+
+            <div className="hero-left">
+
+              <div className="hero-icon">
+
+                <i className="bi bi-hourglass-split"></i>
+
+              </div>
+
+
+              <div>
+
+                <span className="hero-label">
+                  WAITLIST MANAGEMENT
+                </span>
+
+                <h1>
+                  {entries.length}
+                  <span>
+                    {" "}
+                    active entr
+                    {entries.length === 1 ? "y" : "ies"}
+                  </span>
+                </h1>
+
+                <p>
+                  We'll keep you informed when your
+                  requested equipment becomes available.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+                SUMMARY STATS
+            ================================================= */}
+
+            <div className="waitlist-stats">
+
+
+              {/* WAITING */}
+
+              <div className="waitlist-stat">
+
+                <div className="stat-icon waiting-icon">
+                  <i className="bi bi-hourglass-split"></i>
                 </div>
 
-                {/* STATUS */}
-                <span
-                  style={{
-                    background: statusColor(entry.status),
-                    color: "#ffffff",
-                    padding: "7px 15px",
-                    borderRadius: "999px",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.20)",
-                  }}
-                >
-                  {entry.status}
-                </span>
+                <div>
+
+                  <strong>
+                    {waitingCount}
+                  </strong>
+
+                  <small>
+                    Waiting
+                  </small>
+
+                </div>
+
               </div>
-            ))}
+
+
+              {/* NOTIFIED */}
+
+              <div className="waitlist-stat">
+
+                <div className="stat-icon notified-icon">
+                  <i className="bi bi-bell-fill"></i>
+                </div>
+
+                <div>
+
+                  <strong>
+                    {notifiedCount}
+                  </strong>
+
+                  <small>
+                    Notified
+                  </small>
+
+                </div>
+
+              </div>
+
+
+              {/* EXPIRED */}
+
+              <div className="waitlist-stat">
+
+                <div className="stat-icon expired-icon">
+                  <i className="bi bi-clock-history"></i>
+                </div>
+
+                <div>
+
+                  <strong>
+                    {expiredCount}
+                  </strong>
+
+                  <small>
+                    Expired
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* =================================================
+              SECTION HEADER
+          ================================================= */}
+
+          <div className="waitlist-section-header">
+
+            <div>
+
+              <div className="waitlist-section-title">
+
+                <span>
+                  <i className="bi bi-list-check"></i>
+                </span>
+
+                <h3>
+                  Your Waitlist Entries
+                </h3>
+
+              </div>
+
+              <p>
+                Equipment requests you're currently tracking
+              </p>
+
+            </div>
+
+
+            <div className="waitlist-count-badge">
+
+              <i className="bi bi-layers-fill"></i>
+
+              {entries.length} Entry
+              {entries.length !== 1 ? "ies" : ""}
+
+            </div>
+
           </div>
-        )}
+
+
+          {/* =================================================
+              LOADING
+          ================================================= */}
+
+          {loading && (
+
+            <div className="waitlist-special-state">
+
+              <div className="waitlist-state-icon loading">
+
+                <i className="bi bi-arrow-repeat"></i>
+
+              </div>
+
+              <h3>
+                Loading your waitlist...
+              </h3>
+
+              <p>
+                Checking your equipment availability requests.
+              </p>
+
+            </div>
+
+          )}
+
+
+          {/* =================================================
+              EMPTY
+          ================================================= */}
+
+          {!loading &&
+            entries.length === 0 && (
+
+              <div className="waitlist-special-state empty-state">
+
+                <div className="empty-circle-one"></div>
+                <div className="empty-circle-two"></div>
+
+                <div className="empty-waitlist-icon">
+
+                  <i className="bi bi-hourglass-bottom"></i>
+
+                </div>
+
+                <h3>
+                  Your waitlist is empty
+                </h3>
+
+                <p>
+                  You're not waiting for any laboratory
+                  equipment right now.
+                </p>
+
+                <button
+                  className="browse-equipment-btn"
+                  onClick={() =>
+                    navigate("/bookings")
+                  }
+                >
+
+                  <i className="bi bi-search"></i>
+
+                  Browse Equipment
+
+                </button>
+
+              </div>
+
+            )}
+
+
+          {/* =================================================
+              WAITLIST ENTRIES
+          ================================================= */}
+
+          {!loading &&
+            entries.length > 0 && (
+
+              <div className="waitlist-grid">
+
+                {entries.map((entry, index) => {
+
+                  const status =
+                    getStatusConfig(
+                      entry.status
+                    );
+
+
+                  return (
+
+                    <article
+                      className={`waitlist-card ${entry.status.toLowerCase()}`}
+                      key={entry.id}
+                    >
+
+
+                      {/* CARD GLOW */}
+
+                      <div className="waitlist-card-glow"></div>
+
+
+                      {/* TOP ACCENT */}
+
+                      <div
+                        className="waitlist-card-accent"
+                        style={{
+                          background:
+                            status.gradient,
+                        }}
+                      ></div>
+
+
+                      {/* =================================================
+                          CARD HEADER
+                      ================================================= */}
+
+                      <div className="waitlist-card-header">
+
+
+                        <div className="equipment-block">
+
+
+                          {/* EQUIPMENT ICON */}
+
+                          <div
+                            className="waitlist-equipment-icon"
+                            style={{
+                              background:
+                                status.gradient,
+                            }}
+                          >
+
+                            <i className="bi bi-cpu-fill"></i>
+
+                          </div>
+
+
+                          <div>
+
+                            <h3>
+                              {entry.equipmentName}
+                            </h3>
+
+                            <span>
+                              Waitlist entry #{index + 1}
+                            </span>
+
+                          </div>
+
+                        </div>
+
+
+                        {/* STATUS */}
+
+                        <div
+                          className="waitlist-status"
+                          style={{
+                            color: status.color,
+                            background: status.light,
+                            borderColor: status.border,
+                          }}
+                        >
+
+                          <i
+                            className={`bi ${status.icon}`}
+                          ></i>
+
+                          {status.label}
+
+                        </div>
+
+                      </div>
+
+
+                      {/* =================================================
+                          DATE / TIME
+                      ================================================= */}
+
+                      <div className="waitlist-details">
+
+
+                        {/* DATE */}
+
+                        <div className="waitlist-detail">
+
+                          <div
+                            className="waitlist-detail-icon date"
+                          >
+                            <i className="bi bi-calendar3"></i>
+                          </div>
+
+                          <div>
+
+                            <small>
+                              Requested Date
+                            </small>
+
+                            <strong>
+                              {entry.requestedDate}
+                            </strong>
+
+                          </div>
+
+                        </div>
+
+
+                        {/* TIME */}
+
+                        <div className="waitlist-detail">
+
+                          <div
+                            className="waitlist-detail-icon time"
+                          >
+                            <i className="bi bi-clock-fill"></i>
+                          </div>
+
+                          <div>
+
+                            <small>
+                              Requested Time
+                            </small>
+
+                            <strong>
+                              {entry.startTime}
+                              {" – "}
+                              {entry.endTime}
+                            </strong>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* =================================================
+                          NOTIFIED MESSAGE
+                      ================================================= */}
+
+                      {entry.status === "NOTIFIED" && (
+
+                        <div className="waitlist-notification">
+
+                          <div className="notification-icon">
+
+                            <i className="bi bi-bell-fill"></i>
+
+                          </div>
+
+
+                          <div>
+
+                            <strong>
+                              Your slot is available!
+                            </strong>
+
+                            <p>
+                              A slot has opened up —
+                              try booking again now.
+                            </p>
+
+                          </div>
+
+
+                          <button
+                            className="book-now-btn"
+                            onClick={() =>
+                              navigate("/bookings")
+                            }
+                          >
+
+                            Book Now
+
+                            <i className="bi bi-arrow-right"></i>
+
+                          </button>
+
+                        </div>
+
+                      )}
+
+
+                      {/* =================================================
+                          WAITING MESSAGE
+                      ================================================= */}
+
+                      {entry.status !== "NOTIFIED" &&
+                        entry.status !== "EXPIRED" && (
+
+                          <div className="waiting-message">
+
+                            <i className="bi bi-hourglass-split"></i>
+
+                            <span>
+                              Waiting for this equipment
+                              to become available.
+                            </span>
+
+                          </div>
+
+                        )}
+
+
+                      {/* =================================================
+                          EXPIRED MESSAGE
+                      ================================================= */}
+
+                      {entry.status === "EXPIRED" && (
+
+                        <div className="expired-message">
+
+                          <i className="bi bi-clock-history"></i>
+
+                          <span>
+                            This waitlist request has expired.
+                          </span>
+
+                        </div>
+
+                      )}
+
+                    </article>
+
+                  );
+
+                })}
+
+              </div>
+
+            )}
+
+        </div>
+
       </main>
+
     </div>
+
   );
 }

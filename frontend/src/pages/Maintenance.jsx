@@ -4,7 +4,6 @@ import {
   getAllWorkOrders,
   createWorkOrder,
   assignTechnician,
-  markComplete,
 } from "../services/maintenanceService";
 import { getAllEquipment } from "../services/equipmentService";
 import { isAdmin } from "../utils/auth";
@@ -57,10 +56,10 @@ function statusColor(status) {
 }
 
 /* =========================================================
-   MAINTENANCE COMPONENT
+   DOWNTIME FORMAT
 ========================================================= */
-function formatDowntime(minutes) {
 
+function formatDowntime(minutes) {
   if (minutes == null) {
     return "—";
   }
@@ -86,12 +85,18 @@ function formatDowntime(minutes) {
     : `${days}d`;
 }
 
+/* =========================================================
+   MAINTENANCE COMPONENT
+========================================================= */
 
 export default function Maintenance() {
   const [workOrders, setWorkOrders] = useState([]);
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+
+  /* Selected work order for View Details modal */
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState(null);
 
   const [form, setForm] = useState({
     equipmentId: "",
@@ -113,6 +118,8 @@ export default function Maintenance() {
 
   async function loadData() {
     try {
+      setLoading(true);
+
       const [wos, equipment] = await Promise.all([
         getAllWorkOrders(),
         getAllEquipment(),
@@ -195,42 +202,19 @@ export default function Maintenance() {
      COMPLETE WORK ORDER
   ========================================================= */
 
-  async function handleComplete(id) {
 
-  const serviceLog = window.prompt(
-    "Enter the service/repair performed:"
-  );
 
-  if (serviceLog === null) {
-    return;
+  /* =========================================================
+     VIEW MAINTENANCE DETAILS
+  ========================================================= */
+
+  function handleViewDetails(workOrder) {
+    setSelectedWorkOrder(workOrder);
   }
 
-  if (!serviceLog.trim()) {
-    alert("Please enter the service/repair details.");
-    return;
+  function closeDetails() {
+    setSelectedWorkOrder(null);
   }
-
-  try {
-
-    await markComplete(
-      id,
-      serviceLog.trim()
-    );
-
-    alert(
-      "Work order completed. Service log saved and equipment is available."
-    );
-
-    loadData();
-
-  } catch (err) {
-
-    alert(
-      err.response?.data?.message ||
-      "Failed to mark complete."
-    );
-  }
-}
 
   /* =========================================================
      UI
@@ -246,6 +230,7 @@ export default function Maintenance() {
         color: "#ffffff",
       }}
     >
+
       {/* =====================================================
           SIDEBAR
       ===================================================== */}
@@ -272,6 +257,7 @@ export default function Maintenance() {
           color: "#ffffff",
         }}
       >
+
         {/* ===================================================
             PAGE HEADER
         =================================================== */}
@@ -334,6 +320,7 @@ export default function Maintenance() {
               color: "#0F172A",
             }}
           >
+
             {/* EQUIPMENT */}
 
             <div
@@ -520,65 +507,65 @@ export default function Maintenance() {
                 borderCollapse: "collapse",
               }}
             >
+
               {/* TABLE HEADER */}
 
               <thead>
-  <tr>
+                <tr>
+                  <th style={thStyle}>
+                    ID
+                  </th>
 
-    <th style={thStyle}>
-      ID
-    </th>
+                  <th style={thStyle}>
+                    Equipment
+                  </th>
 
-    <th style={thStyle}>
-      Equipment
-    </th>
+                  <th style={thStyle}>
+                    Issue
+                  </th>
 
-    <th style={thStyle}>
-      Issue
-    </th>
+                  <th style={thStyle}>
+                    Priority
+                  </th>
 
-    <th style={thStyle}>
-      Priority
-    </th>
+                  <th style={thStyle}>
+                    Status
+                  </th>
 
-    <th style={thStyle}>
-      Status
-    </th>
+                  <th style={thStyle}>
+                    Assigned to
+                  </th>
 
-    <th style={thStyle}>
-      Assigned to
-    </th>
+                  <th style={thStyle}>
+                    Maintenance started
+                  </th>
 
-    <th style={thStyle}>
-      Maintenance started
-    </th>
+                  <th style={thStyle}>
+                    Completed
+                  </th>
 
-    <th style={thStyle}>
-      Completed
-    </th>
+                  <th style={thStyle}>
+                    Downtime
+                  </th>
 
-    <th style={thStyle}>
-      Downtime
-    </th>
+                  <th style={thStyle}>
+                    Service log
+                  </th>
 
-    <th style={thStyle}>
-      Service log
-    </th>
+                  {/* ACTION IS NOW AVAILABLE TO EVERYONE */}
 
-    {userIsAdmin && (
-      <th style={thStyle}>
-        Action
-      </th>
-    )}
-
-  </tr>
-</thead>
+                  <th style={thStyle}>
+                    Action
+                  </th>
+                </tr>
+              </thead>
 
               {/* TABLE BODY */}
 
               <tbody>
                 {workOrders.map((wo) => (
                   <tr key={wo.id}>
+
                     {/* ID */}
 
                     <td style={tdStyle}>
@@ -630,70 +617,100 @@ export default function Maintenance() {
                     {/* ASSIGNED TO */}
 
                     <td style={tdStyle}>
-                      {wo.assignedToName ||
-                        "—"}
+                      {wo.assignedToName || "—"}
                     </td>
 
                     {/* MAINTENANCE STARTED */}
 
-<td style={tdStyle}>
-  {wo.maintenanceStartedAt
-    ? new Date(
-        wo.maintenanceStartedAt
-      ).toLocaleString()
-    : "—"}
-</td>
+                    <td style={tdStyle}>
+                      {wo.maintenanceStartedAt
+                        ? new Date(
+                            wo.maintenanceStartedAt
+                          ).toLocaleString()
+                        : "—"}
+                    </td>
 
+                    {/* COMPLETED */}
 
-{/* COMPLETED */}
+                    <td style={tdStyle}>
+                      {wo.completedAt
+                        ? new Date(
+                            wo.completedAt
+                          ).toLocaleString()
+                        : "—"}
+                    </td>
 
-<td style={tdStyle}>
-  {wo.completedAt
-    ? new Date(
-        wo.completedAt
-      ).toLocaleString()
-    : "—"}
-</td>
+                    {/* DOWNTIME */}
 
+                    <td style={tdStyle}>
+                      {wo.downtimeMinutes != null
+                        ? formatDowntime(
+                            wo.downtimeMinutes
+                          )
+                        : "—"}
+                    </td>
 
-{/* DOWNTIME */}
+                    {/* SERVICE LOG */}
 
-<td style={tdStyle}>
+                    <td
+                      style={{
+                        ...tdStyle,
+                        maxWidth: "280px",
+                        whiteSpace: "normal",
+                      }}
+                    >
+                      {wo.serviceLog || "—"}
+                    </td>
 
-  {wo.downtimeMinutes != null
-    ? formatDowntime(wo.downtimeMinutes)
-    : "—"}
+                    {/* =================================================
+                        ACTION
+                    ================================================= */}
 
-</td>
+                    <td
+                      style={{
+                        ...tdStyle,
+                        minWidth: "170px",
+                      }}
+                    >
 
+                      {/* VIEW DETAILS BUTTON */}
 
-{/* SERVICE LOG */}
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() =>
+                          handleViewDetails(wo)
+                        }
+                        style={{
+                          width: "100%",
+                          marginBottom:
+                            userIsAdmin &&
+                            (wo.status === "OPEN" ||
+                              wo.status ===
+                                "IN_PROGRESS")
+                              ? "8px"
+                              : "0",
+                          fontWeight: 600,
+                          background: "#1557a8",
+                          border:
+                            "1px solid #38bdf8",
+                          color: "#FFFFFF",
+                          borderRadius: "6px",
+                          padding: "7px 10px",
+                        }}
+                      >
+                        <i className="bi bi-eye me-1"></i>
+                        View Details
+                      </button>
 
-<td
-  style={{
-    ...tdStyle,
-    maxWidth: "280px",
-    whiteSpace: "normal",
-  }}
->
-  {wo.serviceLog || "—"}
-</td>
+                      {/* ADMIN ACTIONS */}
 
-                    {/* ACTION */}
-
-                    {userIsAdmin && (
-                      <td style={tdStyle}>
-                        {/* OPEN → ASSIGN */}
-
-                        {wo.status ===
-                          "OPEN" && (
+                      {userIsAdmin &&
+                        wo.status === "OPEN" && (
                           <div
                             style={{
-                              display:
-                                "flex",
+                              display: "flex",
+                              flexDirection: "column",
                               gap: "6px",
-                              alignItems:
-                                "center",
                             }}
                           >
                             <input
@@ -709,27 +726,22 @@ export default function Maintenance() {
                                   (prev) => ({
                                     ...prev,
                                     [wo.id]:
-                                      e.target
-                                        .value,
+                                      e.target.value,
                                   })
                                 )
                               }
                               style={{
-                                width: "160px",
-                                fontSize:
-                                  "12px",
-                                padding:
-                                  "6px",
+                                width: "100%",
+                                fontSize: "12px",
+                                padding: "6px",
                                 border:
                                   "1px solid #CBD5E1",
                                 borderRadius:
                                   "5px",
-                                color:
-                                  "#0F172A",
+                                color: "#0F172A",
                                 background:
                                   "#FFFFFF",
-                                outline:
-                                  "none",
+                                outline: "none",
                               }}
                             />
 
@@ -746,23 +758,10 @@ export default function Maintenance() {
                           </div>
                         )}
 
-                        {/* IN_PROGRESS → COMPLETE */}
+                      {/* ADMIN MARK COMPLETE */}
 
-                        {wo.status ===
-                          "IN_PROGRESS" && (
-                          <button
-                            className="btn btn-outline-dark btn-sm"
-                            onClick={() =>
-                              handleComplete(
-                                wo.id
-                              )
-                            }
-                          >
-                            Mark complete
-                          </button>
-                        )}
-                      </td>
-                    )}
+                    
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -770,6 +769,412 @@ export default function Maintenance() {
           </div>
         )}
       </main>
+
+      {/* =========================================================
+          MAINTENANCE DETAILS MODAL
+      ========================================================= */}
+
+      {selectedWorkOrder && (
+        <div
+          onClick={closeDetails}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background:
+              "rgba(0, 0, 0, 0.70)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+        >
+          {/* MODAL BOX */}
+
+          <div
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+            style={{
+              width: "min(700px, 95vw)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#FFFFFF",
+              borderRadius: "14px",
+              boxShadow:
+                "0 20px 60px rgba(0,0,0,0.45)",
+              color: "#0F172A",
+            }}
+          >
+
+            {/* MODAL HEADER */}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                padding: "20px 24px",
+                background: "#0F1B2D",
+                color: "#FFFFFF",
+                borderRadius:
+                  "14px 14px 0 0",
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "20px",
+                    fontWeight: 700,
+                  }}
+                >
+                  Maintenance Details
+                </h3>
+
+                <div
+                  style={{
+                    marginTop: "4px",
+                    fontSize: "13px",
+                    color: "#94A3B8",
+                  }}
+                >
+                  Work Order #{selectedWorkOrder.id}
+                </div>
+              </div>
+
+              <button
+                onClick={closeDetails}
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "50%",
+                  border: "1px solid #64748B",
+                  background: "transparent",
+                  color: "#FFFFFF",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* MODAL BODY */}
+
+            <div
+              style={{
+                padding: "24px",
+              }}
+            >
+
+              {/* EQUIPMENT + STATUS */}
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "1fr 1fr",
+                  gap: "15px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "15px",
+                    background: "#F8FAFC",
+                    borderRadius: "10px",
+                    border:
+                      "1px solid #E2E8F0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748B",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    Equipment
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selectedWorkOrder.equipmentName}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    padding: "15px",
+                    background: "#F8FAFC",
+                    borderRadius: "10px",
+                    border:
+                      "1px solid #E2E8F0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748B",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    Status
+                  </div>
+
+                  <span
+                    style={{
+                      background:
+                        statusColor(
+                          selectedWorkOrder.status
+                        ),
+                      color: "#FFFFFF",
+                      padding:
+                        "6px 12px",
+                      borderRadius:
+                        "999px",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      display:
+                        "inline-block",
+                    }}
+                  >
+                    {selectedWorkOrder.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* DETAIL GRID */}
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "1fr 1fr",
+                  gap: "18px",
+                }}
+              >
+
+                <DetailItem
+                  label="Work Order ID"
+                  value={
+                    selectedWorkOrder.id
+                  }
+                />
+
+                <DetailItem
+                  label="Priority"
+                  value={
+                    selectedWorkOrder.priority
+                  }
+                />
+
+                <DetailItem
+                  label="Assigned To"
+                  value={
+                    selectedWorkOrder.assignedToName ||
+                    "Not assigned"
+                  }
+                />
+
+                <DetailItem
+                  label="Reported By"
+                  value={
+                    selectedWorkOrder.reportedByName ||
+                    "—"
+                  }
+                />
+
+                <DetailItem
+                  label="Maintenance Started"
+                  value={
+                    selectedWorkOrder.maintenanceStartedAt
+                      ? new Date(
+                          selectedWorkOrder.maintenanceStartedAt
+                        ).toLocaleString()
+                      : "—"
+                  }
+                />
+
+                <DetailItem
+                  label="Completed At"
+                  value={
+                    selectedWorkOrder.completedAt
+                      ? new Date(
+                          selectedWorkOrder.completedAt
+                        ).toLocaleString()
+                      : "Not completed"
+                  }
+                />
+
+                <DetailItem
+                  label="Downtime"
+                  value={
+                    selectedWorkOrder.downtimeMinutes !=
+                    null
+                      ? formatDowntime(
+                          selectedWorkOrder.downtimeMinutes
+                        )
+                      : "—"
+                  }
+                />
+
+                <DetailItem
+                  label="Created At"
+                  value={
+                    selectedWorkOrder.createdAt
+                      ? new Date(
+                          selectedWorkOrder.createdAt
+                        ).toLocaleString()
+                      : "—"
+                  }
+                />
+
+              </div>
+
+              {/* ISSUE */}
+
+              <div
+                style={{
+                  marginTop: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    marginBottom: "7px",
+                  }}
+                >
+                  Issue Description
+                </div>
+
+                <div
+                  style={{
+                    background: "#F8FAFC",
+                    border:
+                      "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    padding: "14px",
+                    lineHeight: "1.6",
+                    whiteSpace:
+                      "pre-wrap",
+                  }}
+                >
+                  {selectedWorkOrder.issueDescription ||
+                    "—"}
+                </div>
+              </div>
+
+              {/* SERVICE LOG */}
+
+              <div
+                style={{
+                  marginTop: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    marginBottom: "7px",
+                  }}
+                >
+                  Service / Maintenance Log
+                </div>
+
+                <div
+                  style={{
+                    background:
+                      selectedWorkOrder.serviceLog
+                        ? "#F0FDF4"
+                        : "#F8FAFC",
+                    border:
+                      "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    padding: "14px",
+                    lineHeight: "1.6",
+                    whiteSpace:
+                      "pre-wrap",
+                  }}
+                >
+                  {selectedWorkOrder.serviceLog ||
+                    "No service log has been added yet."}
+                </div>
+              </div>
+
+            </div>
+
+            {/* MODAL FOOTER */}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                padding: "15px 24px",
+                borderTop:
+                  "1px solid #E2E8F0",
+              }}
+            >
+              <button
+                onClick={closeDetails}
+                className="btn btn-dark"
+                style={{
+                  padding: "8px 20px",
+                  fontWeight: 600,
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   REUSABLE DETAIL ITEM
+========================================================= */
+
+function DetailItem({ label, value }) {
+  return (
+    <div
+      style={{
+        paddingBottom: "12px",
+        borderBottom:
+          "1px solid #E2E8F0",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "12px",
+          color: "#64748B",
+          marginBottom: "4px",
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: "14px",
+          fontWeight: 600,
+          color: "#0F172A",
+          wordBreak: "break-word",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }

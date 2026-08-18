@@ -16,18 +16,33 @@ public class EquipmentResponse {
     private String model;
     private String imageUrl;
     private String status;
+
+    // Existing calibration field - kept for compatibility
     private LocalDate calibrationDueDate;
+
+    // New calibration fields
+    private LocalDate lastCalibrationDate;
+    private LocalDate nextCalibrationDate;
+
+    // Certification fields
+    private String certificationDetails;
+    private LocalDate certificationExpiryDate;
+
     private String manualDocument;
     private String calibrationCertificate;
+
     private LocalDateTime createdAt;
+
     private Integer institutionId;
     private String institutionName;
+
     private java.math.BigDecimal hourlyRate;
 
     public EquipmentResponse() {
     }
 
     public EquipmentResponse(Equipment equipment) {
+
         this.id = equipment.getId();
         this.equipmentName = equipment.getEquipmentName();
         this.assetTag = equipment.getAssetTag();
@@ -36,13 +51,36 @@ public class EquipmentResponse {
         this.manufacturer = equipment.getManufacturer();
         this.model = equipment.getModel();
         this.imageUrl = equipment.getImageUrl();
-        this.status = equipment.getStatus() != null ? equipment.getStatus().name() : null;
+
+        this.status = equipment.getStatus() != null
+                ? equipment.getStatus().name()
+                : null;
+
+        // Existing calibration field
         this.calibrationDueDate = equipment.getCalibrationDueDate();
+
+        // New calibration fields
+        this.lastCalibrationDate = equipment.getLastCalibrationDate();
+        this.nextCalibrationDate = equipment.getNextCalibrationDate();
+
+        // Certification fields
+        this.certificationDetails = equipment.getCertificationDetails();
+        this.certificationExpiryDate = equipment.getCertificationExpiryDate();
+
         this.manualDocument = equipment.getManualDocument();
         this.calibrationCertificate = equipment.getCalibrationCertificate();
+
         this.createdAt = equipment.getCreatedAt();
-        this.institutionId = equipment.getInstitution() != null ? equipment.getInstitution().getId() : null;
-        this.institutionName = equipment.getInstitution() != null ? equipment.getInstitution().getName() : null;
+
+        this.institutionId = equipment.getInstitution() != null
+                ? equipment.getInstitution().getId()
+                : null;
+
+        this.institutionName = equipment.getInstitution() != null
+                ? equipment.getInstitution().getName()
+                : null;
+
+        this.hourlyRate = equipment.getHourlyRate();
     }
 
     public Long getId() {
@@ -125,6 +163,38 @@ public class EquipmentResponse {
         this.calibrationDueDate = calibrationDueDate;
     }
 
+    public LocalDate getLastCalibrationDate() {
+        return lastCalibrationDate;
+    }
+
+    public void setLastCalibrationDate(LocalDate lastCalibrationDate) {
+        this.lastCalibrationDate = lastCalibrationDate;
+    }
+
+    public LocalDate getNextCalibrationDate() {
+        return nextCalibrationDate;
+    }
+
+    public void setNextCalibrationDate(LocalDate nextCalibrationDate) {
+        this.nextCalibrationDate = nextCalibrationDate;
+    }
+
+    public String getCertificationDetails() {
+        return certificationDetails;
+    }
+
+    public void setCertificationDetails(String certificationDetails) {
+        this.certificationDetails = certificationDetails;
+    }
+
+    public LocalDate getCertificationExpiryDate() {
+        return certificationExpiryDate;
+    }
+
+    public void setCertificationExpiryDate(LocalDate certificationExpiryDate) {
+        this.certificationExpiryDate = certificationExpiryDate;
+    }
+
     public String getManualDocument() {
         return manualDocument;
     }
@@ -164,6 +234,7 @@ public class EquipmentResponse {
     public void setInstitutionName(String institutionName) {
         this.institutionName = institutionName;
     }
+
     public java.math.BigDecimal getHourlyRate() {
         return hourlyRate;
     }
