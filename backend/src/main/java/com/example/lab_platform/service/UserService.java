@@ -47,12 +47,29 @@ public class UserService {
                         new RuntimeException("Invalid role selected!")
                 );
 
-        // Find department
-        Department department = departmentRepository
-                .findById(registerRequest.getDepartmentId())
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid department selected!")
-                );
+       // Find department — optional for INSTITUTION_ADMIN, who oversees the whole institution
+Department department = null;
+boolean isInstitutionAdmin = "INSTITUTION_ADMIN".equalsIgnoreCase(role.getRoleName());
+
+if (!isInstitutionAdmin) {
+    department = departmentRepository
+            .findById(registerRequest.getDepartmentId())
+            .orElseThrow(() -> new RuntimeException("Invalid department selected!"));
+}
+
+Institution institution = institutionRepository
+        .findById(registerRequest.getInstitutionId())
+        .orElseThrow(() -> new RuntimeException("Invalid institution selected!"));
+
+if (department != null) {
+    boolean departmentBelongsToInstitution =
+        institutionDepartmentRepository.existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
+            institution.getInstitutionId(), department.getDepartmentId());
+
+    if (!departmentBelongsToInstitution) {
+        throw new RuntimeException("Selected department does not belong to the selected institution!");
+    }
+}
 
         // Create user
         User user = new User();

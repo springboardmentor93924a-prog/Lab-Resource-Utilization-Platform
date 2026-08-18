@@ -28,8 +28,9 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToOne
-    @JoinColumn(name = "department_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "department_id")
     private Department department;
 
     @Column(name = "status", length = 20)

@@ -182,8 +182,29 @@ function Register() {
             </select>
           </div>
 
-          {/* Department (Dynamic Mapping) */}
+          {/* Institution (Dynamic Mapping) */}
           <div className="form-group">
+            <label>Institution</label>
+            <select
+              name="institutionId"
+              value={formData.institutionId}
+              onChange={handleChange}
+              required
+            >
+              <option value="">
+                Select Institution
+              </option>
+              {institutions.map((inst) => (
+                <option key={inst.institutionId} value={inst.institutionId}>
+                  {inst.institutionName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Department (Dynamic Mapping, filtered by Institution) */}
+          {formData.roleName !== "INSTITUTION_ADMIN" && (
+            <div className="form-group">
             <label>Department</label>
             <select
               name="departmentId"
@@ -201,6 +222,7 @@ function Register() {
               ))}
             </select>
           </div>
+)}
 
           {/* Register Button */}
           <button
