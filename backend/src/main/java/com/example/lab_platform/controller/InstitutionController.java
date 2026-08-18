@@ -1,12 +1,14 @@
 package com.example.lab_platform.controller;
 
+import com.example.lab_platform.dto.DepartmentDTO;
+import com.example.lab_platform.dto.DepartmentLinkRequest;
+import com.example.lab_platform.dto.InstitutionDTO;
 import com.example.lab_platform.entity.Department;
 import com.example.lab_platform.entity.Institution;
 import com.example.lab_platform.entity.InstitutionDepartment;
 import com.example.lab_platform.repository.DepartmentRepository;
 import com.example.lab_platform.repository.InstitutionDepartmentRepository;
 import com.example.lab_platform.repository.InstitutionRepository;
-import com.example.lab_platform.dto.DepartmentLinkRequest;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,75 +25,133 @@ public class InstitutionController {
     private final DepartmentRepository departmentRepository;
     private final InstitutionDepartmentRepository institutionDepartmentRepository;
 
-public InstitutionController(InstitutionRepository institutionRepository,
-                              InstitutionDepartmentRepository institutionDepartmentRepository,
-                            DepartmentRepository departmentRepository) {
-    this.institutionRepository = institutionRepository;
-    this.departmentRepository = departmentRepository;
-    this.institutionDepartmentRepository = institutionDepartmentRepository;
-}
+    public InstitutionController(
+            InstitutionRepository institutionRepository,
+            InstitutionDepartmentRepository institutionDepartmentRepository,
+            DepartmentRepository departmentRepository) {
 
-// Public read — departments belonging to one institution, for Register.jsx cascade
-@GetMapping("/{institutionId}/departments")
-public List<Department> getDepartmentsForInstitution(@PathVariable Integer institutionId) {
-    return institutionDepartmentRepository.findByInstitutionInstitutionId(institutionId)
-            .stream()
-            .map(InstitutionDepartment::getDepartment)
-            .toList();
-}
-
-// Links an existing (or new) department to this institution.
-// If the department name already exists in the global catalog, it's reused —
-// no duplicate Department row is ever created, only a new link row.
-@PostMapping("/{institutionId}/departments")
-@PreAuthorize("hasAnyRole('INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
-public ResponseEntity<?> addDepartmentToInstitution(
-        @PathVariable Integer institutionId,
-        @RequestBody DepartmentLinkRequest request) {
-
-    Institution institution = institutionRepository.findById(institutionId)
-            .orElseThrow(() -> new RuntimeException("Institution not found"));
-
-    Department department;
-
-    if (request.getDepartmentId() != null) {
-        department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(() -> new RuntimeException("Department not found"));
-    } else {
-        // reuse by name if it already exists in the catalog, else create it once
-        department = departmentRepository.findByDepartmentNameIgnoreCase(request.getDepartmentName())
-                .orElseGet(() -> {
-                    Department d = new Department();
-                    d.setDepartmentName(request.getDepartmentName());
-                    return departmentRepository.save(d);
-                });
+        this.institutionRepository = institutionRepository;
+        this.departmentRepository = departmentRepository;
+        this.institutionDepartmentRepository = institutionDepartmentRepository;
     }
 
-    boolean alreadyLinked = institutionDepartmentRepository
-            .existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
-                    institutionId, department.getDepartmentId());
+    // ============================================================
+    // GET DEPARTMENTS FOR AN INSTITUTION
+    // ============================================================
 
-    if (alreadyLinked) {
-        return ResponseEntity.badRequest().body("Department already linked to this institution");
+    @GetMapping("/{institutionId}/departments")
+    public List<DepartmentDTO> getDepartmentsForInstitution(
+            @PathVariable Integer institutionId) {
+
+        return institutionDepartmentRepository
+                .findByInstitutionInstitutionId(institutionId)
+                .stream()
+                .map(InstitutionDepartment::getDepartment)
+                .map(department ->
+                        new DepartmentDTO(
+                                department.getDepartmentId(),
+                                department.getDepartmentName()
+                        )
+                )
+                .toList();
     }
 
-    InstitutionDepartment link = new InstitutionDepartment(institution, department);
-    institutionDepartmentRepository.save(link);
+    // ============================================================
+    // ADD DEPARTMENT TO INSTITUTION
+    // ============================================================
 
-    return ResponseEntity.ok(department);
-}
+    @PostMapping("/{institutionId}/departments")
+    @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    public ResponseEntity<?> addDepartmentToInstitution(
+            @PathVariable Integer institutionId,
+            @RequestBody DepartmentLinkRequest request) {
 
-    // Public read — needed so any logged-in user can populate the
-    // institution dropdown when creating a sharing request.
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(() ->
+                        new RuntimeException("Institution not found"));
+
+        Department department;
+
+        if (request.getDepartmentId() != null) {
+
+            department = departmentRepository
+                    .findById(request.getDepartmentId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Department not found"));
+
+        } else {
+
+            department = departmentRepository
+                    .findByDepartmentNameIgnoreCase(
+                            request.getDepartmentName())
+                    .orElseGet(() -> {
+
+                        Department d = new Department();
+
+                        d.setDepartmentName(
+                                request.getDepartmentName());
+
+                        return departmentRepository.save(d);
+                    });
+        }
+
+        boolean alreadyLinked =
+                institutionDepartmentRepository
+                        .existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
+                                institutionId,
+                                department.getDepartmentId());
+
+        if (alreadyLinked) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body("Department already linked to this institution");
+        }
+
+        InstitutionDepartment link =
+                new InstitutionDepartment(
+                        institution,
+                        department);
+
+        institutionDepartmentRepository.save(link);
+
+        return ResponseEntity.ok(
+                new DepartmentDTO(
+                        department.getDepartmentId(),
+                        department.getDepartmentName()
+                )
+        );
+    }
+
+    // ============================================================
+    // GET ALL INSTITUTIONS
+    // ============================================================
+
     @GetMapping
-    public List<Institution> getAllInstitutions() {
-        return institutionRepository.findAll();
+    public List<InstitutionDTO> getAllInstitutions() {
+
+        return institutionRepository
+                .findAll()
+                .stream()
+                .map(institution ->
+                        new InstitutionDTO(
+                                institution.getInstitutionId(),
+                                institution.getInstitutionName()
+                        )
+                )
+                .toList();
     }
 
-    // Restricted write — same pattern as DepartmentController
+    // ============================================================
+    // CREATE INSTITUTION
+    // ============================================================
+
     @PostMapping
     @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
-    public Institution createInstitution(@RequestBody Institution institution) {
+    public Institution createInstitution(
+            @RequestBody Institution institution) {
+
         return institutionRepository.save(institution);
     }
 }

@@ -39,7 +39,7 @@ function Login() {
         throw new Error(
           typeof data === "string"
             ? data
-            : "Invalid credentials"
+            : data.message || "Invalid credentials"
         );
       }
 

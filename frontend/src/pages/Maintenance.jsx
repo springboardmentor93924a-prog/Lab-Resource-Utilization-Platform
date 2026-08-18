@@ -10,6 +10,9 @@ function Maintenance() {
     const [showForm, setShowForm] = useState(false);
     const [error, setError] = useState("");
 
+    // id of the record currently being edited, null = create mode
+    const [editingId, setEditingId] = useState(null);
+
     const [formData, setFormData] = useState({
         equipmentId: "",
         maintenanceDate: "",
@@ -78,6 +81,31 @@ function Maintenance() {
         });
     };
 
+    const resetForm = () => {
+        setFormData({
+            equipmentId: "",
+            maintenanceDate: "",
+            maintenanceType: "",
+            description: "",
+            maintenanceStatus: "Scheduled",
+            nextMaintenanceDate: ""
+        });
+        setEditingId(null);
+    };
+
+    const openEditForm = (record) => {
+        setFormData({
+            equipmentId: record.equipment?.equipmentId || "",
+            maintenanceDate: record.maintenanceDate || "",
+            maintenanceType: record.maintenanceType || "",
+            description: record.description || "",
+            maintenanceStatus: record.maintenanceStatus || "Scheduled",
+            nextMaintenanceDate: record.nextMaintenanceDate || ""
+        });
+        setEditingId(record.maintenanceId);
+        setShowForm(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -99,10 +127,14 @@ function Maintenance() {
                     formData.nextMaintenanceDate || null
             };
 
+            const isEditing = editingId !== null;
+
             const response = await fetch(
-                `${API_BASE_URL}/maintenance`,
+                isEditing
+                    ? `${API_BASE_URL}/maintenance/${editingId}`
+                    : `${API_BASE_URL}/maintenance`,
                 {
-                    method: "POST",
+                    method: isEditing ? "PUT" : "POST",
                     headers: getHeaders(),
                     body: JSON.stringify(maintenanceData)
                 }
@@ -111,26 +143,52 @@ function Maintenance() {
             if (!response.ok) {
                 const message = await response.text();
                 throw new Error(
-                    message || `Failed to create maintenance record`
+                    message ||
+                        `Failed to ${isEditing ? "update" : "create"} maintenance record`
                 );
             }
 
-            setFormData({
-                equipmentId: "",
-                maintenanceDate: "",
-                maintenanceType: "",
-                description: "",
-                maintenanceStatus: "Scheduled",
-                nextMaintenanceDate: ""
-            });
-
+            resetForm();
             setShowForm(false);
 
             await fetchData();
 
         } catch (err) {
-            console.error("Create maintenance error:", err);
-            alert(`Failed to create maintenance record: ${err.message}`);
+            console.error("Save maintenance error:", err);
+            alert(`Failed to save maintenance record: ${err.message}`);
+        }
+    };
+
+    const handleMarkComplete = async (record) => {
+        if (!window.confirm(
+            `Mark maintenance for "${getEquipmentName(record)}" as Completed? The equipment will be released back to Available.`
+        )) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/maintenance/${record.maintenanceId}`,
+                {
+                    method: "PUT",
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        ...record,
+                        maintenanceStatus: "Completed"
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || "Failed to mark maintenance complete");
+            }
+
+            await fetchData();
+
+        } catch (err) {
+            console.error("Complete maintenance error:", err);
+            alert(`Failed to mark complete: ${err.message}`);
         }
     };
 
@@ -189,9 +247,14 @@ function Maintenance() {
 
                 <button
                     className="add-maintenance-btn"
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => {
+                        if (showForm) {
+                            resetForm();
+                        }
+                        setShowForm(!showForm);
+                    }}
                 >
-                    + Schedule Maintenance
+                    {showForm ? "Close" : "+ Schedule Maintenance"}
                 </button>
             </div>
 
@@ -203,7 +266,7 @@ function Maintenance() {
 
             {showForm && (
                 <div className="maintenance-form-card">
-                    <h2>Schedule Maintenance</h2>
+                    <h2>{editingId ? "Edit Maintenance" : "Schedule Maintenance"}</h2>
 
                     <form onSubmit={handleSubmit}>
 
@@ -217,6 +280,7 @@ function Maintenance() {
                                     value={formData.equipmentId}
                                     onChange={handleChange}
                                     required
+                                    disabled={editingId !== null}
                                 >
                                     <option value="">
                                         Select equipment
@@ -273,11 +337,17 @@ function Maintenance() {
                                     <option value="Scheduled">
                                         Scheduled
                                     </option>
+                                    <option value="Active">
+                                        Active
+                                    </option>
                                     <option value="In Progress">
                                         In Progress
                                     </option>
                                     <option value="Completed">
                                         Completed
+                                    </option>
+                                    <option value="Cancelled">
+                                        Cancelled
                                     </option>
                                 </select>
                             </div>
@@ -311,7 +381,10 @@ function Maintenance() {
                             <button
                                 type="button"
                                 className="cancel-btn"
-                                onClick={() => setShowForm(false)}
+                                onClick={() => {
+                                    resetForm();
+                                    setShowForm(false);
+                                }}
                             >
                                 Cancel
                             </button>
@@ -320,7 +393,7 @@ function Maintenance() {
                                 type="submit"
                                 className="save-btn"
                             >
-                                Save Maintenance
+                                {editingId ? "Update Maintenance" : "Save Maintenance"}
                             </button>
                         </div>
 
@@ -353,8 +426,9 @@ function Maintenance() {
                         {
                             maintenanceRecords.filter(
                                 (item) =>
-                                    item.maintenanceStatus?.toLowerCase() ===
-                                    "in progress"
+                                    ["in progress", "active"].includes(
+                                        item.maintenanceStatus?.toLowerCase()
+                                    )
                             ).length
                         }
                     </strong>
@@ -392,64 +466,89 @@ function Maintenance() {
             ) : (
                 <div className="maintenance-grid">
 
-                    {maintenanceRecords.map((record) => (
-                        <div
-                            className="maintenance-card"
-                            key={record.maintenanceId}
-                        >
+                    {maintenanceRecords.map((record) => {
+                        const status = record.maintenanceStatus?.toLowerCase() || "";
+                        const isClosed = status === "completed" || status === "cancelled";
 
-                            <div className="maintenance-card-top">
-                                <div className="equipment-icon">
-                                    🔧
+                        return (
+                            <div
+                                className="maintenance-card"
+                                key={record.maintenanceId}
+                            >
+
+                                <div className="maintenance-card-top">
+                                    <div className="equipment-icon">
+                                        🔧
+                                    </div>
+
+                                    <span
+                                        className={`maintenance-status ${getStatusClass(
+                                            record.maintenanceStatus
+                                        )}`}
+                                    >
+                                        {record.maintenanceStatus ||
+                                            "Unknown"}
+                                    </span>
                                 </div>
 
-                                <span
-                                    className={`maintenance-status ${getStatusClass(
-                                        record.maintenanceStatus
-                                    )}`}
-                                >
-                                    {record.maintenanceStatus ||
-                                        "Unknown"}
-                                </span>
+                                <h2>
+                                    {getEquipmentName(record)}
+                                </h2>
+
+                                <div className="maintenance-info">
+
+                                    <div>
+                                        <span>Maintenance Date</span>
+                                        <strong>
+                                            {record.maintenanceDate || "—"}
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <span>Type</span>
+                                        <strong>
+                                            {record.maintenanceType || "—"}
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <span>Next Maintenance</span>
+                                        <strong>
+                                            {record.nextMaintenanceDate || "—"}
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                                {record.description && (
+                                    <div className="maintenance-description">
+                                        {record.description}
+                                    </div>
+                                )}
+
+                                <div className="maintenance-card-actions">
+                                    <button
+                                        type="button"
+                                        className="edit-maintenance-btn"
+                                        onClick={() => openEditForm(record)}
+                                    >
+                                        Edit
+                                    </button>
+
+                                    {!isClosed && (
+                                        <button
+                                            type="button"
+                                            className="complete-maintenance-btn"
+                                            onClick={() => handleMarkComplete(record)}
+                                        >
+                                            Mark Complete
+                                        </button>
+                                    )}
+                                </div>
+
                             </div>
-
-                            <h2>
-                                {getEquipmentName(record)}
-                            </h2>
-
-                            <div className="maintenance-info">
-
-                                <div>
-                                    <span>Maintenance Date</span>
-                                    <strong>
-                                        {record.maintenanceDate || "—"}
-                                    </strong>
-                                </div>
-
-                                <div>
-                                    <span>Type</span>
-                                    <strong>
-                                        {record.maintenanceType || "—"}
-                                    </strong>
-                                </div>
-
-                                <div>
-                                    <span>Next Maintenance</span>
-                                    <strong>
-                                        {record.nextMaintenanceDate || "—"}
-                                    </strong>
-                                </div>
-
-                            </div>
-
-                            {record.description && (
-                                <div className="maintenance-description">
-                                    {record.description}
-                                </div>
-                            )}
-
-                        </div>
-                    ))}
+                        );
+                    })}
 
                 </div>
             )}

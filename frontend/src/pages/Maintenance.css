@@ -52,7 +52,43 @@
     margin-bottom: 25px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
 }
+/* --- Append below: card action buttons for Edit / Mark Complete --- */
+.maintenance-card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
 
+.edit-maintenance-btn,
+.complete-maintenance-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.edit-maintenance-btn {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #e2e8f0;
+}
+
+.edit-maintenance-btn:hover {
+    background: #e2e8f0;
+}
+
+.complete-maintenance-btn {
+    background: #16a34a;
+    color: #fff;
+}
+
+.complete-maintenance-btn:hover {
+    background: #15803d;
+}
 .maintenance-form-card h2 {
     margin-top: 0;
     color: #1f2937;

@@ -20,34 +20,81 @@ function Register() {
   const [departments, setDepartments] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+const selectedRole = roles.find(
+  (role) => String(role.roleId) === String(formData.roleId)
+);
   // Fetch roles and institutions once on mount
   useEffect(() => {
-    fetch("http://localhost:8080/api/roles")
-      .then((res) => res.json())
-      .then((data) => setRoles(data))
-      .catch((err) => console.error("Error fetching roles:", err));
 
-    fetch("http://localhost:8080/api/institutions")
-      .then((res) => res.json())
-      .then((data) => setInstitutions(data))
-      .catch((err) => console.error("Error fetching institutions:", err));
-  }, []);
+  fetch("http://localhost:8080/api/roles")
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Failed to load roles");
+      }
+      return res.json();
+    })
+    .then((data) => {
+      setRoles(Array.isArray(data) ? data : []);
+    })
+    .catch((err) => {
+      console.error("Error fetching roles:", err);
+      setRoles([]);
+    });
+
+  fetch("http://localhost:8080/api/institutions")
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Failed to load institutions");
+      }
+      return res.json();
+    })
+    .then((data) => {
+      setInstitutions(Array.isArray(data) ? data : []);
+    })
+    .catch((err) => {
+      console.error("Error fetching institutions:", err);
+      setInstitutions([]);
+    });
+
+}, []); 
 
   // Fetch departments only for the selected institution
   useEffect(() => {
-    if (!formData.institutionId) {
-      setDepartments([]);
-      return;
-    }
 
-    fetch(
-      `http://localhost:8080/api/institutions/${formData.institutionId}/departments`
-    )
-      .then((res) => res.json())
-      .then((data) => setDepartments(data))
-      .catch((err) => console.error("Error fetching departments:", err));
-  }, [formData.institutionId]);
+  if (!formData.institutionId) {
+    setDepartments([]);
+    return;
+  }
+
+  fetch(
+    `http://localhost:8080/api/institutions/${formData.institutionId}/departments`
+  )
+    .then((res) => {
+
+      if (!res.ok) {
+        throw new Error("Failed to load departments");
+      }
+
+      return res.json();
+    })
+    .then((data) => {
+
+      setDepartments(
+        Array.isArray(data) ? data : []
+      );
+
+    })
+    .catch((err) => {
+
+      console.error(
+        "Error fetching departments:",
+        err
+      );
+
+      setDepartments([]);
+    });
+
+}, [formData.institutionId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -230,28 +277,33 @@ function Register() {
           </div>
 
           {/* Department (Dynamic Mapping, filtered by Institution) */}
-          {formData.roleName !== "INSTITUTION_ADMIN" && (
-            <div className="form-group">
-            <label>Department</label>
-            <select
-              name="departmentId"
-              value={formData.departmentId}
-              onChange={handleChange}
-              required
-              disabled={!formData.institutionId}
-            >
-              <option value="">
-                {formData.institutionId
-                  ? "Select Department"
-                  : "Select an institution first"}
-              </option>
-              {departments.map((dept) => (
-                <option key={dept.departmentId} value={dept.departmentId}>
-                  {dept.departmentName}
-                </option>
-              ))}
-            </select>
-          </div>
+          {selectedRole?.roleName !== "INSTITUTION_ADMIN" && (
+  <div className="form-group">
+    <label>Department</label>
+
+    <select
+      name="departmentId"
+      value={formData.departmentId}
+      onChange={handleChange}
+      required
+      disabled={!formData.institutionId}
+    >
+      <option value="">
+        {formData.institutionId
+          ? "Select Department"
+          : "Select an institution first"}
+      </option>
+
+      {departments.map((dept) => (
+        <option
+          key={dept.departmentId}
+          value={dept.departmentId}
+        >
+          {dept.departmentName}
+        </option>
+      ))}
+    </select>
+  </div>
 )}
 
           {/* Register Button */}
