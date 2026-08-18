@@ -82,6 +82,7 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/api/departments/**",
                     "/api/roles/**",
+                    "/api/institutions/**",
                     "/error"
                 ).permitAll()
 
