@@ -27,8 +27,14 @@ public class Equipment {
     @Column(name = "status", length = 20)
     private String status = "Available";
 
-    @ManyToOne
-    @JoinColumn(name = "department_id")
+    @Column(name = "requires_approval")
+private Boolean requiresApproval = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "department_id",
+        nullable = false
+    )
     private Department department;
 
     @Column(name = "purchase_date")
@@ -37,6 +43,13 @@ public class Equipment {
     // 🔥 NEW FIELD (Idle Detection ke liye)
     @Column(name = "last_used_date")
     private LocalDate lastUsedDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(
+        name = "institution_id",
+        nullable = false
+)
+private Institution institution;
 
     public Equipment() {
     }
@@ -114,4 +127,20 @@ public class Equipment {
     public void setLastUsedDate(LocalDate lastUsedDate) {
         this.lastUsedDate = lastUsedDate;
     }
+
+    public Institution getInstitution() {
+    return institution;
+}
+
+public void setInstitution(Institution institution) {
+    this.institution = institution;
+}
+
+public Boolean getRequiresApproval() {
+    return requiresApproval;
+}
+
+public void setRequiresApproval(Boolean requiresApproval) {
+    this.requiresApproval = requiresApproval;
+}
 }

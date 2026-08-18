@@ -39,6 +39,13 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(
+        name = "institution_id",
+        nullable = false
+)
+private Institution institution;
+
     public User() {
     }
 
@@ -118,4 +125,13 @@ public class User {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public Institution getInstitution() {
+    return institution;
+}
+
+public void setInstitution(Institution institution) {
+    this.institution = institution;
+}
+
 }
