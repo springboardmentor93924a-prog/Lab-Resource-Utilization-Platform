@@ -66,12 +66,6 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
-  const canAccessResourceSharing = [
-    "LAB_MANAGER",
-    "INSTITUTION_ADMIN",
-    "SYSTEM_ADMIN"
-  ].includes(role);
-
   return (
     <aside className="sidebar">
 
@@ -90,7 +84,6 @@ function Sidebar() {
 
       <nav className="sidebar-menu">
 
-        {/* Dashboard */}
         <Link
           to="/dashboard"
           className={`sidebar-link ${
@@ -101,7 +94,6 @@ function Sidebar() {
           Dashboard
         </Link>
 
-        {/* Equipment */}
         {canAccessEquipment && (
           <Link
             to="/equipment"
@@ -114,7 +106,6 @@ function Sidebar() {
           </Link>
         )}
 
-        {/* Bookings */}
         {canAccessBookings && (
           <Link
             to="/reservations"
@@ -126,8 +117,7 @@ function Sidebar() {
             Bookings
           </Link>
         )}
-
-        {/* Waitlist */}
+        
         {canAccessWaitlist && (
           <Link
             to="/waitlist"
@@ -140,7 +130,6 @@ function Sidebar() {
           </Link>
         )}
 
-        {/* Utilization */}
         {canAccessUtilization && (
           <Link
             to="/utilization"
@@ -153,7 +142,6 @@ function Sidebar() {
           </Link>
         )}
 
-        {/* Heatmap */}
         {canAccessUtilization && (
           <Link
             to="/heatmap"
@@ -165,21 +153,18 @@ function Sidebar() {
             Heatmap
           </Link>
         )}
-
-        {/* Demand Analysis */}
         {canAccessUtilization && (
-          <Link
-            to="/demand-analysis"
-            className={`sidebar-link ${
-              isActive("/demand-analysis") ? "active" : ""
-            }`}
-          >
-            <span>📊</span>
-            Demand Analysis
-          </Link>
-        )}
+    <Link
+      to="/demand-analysis"
+      className={`sidebar-link ${
+      isActive("/demand-analysis") ? "active" : ""
+     }`}
+   >
+    <span>📊</span>
+    Demand Analysis
+  </Link>
+)}
 
-        {/* Maintenance */}
         {canAccessMaintenance && (
           <Link
             to="/maintenance"
@@ -192,20 +177,6 @@ function Sidebar() {
           </Link>
         )}
 
-        {/* Resource Sharing */}
-        {canAccessResourceSharing && (
-          <Link
-            to="/resource-sharing"
-            className={`sidebar-link ${
-              isActive("/resource-sharing") ? "active" : ""
-            }`}
-          >
-            <span>🤝</span>
-            Resource Sharing
-          </Link>
-        )}
-
-        {/* Reports */}
         {canAccessReports && (
           <Link
             to="/reports"
@@ -218,7 +189,6 @@ function Sidebar() {
           </Link>
         )}
 
-        {/* Users */}
         {canAccessUsers && (
           <Link
             to="/users"

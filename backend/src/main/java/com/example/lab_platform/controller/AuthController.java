@@ -1,9 +1,7 @@
 package com.example.lab_platform.controller;
 
-import com.example.lab_platform.dto.ForgotPasswordRequest;
 import com.example.lab_platform.dto.LoginRequest;
 import com.example.lab_platform.dto.RegisterRequest;
-import com.example.lab_platform.dto.ResetPasswordRequest;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.security.JwtService;
 import com.example.lab_platform.service.UserService;
@@ -65,12 +63,13 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
 
-        } catch (RuntimeException e) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
-        }
+       } catch (RuntimeException e) {
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("message", e.getMessage());
+    return ResponseEntity
+            .badRequest()
+            .body(errorResponse);
+}
     }
 
 
@@ -95,32 +94,4 @@ public class AuthController {
                     .body(e.getMessage());
         }
     }
-
-    @PostMapping("/forgot-password")
-public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-    try {
-        String token = userService.createPasswordResetToken(request.getEmail());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Reset token generated");
-        response.put("token", token); // 
-
-        return ResponseEntity.ok(response);
-
-    } catch (RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-}
-
-@PostMapping("/reset-password")
-public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-    try {
-        userService.resetPassword(request.getToken(), request.getNewPassword());
-        return ResponseEntity.ok("Password reset successful");
-
-    } catch (RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-}
-
 }

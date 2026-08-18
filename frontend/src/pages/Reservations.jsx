@@ -371,13 +371,13 @@ function Reservations() {
                 <td style={cellStyle}>
                   <strong>
                     {booking.bookingStatus === "Pending" && "⏳ Pending"}
-                    {booking.bookingStatus === "Pending Approval" && "⏳ Pending Approval"}
-                    {booking.bookingStatus === "Confirmed" && "✅ Confirmed"}
-                    {booking.bookingStatus === "In Use" && "🟦 In Use"}
-                    {booking.bookingStatus === "Rejected" && "❌ Rejected"}
-                    {booking.bookingStatus === "Cancelled" && "⚪ Cancelled"}
-                    {booking.bookingStatus === "No Show" && "⚫ No Show"}
-                    {booking.bookingStatus === "Completed" && "✔ Completed"}
+{booking.bookingStatus === "Pending Approval" && "⏳ Pending Approval"}
+{booking.bookingStatus === "Confirmed" && "✅ Confirmed"}
+{booking.bookingStatus === "In Use" && "🟦 In Use"}
+{booking.bookingStatus === "Rejected" && "❌ Rejected"}
+{booking.bookingStatus === "Cancelled" && "⚪ Cancelled"}
+{booking.bookingStatus === "No Show" && "⚫ No Show"}
+{booking.bookingStatus === "Completed" && "✔ Completed"}
                   </strong>
                 </td>
 
@@ -388,7 +388,7 @@ function Reservations() {
                 <td style={cellStyle}>
 
                   {/* Student can edit/delete their own pending bookings */}
-                  {booking.bookingStatus === "Pending Approval" &&
+                  {booking.bookingStatus === "Pending" || booking.bookingStatus === "Pending Approval" &&
                    role === "STUDENT" && (
                     <>
                       <button
@@ -410,7 +410,7 @@ function Reservations() {
 
                   {/* Lab Manager / Department Head / Institution Admin /
                       System Admin can also edit or delete any pending booking */}
-                  {booking.bookingStatus === "Pending Approval" &&
+                  {booking.bookingStatus === "Pending" &&
                    (role === "LAB_MANAGER" ||
                     role === "DEPARTMENT_HEAD" ||
                     role === "INSTITUTION_ADMIN" ||
@@ -434,7 +434,7 @@ function Reservations() {
 
 
                   {/* Lab Technician and Manager-tier roles can approve/reject */}
-                  {booking.bookingStatus === "Pending Approval" &&
+                  {booking.bookingStatus === "Pending" &&
                    (role === "LAB_TECHNICIAN" ||
                     role === "LAB_MANAGER" ||
                     role === "DEPARTMENT_HEAD" ||

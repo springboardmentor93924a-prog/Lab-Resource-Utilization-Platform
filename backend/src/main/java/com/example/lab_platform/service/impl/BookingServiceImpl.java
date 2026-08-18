@@ -261,18 +261,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        boolean requiresApproval = booking.getEquipment().getRequiresApproval() == null
-        || booking.getEquipment().getRequiresApproval();
-
-if (requiresApproval) {
-    booking.setBookingStatus("Pending Approval");
-} else {
-    booking.setBookingStatus("Confirmed");
-
-    Equipment eq = booking.getEquipment();
-    eq.setStatus("Booked");
-    equipmentRepository.save(eq);
-}
+        booking.setBookingStatus("Pending Approval");
 
         return bookingRepository.save(booking);
     }
@@ -490,55 +479,48 @@ public Booking updateBooking(
             existingBooking
     );
 }
+    @Override
+    public void deleteBooking(Integer id) {
 
-public void deleteBooking(Integer id) {
+        Booking existingBooking =
+                bookingRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking not found"
+                                )
+                        );
 
-    Booking existingBooking =
-            bookingRepository.findById(id)
-                    .orElseThrow(() ->
-                            new RuntimeException("Booking not found")
-                    );
+        User loggedInUser = getLoggedInUser();
+        String role = getRole(loggedInUser);
 
-    User loggedInUser = getLoggedInUser();
-    String role = getRole(loggedInUser);
+        if (isManagerOrAbove(role)) {
 
-    boolean isOwnBooking = existingBooking.getUser()
-            .getUserId()
-            .equals(loggedInUser.getUserId());
-
-    if (!isManagerOrAbove(role)) {
-
-        if (!role.equalsIgnoreCase("STUDENT")) {
-            throw new RuntimeException("You are not allowed to delete bookings");
+            bookingRepository.delete(existingBooking);
+            return;
         }
 
-        if (!isOwnBooking) {
-            throw new RuntimeException("You can delete only your own booking");
+        if (!role.equalsIgnoreCase("STUDENT")) {
+
+            throw new RuntimeException(
+                    "You are not allowed to delete bookings"
+            );
+        }
+
+        if (!existingBooking.getUser()
+                .getUserId()
+                .equals(loggedInUser.getUserId())) {
+
+            throw new RuntimeException(
+                    "You can delete only your own booking"
+            );
         }
 
         if (!isPendingApproval(existingBooking.getBookingStatus())) {
-            throw new RuntimeException("Only Pending Approval bookings can be cancelled");
-        }
-    }
-
-    String previousStatus = existingBooking.getBookingStatus();
-
-    existingBooking.setBookingStatus("Cancelled");
-    bookingRepository.save(existingBooking);
-
-    boolean wasHoldingEquipment =
-            "Confirmed".equalsIgnoreCase(previousStatus)
-                    || "In Use".equalsIgnoreCase(previousStatus);
-
-    if (wasHoldingEquipment && existingBooking.getEquipment() != null) {
-
-        Equipment equipment = existingBooking.getEquipment();
-        equipment.setStatus("Available");
-        equipmentRepository.save(equipment);
-
-        notifyNextWaitlistedUser(equipment);
-    }
+    throw new RuntimeException("Only Pending Approval bookings can be deleted");
 }
+
+        bookingRepository.delete(existingBooking);
+    }
 
     @Override
     public Booking approveBooking(Integer id) {
