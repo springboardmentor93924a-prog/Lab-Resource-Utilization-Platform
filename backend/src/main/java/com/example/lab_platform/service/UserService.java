@@ -60,24 +60,29 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
                         new RuntimeException("Invalid role selected!")
                 );
 
-        // Find department
-        Department department = departmentRepository
-                .findById(registerRequest.getDepartmentId())
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid department selected!")
-                );
+       // Find department — optional for INSTITUTION_ADMIN, who oversees the whole institution
+Department department = null;
+boolean isInstitutionAdmin = "INSTITUTION_ADMIN".equalsIgnoreCase(role.getRoleName());
 
-        Institution institution = institutionRepository
-                .findById(registerRequest.getInstitutionId())
-                .orElseThrow(() -> new RuntimeException("Invalid institution selected!"));
+if (!isInstitutionAdmin) {
+    department = departmentRepository
+            .findById(registerRequest.getDepartmentId())
+            .orElseThrow(() -> new RuntimeException("Invalid department selected!"));
+}
 
-            boolean departmentBelongsToInstitution =
-            institutionDepartmentRepository.existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
-                institution.getInstitutionId(), department.getDepartmentId());
+Institution institution = institutionRepository
+        .findById(registerRequest.getInstitutionId())
+        .orElseThrow(() -> new RuntimeException("Invalid institution selected!"));
 
-        if (!departmentBelongsToInstitution) {
+if (department != null) {
+    boolean departmentBelongsToInstitution =
+        institutionDepartmentRepository.existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
+            institution.getInstitutionId(), department.getDepartmentId());
+
+    if (!departmentBelongsToInstitution) {
         throw new RuntimeException("Selected department does not belong to the selected institution!");
-        }
+    }
+}
 
         // Create user
         User user = new User();

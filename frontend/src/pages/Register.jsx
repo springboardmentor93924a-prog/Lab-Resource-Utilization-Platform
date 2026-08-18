@@ -230,7 +230,8 @@ function Register() {
           </div>
 
           {/* Department (Dynamic Mapping, filtered by Institution) */}
-          <div className="form-group">
+          {formData.roleName !== "INSTITUTION_ADMIN" && (
+            <div className="form-group">
             <label>Department</label>
             <select
               name="departmentId"
@@ -251,6 +252,7 @@ function Register() {
               ))}
             </select>
           </div>
+)}
 
           {/* Register Button */}
           <button
