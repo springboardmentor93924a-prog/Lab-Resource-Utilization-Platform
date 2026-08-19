@@ -22,7 +22,7 @@ function Maintenance() {
         nextMaintenanceDate: ""
     });
 
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
 
     const getHeaders = () => ({
         "Content-Type": "application/json",

@@ -6,10 +6,10 @@ function ProtectedRoute({
 }) {
 
   const token =
-    localStorage.getItem("token");
+    sessionStorage.getItem("token");
 
   const role =
-    localStorage.getItem("role");
+    sessionStorage.getItem("role");
 
 
   // User is not logged in

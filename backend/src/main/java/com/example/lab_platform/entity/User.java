@@ -1,5 +1,6 @@
 package com.example.lab_platform.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -18,6 +19,10 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
+    // Never serialize the password hash back to the frontend — every
+    // endpoint that returns a User (directly, or nested under Booking/
+    // Waitlist/Maintenance/etc.) was previously leaking the BCrypt hash.
+    @JsonIgnore
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
@@ -28,7 +33,7 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(
         name = "department_id")
     private Department department;
@@ -39,7 +44,7 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
 @JoinColumn(
         name = "institution_id",
         nullable = false

@@ -30,7 +30,7 @@ public class Equipment {
     @Column(name = "requires_approval")
 private Boolean requiresApproval = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(
         name = "department_id",
         nullable = false
@@ -44,7 +44,7 @@ private Boolean requiresApproval = true;
     @Column(name = "last_used_date")
     private LocalDate lastUsedDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
 @JoinColumn(
         name = "institution_id",
         nullable = false

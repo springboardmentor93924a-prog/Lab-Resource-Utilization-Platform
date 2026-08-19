@@ -6,6 +6,7 @@ import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.service.BookingService;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,15 +21,18 @@ public class EquipmentStatusScheduler {
     private final BookingRepository bookingRepository;
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceRepository maintenanceRepository;
+    private final BookingService bookingService;
 
     public EquipmentStatusScheduler(
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
-            MaintenanceRepository maintenanceRepository) {
+            MaintenanceRepository maintenanceRepository,
+            BookingService bookingService) {
 
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.maintenanceRepository = maintenanceRepository;
+        this.bookingService = bookingService;
     }
 
     /*
@@ -44,6 +48,11 @@ public class EquipmentStatusScheduler {
         LocalDateTime now = LocalDateTime.now();
 
         activateDueMaintenance();
+
+        // Confirmed bookings whose endTime has already passed get
+        // auto-completed here — otherwise they sit at "Confirmed"
+        // forever with no path to "Completed" except a manual click.
+        bookingService.autoCompleteOverdueBookings();
 
         List<Equipment> equipmentList =
                 equipmentRepository.findAll();

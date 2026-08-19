@@ -10,7 +10,7 @@ export default function BookingAvailability() {
     e.preventDefault();
     try {
       const res = await axios.get(`http://localhost:8080/api/bookings/availability?equipmentId=${equipmentId}&date=${date}`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setIsAvailable(res.data.isAvailable);
     } catch (error) {

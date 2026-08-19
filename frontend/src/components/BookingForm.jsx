@@ -15,7 +15,7 @@ export default function BookingForm({ onSuccess }) {
         bookingDate,
         status: 'PENDING'
       }, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       alert('Equipment booked successfully! Pending approval.');
       setEquipmentId('');

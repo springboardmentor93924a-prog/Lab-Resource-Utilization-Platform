@@ -5,12 +5,14 @@ import com.example.lab_platform.dto.UtilizationDTO;
 import com.example.lab_platform.dto.UtilizationSummaryDTO;
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
+import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.service.UtilizationService;
 
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -37,10 +39,42 @@ public class UtilizationServiceImpl implements UtilizationService {
         this.waitlistRepository = waitlistRepository;
     }
 
+    /*
+     * Manager-tier roles only see utilization/heatmap data for their
+     * own institution's equipment — not every institution combined.
+     * SYSTEM_ADMIN sees everything (platform-wide view).
+     */
+    private List<Equipment> scopedEquipmentToOwnInstitution() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return equipmentRepository.findAll();
+        }
+
+        User loggedInUser = (User) authentication.getPrincipal();
+        String role = loggedInUser.getRole().getRoleName();
+
+        if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+            return equipmentRepository.findAll();
+        }
+
+        if (loggedInUser.getInstitution() == null) {
+            return new ArrayList<>();
+        }
+
+        Integer institutionId = loggedInUser.getInstitution().getInstitutionId();
+
+        return equipmentRepository.findAll().stream()
+                .filter(e -> e.getInstitution() != null
+                        && institutionId.equals(e.getInstitution().getInstitutionId()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @Override
     public List<UtilizationDTO> getUtilizationData() {
 
-        List<Equipment> equipments = equipmentRepository.findAll();
+        List<Equipment> equipments = scopedEquipmentToOwnInstitution();
         List<Booking> bookings = bookingRepository.findAll();
 
         List<UtilizationDTO> result = new ArrayList<>();

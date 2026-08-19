@@ -9,14 +9,23 @@ function Reservations() {
 
   const [formData, setFormData] = useState({
     equipmentId: "",
-    bookingDate: "",
     startTime: "",
     endTime: "",
     purpose: "",
   });
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  // Prevents picking a past date/time in the datetime-local pickers.
+  // Formats to "YYYY-MM-DDTHH:mm" as required by <input type="datetime-local">.
+  const nowLocalString = () => {
+    const now = new Date();
+    now.setSeconds(0, 0);
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+  };
+
+  const token = sessionStorage.getItem("token");
+  const role = sessionStorage.getItem("role");
 
   const [equipmentList, setEquipmentList] = useState([]);
 
@@ -54,6 +63,11 @@ function Reservations() {
   useEffect(() => {
     fetchBookings();
     fetchEquipmentList();
+
+    // Poll so approvals/rejections made by a manager on another
+    // screen show up here without a manual refresh.
+    const interval = setInterval(fetchBookings, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleChange = (e) => {
@@ -66,7 +80,6 @@ function Reservations() {
   const resetForm = () => {
     setFormData({
       equipmentId: "",
-      bookingDate: "",
       startTime: "",
       endTime: "",
       purpose: "",
@@ -83,7 +96,6 @@ function Reservations() {
       equipment: {
         equipmentId: Number(formData.equipmentId),
       },
-      bookingDate: formData.bookingDate,
       startTime: formData.startTime,
       endTime: formData.endTime,
       purpose: formData.purpose,
@@ -134,7 +146,6 @@ function Reservations() {
 
     setFormData({
       equipmentId: booking.equipment?.equipmentId || "",
-      bookingDate: booking.bookingDate || "",
       startTime: booking.startTime || "",
       endTime: booking.endTime || "",
       purpose: booking.purpose || "",
@@ -219,6 +230,30 @@ function Reservations() {
     }
   };
 
+  const handleComplete = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/bookings/${id}/complete`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "You are not allowed to complete this booking");
+      }
+
+      alert("Booking marked as completed");
+      fetchBookings();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   if (loading) {
     return <h2 style={{ padding: "20px" }}>Loading reservations...</h2>;
   }
@@ -249,23 +284,34 @@ function Reservations() {
             style={inputStyle}
           >
             <option value="">-- Select Equipment --</option>
-            {equipmentList.map((item) => (
-              <option key={item.equipmentId} value={item.equipmentId}>
-                {item.equipmentName} ({item.status})
-                {item.department?.institution?.institutionName
-                  ? ` — ${item.department.institution.institutionName}`
-                  : ""}
-              </option>
-            ))}
+            {equipmentList.map((item) => {
+              const isBookable =
+                item.status !== "Under Maintenance" &&
+                item.status !== "Out of Service" &&
+                item.status !== "Retired";
+
+              return (
+                <option
+                  key={item.equipmentId}
+                  value={item.equipmentId}
+                  disabled={!isBookable}
+                >
+                  {item.equipmentName} ({item.status})
+                  {item.institution?.institutionName
+                    ? ` — ${item.institution.institutionName}`
+                    : ""}
+                  {!isBookable ? " — not bookable" : ""}
+                </option>
+              );
+            })}
           </select>
 
           <input
             type="date"
-            name="bookingDate"
-            value={formData.bookingDate}
-            onChange={handleChange}
-            required
-            style={inputStyle}
+            value={new Date().toISOString().slice(0, 10)}
+            disabled
+            title="Booking date is set automatically to today"
+            style={{ ...inputStyle, background: "#f1f5f9", color: "#64748b" }}
           />
 
           <label>Start Time</label>
@@ -275,6 +321,7 @@ function Reservations() {
             name="startTime"
             value={formData.startTime}
             onChange={handleChange}
+            min={nowLocalString()}
             required
             style={inputStyle}
           />
@@ -286,6 +333,7 @@ function Reservations() {
             name="endTime"
             value={formData.endTime}
             onChange={handleChange}
+            min={formData.startTime || nowLocalString()}
             required
             style={inputStyle}
           />
@@ -370,7 +418,6 @@ function Reservations() {
 
                 <td style={cellStyle}>
                   <strong>
-                    {booking.bookingStatus === "Pending" && "⏳ Pending"}
                     {booking.bookingStatus === "Pending Approval" && "⏳ Pending Approval"}
                     {booking.bookingStatus === "Confirmed" && "✅ Confirmed"}
                     {booking.bookingStatus === "In Use" && "🟦 In Use"}
@@ -455,6 +502,23 @@ function Reservations() {
                         Reject
                       </button>
                     </>
+                  )}
+
+                  {/* Confirmed bookings can be manually marked complete
+                      instead of waiting for the automatic sweep once
+                      the end time passes */}
+                  {booking.bookingStatus === "Confirmed" &&
+                   (role === "LAB_TECHNICIAN" ||
+                    role === "LAB_MANAGER" ||
+                    role === "DEPARTMENT_HEAD" ||
+                    role === "INSTITUTION_ADMIN" ||
+                    role === "SYSTEM_ADMIN") && (
+                    <button
+                      onClick={() => handleComplete(booking.bookingId)}
+                      style={smallButtonStyle}
+                    >
+                      Complete
+                    </button>
                   )}
 
                 </td>

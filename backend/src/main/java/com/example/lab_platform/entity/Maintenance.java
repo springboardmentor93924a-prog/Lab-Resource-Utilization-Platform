@@ -31,6 +31,12 @@ public class Maintenance {
     @Column(name = "next_maintenance_date")
     private LocalDate nextMaintenanceDate;
 
+    // Technician the work order is assigned to. Nullable — an unassigned
+    // record simply won't show up on anyone's "My Tasks" view yet.
+    @ManyToOne
+    @JoinColumn(name = "assigned_technician_id")
+    private User assignedTechnician;
+
     public Maintenance() {
     }
 
@@ -88,5 +94,13 @@ public class Maintenance {
 
     public void setNextMaintenanceDate(LocalDate nextMaintenanceDate) {
         this.nextMaintenanceDate = nextMaintenanceDate;
+    }
+
+    public User getAssignedTechnician() {
+        return assignedTechnician;
+    }
+
+    public void setAssignedTechnician(User assignedTechnician) {
+        this.assignedTechnician = assignedTechnician;
     }
 }

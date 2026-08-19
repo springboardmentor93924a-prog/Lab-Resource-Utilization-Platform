@@ -145,6 +145,28 @@ public class BookingServiceImpl implements BookingService {
         return user.getRole().getRoleName();
     }
 
+    /*
+     * Only staff belonging to the SAME institution as the equipment
+     * can approve/reject/complete a booking against it. SYSTEM_ADMIN
+     * is exempt (platform-wide). This is what stops a Manager at
+     * College C from acting on a booking for College A's equipment.
+     */
+    private void assertSameInstitutionAsEquipment(User loggedInUser, String role, Equipment equipment) {
+        if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+            return;
+        }
+
+        if (loggedInUser.getInstitution() == null
+                || equipment.getInstitution() == null
+                || !loggedInUser.getInstitution().getInstitutionId()
+                        .equals(equipment.getInstitution().getInstitutionId())) {
+
+            throw new RuntimeException(
+                    "You can only manage bookings for your own institution's equipment"
+            );
+        }
+    }
+
     private boolean isManagerOrAbove(String role) {
 
         return role.equalsIgnoreCase("LAB_MANAGER")
@@ -202,6 +224,28 @@ public class BookingServiceImpl implements BookingService {
         booking.setEquipment(fullEquipment);
 
         /*
+         * Hard block on equipment that is not currently bookable at
+         * all, regardless of what the time-window maintenance check
+         * below finds. This is the check that was missing — a piece
+         * of equipment already flagged Under Maintenance / Out of
+         * Service / Retired must never be bookable, independent of
+         * whether a dated Maintenance record happens to overlap the
+         * requested slot.
+         */
+        String currentEquipmentStatus = fullEquipment.getStatus();
+
+        if (currentEquipmentStatus != null
+                && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
+                || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
+                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+
+            throw new RuntimeException(
+                    "This equipment is currently " + currentEquipmentStatus
+                            + " and cannot be booked."
+            );
+        }
+
+        /*
          * Inter-institution access control: if the equipment belongs
          * to a different institution than the booker, an APPROVED
          * resource-sharing request between the two institutions for
@@ -227,6 +271,31 @@ public class BookingServiceImpl implements BookingService {
                                 + "Request access via Resource Sharing first."
                 );
             }
+        }
+
+        if (booking.getStartTime() == null || booking.getEndTime() == null) {
+            throw new RuntimeException("Start time and end time are required");
+        }
+
+        if (!booking.getEndTime().isAfter(booking.getStartTime())) {
+            throw new RuntimeException("End time must be after start time");
+        }
+
+        /*
+         * bookingDate is never trusted from the client — it always
+         * reflects the actual system date the booking was made on.
+         * startTime must fall on or after that date, and can't be
+         * in the past relative to right now.
+         */
+        java.time.LocalDate today = java.time.LocalDate.now();
+        booking.setBookingDate(today);
+
+        if (booking.getStartTime().isBefore(java.time.LocalDateTime.now())) {
+            throw new RuntimeException("Cannot book a time slot in the past.");
+        }
+
+        if (booking.getStartTime().toLocalDate().isBefore(today)) {
+            throw new RuntimeException("Start time cannot be before the booking date.");
         }
 
         if (booking.getEquipment() != null
@@ -329,7 +398,29 @@ public List<Booking> getAllBookings() {
         return bookingRepository.findByUser_UserId(loggedInUser.getUserId());
     }
 
-    return bookingRepository.findAll();
+    if (role.equalsIgnoreCase("SYSTEM_ADMIN")) {
+        return bookingRepository.findAll();
+    }
+
+    /*
+     * Staff (Technician/Manager/Dept Head/Institution Admin) only
+     * see bookings for equipment their OWN institution owns — not
+     * every institution's bookings combined. This matches who has
+     * approval authority: you manage bookings against your own
+     * equipment, regardless of which institution the booking
+     * student belongs to.
+     */
+    if (loggedInUser.getInstitution() == null) {
+        return new java.util.ArrayList<>();
+    }
+
+    Integer institutionId = loggedInUser.getInstitution().getInstitutionId();
+
+    return bookingRepository.findAll().stream()
+            .filter(b -> b.getEquipment() != null
+                    && b.getEquipment().getInstitution() != null
+                    && institutionId.equals(b.getEquipment().getInstitution().getInstitutionId()))
+            .collect(java.util.stream.Collectors.toList());
 }
 
 @Override
@@ -409,8 +500,47 @@ public Booking updateBooking(
         );
     }
 
+    if (booking.getStartTime().isBefore(java.time.LocalDateTime.now())) {
+        throw new RuntimeException("Cannot move a booking to a time slot in the past.");
+    }
+
     Integer equipmentId =
             booking.getEquipment().getEquipmentId();
+
+    /*
+     * The equipment object coming from the request body is often just
+     * a stub with the id set (same situation as createBooking). Load
+     * the full record so (a) the hard status block below actually has
+     * a real status to check, and (b) the booking we save/return has
+     * a fully populated equipment object instead of a stub with every
+     * other field null.
+     */
+    Equipment fullEquipment =
+            equipmentRepository.findById(equipmentId)
+                    .orElseThrow(() ->
+                            new RuntimeException("Equipment not found"));
+
+    /*
+     * Same hard block as createBooking()/approveBooking(): this was
+     * missing here entirely, so a student could edit a Pending
+     * Approval booking onto equipment that had since been marked
+     * Under Maintenance / Out of Service / Retired and slip past the
+     * check that blocks it everywhere else.
+     */
+    String currentEquipmentStatus = fullEquipment.getStatus();
+
+    if (currentEquipmentStatus != null
+            && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
+            || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
+            || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+
+        throw new RuntimeException(
+                "This equipment is currently " + currentEquipmentStatus
+                        + " and cannot be booked."
+        );
+    }
+
+    booking.setEquipment(fullEquipment);
 
     /*
      * Check double booking.
@@ -453,14 +583,12 @@ public Booking updateBooking(
     }
 
     /*
-     * Update booking details.
+     * Update booking details. bookingDate is intentionally left
+     * untouched here — it's set once at creation to the actual
+     * system date and never changes on edit.
      */
     existingBooking.setEquipment(
             booking.getEquipment()
-    );
-
-    existingBooking.setBookingDate(
-            booking.getBookingDate()
     );
 
     existingBooking.setStartTime(
@@ -577,8 +705,29 @@ public void deleteBooking(Integer id) {
             );
         }
 
+        assertSameInstitutionAsEquipment(loggedInUser, role, equipment);
+
         Integer equipmentId =
                 equipment.getEquipmentId();
+
+        /*
+         * Same hard block as createBooking(): equipment status may
+         * have changed to Under Maintenance / Out of Service /
+         * Retired between when the student submitted this request
+         * and now, so re-check it at approval time too.
+         */
+        String currentEquipmentStatus = equipment.getStatus();
+
+        if (currentEquipmentStatus != null
+                && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
+                || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
+                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+
+            throw new RuntimeException(
+                    "This equipment is currently " + currentEquipmentStatus
+                            + " and cannot be approved for booking."
+            );
+        }
 
         LocalDateTime start =
                 booking.getStartTime();
@@ -683,6 +832,10 @@ public void deleteBooking(Integer id) {
     throw new RuntimeException("Only Pending Approval bookings can be rejected");
 }
 
+        if (booking.getEquipment() != null) {
+            assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
+        }
+
         booking.setBookingStatus("Rejected");
 
         Booking savedBooking =
@@ -719,6 +872,10 @@ public void deleteBooking(Integer id) {
             );
         }
 
+        if (booking.getEquipment() != null) {
+            assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
+        }
+
         booking.setBookingStatus("Completed");
 
         Equipment equipment =
@@ -736,6 +893,44 @@ public void deleteBooking(Integer id) {
         }
 
         return bookingRepository.save(booking);
+    }
+
+    /*
+     * Called by EquipmentStatusScheduler every 60s. Any booking
+     * still sitting at "Confirmed" after its endTime has passed
+     * gets auto-completed — this is the piece that was missing
+     * entirely: nothing previously called completeBooking() unless
+     * a staff member manually clicked something, and no such button
+     * even existed in the frontend, so Confirmed bookings sat there
+     * forever with no path to Completed.
+     */
+    @Override
+    public void autoCompleteOverdueBookings() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Booking> confirmed =
+                bookingRepository.findByBookingStatus("Confirmed");
+
+        for (Booking booking : confirmed) {
+
+            if (booking.getEndTime() == null
+                    || booking.getEndTime().isAfter(now)) {
+                continue;
+            }
+
+            booking.setBookingStatus("Completed");
+
+            Equipment equipment = booking.getEquipment();
+
+            if (equipment != null) {
+                equipment.setStatus("Available");
+                equipmentRepository.save(equipment);
+                notifyNextWaitlistedUser(equipment);
+            }
+
+            bookingRepository.save(booking);
+        }
     }
 
     private String normalizeBookingStatus(String status) {

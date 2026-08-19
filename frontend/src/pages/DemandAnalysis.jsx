@@ -21,7 +21,7 @@ function DemandAnalysis() {
   useEffect(() => {
   fetch("http://localhost:8080/api/utilization", {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`
+      Authorization: `Bearer ${sessionStorage.getItem("token")}`
     }
   })
     .then((response) => response.json())
@@ -33,7 +33,7 @@ function DemandAnalysis() {
   useEffect(() => {
     fetch("http://localhost:8080/api/utilization/summary", {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
       },
     })
       .then((response) => response.json())

@@ -9,7 +9,7 @@ export default function ResourceSharing() {
   const [receiverInstitutionId, setReceiverInstitutionId] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
 
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const authHeader = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {

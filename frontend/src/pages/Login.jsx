@@ -43,11 +43,13 @@ function Login() {
         );
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.userId);
-      localStorage.setItem("fullName", data.fullName);
-      localStorage.setItem("email", data.email);
-      localStorage.setItem("role", data.role);
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("userId", data.userId);
+      sessionStorage.setItem("fullName", data.fullName);
+      sessionStorage.setItem("email", data.email);
+      sessionStorage.setItem("role", data.role);
+      sessionStorage.setItem("institutionId", data.institutionId ?? "");
+      sessionStorage.setItem("institutionName", data.institutionName ?? "");
 
       navigate("/dashboard");
     } catch (error) {

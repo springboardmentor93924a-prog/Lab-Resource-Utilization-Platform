@@ -9,7 +9,7 @@ function User() {
 
     fetch("http://localhost:8080/api/users", {
   headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
+    Authorization: `Bearer ${sessionStorage.getItem("token")}`,
   },
 })
       .then((response) => {

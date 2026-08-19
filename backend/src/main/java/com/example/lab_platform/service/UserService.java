@@ -14,6 +14,8 @@ import com.example.lab_platform.repository.PasswordResetTokenRepository;
 import com.example.lab_platform.repository.RoleRepository;
 import com.example.lab_platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,17 @@ public class UserService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    private User getLoggedInUser() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return null;
+        }
+
+        return (User) authentication.getPrincipal();
+    }
 
     @Autowired
     private DepartmentRepository departmentRepository;
@@ -46,11 +59,22 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
 
     // =========================
     // REGISTER USER
+    // Used by both the public POST /api/auth/register endpoint and the
+    // admin-only POST /api/users/register endpoint. Self-registration is
+    // intentionally unrestricted for every role.
     // =========================
     public User registerUser(RegisterRequest registerRequest) {
+        return registerUserInternal(registerRequest);
+    }
+
+    private User registerUserInternal(RegisterRequest registerRequest) {
 
         // Check duplicate email
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+        String normalizedEmail = registerRequest.getEmail() == null
+                ? null
+                : registerRequest.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email is already registered!");
         }
 
@@ -88,7 +112,7 @@ if (department != null) {
         User user = new User();
 
         user.setFullName(registerRequest.getFullName());
-        user.setEmail(registerRequest.getEmail());
+        user.setEmail(normalizedEmail);
         
         // Encode password using BCrypt instead of storing in plain text
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
@@ -113,8 +137,12 @@ if (department != null) {
     // =========================
     public User loginUser(LoginRequest loginRequest) {
 
+        String normalizedEmail = loginRequest.getEmail() == null
+                ? null
+                : loginRequest.getEmail().trim().toLowerCase();
+
         Optional<User> userOptional =
-                userRepository.findByEmail(loginRequest.getEmail());
+                userRepository.findByEmail(normalizedEmail);
 
         if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found!");
@@ -140,7 +168,20 @@ if (department != null) {
     // GET ALL USERS
     // =========================
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        User loggedInUser = getLoggedInUser();
+
+        if (loggedInUser != null
+                && "SYSTEM_ADMIN".equalsIgnoreCase(loggedInUser.getRole().getRoleName())) {
+            return userRepository.findAll();
+        }
+
+        if (loggedInUser == null || loggedInUser.getInstitution() == null) {
+            return new java.util.ArrayList<>();
+        }
+
+        return userRepository.findByInstitution_InstitutionId(
+                loggedInUser.getInstitution().getInstitutionId()
+        );
     }
 
     public String createPasswordResetToken(String email) {

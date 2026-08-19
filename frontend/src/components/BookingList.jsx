@@ -11,7 +11,7 @@ export default function BookingList() {
   const fetchBookings = async () => {
     try {
       const res = await axios.get('http://localhost:8080/api/bookings', {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setBookings(res.data);
     } catch (error) {

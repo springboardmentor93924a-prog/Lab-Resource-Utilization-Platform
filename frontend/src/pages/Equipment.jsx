@@ -16,13 +16,21 @@ function Equipment() {
     location: "",
     status: "Available",
     purchaseDate: "",
+    requiresApproval: true,
+    institutionId: "",
+    departmentId: "",
   });
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const token = sessionStorage.getItem("token");
+  const role = sessionStorage.getItem("role");
+  const myInstitutionId = sessionStorage.getItem("institutionId");
 
   // NEW: search state + filtered list
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Institutions/departments for the Add/Edit form
+  const [institutions, setInstitutions] = useState([]);
+  const [formDepartments, setFormDepartments] = useState([]);
 
   const filteredEquipment = equipment.filter((item) =>
     item.equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,13 +71,52 @@ function Equipment() {
       });
   };
 
+  const fetchInstitutions = () => {
+    fetch("http://localhost:8080/api/institutions", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setInstitutions(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Institutions error:", err));
+  };
+
+  // Departments depend on which institution is selected in the form
+  const fetchDepartmentsForInstitution = (institutionId) => {
+    if (!institutionId) {
+      setFormDepartments([]);
+      return;
+    }
+    fetch(`http://localhost:8080/api/institutions/${institutionId}/departments`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setFormDepartments(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Departments error:", err));
+  };
+
   useEffect(() => {
     fetchEquipment();
+    fetchInstitutions();
+
+    // Poll so status/institution changes made by other users show up
+    // without a manual page refresh.
+    const interval = setInterval(fetchEquipment, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   // Handle Input Changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    const nextValue = type === "checkbox" ? checked : value;
+
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
+
+    if (name === "institutionId") {
+      // Changing the institution invalidates the previously selected
+      // department, since departments belong to a specific institution.
+      setFormData((prev) => ({ ...prev, institutionId: value, departmentId: "" }));
+      fetchDepartmentsForInstitution(value);
+    }
   };
 
   // Open Modal for Create
@@ -83,7 +130,15 @@ function Equipment() {
       location: "",
       status: "Available",
       purchaseDate: "",
+      requiresApproval: true,
+      institutionId: myInstitutionId || "",
+      departmentId: "",
     });
+    if (myInstitutionId) {
+      fetchDepartmentsForInstitution(myInstitutionId);
+    } else {
+      setFormDepartments([]);
+    }
     setShowModal(true);
   };
 
@@ -91,6 +146,7 @@ function Equipment() {
   const handleEdit = (item) => {
     setIsEditing(true);
     setCurrentId(item.equipmentId);
+    const institutionId = item.institution?.institutionId || "";
     setFormData({
       equipmentName: item.equipmentName || "",
       category: item.category || "",
@@ -98,7 +154,13 @@ function Equipment() {
       location: item.location || "",
       status: item.status || "Available",
       purchaseDate: item.purchaseDate || "",
+      requiresApproval: item.requiresApproval !== false,
+      institutionId,
+      departmentId: item.department?.departmentId || "",
     });
+    if (institutionId) {
+      fetchDepartmentsForInstitution(institutionId);
+    }
     setShowModal(true);
   };
 
@@ -110,13 +172,29 @@ function Equipment() {
       : "http://localhost:8080/api/equipment";
     const method = isEditing ? "PUT" : "POST";
 
+    const payload = {
+      equipmentName: formData.equipmentName,
+      category: formData.category,
+      serialNumber: formData.serialNumber,
+      location: formData.location,
+      status: formData.status,
+      purchaseDate: formData.purchaseDate,
+      requiresApproval: formData.requiresApproval,
+      institution: formData.institutionId
+        ? { institutionId: Number(formData.institutionId) }
+        : null,
+      department: formData.departmentId
+        ? { departmentId: Number(formData.departmentId) }
+        : null,
+    };
+
     fetch(url, {
       method: method,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(payload),
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to save equipment");
@@ -179,6 +257,7 @@ function Equipment() {
             {/* CHANGED: ID header hidden for students */}
             {role !== "STUDENT" && <th style={cellStyle}>ID</th>}
             <th style={cellStyle}>Name</th>
+            <th style={cellStyle}>Institution</th>
             <th style={cellStyle}>Category</th>
             <th style={cellStyle}>Serial Number</th>
             <th style={cellStyle}>Location</th>
@@ -194,6 +273,25 @@ function Equipment() {
                 {/* CHANGED: ID cell hidden for students */}
                 {role !== "STUDENT" && <td style={cellStyle}>{item.equipmentId}</td>}
                 <td style={cellStyle}>{item.equipmentName}</td>
+                <td style={cellStyle}>
+                  {item.institution?.institutionName || "—"}
+                  {myInstitutionId &&
+                    String(item.institution?.institutionId) === String(myInstitutionId) && (
+                      <span
+                        style={{
+                          marginLeft: "6px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#166534",
+                          background: "#dcfce7",
+                          borderRadius: "999px",
+                          padding: "2px 8px",
+                        }}
+                      >
+                        Your Institution
+                      </span>
+                    )}
+                </td>
                 <td style={cellStyle}>{item.category}</td>
                 <td style={cellStyle}>{item.serialNumber}</td>
                 <td style={cellStyle}>{item.location}</td>
@@ -303,6 +401,57 @@ function Equipment() {
                   onChange={handleChange}
                   style={inputStyle}
                 />
+              </div>
+              <div style={formGroup}>
+                <label>Institution:</label>
+                <select
+                  name="institutionId"
+                  value={formData.institutionId}
+                  onChange={handleChange}
+                  required
+                  style={inputStyle}
+                >
+                  <option value="">-- Select Institution --</option>
+                  {institutions.map((inst) => (
+                    <option key={inst.institutionId} value={inst.institutionId}>
+                      {inst.institutionName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={formGroup}>
+                <label>Department:</label>
+                <select
+                  name="departmentId"
+                  value={formData.departmentId}
+                  onChange={handleChange}
+                  required
+                  disabled={!formData.institutionId}
+                  style={inputStyle}
+                >
+                  <option value="">
+                    {formData.institutionId
+                      ? "-- Select Department --"
+                      : "Select an institution first"}
+                  </option>
+                  {formDepartments.map((dept) => (
+                    <option key={dept.departmentId} value={dept.departmentId}>
+                      {dept.departmentName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ ...formGroup, flexDirection: "row", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="checkbox"
+                  id="requiresApproval"
+                  name="requiresApproval"
+                  checked={formData.requiresApproval}
+                  onChange={handleChange}
+                />
+                <label htmlFor="requiresApproval" style={{ margin: 0 }}>
+                  Requires approval before booking
+                </label>
               </div>
               <div style={{ marginTop: "15px", textAlign: "right" }}>
                 <button type="button" onClick={() => setShowModal(false)} style={btnCancel}>

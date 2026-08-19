@@ -1,37 +1,40 @@
 package com.example.lab_platform.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
 @Table(
-        name = "institution_departments",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        columnNames = {
-                                "institution_id",
-                                "department_id"
-                        }
-                )
-        }
+    name = "institution_departments",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            columnNames = {
+                "institution_id",
+                "department_id"
+            }
+        )
+    }
 )
 public class InstitutionDepartment {
 
     @EmbeddedId
     private InstitutionDepartmentId id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("institutionId")
     @JoinColumn(
-            name = "institution_id",
-            nullable = false
+        name = "institution_id",
+        nullable = false
     )
     private Institution institution;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("departmentId")
     @JoinColumn(
-            name = "department_id",
-            nullable = false
+        name = "department_id",
+        nullable = false
     )
     private Department department;
 
@@ -46,8 +49,8 @@ public class InstitutionDepartment {
         this.department = department;
 
         this.id = new InstitutionDepartmentId(
-                institution.getInstitutionId(),
-                department.getDepartmentId()
+            institution.getInstitutionId(),
+            department.getDepartmentId()
         );
     }
 
