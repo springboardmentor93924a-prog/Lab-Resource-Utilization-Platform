@@ -28,100 +28,60 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepo;
     private final EquipmentRepository equipRepo;
     private final UserRepository userRepo;
-    private final BookingWaitlistRepository bookingWaitlistRepo;
+    private final BookingWaitlistRepository waitlistRepo;
 
     @Override
     @Transactional
-    public BookingResponseDTO createBooking(BookingRequestDTO requestDTO) {
+    public BookingResponseDTO createBooking(BookingRequestDTO reqDto, String requesterEmail) {
 
-        UserEntity user = userRepo.findById(requestDTO.getRequestedById())
+        // requester is the currently logged in user, never taken from the request body
+        UserEntity user = userRepo.findByEmail(requesterEmail)
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             throw new RuntimeException("User is inactive.");
         }
 
-        Equipment equip = equipRepo.findById(requestDTO.getEquipId())
+        Equipment equip = equipRepo.findById(reqDto.getEquipId())
                 .orElseThrow(() -> new RuntimeException("Equipment not found."));
 
-        if (requestDTO.getStartTime() == null ||
-                requestDTO.getEndTime() == null) {
-
-            throw new RuntimeException(
-                    "Start time and end time are required."
-            );
+        if (reqDto.getStartTime() == null || reqDto.getEndTime() == null) {
+            throw new RuntimeException("Start time and end time are required.");
         }
 
-        if (!requestDTO.getStartTime().isBefore(requestDTO.getEndTime())) {
-
-            throw new RuntimeException(
-                    "Start time must be before end time."
-            );
+        if (!reqDto.getStartTime().isBefore(reqDto.getEndTime())) {
+            throw new RuntimeException("Start time must be before end time.");
         }
 
-        if (requestDTO.getStartTime().isBefore(LocalDateTime.now())) {
-
-            throw new RuntimeException(
-                    "Booking cannot be created for past time."
-            );
+        if (reqDto.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Booking cannot be created for past time.");
         }
 
-        /*
-         * Equipment which cannot be used at all
-         * should not be added to the waitlist.
-         */
+        // equipment which cannot be used at all should not be added to the waitlist
         if (equip.getStatus() == EquipmentStatus.UNDER_MAINTENANCE ||
                 equip.getStatus() == EquipmentStatus.OUT_OF_SERVICE ||
                 equip.getStatus() == EquipmentStatus.RETIRED) {
 
-            throw new RuntimeException(
-                    "Equipment is not available for booking."
-            );
+            throw new RuntimeException("Equipment is not available for booking.");
         }
 
-        /*
-         * Check whether the requested time slot is already occupied
-         * by another booking.
-         */
-        boolean alreadyBooked =
-                bookingRepo
-                        .existsByEquipmentAndStartTimeLessThanAndEndTimeGreaterThan(
-                                equip,
-                                requestDTO.getEndTime(),
-                                requestDTO.getStartTime()
-                        );
-
-        /*
-         * Internal / External booking is derived from
-         * equipment institution and requesting user's institution.
-         */
-        boolean externalBooking =
-                !equip.getInstitution().getInstitutionId()
-                        .equals(user.getInstitution().getInstitutionId());
+        // check whether the requested time slot is already occupied by another booking
+        boolean alreadyBooked = bookingRepo.existsByEquipmentAndStartTimeLessThanAndEndTimeGreaterThan(equip, reqDto.getEndTime(), reqDto.getStartTime());
 
         Booking booking = new Booking();
 
         booking.setEquipment(equip);
         booking.setRequestedBy(user);
-
-        // Requester's institution
         booking.setInstitution(user.getInstitution());
+        booking.setStartTime(reqDto.getStartTime());
+        booking.setEndTime(reqDto.getEndTime());
 
-        booking.setStartTime(requestDTO.getStartTime());
-        booking.setEndTime(requestDTO.getEndTime());
-
-        /*
-         * Both internal and external bookings initially
-         * require approval.
-         */
+        // both internal and external bookings initially require approval
         booking.setStatus(BookingStatus.PENDING_APPROVAL);
 
         Booking savedBooking = bookingRepo.save(booking);
 
-        /*
-         * If the requested equipment/time slot is already occupied,
-         * the booking is added to the waitlist instead of being rejected.
-         */
+        // if the slot is already occupied, the booking goes into the waitlist instead of being rejected
         if (alreadyBooked) {
 
             BookingWaitlist waitlist = new BookingWaitlist();
@@ -130,7 +90,7 @@ public class BookingServiceImpl implements BookingService {
             waitlist.setAddedAt(LocalDateTime.now());
             waitlist.setActive(true);
 
-            bookingWaitlistRepo.save(waitlist);
+            waitlistRepo.save(waitlist);
         }
 
         return convertToDTO(savedBooking);
@@ -160,47 +120,29 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponseDTO updateBooking(
-            Long bookingId,
-            BookingRequestDTO requestDTO) {
+    public BookingResponseDTO updateBooking(Long bookingId, BookingRequestDTO reqDto) {
 
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         Equipment equip = booking.getEquipment();
 
-        if (requestDTO.getStartTime() == null ||
-                requestDTO.getEndTime() == null) {
-
-            throw new RuntimeException(
-                    "Start time and end time are required."
-            );
+        if (reqDto.getStartTime() == null || reqDto.getEndTime() == null) {
+            throw new RuntimeException("Start time and end time are required.");
         }
 
-        if (!requestDTO.getStartTime().isBefore(requestDTO.getEndTime())) {
-
-            throw new RuntimeException(
-                    "Start time must be before end time."
-            );
+        if (!reqDto.getStartTime().isBefore(reqDto.getEndTime())) {
+            throw new RuntimeException("Start time must be before end time.");
         }
 
-        boolean alreadyBooked = bookingRepo
-                .existsByEquipmentAndStartTimeLessThanAndEndTimeGreaterThan(
-                        equip,
-                        requestDTO.getEndTime(),
-                        requestDTO.getStartTime());
+        boolean alreadyBooked = bookingRepo.existsByEquipmentAndStartTimeLessThanAndEndTimeGreaterThan(equip, reqDto.getEndTime(), reqDto.getStartTime());
 
-        if (alreadyBooked &&
-                !(booking.getStartTime().equals(requestDTO.getStartTime())
-                        && booking.getEndTime().equals(requestDTO.getEndTime()))) {
-
-            throw new RuntimeException(
-                    "Selected slot is already booked."
-            );
+        if (alreadyBooked && !(booking.getStartTime().equals(reqDto.getStartTime()) && booking.getEndTime().equals(reqDto.getEndTime()))) {
+            throw new RuntimeException("Selected slot is already booked.");
         }
 
-        booking.setStartTime(requestDTO.getStartTime());
-        booking.setEndTime(requestDTO.getEndTime());
+        booking.setStartTime(reqDto.getStartTime());
+        booking.setEndTime(reqDto.getEndTime());
 
         Booking updatedBooking = bookingRepo.save(booking);
 
@@ -216,38 +158,32 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
 
-        booking.getEquipment().setStatus(EquipmentStatus.AVAILABLE);
+        Equipment equip = booking.getEquipment();
+        equip.setStatus(EquipmentStatus.AVAILABLE);
+        equipRepo.save(equip);
 
-        equipRepo.save(booking.getEquipment());
-
-        /*
-         * If this booking was present in the waitlist,
-         * deactivate its waitlist entry.
-         */
-        bookingWaitlistRepo.findByBooking(booking)
+        // if this booking was on the waitlist, deactivate its entry
+        waitlistRepo.findByBooking(booking)
                 .ifPresent(waitlist -> {
-
                     waitlist.setActive(false);
-
-                    bookingWaitlistRepo.save(waitlist);
+                    waitlistRepo.save(waitlist);
                 });
 
         bookingRepo.save(booking);
+
+        // equipment just freed up, so the next person waiting for it should be picked up
+        notifyNextInWaitlist(equip);
     }
 
     @Override
-    public BookingResponseDTO approveBooking(
-            Long bookingId,
-            String approverEmail) {
+    @Transactional
+    public BookingResponseDTO approveBooking(Long bookingId, String approverEmail) {
 
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         if (booking.getStatus() != BookingStatus.PENDING_APPROVAL) {
-
-            throw new RuntimeException(
-                    "Only pending bookings can be approved."
-            );
+            throw new RuntimeException("Only pending bookings can be approved.");
         }
 
         UserEntity approver = userRepo.findByEmail(approverEmail)
@@ -256,130 +192,71 @@ public class BookingServiceImpl implements BookingService {
         Equipment equipment = booking.getEquipment();
         UserEntity requester = booking.getRequestedBy();
 
-        Long equipmentInstitutionId =
-                equipment.getInstitution().getInstitutionId();
+        Long equipmentInstitutionId = equipment.getInstitution().getInstitutionId();
+        Long requesterInstitutionId = requester.getInstitution().getInstitutionId();
+        Long equipmentDepartmentId = equipment.getDepartment().getDepartId();
+        Long requesterDepartmentId = requester.getDepartment().getDepartId();
 
-        Long requesterInstitutionId =
-                requester.getInstitution().getInstitutionId();
-
-        Long equipmentDepartmentId =
-                equipment.getDepartment().getDepartId();
-
-        Long requesterDepartmentId =
-                requester.getDepartment().getDepartId();
-
-        /*
-         * CASE 1:
-         * Same institution + same department
-         *
-         * Approval required from:
-         * LAB_MANAGER of equipment department
-         */
-        if (equipmentInstitutionId.equals(requesterInstitutionId)
-                && equipmentDepartmentId.equals(requesterDepartmentId)) {
+        // CASE 1: same institution + same department -> lab manager of that department approves
+        if (equipmentInstitutionId.equals(requesterInstitutionId) && equipmentDepartmentId.equals(requesterDepartmentId)) {
 
             if (approver.getRole() != Role.LAB_MANAGER) {
-
-                throw new RuntimeException(
-                        "Only the Lab Manager can approve this booking."
-                );
+                throw new RuntimeException("Only the Lab Manager can approve this booking.");
             }
 
-            if (!approver.getInstitution().getInstitutionId()
-                    .equals(equipmentInstitutionId)) {
-
-                throw new RuntimeException(
-                        "Approver does not belong to the equipment institution."
-                );
+            if (!approver.getInstitution().getInstitutionId().equals(equipmentInstitutionId)) {
+                throw new RuntimeException("Approver does not belong to the equipment institution.");
             }
 
-            if (!approver.getDepartment().getDepartId()
-                    .equals(equipmentDepartmentId)) {
-
-                throw new RuntimeException(
-                        "Approver does not belong to the equipment department."
-                );
+            if (!approver.getDepartment().getDepartId().equals(equipmentDepartmentId)) {
+                throw new RuntimeException("Approver does not belong to the equipment department.");
             }
         }
 
-        /*
-         * CASE 2:
-         * Same institution + different departments
-         *
-         * Approval required from:
-         * DEPARTMENT_HEAD
-         */
+        // CASE 2: same institution + different department -> department head approves
         else if (equipmentInstitutionId.equals(requesterInstitutionId)) {
 
             if (approver.getRole() != Role.DEPARTMENT_HEAD) {
-
-                throw new RuntimeException(
-                        "Only the Department Head can approve this booking."
-                );
+                throw new RuntimeException("Only the Department Head can approve this booking.");
             }
 
-            if (!approver.getInstitution().getInstitutionId()
-                    .equals(equipmentInstitutionId)) {
-
-                throw new RuntimeException(
-                        "Approver does not belong to the equipment institution."
-                );
+            if (!approver.getInstitution().getInstitutionId().equals(equipmentInstitutionId)) {
+                throw new RuntimeException("Approver does not belong to the equipment institution.");
             }
         }
 
-        /*
-         * CASE 3:
-         * Different institutions
-         *
-         * Approval required from:
-         * INSTITUTION_ADMIN of equipment-owning institution
-         */
+        // CASE 3: different institutions -> institution admin of the equipment owning institution approves
         else {
 
             if (approver.getRole() != Role.INSTITUTION_ADMIN) {
-
-                throw new RuntimeException(
-                        "Only the Institution Admin can approve this booking."
-                );
+                throw new RuntimeException("Only the Institution Admin can approve this booking.");
             }
 
-            if (!approver.getInstitution().getInstitutionId()
-                    .equals(equipmentInstitutionId)) {
-
-                throw new RuntimeException(
-                        "Only the Institution Admin of the equipment-owning institution can approve this booking."
-                );
+            if (!approver.getInstitution().getInstitutionId().equals(equipmentInstitutionId)) {
+                throw new RuntimeException("Only the Institution Admin of the equipment-owning institution can approve this booking.");
             }
         }
 
-        /*
-         * Approval successful
-         */
         booking.setApprovedBy(approver);
         booking.setStatus(BookingStatus.CONFIRMED);
 
         equipment.setStatus(EquipmentStatus.BOOKED);
-
         equipRepo.save(equipment);
 
         Booking updatedBooking = bookingRepo.save(booking);
 
-        /*
-         * Once a waitlisted booking is approved,
-         * its waitlist entry is no longer active.
-         */
-        bookingWaitlistRepo.findByBooking(booking)
+        // once a waitlisted booking gets approved, its waitlist entry is no longer active
+        waitlistRepo.findByBooking(booking)
                 .ifPresent(waitlist -> {
-
                     waitlist.setActive(false);
-
-                    bookingWaitlistRepo.save(waitlist);
+                    waitlistRepo.save(waitlist);
                 });
 
         return convertToDTO(updatedBooking);
     }
 
     @Override
+    @Transactional
     public BookingResponseDTO rejectBooking(Long bookingId) {
 
         Booking booking = bookingRepo.findById(bookingId)
@@ -387,21 +264,36 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(BookingStatus.REJECTED);
 
-        /*
-         * If the booking was in the waitlist,
-         * deactivate its waitlist entry.
-         */
-        bookingWaitlistRepo.findByBooking(booking)
+        waitlistRepo.findByBooking(booking)
                 .ifPresent(waitlist -> {
-
                     waitlist.setActive(false);
-
-                    bookingWaitlistRepo.save(waitlist);
+                    waitlistRepo.save(waitlist);
                 });
 
         Booking updatedBooking = bookingRepo.save(booking);
 
         return convertToDTO(updatedBooking);
+    }
+
+    /*
+     * Whenever equipment goes back to AVAILABLE (cancel / end of utilization),
+     * the first active waitlist entry for that equipment should be picked up
+     * so someone can act on it. This does NOT auto confirm the booking,
+     * approval is a separate step, it just flags who is next in line.
+     */
+    private void notifyNextInWaitlist(Equipment equip) {
+
+        List<BookingWaitlist> waiting = waitlistRepo.findByBooking_EquipmentAndActiveTrueOrderByAddedAtAsc(equip);
+
+        if (waiting.isEmpty()) {
+            return;
+        }
+
+        BookingWaitlist nextInLine = waiting.get(0);
+        UserEntity nextUser = nextInLine.getBooking().getRequestedBy();
+
+        // TODO: hook this up to the notification module once it is built (Milestone 3)
+        System.out.println("Equipment " + equip.getEquipName() + " is now available. Next in waitlist: " + nextUser.getEmail());
     }
 
     private BookingResponseDTO convertToDTO(Booking booking) {

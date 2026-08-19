@@ -6,5 +6,4 @@ import lombok.Data;
 @Data
 public class SharingRequestDTO {
     private Long equipmentId;
-    private Long requestedById;
 }

@@ -20,10 +20,10 @@ public class BookingController {
 
     @PostMapping("/create")
     @PreAuthorize("hasAnyRole('LAB_MANAGER','DEPARTMENT_HEAD','RESEARCHER')")
-    public ResponseEntity<BookingResponseDTO> createBooking(
-            @RequestBody BookingRequestDTO requestDTO) {
+    public ResponseEntity<BookingResponseDTO> createBooking(@RequestBody BookingRequestDTO reqDto, Authentication auth) {
 
-        BookingResponseDTO booking = bookingService.createBooking(requestDTO);
+        // requester is always taken from the logged in user, not from the request body
+        BookingResponseDTO booking = bookingService.createBooking(reqDto, auth.getName());
 
         return new ResponseEntity<>(booking, HttpStatus.CREATED);
     }
@@ -37,48 +37,35 @@ public class BookingController {
 
     @GetMapping("/{bookingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BookingResponseDTO> getBookingById(
-            @PathVariable Long bookingId) {
+    public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable Long bookingId) {
 
         return ResponseEntity.ok(bookingService.getBookingById(bookingId));
     }
 
     @PutMapping("/update/{bookingId}")
     @PreAuthorize("hasAnyRole('LAB_MANAGER','DEPARTMENT_HEAD')")
-    public ResponseEntity<BookingResponseDTO> updateBooking(
-            @PathVariable Long bookingId,
-            @RequestBody BookingRequestDTO requestDTO) {
+    public ResponseEntity<BookingResponseDTO> updateBooking(@PathVariable Long bookingId, @RequestBody BookingRequestDTO reqDto) {
 
-        return ResponseEntity.ok(
-                bookingService.updateBooking(bookingId, requestDTO));
+        return ResponseEntity.ok(bookingService.updateBooking(bookingId, reqDto));
     }
 
     @PutMapping("/approve/{bookingId}")
     @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN','DEPARTMENT_HEAD','LAB_MANAGER')")
-    public ResponseEntity<BookingResponseDTO> approveBooking(
-            @PathVariable Long bookingId,
-            Authentication authentication) {
+    public ResponseEntity<BookingResponseDTO> approveBooking(@PathVariable Long bookingId, Authentication auth) {
 
-        return ResponseEntity.ok(
-                bookingService.approveBooking(
-                        bookingId,
-                        authentication.getName()
-                )
-        );
+        return ResponseEntity.ok(bookingService.approveBooking(bookingId, auth.getName()));
     }
+
     @PutMapping("/reject/{bookingId}")
     @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN','DEPARTMENT_HEAD')")
-    public ResponseEntity<BookingResponseDTO> rejectBooking(
-            @PathVariable Long bookingId) {
+    public ResponseEntity<BookingResponseDTO> rejectBooking(@PathVariable Long bookingId) {
 
-        return ResponseEntity.ok(
-                bookingService.rejectBooking(bookingId));
+        return ResponseEntity.ok(bookingService.rejectBooking(bookingId));
     }
 
     @PutMapping("/cancel/{bookingId}")
     @PreAuthorize("hasAnyRole('LAB_MANAGER','DEPARTMENT_HEAD')")
-    public ResponseEntity<String> cancelBooking(
-            @PathVariable Long bookingId) {
+    public ResponseEntity<String> cancelBooking(@PathVariable Long bookingId) {
 
         bookingService.cancelBooking(bookingId);
 

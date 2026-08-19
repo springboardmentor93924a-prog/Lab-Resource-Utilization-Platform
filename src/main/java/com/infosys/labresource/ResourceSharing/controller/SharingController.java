@@ -6,6 +6,7 @@ import com.infosys.labresource.ResourceSharing.service.SharingServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,8 +19,10 @@ public class SharingController {
 
     @PostMapping("/request")
     @PreAuthorize("hasAnyRole('RESEARCHER','LAB_MANAGER','DEPARTMENT_HEAD')")
-    public ResponseEntity<SharingResponseDTO> createRequest(@RequestBody SharingRequestDTO requestDTO) {
-        return ResponseEntity.ok(sharingService.createRequest(requestDTO));
+    public ResponseEntity<SharingResponseDTO> createRequest(@RequestBody SharingRequestDTO reqDto, Authentication auth) {
+
+        // requester comes from the logged in session, not from the request body
+        return ResponseEntity.ok(sharingService.createRequest(reqDto, auth.getName()));
     }
 
     @GetMapping
@@ -42,13 +45,10 @@ public class SharingController {
 
     @PutMapping("/approve/{requestId}")
     @PreAuthorize("hasAnyRole('LAB_MANAGER','DEPARTMENT_HEAD','INSTITUTION_ADMIN')")
-    public ResponseEntity<SharingResponseDTO> approveRequest(
-            @PathVariable Long requestId,
-            @RequestParam String approverEmail) {
+    public ResponseEntity<SharingResponseDTO> approveRequest(@PathVariable Long requestId, Authentication auth) {
 
-        return ResponseEntity.ok(
-                sharingService.approveRequest(requestId, approverEmail)
-        );
+        // approver identity comes from the token, it can no longer be passed in by the caller
+        return ResponseEntity.ok(sharingService.approveRequest(requestId, auth.getName()));
     }
 
     @PutMapping("/reject/{requestId}")

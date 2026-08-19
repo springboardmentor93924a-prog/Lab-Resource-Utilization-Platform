@@ -19,6 +19,5 @@ public interface BookingWaitlistRepository extends JpaRepository<BookingWaitlist
 
     List<BookingWaitlist> findByActiveTrueOrderByAddedAtAsc();
 
-    List<BookingWaitlist> findByBooking_EquipmentAndActiveTrueOrderByAddedAtAsc(
-            Equipment equipment);
+    List<BookingWaitlist> findByBooking_EquipmentAndActiveTrueOrderByAddedAtAsc(Equipment equipment);
 }

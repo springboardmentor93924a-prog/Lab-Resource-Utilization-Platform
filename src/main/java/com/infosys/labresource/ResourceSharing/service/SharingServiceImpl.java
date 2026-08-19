@@ -23,13 +23,15 @@ public class SharingServiceImpl implements SharingService{
     private final ResourceSharingRepo sharingRepo;
     private final EquipmentRepository equipRepo;
     private final UserRepository userRepo;
-    @Override
-    public SharingResponseDTO createRequest(SharingRequestDTO requestDTO) {
 
-        Equipment equip = equipRepo.findById(requestDTO.getEquipmentId())
+    @Override
+    public SharingResponseDTO createRequest(SharingRequestDTO reqDto, String requesterEmail) {
+
+        Equipment equip = equipRepo.findById(reqDto.getEquipmentId())
                 .orElseThrow(() -> new RuntimeException("Equipment not found."));
 
-        UserEntity user = userRepo.findById(requestDTO.getRequestedById())
+        // requesting user is always the logged in user, never taken from the request body
+        UserEntity user = userRepo.findByEmail(requesterEmail)
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if (!Boolean.TRUE.equals(user.getIsActive())) {
@@ -98,6 +100,7 @@ public class SharingServiceImpl implements SharingService{
             throw new RuntimeException("Only pending requests can be approved.");
         }
 
+        // approver is always the logged in user, this used to be a request param and that was a bug
         UserEntity approver = userRepo.findByEmail(approverEmail)
                 .orElseThrow(() -> new RuntimeException("Approver not found."));
 
@@ -108,9 +111,7 @@ public class SharingServiceImpl implements SharingService{
             throw new RuntimeException("You are not authorized to approve this sharing request.");
         }
 
-        if (!approver.getInstitution().getInstitutionId()
-                .equals(req.getEquipment().getInstitution().getInstitutionId())) {
-
+        if (!approver.getInstitution().getInstitutionId().equals(req.getEquipment().getInstitution().getInstitutionId())) {
             throw new RuntimeException("Approver does not belong to the equipment institution.");
         }
 

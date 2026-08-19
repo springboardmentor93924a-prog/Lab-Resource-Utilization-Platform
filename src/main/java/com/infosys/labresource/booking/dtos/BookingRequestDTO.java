@@ -8,8 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class BookingRequestDTO {
    // private Long bookingId;
-    private Long equipId;
-    private Long requestedById;
+   private Long equipId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 }

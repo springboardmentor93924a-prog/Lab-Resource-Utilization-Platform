@@ -6,15 +6,15 @@ import com.infosys.labresource.ResourceSharing.dtos.SharingResponseDTO;
 import java.util.List;
 
 public interface SharingService {
-   SharingResponseDTO createRequest(SharingRequestDTO requestDTO);
+    SharingResponseDTO createRequest(SharingRequestDTO reqDto, String requesterEmail);
 
     List<SharingResponseDTO> getAllRequests();
 
-   SharingResponseDTO getRequestById(Long requestId);
+    SharingResponseDTO getRequestById(Long requestId);
 
     List<SharingResponseDTO> getPendingRequests();
 
-  SharingResponseDTO approveRequest(Long requestId, String approverEmail);
+    SharingResponseDTO approveRequest(Long requestId, String approverEmail);
 
     SharingResponseDTO rejectRequest(Long requestId);
 }
