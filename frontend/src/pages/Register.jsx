@@ -62,7 +62,7 @@ const selectedRole = roles.find(
   useEffect(() => {
 
   if (!formData.institutionId) {
-    setDepartments([]);
+    //setDepartments([]); if required remove slashes
     return;
   }
 
