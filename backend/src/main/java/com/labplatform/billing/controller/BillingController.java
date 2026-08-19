@@ -1,4 +1,5 @@
 package com.labplatform.billing.controller;
+import com.labplatform.billing.dto.DepartmentCostResponse;
 
 import com.labplatform.billing.dto.BillingRecordResponse;
 import com.labplatform.billing.service.BillingService;
@@ -26,6 +27,17 @@ public class BillingController {
     @GetMapping("/owed-to-me")
     public ResponseEntity<List<BillingRecordResponse>> getWhatIsOwedToMyInstitution(Authentication authentication) {
         return ResponseEntity.ok(billingService.getWhatIsOwedToMyInstitution(authentication.getName()));
+    }
+    @GetMapping("/department-summary")
+    public ResponseEntity<List<DepartmentCostResponse>>
+    getDepartmentCostSummary(
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                billingService.getDepartmentCostSummary(
+                        authentication.getName()
+                )
+        );
     }
 
     @PutMapping("/{id}/mark-paid")

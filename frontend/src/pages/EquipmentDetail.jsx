@@ -198,32 +198,43 @@ export default function EquipmentDetail() {
 
   // ================= EQUIPMENT SPECS =================
 
-  const specs = [
-    {
-      label: "Asset tag",
-      value: equipment.assetTag,
-    },
-    {
-      label: "Category",
-      value: equipment.category,
-    },
-    {
-      label: "Department",
-      value: equipment.department,
-    },
-    {
-      label: "Manufacturer",
-      value: equipment.manufacturer,
-    },
-    {
-      label: "Model",
-      value: equipment.model,
-    },
-    {
-      label: "Calibration due",
-      value: equipment.calibrationDueDate,
-    },
-  ];
+  // ================= EQUIPMENT SPECS =================
+
+const specs = [
+  {
+    label: "Asset tag",
+    value: equipment.assetTag,
+  },
+  {
+    label: "Category",
+    value: equipment.category,
+  },
+  {
+    label: "Department",
+    value: equipment.department,
+  },
+  {
+    label: "Manufacturer",
+    value: equipment.manufacturer,
+  },
+  {
+    label: "Model",
+    value: equipment.model,
+  },
+  {
+    label: "Hourly rate",
+    value:
+      equipment.hourlyRate !== null &&
+      equipment.hourlyRate !== undefined &&
+      equipment.hourlyRate !== ""
+        ? `₹${equipment.hourlyRate} / hour`
+        : "Not set",
+  },
+  {
+    label: "Calibration due",
+    value: equipment.calibrationDueDate,
+  },
+];
 
   // ================= DOCUMENTS =================
 

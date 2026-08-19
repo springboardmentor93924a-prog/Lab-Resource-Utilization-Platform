@@ -13,26 +13,25 @@ import { isAdmin } from "../utils/auth";
 ========================================================= */
 
 const thStyle = {
-  padding: "12px 16px",
+  padding: "14px 14px",
   textAlign: "left",
-  background: "#0F1B2D",
-  color: "#FFFFFF",
-  border: "1px solid #0F1B2D",
-  fontSize: "14px",
-  fontWeight: 700,
+  background: "#102A43",
+  color: "#F8FBFF",
+  borderBottom: "1px solid #274766",
+  fontSize: "12px",
+  fontWeight: 800,
+  letterSpacing: "0.35px",
+  whiteSpace: "nowrap",
 };
 
-/* =========================================================
-   TABLE DATA STYLE
-========================================================= */
-
 const tdStyle = {
-  padding: "12px 16px",
-  border: "1px solid #E2E8F0",
-  color: "#0F172A",
-  background: "#FFFFFF",
-  fontSize: "14px",
+  padding: "14px 14px",
+  borderBottom: "1px solid #1B3854",
+  color: "#DCEAF7",
+  background: "#0A2037",
+  fontSize: "13px",
   fontWeight: 500,
+  verticalAlign: "middle",
 };
 
 /* =========================================================
@@ -42,13 +41,13 @@ const tdStyle = {
 function statusColor(status) {
   switch (status) {
     case "OPEN":
-      return "#ef4444";
+      return "#EF4444";
 
     case "IN_PROGRESS":
-      return "#f59e0b";
+      return "#F59E0B";
 
     case "COMPLETED":
-      return "#22c55e";
+      return "#22C55E";
 
     default:
       return "#94a3b8";
@@ -226,8 +225,8 @@ export default function Maintenance() {
         display: "flex",
         minHeight: "100vh",
         width: "100%",
-        background: "#020b1c",
-        color: "#ffffff",
+        background: "#061426",
+        color: "#F8FBFF",
       }}
     >
 
@@ -253,8 +252,8 @@ export default function Maintenance() {
           flex: 1,
           minHeight: "100vh",
           padding: "30px",
-          background: "#020b1c",
-          color: "#ffffff",
+          background: "#061426",
+          color: "#F8FBFF",
         }}
       >
 
@@ -267,19 +266,40 @@ export default function Maintenance() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "25px",
+            marginBottom: "22px",
           }}
         >
-          <h2
-            style={{
-              fontWeight: 700,
-              fontSize: "22px",
-              color: "#FFFFFF",
-              margin: 0,
-            }}
-          >
-            Maintenance & work orders
-          </h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "linear-gradient(135deg, #06B6D4, #2563EB, #7C3AED)",
+                boxShadow: "0 0 24px rgba(37,99,235,0.35)",
+              }}
+            >
+              <i className="fa-solid fa-screwdriver-wrench" style={{ color: "#fff", fontSize: "21px" }} />
+            </div>
+            <div>
+              <h2
+                style={{
+                  fontWeight: 800,
+                  fontSize: "26px",
+                  color: "#FFFFFF",
+                  margin: 0,
+                }}
+              >
+                Maintenance & work orders
+              </h2>
+              <div style={{ color: "#8FAAC5", fontSize: "12px", marginTop: "4px" }}>
+                Monitor repairs, technicians, downtime and service history
+              </div>
+            </div>
+          </div>
 
           {/* LOG ISSUE BUTTON */}
 
@@ -299,7 +319,7 @@ export default function Maintenance() {
                 cursor: "pointer",
               }}
             >
-              {showForm ? "Cancel" : "+ Log an issue"}
+              {showForm ? "✕ Cancel" : "＋ Log an issue"}
             </button>
           )}
         </div>
@@ -467,7 +487,7 @@ export default function Maintenance() {
                 cursor: "pointer",
               }}
             >
-              Create work order
+              <i className="fa-solid fa-plus me-2"></i>Create work order
             </button>
           </div>
         )}
@@ -512,51 +532,29 @@ export default function Maintenance() {
 
               <thead>
                 <tr>
-                  <th style={thStyle}>
-                    ID
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-hashtag" style={{ color: "#38BDF8", marginRight: "6px" }} />ID</th>
 
-                  <th style={thStyle}>
-                    Equipment
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-microscope" style={{ color: "#7DD3FC", marginRight: "6px" }} />Equipment</th>
 
-                  <th style={thStyle}>
-                    Issue
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-triangle-exclamation" style={{ color: "#FDE68A", marginRight: "6px" }} />Issue</th>
 
-                  <th style={thStyle}>
-                    Priority
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-flag" style={{ color: "#93C5FD", marginRight: "6px" }} />Priority</th>
 
-                  <th style={thStyle}>
-                    Status
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-circle-check" style={{ color: "#86EFAC", marginRight: "6px" }} />Status</th>
 
-                  <th style={thStyle}>
-                    Assigned to
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-user-gear" style={{ color: "#7DD3FC", marginRight: "6px" }} />Assigned to</th>
 
-                  <th style={thStyle}>
-                    Maintenance started
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-play" style={{ color: "#67E8F9", marginRight: "6px" }} />Maintenance started</th>
 
-                  <th style={thStyle}>
-                    Completed
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-check-double" style={{ color: "#86EFAC", marginRight: "6px" }} />Completed</th>
 
-                  <th style={thStyle}>
-                    Downtime
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-hourglass-half" style={{ color: "#FDE68A", marginRight: "6px" }} />Downtime</th>
 
-                  <th style={thStyle}>
-                    Service log
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-clipboard-list" style={{ color: "#C4B5FD", marginRight: "6px" }} />Service log</th>
 
                   {/* ACTION IS NOW AVAILABLE TO EVERYONE */}
 
-                  <th style={thStyle}>
-                    Action
-                  </th>
+                  <th style={thStyle}><i className="fa-solid fa-bolt" style={{ color: "#38BDF8", marginRight: "6px" }} />Action</th>
                 </tr>
               </thead>
 
@@ -575,7 +573,17 @@ export default function Maintenance() {
                     {/* EQUIPMENT */}
 
                     <td style={tdStyle}>
-                      {wo.equipmentName}
+                      <div style={{ display: "flex", alignItems: "center", gap: "9px", fontWeight: 700, color: "#FFFFFF" }}>
+                        <span style={{
+                          width: "32px", height: "32px", borderRadius: "9px",
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          background: "linear-gradient(135deg, #2563EB, #7C3AED)",
+                          boxShadow: "0 4px 14px rgba(99,102,241,0.25)"
+                        }}>
+                          <i className="fa-solid fa-microscope" style={{ color: "#fff", fontSize: "12px" }} />
+                        </span>
+                        {wo.equipmentName}
+                      </div>
                     </td>
 
                     {/* ISSUE */}
@@ -587,7 +595,21 @@ export default function Maintenance() {
                     {/* PRIORITY */}
 
                     <td style={tdStyle}>
-                      {wo.priority}
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: "6px",
+                        padding: "5px 9px", borderRadius: "8px",
+                        background:
+                          wo.priority === "HIGH" ? "rgba(239,68,68,0.14)" :
+                          wo.priority === "MEDIUM" ? "rgba(245,158,11,0.14)" :
+                          "rgba(34,197,94,0.14)",
+                        color:
+                          wo.priority === "HIGH" ? "#FCA5A5" :
+                          wo.priority === "MEDIUM" ? "#FCD34D" : "#86EFAC",
+                        fontSize: "11px", fontWeight: 800
+                      }}>
+                        <i className="fa-solid fa-flag" />
+                        {wo.priority}
+                      </span>
                     </td>
 
                     {/* STATUS */}
@@ -610,6 +632,16 @@ export default function Maintenance() {
                             "inline-block",
                         }}
                       >
+                        <i
+                          className={`fa-solid ${
+                            wo.status === "COMPLETED"
+                              ? "fa-check"
+                              : wo.status === "IN_PROGRESS"
+                              ? "fa-spinner"
+                              : "fa-triangle-exclamation"
+                          }`}
+                          style={{ marginRight: "6px", fontSize: "10px" }}
+                        />
                         {wo.status}
                       </span>
                     </td>
@@ -676,30 +708,52 @@ export default function Maintenance() {
                       {/* VIEW DETAILS BUTTON */}
 
                       <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() =>
-                          handleViewDetails(wo)
-                        }
+                        type="button"
+                        onClick={() => handleViewDetails(wo)}
                         style={{
                           width: "100%",
+                          minHeight: "40px",
                           marginBottom:
                             userIsAdmin &&
-                            (wo.status === "OPEN" ||
-                              wo.status ===
-                                "IN_PROGRESS")
+                            (wo.status === "OPEN" || wo.status === "IN_PROGRESS")
                               ? "8px"
                               : "0",
-                          fontWeight: 600,
-                          background: "#1557a8",
-                          border:
-                            "1px solid #38bdf8",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          fontWeight: 800,
+                          fontSize: "13px",
+                          background: "#1479D1",
+                          border: "1px solid #5CC8FF",
                           color: "#FFFFFF",
-                          borderRadius: "6px",
-                          padding: "7px 10px",
+                          WebkitTextFillColor: "#FFFFFF",
+                          borderRadius: "9px",
+                          padding: "9px 12px",
+                          cursor: "pointer",
+                          boxShadow: "0 5px 16px rgba(20,121,209,0.24)",
+                          textShadow: "0 1px 1px rgba(0,0,0,0.22)",
                         }}
                       >
-                        <i className="bi bi-eye me-1"></i>
-                        View Details
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "22px",
+                            height: "22px",
+                            borderRadius: "6px",
+                            background: "rgba(255,255,255,0.16)",
+                            color: "#FFFFFF",
+                            WebkitTextFillColor: "#FFFFFF",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <i className="fa-solid fa-eye" style={{ color: "#FFFFFF", fontSize: "11px" }} />
+                        </span>
+                        <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>
+                          View Details
+                        </span>
                       </button>
 
                       {/* ADMIN ACTIONS */}
@@ -934,7 +988,7 @@ export default function Maintenance() {
                         statusColor(
                           selectedWorkOrder.status
                         ),
-                      color: "#FFFFFF",
+                      color: "#ffffff",
                       padding:
                         "6px 12px",
                       borderRadius:
@@ -1049,7 +1103,7 @@ export default function Maintenance() {
                   style={{
                     fontSize: "13px",
                     fontWeight: 700,
-                    color: "#475569",
+                    color: "#01080e",
                     marginBottom: "7px",
                   }}
                 >
@@ -1058,9 +1112,8 @@ export default function Maintenance() {
 
                 <div
                   style={{
-                    background: "#F8FAFC",
-                    border:
-                      "1px solid #E2E8F0",
+                    background: "#0D253D",
+                    border: "1px solid rgba(56,189,248,0.14)",
                     borderRadius: "8px",
                     padding: "14px",
                     lineHeight: "1.6",
@@ -1084,7 +1137,7 @@ export default function Maintenance() {
                   style={{
                     fontSize: "13px",
                     fontWeight: 700,
-                    color: "#475569",
+                    color: "#00060a",
                     marginBottom: "7px",
                   }}
                 >
@@ -1095,10 +1148,9 @@ export default function Maintenance() {
                   style={{
                     background:
                       selectedWorkOrder.serviceLog
-                        ? "#F0FDF4"
-                        : "#F8FAFC",
-                    border:
-                      "1px solid #E2E8F0",
+                        ? "rgba(34,197,94,0.10)"
+                        : "rgba(15,35,62,0.82)",
+                    border: "1px solid rgba(56,189,248,0.14)",
                     borderRadius: "8px",
                     padding: "14px",
                     lineHeight: "1.6",
@@ -1121,7 +1173,7 @@ export default function Maintenance() {
                 justifyContent: "flex-end",
                 padding: "15px 24px",
                 borderTop:
-                  "1px solid #E2E8F0",
+                  "1px solid rgba(56,189,248,0.14)",
               }}
             >
               <button
@@ -1152,13 +1204,13 @@ function DetailItem({ label, value }) {
       style={{
         paddingBottom: "12px",
         borderBottom:
-          "1px solid #E2E8F0",
+          "1px solid #01090f",
       }}
     >
       <div
         style={{
           fontSize: "12px",
-          color: "#64748B",
+          color: "#01090f",
           marginBottom: "4px",
         }}
       >
@@ -1169,7 +1221,7 @@ function DetailItem({ label, value }) {
         style={{
           fontSize: "14px",
           fontWeight: 600,
-          color: "#0F172A",
+          color: "#010a12",
           wordBreak: "break-word",
         }}
       >

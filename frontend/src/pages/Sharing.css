@@ -1173,13 +1173,24 @@ body {
    FIXED: PROPER BOX-SHAPED CARDS
 ========================================================= */
 
+/* =========================================================
+   EQUIPMENT GRID - WIDE BOX CARDS
+========================================================= */
+
 .equipment-grid {
-    width: 100%;
-    max-width: none;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 24px;
-    align-items: stretch;
+    width: calc(100vw - 300px) !important;
+    max-width: none !important;
+
+    display: grid !important;
+
+    grid-template-columns: repeat(4, minmax(280px, 1fr)) !important;
+
+    gap: 24px !important;
+
+    align-items: stretch !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 
@@ -1188,10 +1199,14 @@ body {
 ========================================================= */
 
 .sharing-equipment-card {
-    width: 100%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
+    width: 100% !important;
+    min-width: 280px !important;
+
+    height: 370px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
     overflow: hidden;
 
     border-radius: 19px;
@@ -1203,9 +1218,7 @@ body {
             #f8fbff
         );
 
-    border:
-        1px solid
-        #dbeafe;
+    border: 1px solid #dbeafe;
 
     box-shadow:
         0 10px 25px
@@ -1238,17 +1251,15 @@ body {
 .equipment-image-wrapper {
     position: relative;
 
-    width: calc(100% - 20px);
-
-    height: 180px;
+    width: calc(100% - 20px) !important;
+    height: 150px !important;
 
     overflow: hidden;
 
-    margin: 9px;
+    margin: 9px !important;
 
     border-radius: 14px;
 }
-
 
 .equipment-image-wrapper img {
     width: 100%;
@@ -2413,4 +2424,296 @@ body {
         text-align: center;
     }
 
+    
+
+}
+/* =========================================================
+   SHARING EQUIPMENT GRID - FULL WIDTH / 4 CARDS PER ROW
+========================================================= */
+
+.sharing-content .equipment-section {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+
+
+/* =========================================================
+   EQUIPMENT CARD
+========================================================= */
+
+.sharing-content .sharing-equipment-card {
+    width: 100% !important;
+    min-width: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #dbeafe;
+
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.16);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+
+/* Hover */
+
+.sharing-content .sharing-equipment-card:hover {
+    transform: translateY(-5px);
+
+    box-shadow:
+        0 15px 30px rgba(37, 99, 235, 0.18);
+}
+
+
+/* =========================================================
+   EQUIPMENT IMAGE
+========================================================= */
+
+.sharing-content .equipment-image-wrapper {
+    width: calc(100% - 20px) !important;
+
+    height: 180px !important;
+
+    margin: 10px !important;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+}
+
+.sharing-content .equipment-image-wrapper img {
+    width: 100% !important;
+    height: 100% !important;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+
+/* =========================================================
+   CARD BODY
+========================================================= */
+
+.sharing-content .equipment-card-body {
+    width: 100% !important;
+
+    padding: 8px 16px 16px !important;
+
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1;
+}
+
+
+/* Equipment name */
+
+.sharing-content .equipment-name {
+    font-size: 17px;
+
+    line-height: 1.25;
+
+    margin: 0 0 7px;
+
+    color: #0f172a;
+
+    font-weight: 850;
+
+    word-break: break-word;
+}
+
+
+/* Institution */
+
+.sharing-content .equipment-owner {
+    margin-bottom: 12px;
+
+    font-size: 10px;
+
+    color: #64748b;
+}
+
+
+/* =========================================================
+   REQUEST AREA
+========================================================= */
+
+.sharing-content .request-area {
+    width: 100%;
+
+    margin-top: auto;
+
+    padding-top: 12px;
+
+    border-top: 1px solid #e2e8f0;
+}
+
+
+.sharing-content .reason-input {
+    width: 100% !important;
+
+    min-height: 65px;
+
+    box-sizing: border-box;
+}
+
+
+.sharing-content .request-access-btn {
+    width: 100% !important;
+}
+
+
+/* =========================================================
+   FINAL EQUIPMENT CARD SIZE
+   4 WIDE BOX CARDS
+========================================================= */
+
+.equipment-section {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.equipment-grid {
+    width: calc(100vw - 300px) !important;
+    max-width: none !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+        repeat(4, minmax(280px, 1fr)) !important;
+
+    gap: 24px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+
+/* CARD */
+
+.sharing-equipment-card {
+    width: 100% !important;
+    min-width: 280px !important;
+
+    height: 370px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    overflow: hidden;
+
+    border-radius: 19px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f8fbff
+        );
+
+    border: 1px solid #dbeafe;
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.18);
+}
+
+
+/* IMAGE */
+
+.equipment-image-wrapper {
+    position: relative;
+
+    width: calc(100% - 20px) !important;
+
+    height: 150px !important;
+
+    margin: 9px !important;
+
+    overflow: hidden;
+
+    border-radius: 14px;
+
+    flex-shrink: 0;
+}
+
+.equipment-image-wrapper img {
+    width: 100% !important;
+    height: 100% !important;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+
+/* CARD BODY */
+
+.equipment-card-body {
+    width: 100% !important;
+
+    padding: 8px 17px 15px !important;
+
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+/* EQUIPMENT NAME */
+
+.equipment-name {
+    font-size: 17px !important;
+
+    line-height: 1.25 !important;
+
+    margin: 0 0 7px !important;
+
+    word-break: normal !important;
+}
+
+
+/* OWNER */
+
+.equipment-owner {
+    margin-bottom: 10px !important;
+}
+
+
+/* REQUEST AREA */
+
+.request-area {
+    padding-top: 10px !important;
+}
+
+.reason-input {
+    width: 100% !important;
+
+    min-height: 50px !important;
+
+    box-sizing: border-box;
+}
+
+.request-access-btn {
+    width: 100% !important;
+
+    height: 38px !important;
 }

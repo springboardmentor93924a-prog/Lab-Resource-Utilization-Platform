@@ -2,24 +2,30 @@ import Sidebar from "../components/Sidebar";
 import "./EquipmentCatalog.css";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+
 import {
   getAllEquipment,
   getCalibrationAlerts,
 } from "../services/equipmentService";
+
 import { getUnreadCount } from "../services/notificationService";
 import { isAdmin } from "../utils/auth";
 
 export default function EquipmentCatalog() {
   const navigate = useNavigate();
 
+  // =========================================================
+  // EQUIPMENT STATE
+  // =========================================================
+
   const [equipmentList, setEquipmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [overdueIds, setOverdueIds] = useState([]);
 
-  // ==============================
+  // =========================================================
   // SEARCH & FILTER STATES
-  // ==============================
+  // =========================================================
 
   const [topSearch, setTopSearch] = useState("");
   const [equipmentSearch, setEquipmentSearch] = useState("");
@@ -27,17 +33,17 @@ export default function EquipmentCatalog() {
   const [statusFilter, setStatusFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
 
-  // ==============================
+  // =========================================================
   // NOTIFICATION STATE
-  // ==============================
+  // =========================================================
 
   const [unreadCount, setUnreadCount] = useState(0);
 
   const userIsAdmin = isAdmin();
 
-  // ==============================
+  // =========================================================
   // LOAD EQUIPMENT
-  // ==============================
+  // =========================================================
 
   useEffect(() => {
     async function fetchEquipment() {
@@ -66,9 +72,9 @@ export default function EquipmentCatalog() {
     fetchEquipment();
   }, []);
 
-  // ==============================
+  // =========================================================
   // LOAD UNREAD NOTIFICATIONS
-  // ==============================
+  // =========================================================
 
   useEffect(() => {
     let cancelled = false;
@@ -100,28 +106,35 @@ export default function EquipmentCatalog() {
     };
   }, []);
 
-  // ==============================
+  // =========================================================
   // NAVIGATION FUNCTIONS
-  // ==============================
+  // =========================================================
 
   function handleView(id) {
     navigate(`/equipment/${id}`);
   }
+
   function getStatusLabel(status) {
-  switch (status?.toUpperCase()) {
-    case "AVAILABLE":
-      return "AVAILABLE";
+    switch (status?.toUpperCase()) {
+      case "AVAILABLE":
+        return "AVAILABLE";
 
-    case "IN_USE":
-      return "IN USE";
+      case "IN_USE":
+        return "IN USE";
 
-    case "MAINTENANCE":
-      return "MAINTENANCE";
+      case "MAINTENANCE":
+        return "MAINTENANCE";
 
-    default:
-      return status || "UNKNOWN";
+      case "RETIRED":
+        return "RETIRED";
+
+      case "OUT_OF_SERVICE":
+        return "OUT OF SERVICE";
+
+      default:
+        return status || "UNKNOWN";
+    }
   }
-}
 
   function handleAddEquipment() {
     navigate("/equipment/add");
@@ -135,9 +148,9 @@ export default function EquipmentCatalog() {
     navigate("/notifications");
   }
 
-  // ==============================
+  // =========================================================
   // DYNAMIC CATEGORY OPTIONS
-  // ==============================
+  // =========================================================
 
   const categories = [
     ...new Set(
@@ -147,9 +160,9 @@ export default function EquipmentCatalog() {
     ),
   ].sort();
 
-  // ==============================
+  // =========================================================
   // DYNAMIC DEPARTMENT OPTIONS
-  // ==============================
+  // =========================================================
 
   const departments = [
     ...new Set(
@@ -159,9 +172,9 @@ export default function EquipmentCatalog() {
     ),
   ].sort();
 
-  // ==============================
+  // =========================================================
   // FILTER EQUIPMENT
-  // ==============================
+  // =========================================================
 
   const filteredEquipment = equipmentList.filter((item) => {
     const topSearchText =
@@ -183,7 +196,6 @@ export default function EquipmentCatalog() {
       item.status?.toLowerCase() || "";
 
     // TOP SEARCH
-
     const matchesTopSearch =
       topSearchText === "" ||
       equipmentName.includes(topSearchText) ||
@@ -192,25 +204,21 @@ export default function EquipmentCatalog() {
       status.includes(topSearchText);
 
     // EQUIPMENT SEARCH
-
     const matchesEquipmentSearch =
       equipmentSearchText === "" ||
       equipmentName.includes(equipmentSearchText);
 
     // CATEGORY
-
     const matchesCategory =
       categoryFilter === "" ||
       category === categoryFilter.toLowerCase();
 
     // STATUS
-
     const matchesStatus =
       statusFilter === "" ||
       status === statusFilter.toLowerCase();
 
     // DEPARTMENT
-
     const matchesDepartment =
       departmentFilter === "" ||
       department === departmentFilter.toLowerCase();
@@ -224,9 +232,28 @@ export default function EquipmentCatalog() {
     );
   });
 
-  // ==============================
+  // =========================================================
+  // COUNTS
+  // =========================================================
+
+  const availableCount = equipmentList.filter(
+    (item) =>
+      item.status?.toUpperCase() === "AVAILABLE"
+  ).length;
+
+  const maintenanceCount = equipmentList.filter(
+    (item) =>
+      item.status?.toUpperCase() === "MAINTENANCE"
+  ).length;
+
+  const inUseCount = equipmentList.filter(
+    (item) =>
+      item.status?.toUpperCase() === "IN_USE"
+  ).length;
+
+  // =========================================================
   // UI
-  // ==============================
+  // =========================================================
 
   return (
     <div className="wrapper">
@@ -246,80 +273,64 @@ export default function EquipmentCatalog() {
 
       <div className="main-content">
 
-
         {/* =====================================================
             TOP NAVBAR
         ===================================================== */}
 
         <nav className="navbar">
 
-          <h4>Equipment catalog</h4>
+          <div className="catalog-title">
+
+            <div className="catalog-title-icon">
+              <i className="bi bi-grid-3x3-gap-fill"></i>
+            </div>
+
+            <div>
+              <h4>Equipment Catalog</h4>
+
+              <span>
+                Laboratory resource management
+              </span>
+            </div>
+
+          </div>
+
 
           <div className="nav-right">
 
             {/* TOP SEARCH */}
 
-            <input
-              type="text"
-              className="form-control search-top"
-              placeholder="Search..."
-              value={topSearch}
-              onChange={(e) =>
-                setTopSearch(e.target.value)
-              }
-            />
+            <div className="top-search-wrapper">
+
+              <i className="bi bi-search"></i>
+
+              <input
+                type="text"
+                className="search-top"
+                placeholder="Search equipment, bookings..."
+                value={topSearch}
+                onChange={(e) =>
+                  setTopSearch(e.target.value)
+                }
+              />
+
+            </div>
 
 
-            {/* =================================================
-                NOTIFICATION BELL
-            ================================================= */}
+            {/* NOTIFICATION BELL */}
 
             <button
               type="button"
+              className="notification-button"
               onClick={handleNotifications}
               title="Notifications"
               aria-label="Notifications"
-              style={{
-                position: "relative",
-                width: "42px",
-                height: "42px",
-                borderRadius: "50%",
-                border: "1px solid #2dd4bf",
-                background: "#061a33",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                fontSize: "18px",
-                marginLeft: "8px",
-              }}
             >
 
               <i className="bi bi-bell"></i>
 
-              {/* UNREAD COUNT */}
-
               {unreadCount > 0 && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "-4px",
-                    right: "-4px",
-                    background: "#ef4444",
-                    color: "#ffffff",
-                    borderRadius: "999px",
-                    minWidth: "18px",
-                    height: "18px",
-                    padding: "0 4px",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    lineHeight: 1,
-                  }}
-                >
+                <span className="notification-count">
                   {unreadCount > 99
                     ? "99+"
                     : unreadCount}
@@ -329,13 +340,13 @@ export default function EquipmentCatalog() {
             </button>
 
 
-            {/* =================================================
-                PROFILE
-            ================================================= */}
+            {/* PROFILE */}
 
             <button
               className="profile-circle"
-              onClick={() => navigate("/profile")}
+              onClick={() =>
+                navigate("/profile")
+              }
               title="My Profile"
               aria-label="My Profile"
             >
@@ -348,126 +359,318 @@ export default function EquipmentCatalog() {
 
 
         {/* =====================================================
-            FILTERS
+            HERO SECTION
+        ===================================================== */}
+
+        <section className="catalog-hero">
+
+          <div className="catalog-hero-content">
+
+            <div className="catalog-eyebrow">
+              <i className="bi bi-stars"></i>
+
+              LABORATORY RESOURCE CENTER
+            </div>
+
+
+            <h1>
+              Explore Your
+              <span> Equipment.</span>
+            </h1>
+
+
+            <p>
+              Discover, monitor and manage laboratory
+              equipment across your institution.
+            </p>
+
+
+            {/* HERO STATS */}
+
+            <div className="catalog-hero-stats">
+
+              {/* TOTAL */}
+
+              <div className="hero-mini-stat">
+
+                <div className="hero-mini-icon blue">
+                  <i className="bi bi-box-seam-fill"></i>
+                </div>
+
+                <div>
+                  <strong>
+                    {equipmentList.length}
+                  </strong>
+
+                  <span>
+                    Total Equipment
+                  </span>
+                </div>
+
+              </div>
+
+
+              {/* AVAILABLE */}
+
+              <div className="hero-mini-stat">
+
+                <div className="hero-mini-icon green">
+                  <i className="bi bi-check-circle-fill"></i>
+                </div>
+
+                <div>
+                  <strong>
+                    {availableCount}
+                  </strong>
+
+                  <span>
+                    Available
+                  </span>
+                </div>
+
+              </div>
+
+
+              {/* IN USE */}
+
+              <div className="hero-mini-stat">
+
+                <div className="hero-mini-icon purple">
+                  <i className="bi bi-activity"></i>
+                </div>
+
+                <div>
+                  <strong>
+                    {inUseCount}
+                  </strong>
+
+                  <span>
+                    In Use
+                  </span>
+                </div>
+
+              </div>
+
+
+              {/* MAINTENANCE */}
+
+              <div className="hero-mini-stat">
+
+                <div className="hero-mini-icon orange">
+                  <i className="bi bi-tools"></i>
+                </div>
+
+                <div>
+                  <strong>
+                    {maintenanceCount}
+                  </strong>
+
+                  <span>
+                    Maintenance
+                  </span>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* MAGICAL HERO GRAPHIC */}
+
+          <div className="catalog-hero-art">
+
+            <div className="hero-orbit orbit-one"></div>
+
+            <div className="hero-orbit orbit-two"></div>
+
+            <div className="hero-main-icon">
+              <i className="bi bi-boxes"></i>
+            </div>
+
+            <div className="floating-icon icon-one">
+              <i className="bi bi-microscope"></i>
+            </div>
+
+            <div className="floating-icon icon-two">
+              <i className="bi bi-beaker-fill"></i>
+            </div>
+
+            <div className="floating-icon icon-three">
+              <i className="bi bi-cpu-fill"></i>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* =====================================================
+            FILTER SECTION
         ===================================================== */}
 
         <div className="filters">
 
+          <div className="filter-heading">
 
-          {/* EQUIPMENT SEARCH */}
+            <div className="filter-heading-icon">
+              <i className="bi bi-sliders2"></i>
+            </div>
 
-          <input
-            type="text"
-            className="form-control search-box"
-            placeholder="Search equipment"
-            value={equipmentSearch}
-            onChange={(e) =>
-              setEquipmentSearch(e.target.value)
-            }
-          />
+            <div>
 
+              <h3>
+                Find Equipment
+              </h3>
 
-          {/* CATEGORY */}
+              <p>
+                Search and filter laboratory resources
+              </p>
 
-          <select
-            className="form-select"
-            value={categoryFilter}
-            onChange={(e) =>
-              setCategoryFilter(e.target.value)
-            }
-          >
+            </div>
 
-            <option value="">
-              All categories
-            </option>
-
-            {categories.map((category) => (
-              <option
-                key={category}
-                value={category}
-              >
-                {category}
-              </option>
-            ))}
-
-          </select>
+          </div>
 
 
-          {/* STATUS */}
+          <div className="filter-controls">
 
-          <select
-            className="form-select"
-            value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(e.target.value)
-            }
-          >
+            {/* EQUIPMENT SEARCH */}
 
-            <option value="">
-              All status
-            </option>
+            <div className="input-icon-wrapper">
 
-            <option value="AVAILABLE">
-              Available
-            </option>
+              <i className="bi bi-search"></i>
 
-            <option value="IN_USE">
-              In use
-            </option>
+              <input
+                type="text"
+                className="form-control search-box"
+                placeholder="Search equipment"
+                value={equipmentSearch}
+                onChange={(e) =>
+                  setEquipmentSearch(
+                    e.target.value
+                  )
+                }
+              />
 
-            <option value="MAINTENANCE">
-              Maintenance
-            </option>
-
-          </select>
+            </div>
 
 
-          {/* DEPARTMENT */}
+            {/* CATEGORY */}
 
-          <select
-            className="form-select"
-            value={departmentFilter}
-            onChange={(e) =>
-              setDepartmentFilter(e.target.value)
-            }
-          >
-
-            <option value="">
-              All departments
-            </option>
-
-            {departments.map((department) => (
-              <option
-                key={department}
-                value={department}
-              >
-                {department}
-              </option>
-            ))}
-
-          </select>
-
-
-          {/* VIEW CALENDAR */}
-
-          <button
-            className="view-calendar-btn"
-            onClick={handleViewCalendar}
-          >
-            View calendar
-          </button>
-
-
-          {/* ADD EQUIPMENT */}
-
-          {userIsAdmin && (
-            <button
-              className="add-btn"
-              onClick={handleAddEquipment}
+            <select
+              className="form-select"
+              value={categoryFilter}
+              onChange={(e) =>
+                setCategoryFilter(
+                  e.target.value
+                )
+              }
             >
-              + Add equipment
+
+              <option value="">
+                All categories
+              </option>
+
+              {categories.map((category) => (
+                <option
+                  key={category}
+                  value={category}
+                >
+                  {category}
+                </option>
+              ))}
+
+            </select>
+
+
+            {/* STATUS */}
+
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                All status
+              </option>
+
+              <option value="AVAILABLE">
+                Available
+              </option>
+
+              <option value="IN_USE">
+                In use
+              </option>
+
+              <option value="MAINTENANCE">
+                Maintenance
+              </option>
+
+            </select>
+
+
+            {/* DEPARTMENT */}
+
+            <select
+              className="form-select"
+              value={departmentFilter}
+              onChange={(e) =>
+                setDepartmentFilter(
+                  e.target.value
+                )
+              }
+            >
+
+              <option value="">
+                All departments
+              </option>
+
+              {departments.map((department) => (
+                <option
+                  key={department}
+                  value={department}
+                >
+                  {department}
+                </option>
+              ))}
+
+            </select>
+
+          </div>
+
+
+          {/* FILTER ACTIONS */}
+
+          <div className="filter-actions">
+
+            <button
+              className="view-calendar-btn"
+              onClick={handleViewCalendar}
+            >
+              <i className="bi bi-calendar3"></i>
+
+              View Calendar
             </button>
-          )}
+
+
+            {userIsAdmin && (
+              <button
+                className="add-btn"
+                onClick={handleAddEquipment}
+              >
+                <i className="bi bi-plus-lg"></i>
+
+                Add Equipment
+              </button>
+            )}
+
+          </div>
 
         </div>
 
@@ -477,9 +680,17 @@ export default function EquipmentCatalog() {
         ===================================================== */}
 
         {loading && (
-          <p className="loading-message">
-            Loading equipment...
-          </p>
+          <div className="loading-container">
+
+            <div className="loading-spinner">
+              <i className="bi bi-arrow-repeat"></i>
+            </div>
+
+            <p>
+              Loading equipment...
+            </p>
+
+          </div>
         )}
 
 
@@ -488,9 +699,15 @@ export default function EquipmentCatalog() {
         ===================================================== */}
 
         {error && (
-          <p className="error-message">
-            {error}
-          </p>
+          <div className="error-container">
+
+            <i className="bi bi-exclamation-triangle-fill"></i>
+
+            <p>
+              {error}
+            </p>
+
+          </div>
         )}
 
 
@@ -501,36 +718,79 @@ export default function EquipmentCatalog() {
         {!loading && !error && (
           <>
 
-            {/* RESULT COUNT */}
+            {/* SECTION HEADING */}
 
-            <p
-              style={{
-                color: "#ffffff",
-                margin: "10px 0 15px",
-                fontSize: "14px",
-              }}
-            >
-              Showing {filteredEquipment.length} of{" "}
-              {equipmentList.length} equipment
-            </p>
+            <div className="catalog-section-heading">
+
+              <div className="section-title-left">
+
+                <div className="section-title-icon">
+                  <i className="bi bi-grid-fill"></i>
+                </div>
+
+                <div>
+
+                  <span className="section-eyebrow">
+                    EQUIPMENT COLLECTION
+                  </span>
+
+                  <h2>
+                    Available Laboratory Equipment
+                  </h2>
+
+                  <p>
+                    Browse equipment available across
+                    your laboratory
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="equipment-count-badge">
+
+                <i className="bi bi-box-seam"></i>
+
+                {filteredEquipment.length} Equipment
+
+              </div>
+
+            </div>
 
 
             {/* NO RESULTS */}
 
             {filteredEquipment.length === 0 ? (
 
-              <div
-                style={{
-                  background: "#061a33",
-                  border: "1px solid #1e4b73",
-                  borderRadius: "10px",
-                  padding: "30px",
-                  textAlign: "center",
-                  color: "#ffffff",
-                }}
-              >
-                No equipment found matching your
-                search or filters.
+              <div className="no-results">
+
+                <div className="no-results-icon">
+                  <i className="bi bi-search"></i>
+                </div>
+
+                <h3>
+                  No Equipment Found
+                </h3>
+
+                <p>
+                  No equipment matches your
+                  current search or filters.
+                </p>
+
+                <button
+                  onClick={() => {
+                    setTopSearch("");
+                    setEquipmentSearch("");
+                    setCategoryFilter("");
+                    setStatusFilter("");
+                    setDepartmentFilter("");
+                  }}
+                >
+                  <i className="bi bi-arrow-counterclockwise"></i>
+                  Clear Filters
+                </button>
+
               </div>
 
             ) : (
@@ -542,18 +802,22 @@ export default function EquipmentCatalog() {
                 {filteredEquipment.map((item) => (
 
                   <div
-  className="equipment-card"
-  key={item.id}
-  onClick={() => handleView(item.id)}
-  role="button"
-  tabIndex={0}
-  onKeyDown={(e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      handleView(item.id);
-    }
-  }}
-  style={{ cursor: "pointer" }}
->
+                    className="equipment-card"
+                    key={item.id}
+                    onClick={() =>
+                      handleView(item.id)
+                    }
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === "Enter" ||
+                        e.key === " "
+                      ) {
+                        handleView(item.id);
+                      }
+                    }}
+                  >
 
                     {/* IMAGE */}
 
@@ -564,66 +828,103 @@ export default function EquipmentCatalog() {
                         alt={item.equipmentName}
                       />
 
+                      <div className="image-glow"></div>
+
+
+                      {/* CATEGORY BADGE */}
+
+                      <div className="equipment-category-badge">
+
+                        <i className="bi bi-box-seam"></i>
+
+                        {item.category ||
+                          "Laboratory Equipment"}
+
+                      </div>
+
                     </div>
 
 
-                    {/* NAME */}
+                    {/* CARD BODY */}
 
-                    <h6>
-                      {item.equipmentName}
-                    </h6>
+                    <div className="equipment-card-body">
+
+                      <div className="equipment-icon-small">
+
+                        <i className="bi bi-cpu-fill"></i>
+
+                      </div>
 
 
-                    {/* CATEGORY + DEPARTMENT */}
+                      <div className="equipment-info">
 
-                    <p>
-                      {item.category} —{" "}
-                      {item.department}
-                    </p>
+                        <h6>
+                          {item.equipmentName}
+                        </h6>
+
+                        <p>
+
+                          <i className="bi bi-building"></i>
+
+                          {item.department ||
+                            "General Department"}
+
+                        </p>
+
+                      </div>
+
+                    </div>
 
 
                     {/* CALIBRATION ALERT */}
 
                     {overdueIds.includes(item.id) && (
-                      <span
-                        style={{
-                          background: "#ef4444",
-                          color: "#fff",
-                          padding: "3px 10px",
-                          borderRadius: "999px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                        }}
-                      >
+
+                      <div className="calibration-warning">
+
+                        <i className="bi bi-exclamation-triangle-fill"></i>
+
                         Calibration overdue
-                      </span>
+
+                      </div>
+
                     )}
 
 
-                    
+                    {/* STATUS */}
 
-                   {/* STATUS */}
+                    <div
+                      className={`status ${
+                        item.status?.toLowerCase() || ""
+                      }`}
+                    >
 
-<div
-  className={`status ${
-    item.status?.toLowerCase() || ""
-  }`}
->
-  {getStatusLabel(item.status)}
-</div>
+                      <i className="bi bi-circle-fill"></i>
+
+                      {getStatusLabel(
+                        item.status
+                      )}
+
+                    </div>
 
 
-                    {/* VIEW */}
+                    {/* VIEW BUTTON */}
 
                     <button
-  className="btn btn-outline-dark w-100"
-  onClick={(e) => {
-    e.stopPropagation();
-    handleView(item.id);
-  }}
->
-  View
-</button>
+                      className="view-equipment-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleView(item.id);
+                      }}
+                    >
+
+                      <span>
+                        View Equipment
+                      </span>
+
+                      <i className="bi bi-arrow-right"></i>
+
+                    </button>
 
                   </div>
 

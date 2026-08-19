@@ -16,9 +16,7 @@ import { isAdmin } from "../utils/auth";
 
 import "./Sharing.css";
 
-
 export default function Sharing() {
-
   const [me, setMe] = useState(null);
 
   const [otherInstitutionEquipment, setOtherInstitutionEquipment] =
@@ -40,7 +38,6 @@ export default function Sharing() {
 
   const userIsAdmin = isAdmin();
 
-
   /* =========================================================
      LOAD EVERYTHING
   ========================================================= */
@@ -49,365 +46,220 @@ export default function Sharing() {
     fetchAll();
   }, []);
 
-
   async function fetchAll() {
-
     try {
-
       setLoading(true);
 
-      const meData =
-        await getCurrentUserInfo();
+      const meData = await getCurrentUserInfo();
 
       setMe(meData);
 
+      const allEquipment = await getAllEquipment();
 
-      const allEquipment =
-        await getAllEquipment();
-
-
-      const outside =
-        allEquipment.filter(
-          (eq) =>
-            eq.institutionId !==
-            meData.institutionId
-        );
-
-
-      setOtherInstitutionEquipment(
-        outside
+      const outside = allEquipment.filter(
+        (eq) => eq.institutionId !== meData.institutionId
       );
 
+      setOtherInstitutionEquipment(outside);
 
-      const myReqs =
-        await getMyAccessRequests();
+      const myReqs = await getMyAccessRequests();
 
       setMyRequests(myReqs);
 
-
       if (userIsAdmin) {
-
         try {
-
-          const pending =
-            await getPendingAccessRequests();
+          const pending = await getPendingAccessRequests();
 
           setPendingRequests(pending);
-
         } catch (err) {
-
-          console.error(
-            "Failed to load pending requests:",
-            err
-          );
+          console.error("Failed to load pending requests:", err);
 
           setPendingRequests([]);
-
         }
-
       }
-
     } catch (err) {
-
-      console.error(
-        "Failed to load sharing data:",
-        err
-      );
-
+      console.error("Failed to load sharing data:", err);
     } finally {
-
       setLoading(false);
-
     }
-
   }
-
 
   /* =========================================================
      REQUEST STATUS
   ========================================================= */
 
   function getRequestStatusFor(equipmentId) {
+    const req = myRequests.find(
+      (r) => r.equipmentId === equipmentId
+    );
 
-    const req =
-      myRequests.find(
-        (r) =>
-          r.equipmentId === equipmentId
-      );
-
-    return req
-      ? req.status
-      : null;
+    return req ? req.status : null;
   }
-
 
   /* =========================================================
      REQUEST ACCESS
   ========================================================= */
 
   async function handleRequestAccess(equipmentId) {
-
-    const reason =
-      reasonDrafts[equipmentId] || "";
-
+    const reason = reasonDrafts[equipmentId] || "";
 
     if (reason.trim() === "") {
-
-      alert(
-        "Please enter a reason for your request."
-      );
-
+      alert("Please enter a reason for your request.");
       return;
-
     }
 
-
     try {
-
       setRequestingId(equipmentId);
-
 
       await createAccessRequest({
         equipmentId,
         reason,
       });
 
+      alert("Access request submitted successfully.");
 
-      alert(
-        "Access request submitted successfully."
-      );
-
-
-      setReasonDrafts(
-        (prev) => ({
-          ...prev,
-          [equipmentId]: "",
-        })
-      );
-
+      setReasonDrafts((prev) => ({
+        ...prev,
+        [equipmentId]: "",
+      }));
 
       await fetchAll();
-
     } catch (err) {
-
       alert(
         err.response?.data?.message ||
-        "Failed to submit request."
+          "Failed to submit request."
       );
-
     } finally {
-
       setRequestingId(null);
-
     }
-
   }
-
 
   /* =========================================================
      APPROVE REQUEST
   ========================================================= */
 
   async function handleApprove(id) {
-
     try {
-
       setProcessingId(id);
-
 
       await approveAccessRequest(id);
 
-
-      alert(
-        "Access request approved."
-      );
-
+      alert("Access request approved.");
 
       await fetchAll();
-
     } catch (err) {
-
       alert(
         err.response?.data?.message ||
-        "Failed to approve request."
+          "Failed to approve request."
       );
-
     } finally {
-
       setProcessingId(null);
-
     }
-
   }
-
 
   /* =========================================================
      REJECT REQUEST
   ========================================================= */
 
   async function handleReject(id) {
-
     try {
-
       setProcessingId(id);
-
 
       await rejectAccessRequest(id);
 
-
-      alert(
-        "Access request rejected."
-      );
-
+      alert("Access request rejected.");
 
       await fetchAll();
-
     } catch (err) {
-
       alert(
         err.response?.data?.message ||
-        "Failed to reject request."
+          "Failed to reject request."
       );
-
     } finally {
-
       setProcessingId(null);
-
     }
-
   }
-
 
   /* =========================================================
      SEARCH
   ========================================================= */
 
-  const filteredEquipment =
-    useMemo(() => {
+  const filteredEquipment = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-      const query =
-        search.trim().toLowerCase();
+    if (!query) {
+      return otherInstitutionEquipment;
+    }
 
-
-      if (!query) {
-
-        return otherInstitutionEquipment;
-
-      }
-
-
-      return otherInstitutionEquipment.filter(
-        (eq) =>
-          eq.equipmentName
-            ?.toLowerCase()
-            .includes(query) ||
-
-          eq.institutionName
-            ?.toLowerCase()
-            .includes(query)
-      );
-
-    }, [
-      search,
-      otherInstitutionEquipment,
-    ]);
-
+    return otherInstitutionEquipment.filter(
+      (eq) =>
+        eq.equipmentName
+          ?.toLowerCase()
+          .includes(query) ||
+        eq.institutionName
+          ?.toLowerCase()
+          .includes(query)
+    );
+  }, [search, otherInstitutionEquipment]);
 
   /* =========================================================
      STATISTICS
   ========================================================= */
 
-  const totalEquipment =
-    otherInstitutionEquipment.length;
+  const totalEquipment = otherInstitutionEquipment.length;
 
+  const approvedRequests = myRequests.filter(
+    (r) => r.status === "APPROVED"
+  ).length;
 
-  const approvedRequests =
-    myRequests.filter(
-      (r) =>
-        r.status === "APPROVED"
-    ).length;
-
-
-  const pendingMyRequests =
-    myRequests.filter(
-      (r) =>
-        r.status === "PENDING"
-    ).length;
-
-
-  
-
+  const pendingMyRequests = myRequests.filter(
+    (r) => r.status === "PENDING"
+  ).length;
 
   /* =========================================================
      LOADING SCREEN
   ========================================================= */
 
   if (loading) {
-
     return (
-
       <div className="sharing-wrapper">
-
         <aside className="sidebar">
-
           <Sidebar />
-
         </aside>
 
-
         <main className="sharing-content">
-
           <div className="sharing-loading">
-
             <div className="sharing-loading-icon">
-
               <i className="bi bi-diagram-3-fill"></i>
-
             </div>
 
-
-            <h2>
-              Preparing Resource Exchange
-            </h2>
-
+            <h2>Preparing Resource Exchange</h2>
 
             <p>
               Discovering equipment from partner institutions...
             </p>
 
-
             <div className="sharing-loader"></div>
-
           </div>
-
         </main>
-
       </div>
-
     );
-
   }
-
 
   /* =========================================================
      MAIN PAGE
   ========================================================= */
 
   return (
-
     <div className="sharing-wrapper">
-
 
       {/* =====================================================
           SIDEBAR
       ===================================================== */}
 
       <aside className="sidebar">
-
         <Sidebar />
-
       </aside>
-
 
       {/* =====================================================
           MAIN CONTENT
@@ -415,124 +267,79 @@ export default function Sharing() {
 
       <main className="sharing-content">
 
-
         {/* ===================================================
             HERO
         =================================================== */}
 
         <section className="sharing-hero">
 
-
           <div className="hero-glow hero-glow-one"></div>
 
           <div className="hero-glow hero-glow-two"></div>
 
-
           <div className="sharing-hero-content">
 
-
             <div className="sharing-eyebrow">
-
               <i className="bi bi-stars"></i>
-
               INTER-INSTITUTION RESOURCE NETWORK
-
             </div>
 
-
             <h1>
-
               Share. Discover.
-
-              <span>
-                {" "}Collaborate.
-              </span>
-
+              <span> Collaborate.</span>
             </h1>
 
-
             <p>
-
               Access advanced laboratory equipment
               from partner institutions and expand
               your research possibilities.
-
             </p>
-
 
             <div className="institution-pill">
 
-
               <div className="institution-pill-icon">
-
                 <i className="bi bi-building-fill"></i>
-
               </div>
 
-
               <div>
-
-                <small>
-                  YOUR INSTITUTION
-                </small>
-
+                <small>YOUR INSTITUTION</small>
 
                 <strong>
                   {me?.institutionName || "—"}
                 </strong>
-
               </div>
-
 
             </div>
 
-
           </div>
-
 
           {/* HERO VISUAL */}
 
           <div className="hero-visual">
 
-
             <div className="orbit orbit-one"></div>
 
             <div className="orbit orbit-two"></div>
 
-
             <div className="hero-main-icon">
-
               <i className="bi bi-share-fill"></i>
-
             </div>
-
 
             <div className="floating-icon floating-one">
-
               <i className="bi bi-microscope"></i>
-
             </div>
-
 
             <div className="floating-icon floating-two">
-
               <i className="bi bi-cpu-fill"></i>
-
             </div>
-
 
             <div className="floating-icon floating-three">
-
               <i className="bi bi-flask-fill"></i>
-
             </div>
-
 
           </div>
 
-
         </section>
-
 
         {/* ===================================================
             STATISTICS
@@ -540,231 +347,128 @@ export default function Sharing() {
 
         <section className="sharing-stats">
 
-
           {/* AVAILABLE EQUIPMENT */}
 
           <div className="sharing-stat-card blue-stat">
 
-
             <div className="stat-icon">
-
               <i className="bi bi-box-seam-fill"></i>
-
             </div>
-
 
             <div>
+              <span>AVAILABLE EQUIPMENT</span>
 
-              <span>
-                AVAILABLE EQUIPMENT
-              </span>
+              <strong>{totalEquipment}</strong>
 
-
-              <strong>
-                {totalEquipment}
-              </strong>
-
-
-              <small>
-                From partner institutions
-              </small>
-
+              <small>From partner institutions</small>
             </div>
 
-
           </div>
-
 
           {/* APPROVED */}
 
           <div className="sharing-stat-card green-stat">
 
-
             <div className="stat-icon">
-
               <i className="bi bi-check-circle-fill"></i>
-
             </div>
-
 
             <div>
+              <span>APPROVED ACCESS</span>
 
-              <span>
-                APPROVED ACCESS
-              </span>
+              <strong>{approvedRequests}</strong>
 
-
-              <strong>
-                {approvedRequests}
-              </strong>
-
-
-              <small>
-                Successfully granted
-              </small>
-
+              <small>Successfully granted</small>
             </div>
 
-
           </div>
-
 
           {/* PENDING */}
 
           <div className="sharing-stat-card orange-stat">
 
-
             <div className="stat-icon">
-
               <i className="bi bi-hourglass-split"></i>
-
             </div>
-
 
             <div>
+              <span>PENDING REQUESTS</span>
 
-              <span>
-                PENDING REQUESTS
-              </span>
+              <strong>{pendingMyRequests}</strong>
 
-
-              <strong>
-                {pendingMyRequests}
-              </strong>
-
-
-              <small>
-                Waiting for approval
-              </small>
-
+              <small>Waiting for approval</small>
             </div>
 
-
           </div>
-
 
           {/* COLLABORATION */}
 
           <div className="sharing-stat-card purple-stat">
 
-
             <div className="stat-icon">
-
               <i className="bi bi-arrow-repeat"></i>
-
             </div>
-
 
             <div>
+              <span>COLLABORATION ACTIVITY</span>
 
-              <span>
-                COLLABORATION ACTIVITY
-              </span>
+              <strong>{myRequests.length}</strong>
 
-
-              <strong>
-                {myRequests.length}
-              </strong>
-
-
-              <small>
-                Total access requests
-              </small>
-
+              <small>Total access requests</small>
             </div>
-
 
           </div>
 
-
         </section>
-
 
         {/* ===================================================
             ADMIN PANEL
         =================================================== */}
 
         {userIsAdmin && (
-
           <section className="sharing-section admin-sharing-section">
-
 
             <div className="section-heading">
 
-
               <div className="section-heading-icon admin-icon">
-
                 <i className="bi bi-shield-check"></i>
-
               </div>
 
-
               <div>
+                <span>ADMINISTRATION</span>
 
-                <span>
-                  ADMINISTRATION
-                </span>
-
-
-                <h2>
-                  Access Requests
-                </h2>
-
+                <h2>Access Requests</h2>
 
                 <p>
                   Review and manage requests from researchers.
                 </p>
-
               </div>
-
 
               <div className="section-count admin-count">
-
                 {pendingRequests.length}
 
-                <small>
-                  pending
-                </small>
-
+                <small>pending</small>
               </div>
-
 
             </div>
 
-
             <div className="pending-list">
 
-
-              {/* EMPTY */}
-
               {pendingRequests.length === 0 && (
-
                 <div className="sharing-empty">
 
-
                   <div className="empty-icon green-empty">
-
                     <i className="bi bi-check2-all"></i>
-
                   </div>
 
-
-                  <h3>
-                    Everything is up to date
-                  </h3>
-
+                  <h3>Everything is up to date</h3>
 
                   <p>
                     There are no pending access requests.
                   </p>
 
-
                 </div>
-
               )}
-
-
-              {/* REQUESTS */}
 
               {pendingRequests.map((r) => (
 
@@ -773,16 +477,11 @@ export default function Sharing() {
                   className="pending-item"
                 >
 
-
                   <div className="pending-avatar">
-
                     <i className="bi bi-person-fill"></i>
-
                   </div>
 
-
                   <div className="pending-info">
-
 
                     <div className="pending-user">
 
@@ -790,18 +489,11 @@ export default function Sharing() {
                         {r.requestingUserName}
                       </strong>
 
-
-                      <span>
-                        requested access
-                      </span>
+                      <span>requested access</span>
 
                     </div>
 
-
-                    <h3>
-                      {r.equipmentName}
-                    </h3>
-
+                    <h3>{r.equipmentName}</h3>
 
                     <div className="pending-reason">
 
@@ -811,12 +503,9 @@ export default function Sharing() {
 
                     </div>
 
-
                   </div>
 
-
                   <div className="pending-actions">
-
 
                     <button
                       className="approve-btn"
@@ -828,17 +517,13 @@ export default function Sharing() {
                       }
                     >
 
-
                       <i className="bi bi-check-lg"></i>
-
 
                       {processingId === r.id
                         ? "Processing..."
                         : "Approve"}
 
-
                     </button>
-
 
                     <button
                       className="reject-btn"
@@ -850,30 +535,22 @@ export default function Sharing() {
                       }
                     >
 
-
                       <i className="bi bi-x-lg"></i>
 
                       Reject
 
-
                     </button>
 
-
                   </div>
-
 
                 </div>
 
               ))}
 
-
             </div>
 
-
           </section>
-
         )}
-
 
         {/* ===================================================
             EQUIPMENT
@@ -881,49 +558,32 @@ export default function Sharing() {
 
         <section className="sharing-section equipment-section">
 
-
           {/* SECTION HEADER */}
 
           <div className="section-heading">
 
-
             <div className="section-heading-icon equipment-heading-icon">
-
               <i className="bi bi-boxes"></i>
-
             </div>
 
-
             <div>
+              <span>RESOURCE MARKETPLACE</span>
 
-              <span>
-                RESOURCE MARKETPLACE
-              </span>
-
-
-              <h2>
-                Discover Equipment
-              </h2>
-
+              <h2>Discover Equipment</h2>
 
               <p>
                 Explore advanced laboratory resources
                 available from other institutions.
               </p>
-
             </div>
 
-
           </div>
-
 
           {/* SEARCH */}
 
           <div className="sharing-search">
 
-
             <i className="bi bi-search"></i>
-
 
             <input
               type="text"
@@ -934,74 +594,59 @@ export default function Sharing() {
               }
             />
 
-
             {search && (
-
               <button
-                onClick={() =>
-                  setSearch("")
-                }
+                onClick={() => setSearch("")}
                 aria-label="Clear search"
               >
-
                 <i className="bi bi-x-circle-fill"></i>
-
               </button>
-
             )}
 
-
           </div>
-
 
           {/* NO EQUIPMENT */}
 
           {filteredEquipment.length === 0 && (
-
             <div className="sharing-empty equipment-empty">
 
-
               <div className="empty-icon blue-empty">
-
                 <i className="bi bi-search"></i>
-
               </div>
 
-
-              <h3>
-                No equipment found
-              </h3>
-
+              <h3>No equipment found</h3>
 
               <p>
                 Try searching for another equipment or institution.
               </p>
 
-
             </div>
-
           )}
 
-
-          {/* EQUIPMENT GRID */}
+          {/* =================================================
+              EQUIPMENT GRID
+          ================================================= */}
 
           <div className="equipment-grid">
 
-
             {filteredEquipment.map((eq) => {
-
 
               const status =
                 getRequestStatusFor(eq.id);
-
 
               return (
 
                 <article
                   key={eq.id}
                   className="sharing-equipment-card"
+                  style={{
+                    height: "auto",
+                    minHeight: "500px",
+                    overflow: "visible",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
                 >
-
 
                   {/* =================================================
                       IMAGE
@@ -1009,38 +654,36 @@ export default function Sharing() {
 
                   <div className="equipment-image-wrapper">
 
-
                     <img
                       src={eq.imageUrl}
                       alt={eq.equipmentName}
                     />
 
-
                     <div className="equipment-image-overlay">
-
                       <i className="bi bi-eye-fill"></i>
-
                     </div>
-
 
                     <div className="institution-badge">
-
                       <i className="bi bi-building"></i>
-
                       {eq.institutionName}
-
                     </div>
 
-
                   </div>
-
 
                   {/* =================================================
                       CARD BODY
                   ================================================= */}
 
-                  <div className="equipment-card-body">
-
+                  <div
+                    className="equipment-card-body"
+                    style={{
+                      flex: "1",
+                      display: "flex",
+                      flexDirection: "column",
+                      minHeight: "390px",
+                      paddingBottom: "22px",
+                    }}
+                  >
 
                     {/* CATEGORY */}
 
@@ -1052,26 +695,29 @@ export default function Sharing() {
 
                     </div>
 
+                    {/* EQUIPMENT NAME */}
 
-                    {/* NAME */}
-
-                    <h3 className="equipment-name">
-
+                    <h3
+                      className="equipment-name"
+                      style={{
+                        marginBottom: "10px",
+                      }}
+                    >
                       {eq.equipmentName}
-
                     </h3>
-
 
                     {/* OWNER */}
 
-                    <div className="equipment-owner">
-
+                    <div
+                      className="equipment-owner"
+                      style={{
+                        marginBottom: "18px",
+                      }}
+                    >
                       <i className="bi bi-geo-alt-fill"></i>
 
                       {eq.institutionName}
-
                     </div>
-
 
                     {/* =================================================
                         APPROVED
@@ -1081,13 +727,9 @@ export default function Sharing() {
 
                       <div className="access-status access-granted">
 
-
                         <div className="status-icon">
-
                           <i className="bi bi-check-lg"></i>
-
                         </div>
-
 
                         <div>
 
@@ -1095,18 +737,15 @@ export default function Sharing() {
                             Access Granted
                           </strong>
 
-
                           <small>
                             You can access this equipment
                           </small>
 
                         </div>
 
-
                       </div>
 
                     )}
-
 
                     {/* =================================================
                         PENDING
@@ -1116,13 +755,9 @@ export default function Sharing() {
 
                       <div className="access-status request-pending">
 
-
                         <div className="status-icon">
-
                           <i className="bi bi-hourglass-split"></i>
-
                         </div>
-
 
                         <div>
 
@@ -1130,18 +765,15 @@ export default function Sharing() {
                             Request Pending
                           </strong>
 
-
                           <small>
                             Waiting for approval
                           </small>
 
                         </div>
 
-
                       </div>
 
                     )}
-
 
                     {/* =================================================
                         REJECTED
@@ -1151,13 +783,9 @@ export default function Sharing() {
 
                       <div className="access-status request-rejected">
 
-
                         <div className="status-icon">
-
                           <i className="bi bi-x-lg"></i>
-
                         </div>
-
 
                         <div>
 
@@ -1165,18 +793,15 @@ export default function Sharing() {
                             Request Rejected
                           </strong>
 
-
                           <small>
                             You may request again later
                           </small>
 
                         </div>
 
-
                       </div>
 
                     )}
-
 
                     {/* =================================================
                         NEW REQUEST
@@ -1184,17 +809,40 @@ export default function Sharing() {
 
                     {!status && (
 
-                      <div className="request-area">
+                      <div
+  className="request-area"
+  style={{
+    marginTop: "10px",
+    paddingTop: "12px",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  }}
+>
 
+                        {/* REQUEST LABEL */}
 
-                        <label>
-
-                          <i className="bi bi-pencil-square"></i>
+                        <label
+                          style={{
+                            display: "block",
+                            fontWeight: 700,
+                            fontSize: "13px",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          <i
+                            className="bi bi-pencil-square"
+                            style={{
+                              marginRight: "6px",
+                            }}
+                          ></i>
 
                           Why do you need access?
 
                         </label>
 
+                        {/* LARGE REASON INPUT */}
 
                         <textarea
                           className="reason-input"
@@ -1211,11 +859,23 @@ export default function Sharing() {
                               })
                             )
                           }
-                          rows={3}
+                          rows={5}
+                          style={{
+                            width: "100%",
+                            minHeight: "110px",
+                            resize: "vertical",
+                            boxSizing: "border-box",
+                            padding: "12px",
+                            borderRadius: "10px",
+                            fontSize: "13px",
+                            lineHeight: "1.5",
+                          }}
                         />
 
+                        {/* SEND REQUEST BUTTON */}
 
                         <button
+                          type="button"
                           className="request-access-btn"
                           onClick={() =>
                             handleRequestAccess(eq.id)
@@ -1223,8 +883,20 @@ export default function Sharing() {
                           disabled={
                             requestingId === eq.id
                           }
+                          style={{
+                            width: "100%",
+                            minHeight: "44px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            marginTop: "2px",
+                            cursor:
+                              requestingId === eq.id
+                                ? "not-allowed"
+                                : "pointer",
+                          }}
                         >
-
 
                           <i
                             className={
@@ -1234,22 +906,17 @@ export default function Sharing() {
                             }
                           ></i>
 
-
                           {requestingId === eq.id
                             ? "Sending request..."
-                            : "Request Access"}
-
+                            : "Send Access Request"}
 
                         </button>
-
 
                       </div>
 
                     )}
 
-
                   </div>
-
 
                 </article>
 
@@ -1257,12 +924,9 @@ export default function Sharing() {
 
             })}
 
-
           </div>
 
-
         </section>
-
 
         {/* ===================================================
             MY REQUESTS
@@ -1270,28 +934,17 @@ export default function Sharing() {
 
         <section className="sharing-section my-requests-section">
 
-
           <div className="section-heading">
 
-
             <div className="section-heading-icon requests-heading-icon">
-
               <i className="bi bi-send-check-fill"></i>
-
             </div>
-
 
             <div>
 
-              <span>
-                YOUR ACTIVITY
-              </span>
+              <span>YOUR ACTIVITY</span>
 
-
-              <h2>
-                My Access Requests
-              </h2>
-
+              <h2>My Access Requests</h2>
 
               <p>
                 Track your requests across partner institutions.
@@ -1299,12 +952,9 @@ export default function Sharing() {
 
             </div>
 
-
           </div>
 
-
           <div className="my-requests-list">
-
 
             {/* EMPTY */}
 
@@ -1312,31 +962,20 @@ export default function Sharing() {
 
               <div className="sharing-empty">
 
-
                 <div className="empty-icon purple-empty">
-
                   <i className="bi bi-send"></i>
-
                 </div>
 
-
-                <h3>
-                  No requests yet
-                </h3>
-
+                <h3>No requests yet</h3>
 
                 <p>
-
                   Request access to equipment above
                   to start collaborating.
-
                 </p>
-
 
               </div>
 
             )}
-
 
             {/* REQUEST LIST */}
 
@@ -1347,61 +986,44 @@ export default function Sharing() {
                 className="my-request-item"
               >
 
-
                 {/* NUMBER */}
 
                 <div className="request-number">
-
                   {index + 1}
-
                 </div>
-
 
                 {/* ICON */}
 
                 <div className="my-request-icon">
-
                   <i className="bi bi-microscope"></i>
-
                 </div>
-
 
                 {/* INFORMATION */}
 
                 <div className="my-request-info">
 
-
                   <h3>
                     {r.equipmentName}
                   </h3>
 
-
                   <p>
-
                     <i className="bi bi-building"></i>
-
                     {r.owningInstitutionName}
-
                   </p>
 
-
                 </div>
-
 
                 {/* STATUS */}
 
                 <div
-                  className={
-                    `request-status-pill ${
-                      r.status === "APPROVED"
-                        ? "approved-pill"
-                        : r.status === "REJECTED"
-                        ? "rejected-pill"
-                        : "pending-pill"
-                    }`
-                  }
+                  className={`request-status-pill ${
+                    r.status === "APPROVED"
+                      ? "approved-pill"
+                      : r.status === "REJECTED"
+                      ? "rejected-pill"
+                      : "pending-pill"
+                  }`}
                 >
-
 
                   <i
                     className={
@@ -1413,23 +1035,17 @@ export default function Sharing() {
                     }
                   ></i>
 
-
                   {r.status}
 
-
                 </div>
-
 
               </div>
 
             ))}
 
-
           </div>
 
-
         </section>
-
 
         {/* ===================================================
             FOOTER
@@ -1437,31 +1053,22 @@ export default function Sharing() {
 
         <div className="sharing-footer">
 
-
           <i className="bi bi-shield-check"></i>
-
 
           <span>
             Secure inter-institution resource sharing
           </span>
 
-
           <span className="footer-dot"></span>
-
 
           <span>
             Built for collaborative research
           </span>
 
-
         </div>
-
 
       </main>
 
-
     </div>
-
   );
-
 }
