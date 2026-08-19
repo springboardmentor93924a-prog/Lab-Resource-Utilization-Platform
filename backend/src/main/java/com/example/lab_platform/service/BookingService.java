@@ -22,4 +22,6 @@ public interface BookingService {
     Booking rejectBooking(Integer id);
 
     Booking completeBooking(Integer id);
+
+    void autoCompleteOverdueBookings();
 }

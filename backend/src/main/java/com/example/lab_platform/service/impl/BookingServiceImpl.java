@@ -202,6 +202,28 @@ public class BookingServiceImpl implements BookingService {
         booking.setEquipment(fullEquipment);
 
         /*
+         * Hard block on equipment that is not currently bookable at
+         * all, regardless of what the time-window maintenance check
+         * below finds. This is the check that was missing — a piece
+         * of equipment already flagged Under Maintenance / Out of
+         * Service / Retired must never be bookable, independent of
+         * whether a dated Maintenance record happens to overlap the
+         * requested slot.
+         */
+        String currentEquipmentStatus = fullEquipment.getStatus();
+
+        if (currentEquipmentStatus != null
+                && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
+                || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
+                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+
+            throw new RuntimeException(
+                    "This equipment is currently " + currentEquipmentStatus
+                            + " and cannot be booked."
+            );
+        }
+
+        /*
          * Inter-institution access control: if the equipment belongs
          * to a different institution than the booker, an APPROVED
          * resource-sharing request between the two institutions for
@@ -607,6 +629,25 @@ public void deleteBooking(Integer id) {
         Integer equipmentId =
                 equipment.getEquipmentId();
 
+        /*
+         * Same hard block as createBooking(): equipment status may
+         * have changed to Under Maintenance / Out of Service /
+         * Retired between when the student submitted this request
+         * and now, so re-check it at approval time too.
+         */
+        String currentEquipmentStatus = equipment.getStatus();
+
+        if (currentEquipmentStatus != null
+                && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
+                || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
+                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+
+            throw new RuntimeException(
+                    "This equipment is currently " + currentEquipmentStatus
+                            + " and cannot be approved for booking."
+            );
+        }
+
         LocalDateTime start =
                 booking.getStartTime();
 
@@ -763,6 +804,44 @@ public void deleteBooking(Integer id) {
         }
 
         return bookingRepository.save(booking);
+    }
+
+    /*
+     * Called by EquipmentStatusScheduler every 60s. Any booking
+     * still sitting at "Confirmed" after its endTime has passed
+     * gets auto-completed — this is the piece that was missing
+     * entirely: nothing previously called completeBooking() unless
+     * a staff member manually clicked something, and no such button
+     * even existed in the frontend, so Confirmed bookings sat there
+     * forever with no path to Completed.
+     */
+    @Override
+    public void autoCompleteOverdueBookings() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Booking> confirmed =
+                bookingRepository.findByBookingStatus("Confirmed");
+
+        for (Booking booking : confirmed) {
+
+            if (booking.getEndTime() == null
+                    || booking.getEndTime().isAfter(now)) {
+                continue;
+            }
+
+            booking.setBookingStatus("Completed");
+
+            Equipment equipment = booking.getEquipment();
+
+            if (equipment != null) {
+                equipment.setStatus("Available");
+                equipmentRepository.save(equipment);
+                notifyNextWaitlistedUser(equipment);
+            }
+
+            bookingRepository.save(booking);
+        }
     }
 
     private String normalizeBookingStatus(String status) {

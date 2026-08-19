@@ -27,7 +27,7 @@ List<Booking> findByUser_UserId(Integer userId);
         FROM Booking b
         WHERE b.equipment.equipmentId = :equipmentId
         AND LOWER(b.bookingStatus)
-            IN ('pending', 'confirmed')
+            IN ('pending approval', 'confirmed')
         AND b.startTime < :endTime
         AND b.endTime > :startTime
         """)

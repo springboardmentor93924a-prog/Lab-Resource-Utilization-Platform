@@ -230,6 +230,30 @@ function Reservations() {
     }
   };
 
+  const handleComplete = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/bookings/${id}/complete`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "You are not allowed to complete this booking");
+      }
+
+      alert("Booking marked as completed");
+      fetchBookings();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   if (loading) {
     return <h2 style={{ padding: "20px" }}>Loading reservations...</h2>;
   }
@@ -260,14 +284,26 @@ function Reservations() {
             style={inputStyle}
           >
             <option value="">-- Select Equipment --</option>
-            {equipmentList.map((item) => (
-              <option key={item.equipmentId} value={item.equipmentId}>
-                {item.equipmentName} ({item.status})
-                {item.department?.institution?.institutionName
-                  ? ` — ${item.department.institution.institutionName}`
-                  : ""}
-              </option>
-            ))}
+            {equipmentList.map((item) => {
+              const isBookable =
+                item.status !== "Under Maintenance" &&
+                item.status !== "Out of Service" &&
+                item.status !== "Retired";
+
+              return (
+                <option
+                  key={item.equipmentId}
+                  value={item.equipmentId}
+                  disabled={!isBookable}
+                >
+                  {item.equipmentName} ({item.status})
+                  {item.institution?.institutionName
+                    ? ` — ${item.institution.institutionName}`
+                    : ""}
+                  {!isBookable ? " — not bookable" : ""}
+                </option>
+              );
+            })}
           </select>
 
           <input
@@ -382,7 +418,7 @@ function Reservations() {
 
                 <td style={cellStyle}>
                   <strong>
-                    {booking.bookingStatus === "Pending" && "⏳ Pending"}
+                    {booking.bookingStatus === "Pending Approval" && "⏳ Pending"}
                     {booking.bookingStatus === "Pending Approval" && "⏳ Pending Approval"}
                     {booking.bookingStatus === "Confirmed" && "✅ Confirmed"}
                     {booking.bookingStatus === "In Use" && "🟦 In Use"}
@@ -467,6 +503,23 @@ function Reservations() {
                         Reject
                       </button>
                     </>
+                  )}
+
+                  {/* Confirmed bookings can be manually marked complete
+                      instead of waiting for the automatic sweep once
+                      the end time passes */}
+                  {booking.bookingStatus === "Confirmed" &&
+                   (role === "LAB_TECHNICIAN" ||
+                    role === "LAB_MANAGER" ||
+                    role === "DEPARTMENT_HEAD" ||
+                    role === "INSTITUTION_ADMIN" ||
+                    role === "SYSTEM_ADMIN") && (
+                    <button
+                      onClick={() => handleComplete(booking.bookingId)}
+                      style={smallButtonStyle}
+                    >
+                      Complete
+                    </button>
                   )}
 
                 </td>

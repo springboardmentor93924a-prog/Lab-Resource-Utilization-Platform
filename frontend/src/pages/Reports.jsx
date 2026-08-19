@@ -56,7 +56,7 @@ function Reports() {
   ).length;
 
   const pendingBookings = bookings.filter(
-    (booking) => booking.bookingStatus === "Pending"
+    (booking) => booking.bookingStatus === "Pending Approval"
   ).length;
 
   const completedBookings = bookings.filter(
