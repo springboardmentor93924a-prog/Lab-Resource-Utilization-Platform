@@ -13,8 +13,8 @@ function Waitlist() {
     requestedEndTime: "",
   });
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const token = sessionStorage.getItem("token");
+  const role = sessionStorage.getItem("role");
 
   // Lab Technician can view all waitlist entries (per the backend's
   // GET /api/waitlist) but is not permitted to join or cancel one — the
@@ -194,8 +194,8 @@ function Waitlist() {
                 {equipmentList.map((item) => (
                   <option key={item.equipmentId} value={item.equipmentId}>
                     {item.equipmentName} ({item.status})
-                    {item.department?.institution?.institutionName
-                      ? ` — ${item.department.institution.institutionName}`
+                    {item.institution?.institutionName
+                      ? ` — ${item.institution.institutionName}`
                       : ""}
                   </option>
                 ))}

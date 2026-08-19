@@ -10,9 +10,9 @@ public interface MaintenanceService {
  
     Maintenance createMaintenance(Maintenance maintenance);
  
-    Maintenance getMaintenanceById(Long id);
+    Maintenance getMaintenanceById(Integer id);
  
-    Maintenance updateMaintenance(Long id, Maintenance updatedMaintenance);
+    Maintenance updateMaintenance(Integer id, Maintenance updatedMaintenance);
 
     // Work orders assigned to the currently logged-in technician.
     List<Maintenance> getMyTasks();

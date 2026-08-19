@@ -11,7 +11,7 @@ export default function BookingApproval() {
   const fetchPendingBookings = async () => {
     try {
       const res = await axios.get('http://localhost:8080/api/bookings/pending', {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setPendingBookings(res.data);
     } catch (error) {
@@ -22,7 +22,7 @@ export default function BookingApproval() {
   const updateBookingStatus = async (id, status) => {
     try {
       await axios.put(`http://localhost:8080/api/bookings/${id}/status?status=${status}`, {}, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       fetchPendingBookings();
       alert(`Booking ${status.toLowerCase()} successfully!`);

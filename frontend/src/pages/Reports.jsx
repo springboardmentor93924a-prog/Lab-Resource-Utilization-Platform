@@ -6,8 +6,17 @@ function Reports() {
   const [bookings, setBookings] = useState([]);
   const [users, setUsers] = useState([]);
 
+  const role = sessionStorage.getItem("role");
+
+  // GET /api/users is backend-restricted to INSTITUTION_ADMIN /
+  // SYSTEM_ADMIN, but this Reports page is also reachable by
+  // LAB_MANAGER and DEPARTMENT_HEAD. Calling it unconditionally for
+  // those roles used to fail on every load (403) and leave the User
+  // Summary card silently stuck at 0.
+  const canViewUsers = ["INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
+
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
 
     fetch("http://localhost:8080/api/equipment", {
       headers: {
@@ -27,27 +36,43 @@ function Reports() {
       .then((data) => setBookings(data))
       .catch((error) => console.error("Booking error:", error));
 
-    fetch("http://localhost:8080/api/users", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => setUsers(data))
-      .catch((error) => console.error("User error:", error));
-  }, []);
+    if (canViewUsers) {
+      fetch("http://localhost:8080/api/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => setUsers(data))
+        .catch((error) => console.error("User error:", error));
+    }
+  }, [canViewUsers]);
 
-  const available = equipment.filter(
+  const myInstitutionId = sessionStorage.getItem("institutionId");
+
+  // Same reasoning as Dashboard.jsx: /api/equipment intentionally
+  // returns every institution's equipment (needed for cross-college
+  // booking), but this report should reflect only the viewer's own
+  // institution. SYSTEM_ADMIN sees the real platform-wide total.
+  const scopedEquipment =
+    role === "SYSTEM_ADMIN" || !myInstitutionId
+      ? equipment
+      : equipment.filter(
+          (item) =>
+            String(item.institution?.institutionId) === String(myInstitutionId)
+        );
+
+  const available = scopedEquipment.filter(
     (item) => item.status === "Available"
   ).length;
 
   // Backend sets "Booked" instead of "Reserved"
-  const reserved = equipment.filter(
+  const reserved = scopedEquipment.filter(
     (item) => item.status === "Booked" || item.status === "Reserved"
   ).length;
 
   // Backend sets "Under Maintenance" instead of "Maintenance"
-  const maintenance = equipment.filter(
+  const maintenance = scopedEquipment.filter(
     (item) => item.status === "Under Maintenance" || item.status === "Maintenance"
   ).length;
 
@@ -74,7 +99,7 @@ function Reports() {
       <div className="section-style">
         <div className="card-style border-blue">
           <h4 className="card-title">Total Equipment</h4>
-          <p className="card-value">{equipment.length}</p>
+          <p className="card-value">{scopedEquipment.length}</p>
         </div>
 
         <div className="card-style border-green">

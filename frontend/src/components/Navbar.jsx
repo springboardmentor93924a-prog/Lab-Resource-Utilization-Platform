@@ -2,10 +2,10 @@ import "./Navbar.css";
 
 function Navbar() {
   const fullName =
-    localStorage.getItem("fullName") || "User";
+    sessionStorage.getItem("fullName") || "User";
 
   const role =
-    localStorage.getItem("role") || "";
+    sessionStorage.getItem("role") || "";
 
   const formattedRole = role
     .replaceAll("_", " ")

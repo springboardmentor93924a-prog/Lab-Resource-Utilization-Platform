@@ -40,7 +40,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
  
  
     @Override
-    public Maintenance getMaintenanceById(Long id) {
+    public Maintenance getMaintenanceById(Integer id) {
  
         return maintenanceRepository.findById(id)
                 .orElseThrow(() ->
@@ -83,7 +83,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
      * the same equipment.
      */
     @Override
-    public Maintenance updateMaintenance(Long id, Maintenance updatedMaintenance) {
+    public Maintenance updateMaintenance(Integer id, Maintenance updatedMaintenance) {
  
         Maintenance existing = maintenanceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Maintenance not found"));

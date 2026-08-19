@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface MaintenanceRepository
-        extends JpaRepository<Maintenance, Long> {
+        extends JpaRepository<Maintenance, Integer> {
 
     List<Maintenance> findByMaintenanceStatus(
             String maintenanceStatus

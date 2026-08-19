@@ -152,6 +152,23 @@ public class EquipmentController {
                             updatedEquipment.getPurchaseDate()
                     );
 
+                    /*
+                     * Status was silently dropped here before — the
+                     * edit form could set requiresApproval/department/
+                     * institution but never status, so marking
+                     * equipment "Out of Service" or "Retired" from
+                     * the Edit form returned 200 OK but never
+                     * persisted. The scheduler treats these two
+                     * values as sticky/manual (never auto-overwrites
+                     * them), so this is the only way to set them.
+                     */
+                    if (updatedEquipment.getStatus() != null
+                            && !updatedEquipment.getStatus().isBlank()) {
+                        eq.setStatus(
+                                updatedEquipment.getStatus()
+                        );
+                    }
+
                     // requiresApproval, department and institution are
                     // part of the equipment record and matter to the
                     // approval workflow / sharing scoping — they were

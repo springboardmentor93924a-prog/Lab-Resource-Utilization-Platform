@@ -145,6 +145,28 @@ public class BookingServiceImpl implements BookingService {
         return user.getRole().getRoleName();
     }
 
+    /*
+     * Only staff belonging to the SAME institution as the equipment
+     * can approve/reject/complete a booking against it. SYSTEM_ADMIN
+     * is exempt (platform-wide). This is what stops a Manager at
+     * College C from acting on a booking for College A's equipment.
+     */
+    private void assertSameInstitutionAsEquipment(User loggedInUser, String role, Equipment equipment) {
+        if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+            return;
+        }
+
+        if (loggedInUser.getInstitution() == null
+                || equipment.getInstitution() == null
+                || !loggedInUser.getInstitution().getInstitutionId()
+                        .equals(equipment.getInstitution().getInstitutionId())) {
+
+            throw new RuntimeException(
+                    "You can only manage bookings for your own institution's equipment"
+            );
+        }
+    }
+
     private boolean isManagerOrAbove(String role) {
 
         return role.equalsIgnoreCase("LAB_MANAGER")
@@ -376,7 +398,29 @@ public List<Booking> getAllBookings() {
         return bookingRepository.findByUser_UserId(loggedInUser.getUserId());
     }
 
-    return bookingRepository.findAll();
+    if (role.equalsIgnoreCase("SYSTEM_ADMIN")) {
+        return bookingRepository.findAll();
+    }
+
+    /*
+     * Staff (Technician/Manager/Dept Head/Institution Admin) only
+     * see bookings for equipment their OWN institution owns — not
+     * every institution's bookings combined. This matches who has
+     * approval authority: you manage bookings against your own
+     * equipment, regardless of which institution the booking
+     * student belongs to.
+     */
+    if (loggedInUser.getInstitution() == null) {
+        return new java.util.ArrayList<>();
+    }
+
+    Integer institutionId = loggedInUser.getInstitution().getInstitutionId();
+
+    return bookingRepository.findAll().stream()
+            .filter(b -> b.getEquipment() != null
+                    && b.getEquipment().getInstitution() != null
+                    && institutionId.equals(b.getEquipment().getInstitution().getInstitutionId()))
+            .collect(java.util.stream.Collectors.toList());
 }
 
 @Override
@@ -462,6 +506,41 @@ public Booking updateBooking(
 
     Integer equipmentId =
             booking.getEquipment().getEquipmentId();
+
+    /*
+     * The equipment object coming from the request body is often just
+     * a stub with the id set (same situation as createBooking). Load
+     * the full record so (a) the hard status block below actually has
+     * a real status to check, and (b) the booking we save/return has
+     * a fully populated equipment object instead of a stub with every
+     * other field null.
+     */
+    Equipment fullEquipment =
+            equipmentRepository.findById(equipmentId)
+                    .orElseThrow(() ->
+                            new RuntimeException("Equipment not found"));
+
+    /*
+     * Same hard block as createBooking()/approveBooking(): this was
+     * missing here entirely, so a student could edit a Pending
+     * Approval booking onto equipment that had since been marked
+     * Under Maintenance / Out of Service / Retired and slip past the
+     * check that blocks it everywhere else.
+     */
+    String currentEquipmentStatus = fullEquipment.getStatus();
+
+    if (currentEquipmentStatus != null
+            && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
+            || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
+            || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+
+        throw new RuntimeException(
+                "This equipment is currently " + currentEquipmentStatus
+                        + " and cannot be booked."
+        );
+    }
+
+    booking.setEquipment(fullEquipment);
 
     /*
      * Check double booking.
@@ -626,6 +705,8 @@ public void deleteBooking(Integer id) {
             );
         }
 
+        assertSameInstitutionAsEquipment(loggedInUser, role, equipment);
+
         Integer equipmentId =
                 equipment.getEquipmentId();
 
@@ -751,6 +832,10 @@ public void deleteBooking(Integer id) {
     throw new RuntimeException("Only Pending Approval bookings can be rejected");
 }
 
+        if (booking.getEquipment() != null) {
+            assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
+        }
+
         booking.setBookingStatus("Rejected");
 
         Booking savedBooking =
@@ -785,6 +870,10 @@ public void deleteBooking(Integer id) {
             throw new RuntimeException(
                     "You are not allowed to mark bookings as completed"
             );
+        }
+
+        if (booking.getEquipment() != null) {
+            assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
         }
 
         booking.setBookingStatus("Completed");

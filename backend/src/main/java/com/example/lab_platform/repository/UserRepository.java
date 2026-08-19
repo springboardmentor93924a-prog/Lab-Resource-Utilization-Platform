@@ -28,4 +28,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Boolean existsByEmail(
         @org.springframework.data.repository.query.Param("email") String email
     );
+
+    // Scopes the user-management list to one institution — used so
+    // an Institution Admin/Lab Manager only sees their own
+    // institution's users, not every institution's combined.
+    java.util.List<User> findByInstitution_InstitutionId(Integer institutionId);
 }

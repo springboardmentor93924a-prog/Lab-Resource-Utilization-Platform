@@ -14,6 +14,8 @@ import com.example.lab_platform.repository.PasswordResetTokenRepository;
 import com.example.lab_platform.repository.RoleRepository;
 import com.example.lab_platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,17 @@ public class UserService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    private User getLoggedInUser() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return null;
+        }
+
+        return (User) authentication.getPrincipal();
+    }
 
     @Autowired
     private DepartmentRepository departmentRepository;
@@ -155,7 +168,20 @@ if (department != null) {
     // GET ALL USERS
     // =========================
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        User loggedInUser = getLoggedInUser();
+
+        if (loggedInUser != null
+                && "SYSTEM_ADMIN".equalsIgnoreCase(loggedInUser.getRole().getRoleName())) {
+            return userRepository.findAll();
+        }
+
+        if (loggedInUser == null || loggedInUser.getInstitution() == null) {
+            return new java.util.ArrayList<>();
+        }
+
+        return userRepository.findByInstitution_InstitutionId(
+                loggedInUser.getInstitution().getInstitutionId()
+        );
     }
 
     public String createPasswordResetToken(String email) {

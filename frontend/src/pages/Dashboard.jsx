@@ -19,7 +19,8 @@ function Dashboard() {
   const [myWaitlist, setMyWaitlist] = useState([]);
   const [maintenanceRecords, setMaintenanceRecords] = useState([]);
 
-  const role = localStorage.getItem("role");
+  const role = sessionStorage.getItem("role");
+  const myInstitutionId = sessionStorage.getItem("institutionId");
 
   const canViewUtilization = [
     "LAB_MANAGER",
@@ -56,8 +57,8 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
+    const token = sessionStorage.getItem("token");
+    const userId = sessionStorage.getItem("userId");
 
     const fetchData = () => {
       fetch("http://localhost:8080/api/equipment", {
@@ -81,24 +82,36 @@ function Dashboard() {
           .catch(console.error);
       }
 
-      fetch("http://localhost:8080/api/utilization", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          const fixedData = data.map((item) => ({
-            ...item,
-            utilizationPercentage: Math.min(
-              100,
-              Math.max(0, item.utilizationPercentage || 0)
-            ),
-          }));
+      const canViewUtilization = [
+        "LAB_MANAGER",
+        "DEPARTMENT_HEAD",
+        "INSTITUTION_ADMIN",
+        "SYSTEM_ADMIN",
+      ].includes(role);
 
-          setUtilData(fixedData);
+      // Backend restricts /api/utilization to manager-tier roles —
+      // this was firing unconditionally before, so STUDENT/LAB_TECHNICIAN
+      // got a repeated failed 403 call every 5s.
+      if (canViewUtilization) {
+        fetch("http://localhost:8080/api/utilization", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
-        .catch(console.error);
+          .then((res) => res.json())
+          .then((data) => {
+            const fixedData = data.map((item) => ({
+              ...item,
+              utilizationPercentage: Math.min(
+                100,
+                Math.max(0, item.utilizationPercentage || 0)
+              ),
+            }));
+
+            setUtilData(fixedData);
+          })
+          .catch(console.error);
+      }
 
       if (role === "STUDENT") {
         fetch("http://localhost:8080/api/bookings", {
@@ -137,13 +150,26 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, [role]);
 
-  const totalEquipment = equipment.length;
+  // Equipment.jsx and the booking dropdown intentionally show every
+  // institution's equipment (needed for cross-college booking), but
+  // these Dashboard counts should reflect only the viewer's own
+  // institution — otherwise every college's admin sees the same
+  // combined platform-wide numbers. SYSTEM_ADMIN sees the real total.
+  const scopedEquipment =
+    role === "SYSTEM_ADMIN" || !myInstitutionId
+      ? equipment
+      : equipment.filter(
+          (item) =>
+            String(item.institution?.institutionId) === String(myInstitutionId)
+        );
 
-  const availableEquipment = equipment.filter(
+  const totalEquipment = scopedEquipment.length;
+
+  const availableEquipment = scopedEquipment.filter(
     (item) => item.status === "Available"
   ).length;
 
-  const reservedEquipment = equipment.filter(
+  const reservedEquipment = scopedEquipment.filter(
     (item) => item.status === "Booked"
   ).length;
 

@@ -9,7 +9,7 @@ export default function BookingStatus() {
     e.preventDefault();
     try {
       const res = await axios.get(`http://localhost:8080/api/bookings/${bookingId}`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setStatusData(res.data);
     } catch (error) {

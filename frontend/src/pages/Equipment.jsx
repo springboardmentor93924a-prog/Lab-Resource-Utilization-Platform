@@ -21,9 +21,9 @@ function Equipment() {
     departmentId: "",
   });
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
-  const myInstitutionId = localStorage.getItem("institutionId");
+  const token = sessionStorage.getItem("token");
+  const role = sessionStorage.getItem("role");
+  const myInstitutionId = sessionStorage.getItem("institutionId");
 
   // NEW: search state + filtered list
   const [searchTerm, setSearchTerm] = useState("");

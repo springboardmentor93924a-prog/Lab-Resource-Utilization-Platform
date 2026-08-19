@@ -44,7 +44,7 @@ public class MaintenanceController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> getMaintenanceById(
-            @PathVariable Long id) {
+            @PathVariable Integer id) {
  
         return ResponseEntity.ok(
                 maintenanceService.getMaintenanceById(id)
@@ -63,7 +63,7 @@ public class MaintenanceController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> updateMaintenance(
-            @PathVariable Long id,
+            @PathVariable Integer id,
             @RequestBody Maintenance maintenance) {
  
         Maintenance updated =

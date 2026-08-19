@@ -24,8 +24,8 @@ function Reservations() {
     return local.toISOString().slice(0, 16);
   };
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const token = sessionStorage.getItem("token");
+  const role = sessionStorage.getItem("role");
 
   const [equipmentList, setEquipmentList] = useState([]);
 
@@ -418,7 +418,6 @@ function Reservations() {
 
                 <td style={cellStyle}>
                   <strong>
-                    {booking.bookingStatus === "Pending Approval" && "⏳ Pending"}
                     {booking.bookingStatus === "Pending Approval" && "⏳ Pending Approval"}
                     {booking.bookingStatus === "Confirmed" && "✅ Confirmed"}
                     {booking.bookingStatus === "In Use" && "🟦 In Use"}
