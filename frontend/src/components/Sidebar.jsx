@@ -25,6 +25,7 @@ function Sidebar() {
 
   const canAccessWaitlist = [
     "STUDENT",
+    "LAB_TECHNICIAN",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
@@ -33,6 +34,7 @@ function Sidebar() {
 
   const canAccessBookings = [
     "STUDENT",
+    "LAB_TECHNICIAN",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
@@ -68,6 +70,7 @@ function Sidebar() {
 
   const canAccessResourceSharing = [
     "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);

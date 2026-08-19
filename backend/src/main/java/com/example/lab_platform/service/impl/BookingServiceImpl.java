@@ -229,6 +229,31 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        if (booking.getStartTime() == null || booking.getEndTime() == null) {
+            throw new RuntimeException("Start time and end time are required");
+        }
+
+        if (!booking.getEndTime().isAfter(booking.getStartTime())) {
+            throw new RuntimeException("End time must be after start time");
+        }
+
+        /*
+         * bookingDate is never trusted from the client — it always
+         * reflects the actual system date the booking was made on.
+         * startTime must fall on or after that date, and can't be
+         * in the past relative to right now.
+         */
+        java.time.LocalDate today = java.time.LocalDate.now();
+        booking.setBookingDate(today);
+
+        if (booking.getStartTime().isBefore(java.time.LocalDateTime.now())) {
+            throw new RuntimeException("Cannot book a time slot in the past.");
+        }
+
+        if (booking.getStartTime().toLocalDate().isBefore(today)) {
+            throw new RuntimeException("Start time cannot be before the booking date.");
+        }
+
         if (booking.getEquipment() != null
                 && booking.getStartTime() != null
                 && booking.getEndTime() != null) {
@@ -409,6 +434,10 @@ public Booking updateBooking(
         );
     }
 
+    if (booking.getStartTime().isBefore(java.time.LocalDateTime.now())) {
+        throw new RuntimeException("Cannot move a booking to a time slot in the past.");
+    }
+
     Integer equipmentId =
             booking.getEquipment().getEquipmentId();
 
@@ -453,14 +482,12 @@ public Booking updateBooking(
     }
 
     /*
-     * Update booking details.
+     * Update booking details. bookingDate is intentionally left
+     * untouched here — it's set once at creation to the actual
+     * system date and never changes on edit.
      */
     existingBooking.setEquipment(
             booking.getEquipment()
-    );
-
-    existingBooking.setBookingDate(
-            booking.getBookingDate()
     );
 
     existingBooking.setStartTime(

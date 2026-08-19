@@ -13,5 +13,8 @@ public interface MaintenanceService {
     Maintenance getMaintenanceById(Long id);
  
     Maintenance updateMaintenance(Long id, Maintenance updatedMaintenance);
+
+    // Work orders assigned to the currently logged-in technician.
+    List<Maintenance> getMyTasks();
  
 }

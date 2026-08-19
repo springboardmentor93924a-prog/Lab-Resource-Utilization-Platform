@@ -63,6 +63,11 @@ public class AuthController {
             response.put("email", user.getEmail());
             response.put("role", role);
 
+            if (user.getInstitution() != null) {
+                response.put("institutionId", user.getInstitution().getInstitutionId());
+                response.put("institutionName", user.getInstitution().getInstitutionName());
+            }
+
             return ResponseEntity.ok(response);
 
         }catch (RuntimeException e) {
@@ -79,6 +84,9 @@ public class AuthController {
     // =========================
     // REGISTER
     // =========================
+    // Public self-registration. Any role listed in /api/roles (including
+    // admin-tier roles) can be selected here — self-registration is
+    // intentionally left open for every role.
     @PostMapping("/register")
     public ResponseEntity<?> register(
             @RequestBody RegisterRequest registerRequest) {
@@ -98,21 +106,39 @@ public class AuthController {
         }
     }
 
+    // =========================
+    // FORGOT PASSWORD
+    // Security note: the reset token is never returned in the API
+    // response (that would let anyone who knows/guesses an email take
+    // over the account without inbox access). It is logged server-side
+    // for dev/testing until a real Email Service (Milestone 3) exists.
+    // The response is identical whether or not the email exists, so
+    // this endpoint can't be used to enumerate registered accounts.
+    // =========================
     @PostMapping("/forgot-password")
-public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-    try {
-        String token = userService.createPasswordResetToken(request.getEmail());
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
 
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Reset token generated");
-        response.put("token", token); // 
+        response.put("message", "If an account with that email exists, a password reset link has been generated.");
+
+        try {
+            String token = userService.createPasswordResetToken(request.getEmail());
+
+            // Dev-only: no JavaMailSender/SMTP is wired up yet (Milestone 3
+            // scope), so the token is logged server-side instead of ever
+            // leaving the backend in an HTTP response.
+            org.slf4j.LoggerFactory.getLogger(AuthController.class)
+                    .info("Password reset token generated for {}: {}", request.getEmail(), token);
+
+        } catch (RuntimeException e) {
+            // Deliberately swallowed: returning a different response for a
+            // nonexistent email allows user enumeration.
+            org.slf4j.LoggerFactory.getLogger(AuthController.class)
+                    .info("Password reset requested for unknown/invalid email: {}", request.getEmail());
+        }
 
         return ResponseEntity.ok(response);
-
-    } catch (RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
     }
-}
 
 @PostMapping("/reset-password")
 public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {

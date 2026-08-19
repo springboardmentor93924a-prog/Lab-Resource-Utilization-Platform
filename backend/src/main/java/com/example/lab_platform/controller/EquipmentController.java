@@ -152,6 +152,30 @@ public class EquipmentController {
                             updatedEquipment.getPurchaseDate()
                     );
 
+                    // requiresApproval, department and institution are
+                    // part of the equipment record and matter to the
+                    // approval workflow / sharing scoping — they were
+                    // previously silently ignored on update.
+                    if (updatedEquipment.getRequiresApproval() != null) {
+                        eq.setRequiresApproval(
+                                updatedEquipment.getRequiresApproval()
+                        );
+                    }
+
+                    if (updatedEquipment.getDepartment() != null
+                            && updatedEquipment.getDepartment().getDepartmentId() != null) {
+                        eq.setDepartment(
+                                updatedEquipment.getDepartment()
+                        );
+                    }
+
+                    if (updatedEquipment.getInstitution() != null
+                            && updatedEquipment.getInstitution().getInstitutionId() != null) {
+                        eq.setInstitution(
+                                updatedEquipment.getInstitution()
+                        );
+                    }
+
                     Equipment saved =
                             equipmentRepository.save(eq);
 

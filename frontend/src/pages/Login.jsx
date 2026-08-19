@@ -48,6 +48,8 @@ function Login() {
       localStorage.setItem("fullName", data.fullName);
       localStorage.setItem("email", data.email);
       localStorage.setItem("role", data.role);
+      localStorage.setItem("institutionId", data.institutionId ?? "");
+      localStorage.setItem("institutionName", data.institutionName ?? "");
 
       navigate("/dashboard");
     } catch (error) {

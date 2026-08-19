@@ -9,11 +9,20 @@ function Reservations() {
 
   const [formData, setFormData] = useState({
     equipmentId: "",
-    bookingDate: "",
     startTime: "",
     endTime: "",
     purpose: "",
   });
+
+  // Prevents picking a past date/time in the datetime-local pickers.
+  // Formats to "YYYY-MM-DDTHH:mm" as required by <input type="datetime-local">.
+  const nowLocalString = () => {
+    const now = new Date();
+    now.setSeconds(0, 0);
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+  };
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -54,6 +63,11 @@ function Reservations() {
   useEffect(() => {
     fetchBookings();
     fetchEquipmentList();
+
+    // Poll so approvals/rejections made by a manager on another
+    // screen show up here without a manual refresh.
+    const interval = setInterval(fetchBookings, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleChange = (e) => {
@@ -66,7 +80,6 @@ function Reservations() {
   const resetForm = () => {
     setFormData({
       equipmentId: "",
-      bookingDate: "",
       startTime: "",
       endTime: "",
       purpose: "",
@@ -83,7 +96,6 @@ function Reservations() {
       equipment: {
         equipmentId: Number(formData.equipmentId),
       },
-      bookingDate: formData.bookingDate,
       startTime: formData.startTime,
       endTime: formData.endTime,
       purpose: formData.purpose,
@@ -134,7 +146,6 @@ function Reservations() {
 
     setFormData({
       equipmentId: booking.equipment?.equipmentId || "",
-      bookingDate: booking.bookingDate || "",
       startTime: booking.startTime || "",
       endTime: booking.endTime || "",
       purpose: booking.purpose || "",
@@ -261,11 +272,10 @@ function Reservations() {
 
           <input
             type="date"
-            name="bookingDate"
-            value={formData.bookingDate}
-            onChange={handleChange}
-            required
-            style={inputStyle}
+            value={new Date().toISOString().slice(0, 10)}
+            disabled
+            title="Booking date is set automatically to today"
+            style={{ ...inputStyle, background: "#f1f5f9", color: "#64748b" }}
           />
 
           <label>Start Time</label>
@@ -275,6 +285,7 @@ function Reservations() {
             name="startTime"
             value={formData.startTime}
             onChange={handleChange}
+            min={nowLocalString()}
             required
             style={inputStyle}
           />
@@ -286,6 +297,7 @@ function Reservations() {
             name="endTime"
             value={formData.endTime}
             onChange={handleChange}
+            min={formData.startTime || nowLocalString()}
             required
             style={inputStyle}
           />

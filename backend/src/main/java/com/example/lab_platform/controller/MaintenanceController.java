@@ -51,6 +51,14 @@ public class MaintenanceController {
         );
     }
  
+    // Work orders assigned to the currently logged-in technician
+    // (the Lab Technician dashboard's "My Tasks" view).
+    @GetMapping("/my-tasks")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    public ResponseEntity<List<Maintenance>> getMyTasks() {
+        return ResponseEntity.ok(maintenanceService.getMyTasks());
+    }
+
     // Update / complete a maintenance record (Restricted to technicians and managers)
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
@@ -64,4 +72,3 @@ public class MaintenanceController {
         return ResponseEntity.ok(updated);
     }
 }
- 

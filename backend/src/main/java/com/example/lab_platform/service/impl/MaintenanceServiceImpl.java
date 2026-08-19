@@ -2,10 +2,13 @@ package com.example.lab_platform.service.impl;
  
 import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.entity.Equipment;
+import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.MaintenanceService;
- 
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
  
 import java.util.List;
@@ -104,7 +107,11 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         if (updatedMaintenance.getMaintenanceStatus() != null) {
             existing.setMaintenanceStatus(updatedMaintenance.getMaintenanceStatus());
         }
- 
+
+        if (updatedMaintenance.getAssignedTechnician() != null) {
+            existing.setAssignedTechnician(updatedMaintenance.getAssignedTechnician());
+        }
+
         Maintenance saved = maintenanceRepository.save(existing);
  
         syncEquipmentStatus(saved);
@@ -147,5 +154,17 @@ public class MaintenanceServiceImpl implements MaintenanceService {
             equipmentRepository.save(equipment);
         }
     }
- 
+
+    @Override
+    public List<Maintenance> getMyTasks() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        User loggedInUser = (User) authentication.getPrincipal();
+
+        return maintenanceRepository
+                .findByAssignedTechnician_UserId(loggedInUser.getUserId());
+    }
+
 }

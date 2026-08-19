@@ -1,6 +1,8 @@
 package com.example.lab_platform.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,18 +15,25 @@ public class Institution {
     @Column(name = "institution_id")
     private Integer institutionId;
 
-    @Column(name = "institution_name", nullable = false, unique = true, length = 150)
+    @Column(
+        name = "institution_name",
+        nullable = false,
+        unique = true,
+        length = 150
+    )
     private String institutionName;
 
     @Column(name = "location", length = 200)
     private String location;
 
+    @JsonIgnore
     @OneToMany(
-            mappedBy = "institution",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+        mappedBy = "institution",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
     )
-    private Set<InstitutionDepartment> institutionDepartments = new HashSet<>();
+    private Set<InstitutionDepartment> institutionDepartments =
+            new HashSet<>();
 
     public Integer getInstitutionId() {
         return institutionId;

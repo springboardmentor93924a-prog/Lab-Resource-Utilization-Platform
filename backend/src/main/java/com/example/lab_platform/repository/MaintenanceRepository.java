@@ -18,4 +18,8 @@ public interface MaintenanceRepository
     List<Maintenance> findByEquipment_EquipmentId(
             Integer equipmentId
     );
+
+    List<Maintenance> findByAssignedTechnician_UserId(
+            Integer userId
+    );
 }

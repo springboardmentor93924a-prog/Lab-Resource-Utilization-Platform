@@ -14,9 +14,20 @@ function Waitlist() {
   });
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  // Lab Technician can view all waitlist entries (per the backend's
+  // GET /api/waitlist) but is not permitted to join or cancel one — the
+  // "my waitlist" endpoint below is only for roles that can actually
+  // hold a waitlist entry themselves.
+  const isTechnicianView = role === "LAB_TECHNICIAN";
 
   const fetchMyWaitlist = () => {
-    fetch("http://localhost:8080/api/waitlist/my", {
+    const url = isTechnicianView
+      ? "http://localhost:8080/api/waitlist"
+      : "http://localhost:8080/api/waitlist/my";
+
+    fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -49,6 +60,11 @@ function Waitlist() {
   useEffect(() => {
     fetchMyWaitlist();
     fetchEquipmentList();
+
+    // Poll so a promotion/fulfillment triggered by someone else's
+    // booking shows up here without a manual refresh.
+    const interval = setInterval(fetchMyWaitlist, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleChange = (e) => {
@@ -146,18 +162,24 @@ function Waitlist() {
     <div className="waitlist-container">
       <div className="waitlist-header">
         <div>
-          <h2>My Waitlist</h2>
-          <p>Track equipment you're waiting on, or join a new waitlist.</p>
+          <h2>{isTechnicianView ? "All Waitlist Entries" : "My Waitlist"}</h2>
+          <p>
+            {isTechnicianView
+              ? "Every equipment waitlist entry across the platform."
+              : "Track equipment you're waiting on, or join a new waitlist."}
+          </p>
         </div>
-        <button
-          className="add-waitlist-btn"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? "Cancel" : "+ Join Waitlist"}
-        </button>
+        {!isTechnicianView && (
+          <button
+            className="add-waitlist-btn"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? "Cancel" : "+ Join Waitlist"}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {showForm && !isTechnicianView && (
         <div className="waitlist-form-card">
           <form onSubmit={handleSubmit} className="waitlist-form">
             <div className="waitlist-form-group">
@@ -209,17 +231,20 @@ function Waitlist() {
       <div className="waitlist-table-card">
         {entries.length === 0 ? (
           <div className="waitlist-empty">
-            You're not on any waitlists right now.
+            {isTechnicianView
+              ? "No waitlist entries right now."
+              : "You're not on any waitlists right now."}
           </div>
         ) : (
           <table className="waitlist-table">
             <thead>
               <tr>
                 <th>Equipment</th>
+                {isTechnicianView && <th>Requested By</th>}
                 <th>Requested Start</th>
                 <th>Requested End</th>
                 <th>Status</th>
-                <th>Action</th>
+                {!isTechnicianView && <th>Action</th>}
               </tr>
             </thead>
             <tbody>
@@ -228,6 +253,9 @@ function Waitlist() {
                   <td className="equipment-name">
                     {entry.equipment?.equipmentName}
                   </td>
+                  {isTechnicianView && (
+                    <td>{entry.user?.fullName || "—"}</td>
+                  )}
                   <td>{entry.requestedStartTime?.replace("T", " ")}</td>
                   <td>{entry.requestedEndTime?.replace("T", " ")}</td>
                   <td>
@@ -235,16 +263,18 @@ function Waitlist() {
                       {entry.waitlistStatus}
                     </span>
                   </td>
-                  <td>
-                    {entry.waitlistStatus === "WAITING" && (
-                      <button
-                        className="cancel-waitlist-btn"
-                        onClick={() => handleCancel(entry.waitlistId)}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </td>
+                  {!isTechnicianView && (
+                    <td>
+                      {entry.waitlistStatus === "WAITING" && (
+                        <button
+                          className="cancel-waitlist-btn"
+                          onClick={() => handleCancel(entry.waitlistId)}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
