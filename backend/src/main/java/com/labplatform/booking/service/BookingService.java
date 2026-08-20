@@ -1,5 +1,13 @@
 package com.labplatform.booking.service;
-
+import org.springframework.scheduling.annotation.Scheduled;
+import java.util.List;
+import java.util.UUID;
+import java.util.Set;
+import java.time.LocalDate;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.time.LocalDateTime;
 import com.labplatform.auth.model.User;
 import com.labplatform.auth.repository.UserRepository;
 import com.labplatform.billing.service.BillingService;
@@ -12,13 +20,14 @@ import com.labplatform.equipment.model.Equipment;
 import com.labplatform.equipment.repository.EquipmentRepository;
 import com.labplatform.notification.service.NotificationService;
 import com.labplatform.sharing.repository.EquipmentAccessGrantRepository;
+import com.labplatform.equipment.dto.DepartmentUsageReportRow;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.UUID;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +58,126 @@ public class BookingService {
         this.billingService = billingService;
         this.notificationService = notificationService;
     }
+// =========================================================
+// DEPARTMENT / RESOURCE USAGE REPORT
+// =========================================================
 
+    public List<DepartmentUsageReportRow> generateDepartmentUsageReport(
+            LocalDate from,
+            LocalDate to) {
+
+        List<Booking> bookings =
+                bookingRepository.findByBookingDateBetween(from, to);
+
+        // Only actual/approved bookings should count as resource usage
+        bookings = bookings.stream()
+                .filter(booking ->
+                        booking.getBookingStatus() == BookingStatus.CONFIRMED
+                                || booking.getBookingStatus() == BookingStatus.COMPLETED
+                )
+                .collect(Collectors.toList());
+
+        Map<String, List<Booking>> departmentBookings =
+                bookings.stream()
+                        .filter(booking ->
+                                booking.getEquipment() != null
+                                        && booking.getEquipment().getDepartment() != null
+                                        && !booking.getEquipment()
+                                        .getDepartment()
+                                        .isBlank()
+                        )
+                        .collect(Collectors.groupingBy(
+                                booking ->
+                                        booking.getEquipment()
+                                                .getDepartment()
+                        ));
+
+        List<DepartmentUsageReportRow> report = new java.util.ArrayList<>();
+
+        long totalDays =
+                java.time.temporal.ChronoUnit.DAYS.between(
+                        from,
+                        to
+                ) + 1;
+
+        for (Map.Entry<String, List<Booking>> entry
+                : departmentBookings.entrySet()) {
+
+            String department = entry.getKey();
+
+            List<Booking> departmentBookingList =
+                    entry.getValue();
+
+            long totalBookings =
+                    departmentBookingList.size();
+
+            long usageHours =
+                    departmentBookingList.stream()
+                            .mapToLong(booking -> {
+
+                                if (booking.getDurationHours() != null) {
+                                    return booking.getDurationHours();
+                                }
+
+                                if (booking.getStartTime() != null
+                                        && booking.getEndTime() != null) {
+
+                                    return java.time.Duration
+                                            .between(
+                                                    booking.getStartTime(),
+                                                    booking.getEndTime()
+                                            )
+                                            .toHours();
+                                }
+
+                                return 0;
+                            })
+                            .sum();
+
+            long equipmentCount =
+                    departmentBookingList.stream()
+                            .map(booking ->
+                                    booking.getEquipment().getId())
+                            .distinct()
+                            .count();
+
+            /*
+             * Utilization is calculated against
+             * 24 hours per day for each equipment
+             * available in the department.
+             */
+            double availableHours =
+                    equipmentCount
+                            * totalDays
+                            * 24.0;
+
+            double utilizationRate =
+                    availableHours > 0
+                            ? (usageHours / availableHours) * 100.0
+                            : 0.0;
+
+            utilizationRate =
+                    Math.round(utilizationRate * 10.0) / 10.0;
+
+            report.add(
+                    new DepartmentUsageReportRow(
+                            department,
+                            totalBookings,
+                            usageHours,
+                            equipmentCount,
+                            utilizationRate
+                    )
+            );
+        }
+
+        report.sort(
+                java.util.Comparator.comparing(
+                        DepartmentUsageReportRow::getDepartment
+                )
+        );
+
+        return report;
+    }
     private User resolveCurrentUser(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -147,42 +275,67 @@ public class BookingService {
                 saved,
                 currentUser
         );
-        // Notify admins of the equipment's institution
-// when a user from another institution makes a booking.
-        if (currentUser.getInstitution() != null
-                && equipment.getInstitution() != null
-                && !currentUser.getInstitution().getId()
-                .equals(equipment.getInstitution().getId())) {
+        // =========================================================
+// NOTIFY MANAGEMENT ABOUT NEW BOOKING REQUEST
+// LAB MANAGER + DEPARTMENT HEAD + INSTITUTION ADMIN
+// =========================================================
 
-            userRepository.findAll().stream()
-                    .filter(user -> user.getInstitution() != null)
-                    .filter(user -> user.getInstitution().getId()
-                            .equals(equipment.getInstitution().getId()))
-                    .filter(user -> user.getRole() != null)
-                    .filter(user -> "INSTITUTION_ADMIN"
-                            .equals(user.getRole().getName()))
-                    .forEach(admin -> {
+        if (equipment.getInstitution() != null) {
 
-                        String requesterName = currentUser.getFullName();
+            Integer institutionId =
+                    equipment.getInstitution().getId();
+
+            String[] responsibleRoles = {
+                    "LAB_MANAGER",
+                    "DEPARTMENT_HEAD",
+                    "INSTITUTION_ADMIN"
+            };
+
+            Set<UUID> notifiedUserIds = new HashSet<>();
+
+            String requesterName =
+                    currentUser.getFullName();
+
+            String message =
+                    "New booking request for "
+                            + equipment.getEquipmentName()
+                            + " from "
+                            + requesterName
+                            + " on "
+                            + booking.getBookingDate()
+                            + ". Please review the booking.";
+
+            for (String roleName : responsibleRoles) {
+
+                List<User> users =
+                        userRepository
+                                .findByInstitution_IdAndRole_Name(
+                                        institutionId,
+                                        roleName
+                                );
+
+                for (User user : users) {
+
+                    // Prevent duplicate notifications
+                    if (notifiedUserIds.add(user.getId())) {
 
                         notificationService.create(
-                                admin,
-                                "EXTERNAL_BOOKING_REQUEST",
-                                "New external booking request for "
-                                        + equipment.getEquipmentName()
-                                        + " from "
-                                        + requesterName
-                                        + " on "
-                                        + booking.getBookingDate()
-                                        + "."
+                                user,
+                                "NEW_BOOKING_REQUEST",
+                                message
                         );
-                    });
+                    }
+                }
+            }
         }
 
         return new BookingResponse(saved);
     }
 
     public List<BookingResponse> getAllBookings() {
+
+        updateExpiredBookings();
+
         return bookingRepository.findAll()
                 .stream()
                 .map(BookingResponse::new)
@@ -192,6 +345,8 @@ public class BookingService {
     public BookingResponse getBookingById(
             Long id,
             String requesterEmail) {
+
+        updateExpiredBookings();
 
         User currentUser = resolveCurrentUser(requesterEmail);
 
@@ -209,6 +364,8 @@ public class BookingService {
     public List<BookingResponse> getBookingsByUser(
             UUID userId,
             String requesterEmail) {
+
+        updateExpiredBookings();
 
         User currentUser = resolveCurrentUser(requesterEmail);
 
@@ -229,6 +386,8 @@ public class BookingService {
 
     public List<BookingResponse> getBookingsByEquipment(
             Long equipmentId) {
+
+        updateExpiredBookings();
 
         return bookingRepository.findByEquipmentId(equipmentId)
                 .stream()
@@ -416,5 +575,67 @@ public class BookingService {
                 user.getId(),
                 equipment.getId()
         );
+    }
+
+    // ==========================================
+// AUTO COMPLETE EXPIRED BOOKINGS
+// ==========================================
+
+    @Scheduled(fixedRate = 60000)
+    public void automaticallyCompleteBookings() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        bookingRepository.findAll()
+                .stream()
+                .filter(booking ->
+                        booking.getBookingStatus() == BookingStatus.CONFIRMED
+                )
+                .filter(booking -> {
+
+                    LocalDateTime bookingEnd =
+                            LocalDateTime.of(
+                                    booking.getBookingDate(),
+                                    booking.getEndTime()
+                            );
+
+                    return !bookingEnd.isAfter(now);
+                })
+                .forEach(booking -> {
+
+                    booking.setBookingStatus(
+                            BookingStatus.COMPLETED
+                    );
+
+                    bookingRepository.save(booking);
+                });
+    }
+    private void updateExpiredBookings() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        bookingRepository.findAll()
+                .stream()
+                .filter(booking ->
+                        booking.getBookingStatus() == BookingStatus.CONFIRMED
+                )
+                .filter(booking -> {
+
+                    LocalDateTime bookingEnd =
+                            LocalDateTime.of(
+                                    booking.getBookingDate(),
+                                    booking.getEndTime()
+                            );
+
+                    return !bookingEnd.isAfter(now);
+                })
+                .forEach(booking -> {
+
+                    booking.setBookingStatus(
+                            BookingStatus.COMPLETED
+                    );
+
+                    bookingRepository.save(booking);
+                });
     }
 }

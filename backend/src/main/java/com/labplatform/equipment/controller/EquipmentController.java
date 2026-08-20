@@ -1,6 +1,6 @@
 package com.labplatform.equipment.controller;
 import com.labplatform.equipment.dto.EquipmentUtilizationResponse;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.labplatform.equipment.dto.EquipmentRequest;
 import com.labplatform.equipment.dto.EquipmentResponse;
 import com.labplatform.equipment.service.EquipmentService;
@@ -85,9 +85,14 @@ public class EquipmentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EquipmentResponse> updateEquipment(@PathVariable Long id,
-                                                             @Valid @RequestBody EquipmentRequest request) {
-        return ResponseEntity.ok(equipmentService.updateEquipment(id, request));
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER')")
+    public ResponseEntity<EquipmentResponse> updateEquipment(
+            @PathVariable Long id,
+            @Valid @RequestBody EquipmentRequest request) {
+
+        return ResponseEntity.ok(
+                equipmentService.updateEquipment(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")

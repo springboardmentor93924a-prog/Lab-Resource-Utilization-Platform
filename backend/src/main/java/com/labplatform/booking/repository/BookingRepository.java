@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
@@ -16,5 +17,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByEquipmentId(Long equipmentId);
 
     List<Booking> findByEquipmentIdAndBookingDateAndBookingStatusIn(
-            Long equipmentId, LocalDate bookingDate, List<BookingStatus> statuses);
+            Long equipmentId,
+            LocalDate bookingDate,
+            List<BookingStatus> statuses
+    );
+
+    // Department / Resource usage report
+    List<Booking> findByBookingDateBetween(
+            LocalDate from,
+            LocalDate to
+    );
 }

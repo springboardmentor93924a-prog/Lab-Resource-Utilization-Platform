@@ -242,7 +242,11 @@ public class WorkOrderService {
                                 "WORK_ORDER_COMPLETED",
                                 "Maintenance work order for "
                                         + wo.getEquipment().getEquipmentName()
-                                        + " has been completed."
+                                        + " has been completed by "
+                                        + (wo.getAssignedTo() != null
+                                        ? wo.getAssignedTo().getFullName()
+                                        : "the assigned technician")
+                                        + "."
                         );
                     }
                 }

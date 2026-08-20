@@ -1,54 +1,670 @@
 /* =========================================================
-   BOOKING APPROVAL PAGE
+   BOOKING APPROVAL
+   MAGICAL DARK NEON UI
 ========================================================= */
 
 .booking-approval-page {
     display: flex;
     min-height: 100vh;
     width: 100%;
-    background: #020b1c;
+    background:
+        radial-gradient(
+            circle at 75% 10%,
+            rgba(88, 28, 135, 0.18),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 45% 80%,
+            rgba(37, 99, 235, 0.10),
+            transparent 35%
+        ),
+        #020817;
+
+    color: #ffffff;
 }
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
 
 .booking-approval-content {
     flex: 1;
     min-width: 0;
-    padding: 30px;
-    background: #020b1c;
-    color: #ffffff;
+
+    padding: 30px 34px 50px;
+
+    background:
+        radial-gradient(
+            circle at 90% 0%,
+            rgba(124, 58, 237, 0.12),
+            transparent 28%
+        ),
+        #020817;
+
+    overflow-x: hidden;
 }
 
 
 /* =========================================================
-   TITLE
+   HERO
 ========================================================= */
 
-.booking-approval-title {
-    margin-bottom: 25px;
+.approval-hero {
+    position: relative;
 
-    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 22px;
 
-    font-size: 22px;
-    font-weight: 800;
-}
+    min-height: 145px;
 
+    padding: 25px 30px;
 
-/* =========================================================
-   TABLE CONTAINER
-========================================================= */
+    overflow: hidden;
 
-.booking-table-container {
-    width: 100%;
+    border-radius: 24px;
 
-    background: #071a32;
+    border: 1px solid rgba(96, 165, 250, 0.30);
 
-    border: 1px solid #24476b;
-
-    border-radius: 12px;
-
-    overflow-x: auto;
+    background:
+        linear-gradient(
+            110deg,
+            rgba(12, 35, 68, 0.96),
+            rgba(28, 18, 70, 0.94),
+            rgba(9, 27, 53, 0.96)
+        );
 
     box-shadow:
-        0 4px 18px rgba(0, 0, 0, 0.30);
+        0 0 35px rgba(59, 130, 246, 0.12),
+        inset 0 1px rgba(255, 255, 255, 0.06);
+}
+
+
+/* glowing lines */
+
+.approval-hero::before {
+    content: "";
+
+    position: absolute;
+
+    width: 320px;
+    height: 320px;
+
+    right: -130px;
+    top: -170px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(124, 58, 237, 0.32),
+            transparent 65%
+        );
+}
+
+
+.approval-hero::after {
+    content: "";
+
+    position: absolute;
+
+    left: 20%;
+    bottom: -90px;
+
+    width: 350px;
+    height: 180px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            ellipse,
+            rgba(37, 99, 235, 0.18),
+            transparent 70%
+        );
+}
+
+
+/* =========================================================
+   HERO ICON
+========================================================= */
+
+.approval-hero-icon {
+    position: relative;
+
+    width: 76px;
+    height: 76px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 20px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #7c3aed
+        );
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    box-shadow:
+        0 0 25px rgba(59, 130, 246, 0.45),
+        0 0 45px rgba(124, 58, 237, 0.25);
+}
+
+
+.approval-hero-icon i {
+    font-size: 34px;
+
+    color: #ffffff;
+
+    filter:
+        drop-shadow(
+            0 0 10px
+            rgba(255,255,255,0.6)
+        );
+}
+
+
+/* =========================================================
+   SPARKLES
+========================================================= */
+
+.spark {
+    position: absolute;
+
+    color: #a5f3fc;
+
+    text-shadow:
+        0 0 8px #22d3ee,
+        0 0 18px #818cf8;
+
+    animation: sparkle 2.2s infinite ease-in-out;
+}
+
+.spark-one {
+    top: -7px;
+    right: -5px;
+    font-size: 19px;
+}
+
+.spark-two {
+    bottom: -6px;
+    left: -7px;
+    font-size: 14px;
+    animation-delay: 0.7s;
+}
+
+@keyframes sparkle {
+
+    0%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.25);
+        opacity: 1;
+    }
+}
+
+
+/* =========================================================
+   HERO TEXT
+========================================================= */
+
+.approval-hero-text {
+    position: relative;
+    z-index: 2;
+}
+
+
+.hero-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 5px;
+
+    color: #67e8f9;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 2px;
+}
+
+
+.hero-label i {
+    color: #c084fc;
+}
+
+
+.approval-hero-text h1 {
+    margin: 0;
+
+    font-size: 32px;
+    font-weight: 900;
+
+    letter-spacing: -0.8px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #93c5fd,
+            #c084fc,
+            #ffffff
+        );
+
+    background-size: 250% auto;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
+    animation: titleGlow 5s linear infinite;
+}
+
+
+@keyframes titleGlow {
+
+    0% {
+        background-position: 0% center;
+    }
+
+    100% {
+        background-position: 250% center;
+    }
+}
+
+
+.approval-hero-text p {
+    margin: 5px 0 0;
+
+    color: #94a3b8;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   HERO ORB
+========================================================= */
+
+.approval-hero-orb {
+    position: absolute;
+
+    right: 35px;
+
+    width: 80px;
+    height: 80px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(96, 165, 250, 0.28);
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(37, 99, 235, 0.20),
+            rgba(124, 58, 237, 0.08),
+            transparent 70%
+        );
+
+    box-shadow:
+        0 0 30px rgba(59, 130, 246, 0.12);
+}
+
+
+.approval-hero-orb i {
+    font-size: 32px;
+
+    color: #818cf8;
+
+    text-shadow:
+        0 0 12px #6366f1;
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.approval-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 16px;
+
+    margin-top: 22px;
+}
+
+
+.approval-stat-card {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    min-height: 105px;
+
+    padding: 18px;
+
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(10, 29, 53, 0.95),
+            rgba(5, 18, 35, 0.95)
+        );
+
+    border: 1px solid rgba(96, 165, 250, 0.18);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+
+.approval-stat-card:hover {
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.30);
+}
+
+
+.approval-stat-card::after {
+    content: "";
+
+    position: absolute;
+
+    width: 110px;
+    height: 110px;
+
+    right: -45px;
+    top: -55px;
+
+    border-radius: 50%;
+
+    opacity: 0.45;
+}
+
+
+/* icons */
+
+.stat-icon {
+    width: 52px;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background: rgba(59, 130, 246, 0.12);
+
+    border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+
+.stat-icon i {
+    font-size: 22px;
+}
+
+
+/* total */
+
+.stat-total {
+    border-color: rgba(59, 130, 246, 0.28);
+}
+
+.stat-total .stat-icon {
+    color: #60a5fa;
+}
+
+
+/* pending */
+
+.stat-pending {
+    border-color: rgba(245, 158, 11, 0.28);
+}
+
+.stat-pending .stat-icon {
+    color: #fbbf24;
+
+    background: rgba(245, 158, 11, 0.10);
+}
+
+
+/* confirmed */
+
+.stat-confirmed {
+    border-color: rgba(16, 185, 129, 0.28);
+}
+
+.stat-confirmed .stat-icon {
+    color: #34d399;
+
+    background: rgba(16, 185, 129, 0.10);
+}
+
+
+/* completed */
+
+.stat-completed {
+    border-color: rgba(139, 92, 246, 0.28);
+}
+
+.stat-completed .stat-icon {
+    color: #a78bfa;
+
+    background: rgba(139, 92, 246, 0.10);
+}
+
+
+.stat-label {
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: #64748b;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: 1.2px;
+}
+
+
+.approval-stat-card strong {
+    display: block;
+
+    color: #f8fafc;
+
+    font-size: 28px;
+    font-weight: 900;
+}
+
+
+.approval-stat-card small {
+    color: #64748b;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   SECTION HEADER
+========================================================= */
+
+.approval-section-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-top: 30px;
+    margin-bottom: 16px;
+}
+
+
+.section-title-area {
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+}
+
+
+.section-icon {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #7c3aed
+        );
+
+    box-shadow:
+        0 0 18px rgba(99, 102, 241, 0.35);
+}
+
+
+.section-icon i {
+    font-size: 20px;
+}
+
+
+.section-title-area h2 {
+    margin: 0;
+
+    color: #f8fafc;
+
+    font-size: 20px;
+    font-weight: 850;
+}
+
+
+.section-title-area p {
+    margin: 3px 0 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+
+.booking-count-badge {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 9px 15px;
+
+    border-radius: 999px;
+
+    border: 1px solid rgba(96, 165, 250, 0.30);
+
+    background: rgba(37, 99, 235, 0.08);
+
+    color: #93c5fd;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   TABLE CARD
+========================================================= */
+
+.approval-table-card {
+    position: relative;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    border: 1px solid rgba(96, 165, 250, 0.20);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(8, 28, 51, 0.96),
+            rgba(4, 18, 35, 0.98)
+        );
+
+    box-shadow:
+        0 15px 45px rgba(0, 0, 0, 0.25);
+}
+
+
+.approval-table-card::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 10%;
+
+    width: 80%;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #60a5fa,
+            #c084fc,
+            transparent
+        );
+
+    opacity: 0.7;
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+========================================================= */
+
+.approval-table-wrapper {
+    width: 100%;
+
+    overflow-x: auto;
 }
 
 
@@ -59,9 +675,9 @@
 .booking-table {
     width: 100%;
 
-    border-collapse: collapse;
+    min-width: 1050px;
 
-    min-width: 800px;
+    border-collapse: collapse;
 }
 
 
@@ -70,18 +686,40 @@
 ========================================================= */
 
 .booking-table thead th {
-    padding: 14px 16px;
+    padding: 17px 16px;
 
     text-align: left;
 
-    background: #0f1b2d;
+    color: #94a3b8;
 
-    color: #ffffff;
+    background:
+        rgba(8, 25, 46, 0.98);
 
-    border: 1px solid #263f5d;
+    border-bottom: 1px solid rgba(96, 165, 250, 0.16);
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 0.7px;
+}
+
+
+.booking-table thead th span {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+}
+
+
+.booking-table thead th i {
+    color: #818cf8;
 
     font-size: 14px;
-    font-weight: 700;
+
+    text-shadow:
+        0 0 8px rgba(129, 140, 248, 0.6);
 }
 
 
@@ -89,32 +727,151 @@
    TABLE BODY
 ========================================================= */
 
+.booking-table tbody tr {
+    position: relative;
+
+    transition:
+        background 0.25s ease,
+        transform 0.25s ease;
+}
+
+
+.booking-table tbody tr:hover {
+    background:
+        linear-gradient(
+            90deg,
+            rgba(37, 99, 235, 0.06),
+            rgba(124, 58, 237, 0.06)
+        );
+}
+
+
 .booking-table tbody td {
-    padding: 14px 16px;
+    padding: 17px 16px;
 
-    background: #f8fafc;
+    color: #cbd5e1;
 
-    color: #111827;
+    border-bottom: 1px solid rgba(96, 165, 250, 0.10);
 
-    border: 1px solid #d5dee9;
-
-    font-size: 14px;
+    font-size: 13px;
 
     vertical-align: middle;
 }
 
 
-/* Make sure every booking value is visible */
+/* =========================================================
+   ID
+========================================================= */
 
-.booking-table tbody td strong {
-    color: #111827;
+.booking-id {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 43px;
+
+    padding: 7px 10px;
+
+    border-radius: 10px;
+
+    background: rgba(99, 102, 241, 0.10);
+
+    border: 1px solid rgba(129, 140, 248, 0.20);
+
+    color: #a5b4fc;
+
+    font-weight: 800;
+
+    font-size: 12px;
 }
 
 
-/* Hover */
+/* =========================================================
+   USER
+========================================================= */
 
-.booking-table tbody tr:hover td {
-    background: #eef4fb;
+.user-cell,
+.equipment-cell,
+.date-cell {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+}
+
+
+.user-avatar,
+.equipment-icon,
+.date-icon {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+}
+
+
+.user-avatar {
+    color: #60a5fa;
+
+    background:
+        rgba(37, 99, 235, 0.12);
+
+    border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+
+.equipment-icon {
+    color: #c084fc;
+
+    background:
+        rgba(124, 58, 237, 0.12);
+
+    border: 1px solid rgba(168, 85, 247, 0.22);
+
+    box-shadow:
+        0 0 14px rgba(168, 85, 247, 0.08);
+}
+
+
+.date-icon {
+    color: #67e8f9;
+
+    background:
+        rgba(6, 182, 212, 0.10);
+
+    border: 1px solid rgba(6, 182, 212, 0.20);
+}
+
+
+.user-cell strong,
+.equipment-cell strong,
+.date-cell strong {
+    display: block;
+
+    color: #f1f5f9;
+
+    font-size: 13px;
+}
+
+
+.user-cell small,
+.equipment-cell small,
+.date-cell small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 10px;
 }
 
 
@@ -123,19 +880,78 @@
 ========================================================= */
 
 .booking-status {
-    display: inline-block;
+    display: inline-flex;
 
-    padding: 6px 13px;
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 8px 12px;
 
     border-radius: 999px;
 
-    color: #ffffff !important;
+    font-size: 10px;
 
+    font-weight: 850;
+
+    letter-spacing: 0.4px;
+
+    border: 1px solid;
+}
+
+
+.booking-status i {
     font-size: 12px;
+}
 
-    font-weight: 700;
 
-    white-space: nowrap;
+/* pending */
+
+.status-pending {
+    color: #fbbf24;
+
+    background: rgba(245, 158, 11, 0.10);
+
+    border-color: rgba(245, 158, 11, 0.35);
+
+    box-shadow:
+        0 0 14px rgba(245, 158, 11, 0.10);
+}
+
+
+/* confirmed */
+
+.status-confirmed {
+    color: #34d399;
+
+    background: rgba(16, 185, 129, 0.10);
+
+    border-color: rgba(16, 185, 129, 0.35);
+
+    box-shadow:
+        0 0 14px rgba(16, 185, 129, 0.10);
+}
+
+
+/* cancelled */
+
+.status-cancelled {
+    color: #f87171;
+
+    background: rgba(239, 68, 68, 0.10);
+
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+
+/* completed */
+
+.status-completed {
+    color: #a5b4fc;
+
+    background: rgba(99, 102, 241, 0.10);
+
+    border-color: rgba(129, 140, 248, 0.30);
 }
 
 
@@ -143,57 +959,122 @@
    ACTION BUTTONS
 ========================================================= */
 
-.approve-button {
-    margin-right: 8px;
+.approval-actions {
+    display: flex;
 
-    padding: 8px 15px;
+    gap: 8px;
+}
 
-    border: 1px solid #1d4ed8;
 
-    border-radius: 7px;
+.approve-button,
+.reject-button {
+    display: inline-flex;
 
-    background: #172033;
+    align-items: center;
+    justify-content: center;
 
-    color: #ffffff;
+    gap: 7px;
 
-    font-size: 14px;
-    font-weight: 600;
+    min-width: 91px;
+
+    padding: 9px 13px;
+
+    border-radius: 10px;
+
+    font-size: 11px;
+    font-weight: 800;
 
     cursor: pointer;
 
-    transition: all 0.25s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
 }
+
+
+/* approve */
+
+.approve-button {
+    color: #d1fae5;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(16, 185, 129, 0.20),
+            rgba(5, 150, 105, 0.10)
+        );
+
+    border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+
+.approve-button i {
+    color: #34d399;
+}
+
 
 .approve-button:hover {
-    background: #1e40af;
+    transform: translateY(-2px);
 
-    border-color: #3b82f6;
+    border-color: #34d399;
+
+    box-shadow:
+        0 0 18px rgba(16, 185, 129, 0.25);
 }
 
+
+/* reject */
 
 .reject-button {
-    padding: 8px 15px;
+    color: #fecaca;
 
-    border: 1px solid #64748b;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(239, 68, 68, 0.16),
+            rgba(127, 29, 29, 0.08)
+        );
 
-    border-radius: 7px;
-
-    background: #ffffff;
-
-    color: #111827;
-
-    font-size: 14px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: all 0.25s ease;
+    border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
-.reject-button:hover {
-    background: #e2e8f0;
 
-    border-color: #475569;
+.reject-button i {
+    color: #f87171;
+}
+
+
+.reject-button:hover {
+    transform: translateY(-2px);
+
+    border-color: #f87171;
+
+    box-shadow:
+        0 0 18px rgba(239, 68, 68, 0.22);
+}
+
+
+/* =========================================================
+   REVIEWED
+========================================================= */
+
+.no-action {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: #475569;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.no-action i {
+    color: #6366f1;
 }
 
 
@@ -201,10 +1082,143 @@
    LOADING
 ========================================================= */
 
-.booking-loading {
-    color: #e2e8f0;
+.approval-loading {
+    min-height: 300px;
 
-    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 20px;
+
+    border: 1px solid rgba(96, 165, 250, 0.18);
+
+    background:
+        rgba(8, 28, 51, 0.75);
+}
+
+
+.loading-orbit {
+    width: 62px;
+    height: 62px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 2px solid rgba(96, 165, 250, 0.15);
+
+    border-top-color: #60a5fa;
+
+    border-right-color: #a855f7;
+
+    animation:
+        spin 1s linear infinite;
+
+    box-shadow:
+        0 0 25px rgba(96, 165, 250, 0.18);
+}
+
+
+.loading-orbit i {
+    color: #a78bfa;
+
+    font-size: 20px;
+}
+
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+.approval-loading h3 {
+    margin: 18px 0 5px;
+
+    color: #f8fafc;
+
+    font-size: 16px;
+}
+
+
+.approval-loading p {
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.no-bookings {
+    min-height: 330px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+}
+
+
+.empty-icon {
+    width: 70px;
+    height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 20px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37, 99, 235, 0.15),
+            rgba(124, 58, 237, 0.15)
+        );
+
+    border: 1px solid rgba(129, 140, 248, 0.25);
+
+    box-shadow:
+        0 0 25px rgba(99, 102, 241, 0.12);
+}
+
+
+.empty-icon i {
+    color: #818cf8;
+
+    font-size: 28px;
+}
+
+
+.no-bookings h3 {
+    margin: 16px 0 5px;
+
+    color: #f8fafc;
+
+    font-size: 18px;
+}
+
+
+.no-bookings p {
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 12px;
 }
 
 
@@ -212,17 +1226,80 @@
    RESPONSIVE
 ========================================================= */
 
+@media (max-width: 1200px) {
+
+    .approval-stats {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .approval-hero-orb {
+        display: none;
+    }
+}
+
+
 @media (max-width: 768px) {
 
     .booking-approval-content {
-        padding: 20px 15px;
+        padding: 20px 15px 40px;
     }
 
-    .booking-approval-title {
-        font-size: 19px;
+    .approval-hero {
+        padding: 20px;
     }
 
-    .booking-table-container {
-        overflow-x: auto;
+    .approval-hero-text h1 {
+        font-size: 25px;
+    }
+
+    .approval-hero-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .approval-hero-icon i {
+        font-size: 26px;
+    }
+
+    .approval-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .approval-section-header {
+        align-items: flex-start;
+
+        gap: 12px;
+
+        flex-direction: column;
+    }
+
+    .booking-count-badge {
+        align-self: flex-start;
+    }
+}
+
+
+@media (max-width: 500px) {
+
+    .approval-hero {
+        gap: 14px;
+    }
+
+    .approval-hero-icon {
+        display: none;
+    }
+
+    .approval-hero-text h1 {
+        font-size: 22px;
+    }
+
+    .approval-actions {
+        flex-direction: column;
+    }
+
+    .approve-button,
+    .reject-button {
+        width: 100%;
     }
 }

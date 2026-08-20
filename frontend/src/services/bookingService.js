@@ -9,9 +9,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -34,10 +36,12 @@ export async function getBookingsByEquipment(equipmentId) {
   const { data } = await api.get(`/equipment/${equipmentId}`);
   return data;
 }
+
 export async function cancelBooking(id) {
   const { data } = await api.put(`/${id}/cancel`);
   return data;
 }
+
 export async function approveBooking(id) {
   const { data } = await api.put(`/${id}/approve`);
   return data;
@@ -45,6 +49,21 @@ export async function approveBooking(id) {
 
 export async function rejectBooking(id) {
   const { data } = await api.put(`/${id}/reject`);
+  return data;
+}
+
+// =========================================================
+// DEPARTMENT / RESOURCE USAGE REPORT
+// =========================================================
+
+export async function getDepartmentUsageReport(from, to) {
+  const { data } = await api.get("/reports/department-usage", {
+    params: {
+      from,
+      to,
+    },
+  });
+
   return data;
 }
 

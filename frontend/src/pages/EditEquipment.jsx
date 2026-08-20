@@ -6,6 +6,7 @@ import {
   getEquipmentById,
   updateEquipment,
 } from "../services/equipmentService";
+import { canManageEquipment } from "../utils/auth";
 import { uploadFile } from "../services/fileService";
 
 const statusOptions = [
@@ -55,8 +56,15 @@ function mapStatusToUI(backendStatus) {
 }
 
 export default function EditEquipment() {
+
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // ==============================
+  // RBAC CHECK
+  // ==============================
+
+  const userCanManageEquipment = canManageEquipment();
 
   const [form, setForm] = useState(null);
   const [status, setStatus] = useState("Available");
@@ -69,6 +77,19 @@ export default function EditEquipment() {
 
   const [existingManual, setExistingManual] = useState(null);
   const [existingCert, setExistingCert] = useState(null);
+  useEffect(() => {
+
+  if (!userCanManageEquipment) {
+
+    alert(
+      "You do not have permission to edit equipment."
+    );
+
+    navigate(`/equipment/${id}`);
+
+  }
+
+}, [userCanManageEquipment, navigate, id]);
 
   useEffect(() => {
     async function fetchEquipment() {
@@ -150,6 +171,19 @@ export default function EditEquipment() {
   }
 
   async function handleSave() {
+
+    // ==============================
+  // RBAC SECURITY CHECK
+  // ==============================
+
+  if (!userCanManageEquipment) {
+
+    alert(
+      "You do not have permission to update equipment."
+    );
+
+    return;
+  }
     // ==============================
     // BASIC VALIDATION
     // ==============================

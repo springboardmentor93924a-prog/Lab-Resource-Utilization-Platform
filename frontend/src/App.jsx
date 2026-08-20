@@ -25,6 +25,7 @@ import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import OAuth2Callback from "./OAuth2Callback";
 import GoogleRegister from "./pages/GoogleRegister";
+import EquipmentFeedback from "./pages/EquipmentFeedback";
 
 
 
@@ -88,6 +89,15 @@ export default function App() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/equipment-feedback"
+  element={
+    <ProtectedRoute>
+      <EquipmentFeedback />
+    </ProtectedRoute>
+  }
+/>
+
 
           <Route
   path="/equipment/add"

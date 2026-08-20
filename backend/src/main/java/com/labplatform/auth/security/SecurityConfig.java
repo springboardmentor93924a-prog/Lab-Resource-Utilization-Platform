@@ -51,14 +51,35 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**")
                         .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN")
 
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/equipment/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/api/equipment/**"
+                        )
+                        .hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER"
+                        )
 
-                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/equipment/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN", "LAB_MANAGER", "DEPARTMENT_HEAD")
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.PUT,
+                                "/api/equipment/**"
+                        )
+                        .hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER"
+                        )
 
-                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/equipment/**")
-                        .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN", "LAB_MANAGER", "DEPARTMENT_HEAD")
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.DELETE,
+                                "/api/equipment/**"
+                        )
+                        .hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER"
+                        )
 
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/bookings")
                         .hasAnyRole("INSTITUTION_ADMIN", "SYSTEM_ADMIN","LAB_MANAGER", "DEPARTMENT_HEAD")
@@ -111,7 +132,16 @@ public class SecurityConfig {
                                 "LAB_MANAGER",
                                 "DEPARTMENT_HEAD"
                         )
-
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/bookings/reports/**"
+                        )
+                        .hasAnyRole(
+                                "INSTITUTION_ADMIN",
+                                "SYSTEM_ADMIN",
+                                "LAB_MANAGER",
+                                "DEPARTMENT_HEAD"
+                        )
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

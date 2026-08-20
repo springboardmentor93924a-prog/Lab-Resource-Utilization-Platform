@@ -1,4 +1,10 @@
 package com.labplatform.booking.controller;
+import com.labplatform.equipment.dto.DepartmentUsageReportRow;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.labplatform.booking.dto.BookingRequest;
 import com.labplatform.booking.dto.BookingResponse;
@@ -16,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+
 import java.util.UUID;
 
 @RestController
@@ -56,6 +62,19 @@ public class BookingController {
     @GetMapping("/equipment/{equipmentId}")
     public ResponseEntity<List<BookingResponse>> getBookingsByEquipment(@PathVariable Long equipmentId) {
         return ResponseEntity.ok(bookingService.getBookingsByEquipment(equipmentId));
+    }
+    @GetMapping("/reports/department-usage")
+    public ResponseEntity<List<DepartmentUsageReportRow>>
+    getDepartmentUsageReport(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+
+        return ResponseEntity.ok(
+                bookingService.generateDepartmentUsageReport(
+                        from,
+                        to
+                )
+        );
     }
 
     @PutMapping("/{id}/cancel")

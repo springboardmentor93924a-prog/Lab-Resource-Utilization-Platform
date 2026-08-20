@@ -7,7 +7,7 @@ import {
   deleteEquipment,
 } from "../services/equipmentService";
 import { getBookingsByEquipment } from "../services/bookingService";
-import { isAdmin } from "../utils/auth";
+import { canManageEquipment } from "../utils/auth";
 import { downloadFileAsBlob } from "../services/fileService";
 
 export default function EquipmentDetail() {
@@ -19,7 +19,7 @@ export default function EquipmentDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const userIsAdmin = isAdmin();
+  const userCanManageEquipment = canManageEquipment();
 
   // ================= FETCH EQUIPMENT =================
 
@@ -436,26 +436,27 @@ const specs = [
 
             {/* ADMIN ACTIONS */}
 
-            {userIsAdmin && (
-              <>
+            {/* EQUIPMENT MANAGEMENT ACTIONS */}
 
-                <button
-                  className="btn btn-outline-dark"
-                  onClick={handleEdit}
-                >
-                  Edit
-                </button>
+{userCanManageEquipment && (
+  <>
 
-                <button
-                  className="btn btn-outline-dark"
-                  onClick={handleDelete}
-                >
-                  Delete
-                </button>
+    <button
+      className="btn btn-outline-dark"
+      onClick={handleEdit}
+    >
+      Edit
+    </button>
 
-              </>
-            )}
+    <button
+      className="btn btn-outline-dark"
+      onClick={handleDelete}
+    >
+      Delete
+    </button>
 
+  </>
+)}
           </div>
 
         </div>
