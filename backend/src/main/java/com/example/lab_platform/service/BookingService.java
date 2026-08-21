@@ -24,4 +24,13 @@ public interface BookingService {
     Booking completeBooking(Integer id);
 
     void autoCompleteOverdueBookings();
+
+    /*
+     * Runs the full waitlist cascade for one equipment: every active
+     * (WAITING/NOTIFIED) entry, priority ones first then earliest
+     * requested time, each attempted for auto-allocation against its
+     * own requested window. Called when a booking frees the equipment
+     * AND when an equipment-feedback URGENT report gets resolved.
+     */
+    void processWaitlistForEquipment(Integer equipmentId);
 }

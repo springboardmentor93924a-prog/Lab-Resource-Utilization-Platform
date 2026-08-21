@@ -41,4 +41,23 @@ List<Booking> findByUser_UserId(Integer userId);
             @Param("endTime")
             LocalDateTime endTime
     );
+
+    /*
+     * Users with a Pending Approval or Confirmed booking on this
+     * equipment — the set that gets auto-added to the priority
+     * waitlist when an URGENT feedback report comes in against it.
+     * Deliberately not time-window-filtered: any live claim on the
+     * equipment counts, since the report affects the whole asset,
+     * not just one slot.
+     */
+    @Query("""
+        SELECT b
+        FROM Booking b
+        WHERE b.equipment.equipmentId = :equipmentId
+        AND LOWER(b.bookingStatus) IN ('pending approval', 'confirmed')
+        """)
+    List<Booking> findActiveBookingsForEquipment(
+            @Param("equipmentId")
+            Integer equipmentId
+    );
 }

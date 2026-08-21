@@ -26,5 +26,27 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Integer> {
         java.time.LocalDateTime requestedStartTime,
         java.time.LocalDateTime requestedEndTime,
         java.util.List<String> statuses
-);
+    );
+
+    // Used to dedupe when auto-adding a displaced booking-holder: skip
+    // if they already have an active (WAITING/NOTIFIED) entry for this
+    // equipment, regardless of exact time window.
+    boolean existsByUser_UserIdAndEquipment_EquipmentIdAndWaitlistStatusIn(
+        Integer userId,
+        Integer equipmentId,
+        java.util.List<String> statuses
+    );
+
+    // The cascade-processing order: priority entries (displaced booking
+    // holders) first, then earliest queueDate within each group — for a
+    // priority entry that's the original booking's bookingDate (system
+    // date they reserved, not their requested usage start time); for an
+    // ordinary entry it's the date they joined the waitlist. createdAt
+    // breaks ties on the same date. Used both when equipment frees up
+    // (booking rejected/completed) and when an urgent feedback report
+    // or a calibration is resolved/completed.
+    List<Waitlist> findByEquipment_EquipmentIdAndWaitlistStatusInOrderByIsPriorityDescQueueDateAscCreatedAtAsc(
+        Integer equipmentId,
+        java.util.List<String> statuses
+    );
 }

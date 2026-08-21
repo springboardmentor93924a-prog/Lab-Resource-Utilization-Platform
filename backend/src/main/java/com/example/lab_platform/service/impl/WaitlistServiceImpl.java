@@ -10,6 +10,7 @@ import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.repository.EquipmentFeedbackRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -26,15 +27,18 @@ public class WaitlistServiceImpl implements WaitlistService {
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;
     private final MaintenanceRepository maintenanceRepository;
+    private final EquipmentFeedbackRepository equipmentFeedbackRepository;
 
     public WaitlistServiceImpl(WaitlistRepository waitlistRepository,
                                 EquipmentRepository equipmentRepository,
                                 BookingRepository bookingRepository,
-                                MaintenanceRepository maintenanceRepository) {
+                                MaintenanceRepository maintenanceRepository,
+                                EquipmentFeedbackRepository equipmentFeedbackRepository) {
         this.waitlistRepository = waitlistRepository;
         this.equipmentRepository = equipmentRepository;
         this.bookingRepository = bookingRepository;
         this.maintenanceRepository = maintenanceRepository;
+        this.equipmentFeedbackRepository = equipmentFeedbackRepository;
     }
 private String getRole(User user) {
     return user.getRole().getRoleName();
@@ -102,8 +106,14 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
             waitlist.getRequestedEndTime()
     );
 
+    boolean hasUrgentUnresolvedIssue =
+            equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
+                    equipmentId, "URGENT", "RESOLVED"
+            );
+
     boolean unavailable = !overlapping.isEmpty()
             || underMaintenance
+            || hasUrgentUnresolvedIssue
             || !"Available".equalsIgnoreCase(equipment.getStatus());
 
     if (!unavailable) {
@@ -131,6 +141,7 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
     }
 
     waitlist.setWaitlistStatus("WAITING");
+    waitlist.setQueueDate(LocalDate.now());
     return waitlistRepository.save(waitlist);
 }
 
@@ -168,7 +179,17 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
                     waitlist.getRequestedEndTime()
             );
 
-            if (overlapping.isEmpty() && !underMaintenance) {
+            /*
+             * Same live urgent-feedback check as BookingServiceImpl.
+             * A candidate substitute with an unresolved URGENT report
+             * must never be silently auto-assigned.
+             */
+            boolean hasUrgentUnresolvedIssue =
+                    equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
+                            candidate.getEquipmentId(), "URGENT", "RESOLVED"
+                    );
+
+            if (overlapping.isEmpty() && !underMaintenance && !hasUrgentUnresolvedIssue) {
                 return candidate;
             }
         }
