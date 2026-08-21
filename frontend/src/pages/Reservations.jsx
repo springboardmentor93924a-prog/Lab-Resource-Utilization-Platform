@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 function Reservations() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-
+const [sharingBlock, setSharingBlock] = useState(null); // will hold the equipmentId, or null
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -137,9 +137,51 @@ function Reservations() {
       resetForm();
       fetchBookings();
     } catch (error) {
-      alert(error.message);
-    }
+  if (error.message.includes("not shared with yours")) {
+    setSharingBlock(formData.equipmentId);
+  } else {
+    alert(error.message);
+  }
+}
   };
+
+  const handleRequestAccess = async () => {
+  const item = equipmentList.find(
+    (eq) => eq.equipmentId === Number(sharingBlock)
+  );
+
+  if (!item?.institution?.institutionId) {
+    alert("Could not determine this equipment's institution.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://localhost:8080/api/resource-sharing/requests",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          equipment: { equipmentId: Number(sharingBlock) },
+          senderInstitution: { institutionId: item.institution.institutionId },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || "Failed to request access");
+    }
+
+    alert("Access request submitted. You'll be able to book once your institution approves it.");
+    setSharingBlock(null);
+  } catch (error) {
+    alert(error.message);
+  }
+};
 
   const handleEdit = (booking) => {
     setEditingId(booking.bookingId);
@@ -305,7 +347,28 @@ function Reservations() {
               );
             })}
           </select>
-
+{sharingBlock && (
+  <div
+    style={{
+      marginTop: "10px",
+      padding: "10px",
+      background: "#fff3cd",
+      border: "1px solid #ffeeba",
+      borderRadius: "4px",
+    }}
+  >
+    <p style={{ margin: "0 0 8px 0" }}>
+      This equipment isn't shared with your institution yet.
+    </p>
+    <button
+      type="button"
+      onClick={handleRequestAccess}
+      style={smallButtonStyle}
+    >
+      Request Access
+    </button>
+  </div>
+)}
           <input
             type="date"
             value={new Date().toISOString().slice(0, 10)}
