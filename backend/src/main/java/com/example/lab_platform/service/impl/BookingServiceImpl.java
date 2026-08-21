@@ -4,6 +4,7 @@ import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.BookingRepository;
+import com.example.lab_platform.repository.EquipmentFeedbackRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.entity.Waitlist;
@@ -11,6 +12,7 @@ import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.ResourceSharingRepository;
+import com.example.lab_platform.service.NotificationService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,50 +30,109 @@ public class BookingServiceImpl implements BookingService {
     private final WaitlistRepository waitlistRepository;
     private final MaintenanceRepository maintenanceRepository;
     private final ResourceSharingRepository resourceSharingRepository;
+    private final EquipmentFeedbackRepository equipmentFeedbackRepository;
+    private final NotificationService notificationService;
 
-    public BookingServiceImpl(
-            BookingRepository bookingRepository,
-            EquipmentRepository equipmentRepository,
-            WaitlistRepository waitlistRepository,
-            MaintenanceRepository maintenanceRepository,
-            ResourceSharingRepository resourceSharingRepository) {
+public BookingServiceImpl(
+        BookingRepository bookingRepository,
+        EquipmentRepository equipmentRepository,
+        WaitlistRepository waitlistRepository,
+        MaintenanceRepository maintenanceRepository,
+        ResourceSharingRepository resourceSharingRepository,
+        EquipmentFeedbackRepository equipmentFeedbackRepository,
+        NotificationService notificationService) {
 
-        this.bookingRepository = bookingRepository;
-        this.equipmentRepository = equipmentRepository;
-        this.waitlistRepository = waitlistRepository;
-        this.maintenanceRepository = maintenanceRepository;
-        this.resourceSharingRepository = resourceSharingRepository;
+    this.bookingRepository = bookingRepository;
+    this.equipmentRepository = equipmentRepository;
+    this.waitlistRepository = waitlistRepository;
+    this.maintenanceRepository = maintenanceRepository;
+    this.resourceSharingRepository = resourceSharingRepository;
+    this.equipmentFeedbackRepository = equipmentFeedbackRepository;
+    this.notificationService = notificationService;
+}
+    
+    /*
+     * Thin wrapper kept so the existing call sites (rejectBooking,
+     * completeBooking, autoCompleteOverdueBookings) don't need to
+     * change — delegates to the full cascade below instead of only
+     * ever looking at a single entry.
+     */
+    private void notifyNextWaitlistedUser(Equipment equipment) {
+        if (equipment == null) {
+            return;
+        }
+        processWaitlistForEquipment(equipment.getEquipmentId());
     }
 
-    private void notifyNextWaitlistedUser(Equipment equipment) {
+    /*
+     * Runs the full waitlist cascade for one equipment: every active
+     * (WAITING/NOTIFIED) entry is considered, priority entries
+     * (displaced booking-holders from an urgent-report auto-add)
+     * first, then earliest requested start time within each group.
+     * Each entry is tried independently against its OWN requested
+     * window — different entries can have non-overlapping windows
+     * and all get fulfilled in the same pass, since this isn't a
+     * single-slot lock, it's per-entry availability.
+     *
+     * This is also the fix for the old single-shot bug: previously
+     * only the single oldest WAITING entry was ever looked at, and if
+     * it couldn't be allocated the entry was marked NOTIFIED with no
+     * real notification sent and no fallback to the next person in
+     * line — the whole waitlist for that equipment silently stalled.
+     * Now every active entry is walked in order every time this runs
+     * — if entry #1 can't be fitted, #2, #3, etc. still get their
+     * shot in the same pass. Nobody blocks anybody behind them.
+     */
+    @Override
+    public void processWaitlistForEquipment(Integer equipmentId) {
+
+        if (equipmentId == null) {
+            return;
+        }
+
+        Equipment equipment =
+                equipmentRepository.findById(equipmentId).orElse(null);
 
         if (equipment == null) {
             return;
         }
 
-        List<Waitlist> waitingEntries =
+        List<Waitlist> activeEntries =
                 waitlistRepository
-                        .findByEquipment_EquipmentIdAndWaitlistStatusOrderByCreatedAtAsc(
-                                equipment.getEquipmentId(),
-                                "WAITING"
+                        .findByEquipment_EquipmentIdAndWaitlistStatusInOrderByIsPriorityDescQueueDateAscCreatedAtAsc(
+                                equipmentId,
+                                List.of("WAITING", "NOTIFIED")
                         );
 
-        if (waitingEntries.isEmpty()) {
-            return;
+        for (Waitlist entry : activeEntries) {
+
+            boolean allocated = tryAutoAllocate(entry, equipment);
+
+            if (allocated) {
+
+                entry.setWaitlistStatus("FULFILLED");
+                waitlistRepository.save(entry);
+
+                notificationService.create(
+                        entry.getUser(),
+                        "WAITLIST_FULFILLED",
+                        "Your waitlisted slot is booked",
+                        "Your requested slot for " + equipment.getEquipmentName()
+                                + " is now confirmed.",
+                        equipment.getEquipmentId()
+                );
+
+            } else if (!"NOTIFIED".equals(entry.getWaitlistStatus())) {
+
+                // Checked and couldn't be allocated right now — stays
+                // in the queue and gets reconsidered next time this
+                // equipment frees up or an urgent issue/calibration on
+                // it resolves. The loop keeps going to the next entry
+                // regardless of this outcome.
+                entry.setWaitlistStatus("NOTIFIED");
+                waitlistRepository.save(entry);
+            }
         }
-
-        Waitlist nextInLine = waitingEntries.get(0);
-
-        boolean allocated =
-                tryAutoAllocate(nextInLine, equipment);
-
-        if (allocated) {
-            nextInLine.setWaitlistStatus("FULFILLED");
-        } else {
-            nextInLine.setWaitlistStatus("NOTIFIED");
-        }
-
-        waitlistRepository.save(nextInLine);
     }
 
     private boolean tryAutoAllocate(
@@ -113,11 +174,39 @@ public class BookingServiceImpl implements BookingService {
             return false;
         }
 
+        /*
+         * Same live urgent-feedback check as createBooking()/
+         * approveBooking(). Without this, a waitlisted student could
+         * get silently auto-booked onto equipment that still has an
+         * unresolved URGENT report, with no error shown to anyone
+         * since this path never goes through createBooking().
+         */
+        if (equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
+                equipment.getEquipmentId(), "URGENT", "RESOLVED")) {
+
+            return false;
+        }
+
         Booking autoBooking = new Booking();
 
         autoBooking.setUser(entry.getUser());
         autoBooking.setEquipment(equipment);
-        autoBooking.setBookingDate(start.toLocalDate());
+        /*
+         * bookingDate is the system date the user actually SUBMITTED
+         * their request — for a waitlist entry that's the date they
+         * joined the waitlist (or, for a priority entry auto-added
+         * from a displaced booking, that original booking's own
+         * bookingDate), which is exactly what Waitlist.queueDate
+         * already holds. It is NOT the date this cascade happens to
+         * run (that could be days later) and NOT the requested usage
+         * start date. Falls back to today only in the defensive case
+         * queueDate was somehow never set.
+         */
+        autoBooking.setBookingDate(
+                entry.getQueueDate() != null
+                        ? entry.getQueueDate()
+                        : java.time.LocalDate.now()
+        );
         autoBooking.setStartTime(start);
         autoBooking.setEndTime(end);
         autoBooking.setPurpose("Auto-allocated from waitlist");
@@ -226,24 +315,39 @@ public class BookingServiceImpl implements BookingService {
         /*
          * Hard block on equipment that is not currently bookable at
          * all, regardless of what the time-window maintenance check
-         * below finds. This is the check that was missing — a piece
-         * of equipment already flagged Under Maintenance / Out of
-         * Service / Retired must never be bookable, independent of
-         * whether a dated Maintenance record happens to overlap the
-         * requested slot.
+         * below finds. Covers Under Maintenance / Out of Service /
+         * Retired / In Calibration — independent of whether a dated
+         * Maintenance record happens to overlap the requested slot.
          */
         String currentEquipmentStatus = fullEquipment.getStatus();
 
         if (currentEquipmentStatus != null
                 && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
                 || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
-                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+                || currentEquipmentStatus.equalsIgnoreCase("Retired")
+                || currentEquipmentStatus.equalsIgnoreCase("In Calibration"))) {
 
             throw new RuntimeException(
                     "This equipment is currently " + currentEquipmentStatus
                             + " and cannot be booked."
             );
         }
+
+        /*
+* Live check — never a cached flag on Equipment. If there's an
+* unresolved URGENT feedback report against this equipment, block
+* booking immediately, evaluated fresh on every attempt.
+*/
+boolean hasUrgentUnresolvedIssue =
+        equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
+                fullEquipment.getEquipmentId(), "URGENT", "RESOLVED"
+        );
+
+if (hasUrgentUnresolvedIssue) {
+    throw new RuntimeException(
+            "This equipment has an unresolved urgent issue reported and cannot be booked until it is resolved."
+    );
+}
 
         /*
          * Inter-institution access control: if the equipment belongs
@@ -524,15 +628,16 @@ public Booking updateBooking(
      * Same hard block as createBooking()/approveBooking(): this was
      * missing here entirely, so a student could edit a Pending
      * Approval booking onto equipment that had since been marked
-     * Under Maintenance / Out of Service / Retired and slip past the
-     * check that blocks it everywhere else.
+     * Under Maintenance / Out of Service / Retired / In Calibration
+     * and slip past the check that blocks it everywhere else.
      */
     String currentEquipmentStatus = fullEquipment.getStatus();
 
     if (currentEquipmentStatus != null
             && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
             || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
-            || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+            || currentEquipmentStatus.equalsIgnoreCase("Retired")
+            || currentEquipmentStatus.equalsIgnoreCase("In Calibration"))) {
 
         throw new RuntimeException(
                 "This equipment is currently " + currentEquipmentStatus
@@ -713,19 +818,37 @@ public void deleteBooking(Integer id) {
         /*
          * Same hard block as createBooking(): equipment status may
          * have changed to Under Maintenance / Out of Service /
-         * Retired between when the student submitted this request
-         * and now, so re-check it at approval time too.
+         * Retired / In Calibration between when the student submitted
+         * this request and now, so re-check it at approval time too.
          */
         String currentEquipmentStatus = equipment.getStatus();
 
         if (currentEquipmentStatus != null
                 && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
                 || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
-                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+                || currentEquipmentStatus.equalsIgnoreCase("Retired")
+                || currentEquipmentStatus.equalsIgnoreCase("In Calibration"))) {
 
             throw new RuntimeException(
                     "This equipment is currently " + currentEquipmentStatus
                             + " and cannot be approved for booking."
+            );
+        }
+
+        /*
+         * Same live urgent-feedback check as createBooking(): a
+         * booking can be submitted before an urgent report comes in
+         * and still be sitting Pending Approval, so this must be
+         * re-checked here too, not just at submission time.
+         */
+        boolean hasUrgentUnresolvedIssueAtApproval =
+                equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
+                        equipmentId, "URGENT", "RESOLVED"
+                );
+
+        if (hasUrgentUnresolvedIssueAtApproval) {
+            throw new RuntimeException(
+                    "This equipment has an unresolved urgent issue reported and cannot be approved for booking."
             );
         }
 

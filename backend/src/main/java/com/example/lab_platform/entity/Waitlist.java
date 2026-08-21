@@ -1,6 +1,7 @@
 package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,6 +30,30 @@ public class Waitlist {
     @Column(name = "waitlist_status", length = 20)
     private String waitlistStatus = "WAITING"; // WAITING, NOTIFIED, FULFILLED, CANCELLED
 
+    /*
+     * True only for entries auto-created because the user already had
+     * a Pending Approval or Confirmed booking on equipment that got an
+     * unresolved URGENT feedback report filed against it. These users
+     * had already secured a slot before anyone else joined the waitlist
+     * on their own, so they're served ahead of ordinary entries once
+     * the issue is resolved. Ordinary joinWaitlist() entries always
+     * default to false.
+     */
+    @Column(name = "is_priority", nullable = false)
+    private Boolean isPriority = false;
+
+    /*
+     * The ordering key for the queue. For a priority entry (auto-added
+     * from a displaced Pending Approval / Confirmed booking) this is
+     * that booking's bookingDate — the system date the user actually
+     * made the reservation, NOT the requested usage start time. For an
+     * ordinary entry (joined the waitlist on their own) this is simply
+     * the date they joined. Either way it answers the same question:
+     * "when did this user establish their claim in line?"
+     */
+    @Column(name = "queue_date")
+    private LocalDate queueDate;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -53,6 +78,12 @@ public class Waitlist {
 
     public String getWaitlistStatus() { return waitlistStatus; }
     public void setWaitlistStatus(String waitlistStatus) { this.waitlistStatus = waitlistStatus; }
+
+    public Boolean getIsPriority() { return isPriority; }
+    public void setIsPriority(Boolean isPriority) { this.isPriority = isPriority; }
+
+    public LocalDate getQueueDate() { return queueDate; }
+    public void setQueueDate(LocalDate queueDate) { this.queueDate = queueDate; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
