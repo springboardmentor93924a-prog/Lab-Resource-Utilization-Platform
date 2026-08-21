@@ -25,7 +25,7 @@ public class ResourceSharingController {
         return resourceSharingService.getAllRequests();
     }
 
-    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     @PostMapping("/requests")
     public ResponseEntity<ResourceSharingRequest> createRequest(@RequestBody ResourceSharingRequest request) {
         return ResponseEntity.ok(resourceSharingService.createRequest(request));
