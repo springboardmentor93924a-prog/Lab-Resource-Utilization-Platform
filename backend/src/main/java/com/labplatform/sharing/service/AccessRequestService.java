@@ -7,6 +7,7 @@ import com.labplatform.equipment.repository.EquipmentRepository;
 import com.labplatform.notification.service.NotificationService;
 import com.labplatform.sharing.dto.AccessRequestCreateRequest;
 import com.labplatform.sharing.dto.AccessRequestResponse;
+import com.labplatform.sharing.dto.InterInstitutionSharingReportRow;
 import com.labplatform.sharing.model.AccessRequest;
 import com.labplatform.sharing.model.AccessRequestStatus;
 import com.labplatform.sharing.model.EquipmentAccessGrant;
@@ -17,8 +18,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +50,7 @@ public class AccessRequestService {
     }
 
     private User resolveCurrentUser(String email) {
+
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
@@ -53,7 +59,9 @@ public class AccessRequestService {
 
     private boolean isAdmin(User user) {
 
-        if (user.getRole() == null || user.getRole().getName() == null) {
+        if (user.getRole() == null
+                || user.getRole().getName() == null) {
+
             return false;
         }
 
@@ -77,15 +85,18 @@ public class AccessRequestService {
 
         User currentUser = resolveCurrentUser(requesterEmail);
 
-        Equipment equipment = equipmentRepository.findById(request.getEquipmentId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Equipment not found with id: " + request.getEquipmentId()));
+        Equipment equipment =
+                equipmentRepository.findById(request.getEquipmentId())
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Equipment not found with id: "
+                                        + request.getEquipmentId()));
 
         /*
          * Make sure the equipment actually has an owning institution.
          */
         if (equipment.getInstitution() == null) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "This equipment has no owning institution assigned");
@@ -96,7 +107,8 @@ public class AccessRequestService {
          * their own institution.
          */
         if (currentUser.getInstitution() != null
-                && currentUser.getInstitution().getId()
+                && currentUser.getInstitution()
+                .getId()
                 .equals(equipment.getInstitution().getId())) {
 
             throw new ResponseStatusException(
@@ -108,11 +120,13 @@ public class AccessRequestService {
          * Check whether access has already been granted.
          */
         boolean alreadyGranted =
-                grantRepository.existsByUserIdAndEquipmentIdAndRevokedFalse(
-                        currentUser.getId(),
-                        equipment.getId());
+                grantRepository
+                        .existsByUserIdAndEquipmentIdAndRevokedFalse(
+                                currentUser.getId(),
+                                equipment.getId());
 
         if (alreadyGranted) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "You already have access to this equipment");
@@ -129,6 +143,7 @@ public class AccessRequestService {
                                 AccessRequestStatus.PENDING);
 
         if (alreadyPending) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "You already have a pending request for this equipment");
@@ -141,7 +156,8 @@ public class AccessRequestService {
 
         accessRequest.setRequestingUser(currentUser);
         accessRequest.setEquipment(equipment);
-        accessRequest.setOwningInstitution(equipment.getInstitution());
+        accessRequest.setOwningInstitution(
+                equipment.getInstitution());
         accessRequest.setReason(request.getReason());
         accessRequest.setStatus(AccessRequestStatus.PENDING);
 
@@ -149,17 +165,7 @@ public class AccessRequestService {
                 accessRequestRepository.save(accessRequest);
 
         /*
-         * ---------------------------------------------------------
-         * NOTIFICATION TO OWNING INSTITUTION
-         * ---------------------------------------------------------
-         *
-         * Example:
-         *
-         * Sahyadri Researcher
-         *       ↓
-         * requests IIT equipment
-         *       ↓
-         * IIT Admin gets notification
+         * Notify administrators of the owning institution.
          */
         notifyInstitutionAdminsAboutNewRequest(saved);
 
@@ -183,7 +189,8 @@ public class AccessRequestService {
         List<User> institutionUsers =
                 userRepository.findAll()
                         .stream()
-                        .filter(user -> user.getInstitution() != null)
+                        .filter(user ->
+                                user.getInstitution() != null)
                         .filter(user ->
                                 user.getInstitution()
                                         .getId()
@@ -192,10 +199,12 @@ public class AccessRequestService {
                         .collect(Collectors.toList());
 
         String requesterName =
-                accessRequest.getRequestingUser().getFullName();
+                accessRequest.getRequestingUser()
+                        .getFullName();
 
         String equipmentName =
-                accessRequest.getEquipment().getEquipmentName();
+                accessRequest.getEquipment()
+                        .getEquipmentName();
 
         String message =
                 requesterName
@@ -213,18 +222,22 @@ public class AccessRequestService {
         }
     }
 
-    public List<AccessRequestResponse> getPendingRequestsForMyInstitution(
+    public List<AccessRequestResponse>
+    getPendingRequestsForMyInstitution(
             String requesterEmail) {
 
-        User currentUser = resolveCurrentUser(requesterEmail);
+        User currentUser =
+                resolveCurrentUser(requesterEmail);
 
         if (!isAdmin(currentUser)) {
+
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Only institution admins can view access requests");
         }
 
         if (currentUser.getInstitution() == null) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Your account has no institution assigned");
@@ -239,10 +252,11 @@ public class AccessRequestService {
                 .collect(Collectors.toList());
     }
 
-    public List<AccessRequestResponse> getMyRequests(
-            String requesterEmail) {
+    public List<AccessRequestResponse>
+    getMyRequests(String requesterEmail) {
 
-        User currentUser = resolveCurrentUser(requesterEmail);
+        User currentUser =
+                resolveCurrentUser(requesterEmail);
 
         return accessRequestRepository
                 .findByRequestingUserId(currentUser.getId())
@@ -258,7 +272,8 @@ public class AccessRequestService {
             Integer requestId,
             String reviewerEmail) {
 
-        User reviewer = resolveCurrentUser(reviewerEmail);
+        User reviewer =
+                resolveCurrentUser(reviewerEmail);
 
         AccessRequest accessRequest =
                 findRequestOrThrow(requestId);
@@ -317,9 +332,7 @@ public class AccessRequestService {
         grantRepository.save(grant);
 
         /*
-         * ---------------------------------------------------------
-         * NOTIFY REQUESTING USER
-         * ---------------------------------------------------------
+         * Notify requesting user.
          */
         String equipmentName =
                 accessRequest
@@ -354,7 +367,8 @@ public class AccessRequestService {
             Integer requestId,
             String reviewerEmail) {
 
-        User reviewer = resolveCurrentUser(reviewerEmail);
+        User reviewer =
+                resolveCurrentUser(reviewerEmail);
 
         AccessRequest accessRequest =
                 findRequestOrThrow(requestId);
@@ -386,9 +400,7 @@ public class AccessRequestService {
                 accessRequestRepository.save(accessRequest);
 
         /*
-         * ---------------------------------------------------------
-         * NOTIFY REQUESTING USER
-         * ---------------------------------------------------------
+         * Notify requesting user.
          */
         String equipmentName =
                 accessRequest
@@ -421,6 +433,7 @@ public class AccessRequestService {
             User reviewer) {
 
         if (!isAdmin(reviewer)) {
+
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Only institution admins can review access requests");
@@ -472,5 +485,183 @@ public class AccessRequestService {
                                 HttpStatus.NOT_FOUND,
                                 "Access request not found with id: "
                                         + id));
+    }
+
+    // =========================================================
+    // INTER-INSTITUTION SHARING REPORT
+    // =========================================================
+
+    public List<InterInstitutionSharingReportRow>
+    generateInterInstitutionSharingReport(
+            LocalDate from,
+            LocalDate to) {
+
+        LocalDateTime start =
+                from.atStartOfDay();
+
+        LocalDateTime end =
+                to.plusDays(1)
+                        .atStartOfDay()
+                        .minusNanos(1);
+
+        List<AccessRequest> requests =
+                accessRequestRepository
+                        .findByCreatedAtBetween(
+                                start,
+                                end);
+
+        /*
+         * Group requests by:
+         *
+         * Requesting Institution
+         * +
+         * Owning Institution
+         */
+        Map<String, List<AccessRequest>> grouped =
+                requests.stream()
+
+                        // Request must have a user.
+                        .filter(request ->
+                                request.getRequestingUser() != null)
+
+                        // User must have an institution.
+                        .filter(request ->
+                                request.getRequestingUser()
+                                        .getInstitution() != null)
+
+                        // Equipment must have an owning institution.
+                        .filter(request ->
+                                request.getOwningInstitution() != null)
+
+                        /*
+                         * Ignore requests where both institutions
+                         * are the same.
+                         */
+                        .filter(request ->
+                                !request.getRequestingUser()
+                                        .getInstitution()
+                                        .getId()
+                                        .equals(
+                                                request.getOwningInstitution()
+                                                        .getId()))
+
+                        .collect(
+                                java.util.stream.Collectors.groupingBy(
+
+                                        request -> {
+
+                                            Integer requestingInstitutionId =
+                                                    request
+                                                            .getRequestingUser()
+                                                            .getInstitution()
+                                                            .getId();
+
+                                            Integer owningInstitutionId =
+                                                    request
+                                                            .getOwningInstitution()
+                                                            .getId();
+
+                                            return requestingInstitutionId
+                                                    + "-"
+                                                    + owningInstitutionId;
+                                        },
+
+                                        LinkedHashMap::new,
+
+                                        java.util.stream.Collectors.toList()
+                                )
+                        );
+
+        List<InterInstitutionSharingReportRow> report =
+                new java.util.ArrayList<>();
+
+        for (List<AccessRequest> group :
+                grouped.values()) {
+
+            if (group.isEmpty()) {
+                continue;
+            }
+
+            AccessRequest first =
+                    group.get(0);
+
+            Integer requestingInstitutionId =
+                    first
+                            .getRequestingUser()
+                            .getInstitution()
+                            .getId();
+
+            String requestingInstitutionName =
+                    first
+                            .getRequestingUser()
+                            .getInstitution()
+                            .getName();
+
+            Integer owningInstitutionId =
+                    first
+                            .getOwningInstitution()
+                            .getId();
+
+            String owningInstitutionName =
+                    first
+                            .getOwningInstitution()
+                            .getName();
+
+            long totalRequests =
+                    group.size();
+
+            long approvedRequests =
+                    group.stream()
+                            .filter(request ->
+                                    request.getStatus()
+                                            == AccessRequestStatus.APPROVED)
+                            .count();
+
+            long rejectedRequests =
+                    group.stream()
+                            .filter(request ->
+                                    request.getStatus()
+                                            == AccessRequestStatus.REJECTED)
+                            .count();
+
+            long pendingRequests =
+                    group.stream()
+                            .filter(request ->
+                                    request.getStatus()
+                                            == AccessRequestStatus.PENDING)
+                            .count();
+
+            long sharedEquipment =
+                    group.stream()
+                            .filter(request ->
+                                    request.getStatus()
+                                            == AccessRequestStatus.APPROVED)
+
+                            .map(request ->
+                                    request.getEquipment()
+                                            .getId())
+
+                            .filter(Objects::nonNull)
+
+                            .distinct()
+
+                            .count();
+
+            report.add(
+                    new InterInstitutionSharingReportRow(
+                            requestingInstitutionId,
+                            requestingInstitutionName,
+                            owningInstitutionId,
+                            owningInstitutionName,
+                            totalRequests,
+                            approvedRequests,
+                            rejectedRequests,
+                            pendingRequests,
+                            sharedEquipment
+                    )
+            );
+        }
+
+        return report;
     }
 }

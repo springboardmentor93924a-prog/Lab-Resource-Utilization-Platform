@@ -6,6 +6,10 @@ import com.labplatform.maintenance.dto.WorkOrderCompleteRequest;
 import com.labplatform.maintenance.dto.WorkOrderResponse;
 import com.labplatform.maintenance.service.WorkOrderService;
 
+import com.labplatform.maintenance.dto.MaintenanceDowntimeReportRow;
+import java.time.LocalDate;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -69,6 +73,19 @@ public class WorkOrderController {
                 workOrderService
                         .getWorkOrdersByEquipment(
                                 equipmentId));
+    }
+    @GetMapping("/reports/maintenance-downtime")
+    public ResponseEntity<List<MaintenanceDowntimeReportRow>>
+    getMaintenanceDowntimeReport(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+
+        return ResponseEntity.ok(
+                workOrderService.generateMaintenanceDowntimeReport(
+                        from,
+                        to
+                )
+        );
     }
 
     @PutMapping("/{id}/assign")

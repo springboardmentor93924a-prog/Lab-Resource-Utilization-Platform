@@ -21,7 +21,7 @@ import MyTasks from "./pages/MyTasks";
 import Maintenance from "./pages/Maintenance";
 import Billing from "./pages/Billing";
 import Analytics from "./pages/Analytics";
-import Reports from "./pages/Reports";
+import Reports from "./pages/Report";
 import Notifications from "./pages/Notifications";
 import OAuth2Callback from "./OAuth2Callback";
 import GoogleRegister from "./pages/GoogleRegister";

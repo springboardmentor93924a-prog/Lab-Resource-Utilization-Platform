@@ -9,9 +9,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -42,6 +44,24 @@ export async function approveAccessRequest(id) {
 
 export async function rejectAccessRequest(id) {
   const { data } = await api.put(`/access-requests/${id}/reject`);
+  return data;
+}
+
+// =========================================================
+// INTER-INSTITUTION SHARING REPORT
+// =========================================================
+
+export async function getInterInstitutionSharingReport(from, to) {
+  const { data } = await api.get(
+    "/access-requests/reports/inter-institution-sharing",
+    {
+      params: {
+        from,
+        to,
+      },
+    }
+  );
+
   return data;
 }
 

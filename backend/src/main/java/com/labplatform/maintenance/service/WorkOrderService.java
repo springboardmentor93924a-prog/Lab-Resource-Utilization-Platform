@@ -15,11 +15,17 @@ import com.labplatform.maintenance.repository.WorkOrderRepository;
 import com.labplatform.notification.service.NotificationService;
 import com.labplatform.maintenance.dto.WorkOrderCompleteRequest;
 
+import com.labplatform.maintenance.dto.MaintenanceDowntimeReportRow;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -284,6 +290,142 @@ public class WorkOrderService {
                 .stream()
                 .map(WorkOrderResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    public List<MaintenanceDowntimeReportRow>
+    generateMaintenanceDowntimeReport(
+            LocalDate from,
+            LocalDate to) {
+
+        if (from == null || to == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "From and To dates are required");
+        }
+
+        if (from.isAfter(to)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "From date cannot be after To date");
+        }
+
+        LocalDateTime startDateTime =
+                from.atStartOfDay();
+
+        LocalDateTime endDateTime =
+                to.plusDays(1).atStartOfDay();
+
+        List<WorkOrder> workOrders =
+                workOrderRepository.findAll();
+
+        Map<Long, MaintenanceDowntimeReportRow> report =
+                new LinkedHashMap<>();
+
+        for (WorkOrder wo : workOrders) {
+
+            /*
+             * Use the time when maintenance actually started.
+             */
+            LocalDateTime maintenanceStart =
+                    wo.getMaintenanceStartedAt();
+
+            if (maintenanceStart == null) {
+                continue;
+            }
+
+            /*
+             * Only include work orders whose maintenance
+             * started inside the selected date range.
+             */
+            if (maintenanceStart.isBefore(startDateTime)
+                    || !maintenanceStart.isBefore(endDateTime)) {
+                continue;
+            }
+
+            Long equipmentId =
+                    wo.getEquipment().getId();
+
+            String equipmentName =
+                    wo.getEquipment().getEquipmentName();
+
+            /*
+             * Create the row if this equipment
+             * doesn't already exist.
+             */
+            MaintenanceDowntimeReportRow row =
+                    report.get(equipmentId);
+
+            if (row == null) {
+
+                row = new MaintenanceDowntimeReportRow(
+                        equipmentId,
+                        equipmentName,
+                        0L,
+                        0L,
+                        0L,
+                        0L
+                );
+
+                report.put(equipmentId, row);
+            }
+
+            /*
+             * Total work orders
+             */
+            row.setTotalWorkOrders(
+                    row.getTotalWorkOrders() + 1
+            );
+
+            /*
+             * Completed / In Progress counts
+             */
+            if (wo.getStatus() ==
+                    WorkOrderStatus.COMPLETED) {
+
+                row.setCompletedWorkOrders(
+                        row.getCompletedWorkOrders() + 1
+                );
+
+            } else {
+
+                row.setInProgressWorkOrders(
+                        row.getInProgressWorkOrders() + 1
+                );
+            }
+
+            /*
+             * Calculate downtime.
+             *
+             * Completed:
+             * maintenanceStartedAt -> completedAt
+             *
+             * Active:
+             * maintenanceStartedAt -> current time
+             */
+            LocalDateTime endTime;
+
+            if (wo.getCompletedAt() != null) {
+                endTime = wo.getCompletedAt();
+            } else {
+                endTime = LocalDateTime.now();
+            }
+
+            long downtimeMinutes =
+                    Math.max(
+                            0,
+                            Duration.between(
+                                    maintenanceStart,
+                                    endTime
+                            ).toMinutes()
+                    );
+
+            row.setTotalDowntimeMinutes(
+                    row.getTotalDowntimeMinutes()
+                            + downtimeMinutes
+            );
+        }
+
+        return List.copyOf(report.values());
     }
 
     private WorkOrder findOrThrow(Integer id) {

@@ -14,6 +14,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.labplatform.sharing.dto.InterInstitutionSharingReportRow;
+import java.time.LocalDate;
+import org.springframework.web.bind.annotation.RequestParam;
+
+
+
+
 
 import java.util.List;
 
@@ -55,4 +62,20 @@ public class AccessRequestController {
                                                                Authentication authentication) {
         return ResponseEntity.ok(accessRequestService.rejectRequest(id, authentication.getName()));
     }
+
+    @GetMapping("/reports/inter-institution-sharing")
+    public ResponseEntity<List<InterInstitutionSharingReportRow>>
+    getInterInstitutionSharingReport(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+
+        return ResponseEntity.ok(
+                accessRequestService
+                        .generateInterInstitutionSharingReport(
+                                from,
+                                to
+                        )
+        );
+    }
+
 }
