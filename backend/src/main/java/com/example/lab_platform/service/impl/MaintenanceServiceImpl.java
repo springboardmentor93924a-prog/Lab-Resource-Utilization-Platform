@@ -6,6 +6,7 @@ import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.MaintenanceService;
+import com.example.lab_platform.service.BookingService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,14 +20,17 @@ public class MaintenanceServiceImpl implements MaintenanceService {
  
     private final MaintenanceRepository maintenanceRepository;
     private final EquipmentRepository equipmentRepository;
+    private final BookingService bookingService;
  
  
     public MaintenanceServiceImpl(
             MaintenanceRepository maintenanceRepository,
-            EquipmentRepository equipmentRepository) {
+            EquipmentRepository equipmentRepository,
+            BookingService bookingService) {
  
         this.maintenanceRepository = maintenanceRepository;
         this.equipmentRepository = equipmentRepository;
+        this.bookingService = bookingService;
     }
  
  
@@ -152,6 +156,20 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         if (!stillBlocked) {
             equipment.setStatus("Available");
             equipmentRepository.save(equipment);
+
+            /*
+             * This call was missing entirely before: equipment coming
+             * off maintenance never re-ran the waitlist cascade, so
+             * anyone WAITING/NOTIFIED for it just sat there until some
+             * unrelated event (a different booking freeing up, etc.)
+             * happened to trigger processWaitlistForEquipment. Now the
+             * whole active queue for this equipment (priority entries
+             * first, then earliest queueDate) is walked and each entry
+             * tried against its own requested window — same cascade
+             * used by BookingServiceImpl/EquipmentFeedbackServiceImpl/
+             * CalibrationServiceImpl.
+             */
+            bookingService.processWaitlistForEquipment(equipment.getEquipmentId());
         }
     }
 

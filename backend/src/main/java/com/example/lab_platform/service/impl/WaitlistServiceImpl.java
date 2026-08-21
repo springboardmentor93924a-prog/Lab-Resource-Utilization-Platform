@@ -126,7 +126,16 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
         Booking autoBooking = new Booking();
         autoBooking.setUser(loggedInUser);
         autoBooking.setEquipment(substitute);
-        autoBooking.setBookingDate(waitlist.getRequestedStartTime().toLocalDate());
+        /*
+         * bookingDate is the system date this reservation was actually
+         * made (right now) — the user is submitting THIS request at
+         * this very moment, and it's being fulfilled synchronously in
+         * the same call, so "now" IS the submission date here. This is
+         * different from BookingServiceImpl.tryAutoAllocate(), which
+         * runs later (via the cascade) and must use the ORIGINAL
+         * queueDate instead — see that file for why.
+         */
+        autoBooking.setBookingDate(LocalDate.now());
         autoBooking.setStartTime(waitlist.getRequestedStartTime());
         autoBooking.setEndTime(waitlist.getRequestedEndTime());
         autoBooking.setPurpose("Auto-assigned idle substitute (schedule optimization)");

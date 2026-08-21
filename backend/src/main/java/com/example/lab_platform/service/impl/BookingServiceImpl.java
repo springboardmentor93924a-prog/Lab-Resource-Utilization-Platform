@@ -79,6 +79,9 @@ public BookingServiceImpl(
      * it couldn't be allocated the entry was marked NOTIFIED with no
      * real notification sent and no fallback to the next person in
      * line — the whole waitlist for that equipment silently stalled.
+     * Now every active entry is walked in order every time this runs
+     * — if entry #1 can't be fitted, #2, #3, etc. still get their
+     * shot in the same pass. Nobody blocks anybody behind them.
      */
     @Override
     public void processWaitlistForEquipment(Integer equipmentId) {
@@ -123,7 +126,9 @@ public BookingServiceImpl(
 
                 // Checked and couldn't be allocated right now — stays
                 // in the queue and gets reconsidered next time this
-                // equipment frees up or an urgent issue on it resolves.
+                // equipment frees up or an urgent issue/calibration on
+                // it resolves. The loop keeps going to the next entry
+                // regardless of this outcome.
                 entry.setWaitlistStatus("NOTIFIED");
                 waitlistRepository.save(entry);
             }
@@ -186,7 +191,22 @@ public BookingServiceImpl(
 
         autoBooking.setUser(entry.getUser());
         autoBooking.setEquipment(equipment);
-        autoBooking.setBookingDate(start.toLocalDate());
+        /*
+         * bookingDate is the system date the user actually SUBMITTED
+         * their request — for a waitlist entry that's the date they
+         * joined the waitlist (or, for a priority entry auto-added
+         * from a displaced booking, that original booking's own
+         * bookingDate), which is exactly what Waitlist.queueDate
+         * already holds. It is NOT the date this cascade happens to
+         * run (that could be days later) and NOT the requested usage
+         * start date. Falls back to today only in the defensive case
+         * queueDate was somehow never set.
+         */
+        autoBooking.setBookingDate(
+                entry.getQueueDate() != null
+                        ? entry.getQueueDate()
+                        : java.time.LocalDate.now()
+        );
         autoBooking.setStartTime(start);
         autoBooking.setEndTime(end);
         autoBooking.setPurpose("Auto-allocated from waitlist");
@@ -295,18 +315,17 @@ public BookingServiceImpl(
         /*
          * Hard block on equipment that is not currently bookable at
          * all, regardless of what the time-window maintenance check
-         * below finds. This is the check that was missing — a piece
-         * of equipment already flagged Under Maintenance / Out of
-         * Service / Retired must never be bookable, independent of
-         * whether a dated Maintenance record happens to overlap the
-         * requested slot.
+         * below finds. Covers Under Maintenance / Out of Service /
+         * Retired / In Calibration — independent of whether a dated
+         * Maintenance record happens to overlap the requested slot.
          */
         String currentEquipmentStatus = fullEquipment.getStatus();
 
         if (currentEquipmentStatus != null
                 && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
                 || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
-                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+                || currentEquipmentStatus.equalsIgnoreCase("Retired")
+                || currentEquipmentStatus.equalsIgnoreCase("In Calibration"))) {
 
             throw new RuntimeException(
                     "This equipment is currently " + currentEquipmentStatus
@@ -315,10 +334,10 @@ public BookingServiceImpl(
         }
 
         /*
- * Live check — never a cached flag on Equipment. If there's an
- * unresolved URGENT feedback report against this equipment, block
- * booking immediately, evaluated fresh on every attempt.
- */
+* Live check — never a cached flag on Equipment. If there's an
+* unresolved URGENT feedback report against this equipment, block
+* booking immediately, evaluated fresh on every attempt.
+*/
 boolean hasUrgentUnresolvedIssue =
         equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
                 fullEquipment.getEquipmentId(), "URGENT", "RESOLVED"
@@ -609,15 +628,16 @@ public Booking updateBooking(
      * Same hard block as createBooking()/approveBooking(): this was
      * missing here entirely, so a student could edit a Pending
      * Approval booking onto equipment that had since been marked
-     * Under Maintenance / Out of Service / Retired and slip past the
-     * check that blocks it everywhere else.
+     * Under Maintenance / Out of Service / Retired / In Calibration
+     * and slip past the check that blocks it everywhere else.
      */
     String currentEquipmentStatus = fullEquipment.getStatus();
 
     if (currentEquipmentStatus != null
             && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
             || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
-            || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+            || currentEquipmentStatus.equalsIgnoreCase("Retired")
+            || currentEquipmentStatus.equalsIgnoreCase("In Calibration"))) {
 
         throw new RuntimeException(
                 "This equipment is currently " + currentEquipmentStatus
@@ -798,15 +818,16 @@ public void deleteBooking(Integer id) {
         /*
          * Same hard block as createBooking(): equipment status may
          * have changed to Under Maintenance / Out of Service /
-         * Retired between when the student submitted this request
-         * and now, so re-check it at approval time too.
+         * Retired / In Calibration between when the student submitted
+         * this request and now, so re-check it at approval time too.
          */
         String currentEquipmentStatus = equipment.getStatus();
 
         if (currentEquipmentStatus != null
                 && (currentEquipmentStatus.equalsIgnoreCase("Under Maintenance")
                 || currentEquipmentStatus.equalsIgnoreCase("Out of Service")
-                || currentEquipmentStatus.equalsIgnoreCase("Retired"))) {
+                || currentEquipmentStatus.equalsIgnoreCase("Retired")
+                || currentEquipmentStatus.equalsIgnoreCase("In Calibration"))) {
 
             throw new RuntimeException(
                     "This equipment is currently " + currentEquipmentStatus
