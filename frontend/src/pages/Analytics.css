@@ -177,6 +177,11 @@ body {
     max-width: 1600px;
 
     margin: 0 auto;
+
+    /* Uniform vertical spacing between major analytics sections */
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 
@@ -197,7 +202,7 @@ body {
 
     padding: 25px 28px;
 
-    margin-bottom: 22px;
+    margin-bottom: 0;
 
     border-radius: 19px;
 
@@ -335,7 +340,7 @@ body {
 
     gap: 18px;
 
-    margin-bottom: 23px;
+    margin-bottom: 0;
 }
 
 .analytics-stat-grid.admin-grid,
@@ -633,7 +638,7 @@ body {
     position: relative;
     overflow: hidden;
 
-    margin-bottom: 23px;
+    margin-bottom: 0;
 
     padding: 25px;
 
@@ -829,7 +834,7 @@ body {
             minmax(0, 1fr)
         );
 
-    gap: 14px;
+    gap: 18px;
 
     margin-top: 20px;
 }
@@ -1038,7 +1043,7 @@ body {
             minmax(0, 1fr)
         );
 
-    gap: 15px;
+    gap: 18px;
 
     margin-top: 17px;
 }
@@ -2887,5 +2892,67 @@ body {
         grid-column: 1;
 
         justify-self: start;
+    }
+}
+
+/* =========================================================
+   UNIFORM SPACING OVERRIDE
+   ========================================================= */
+
+.analytics-body > * {
+    margin-bottom: 0 !important;
+}
+
+.analytics-body {
+    row-gap: 24px;
+}
+
+.analytics-stat-grid,
+.booking-metrics-grid,
+.booking-rates-section {
+    gap: 18px;
+}
+
+.analytics-panel > * + *,
+.booking-analytics-panel > * + * {
+    margin-top: 18px;
+}
+
+.analytics-panel > .analytics-panel-header,
+.booking-analytics-panel > .booking-performance-header {
+    margin-top: 0;
+}
+
+@media (max-width: 800px) {
+    .analytics-body {
+        gap: 20px;
+    }
+
+    .analytics-stat-grid,
+    .booking-metrics-grid,
+    .booking-rates-section {
+        gap: 16px;
+    }
+
+    .analytics-panel > * + *,
+    .booking-analytics-panel > * + * {
+        margin-top: 16px;
+    }
+}
+
+@media (max-width: 430px) {
+    .analytics-body {
+        gap: 16px;
+    }
+
+    .analytics-stat-grid,
+    .booking-metrics-grid,
+    .booking-rates-section {
+        gap: 14px;
+    }
+
+    .analytics-panel > * + *,
+    .booking-analytics-panel > * + * {
+        margin-top: 14px;
     }
 }

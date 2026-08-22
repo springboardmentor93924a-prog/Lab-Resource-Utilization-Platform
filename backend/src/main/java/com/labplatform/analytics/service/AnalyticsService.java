@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -59,22 +61,42 @@ public class AnalyticsService {
 
         String role = user.getRole().getName();
 
+
+        // =====================================================
+        // SYSTEM ADMIN
+        // =====================================================
+
         if (role.equals("SYSTEM_ADMIN")) {
-
             return buildSystemStats();
+        }
 
-        } else if (
-                role.equals("INSTITUTION_ADMIN")
-                        || role.equals("LAB_MANAGER")
+
+        // =====================================================
+        // INSTITUTION ADMIN
+        // =====================================================
+
+        if (role.equals("INSTITUTION_ADMIN")) {
+            return buildInstitutionAdminStats(user);
+        }
+
+
+        // =====================================================
+        // LAB MANAGER / DEPARTMENT HEAD
+        // =====================================================
+
+        if (
+                role.equals("LAB_MANAGER")
                         || role.equals("DEPARTMENT_HEAD")
         ) {
-
             return buildAdminStats(user);
-
-        } else {
-
-            return buildResearcherStats(user);
         }
+
+
+        // =====================================================
+        // RESEARCHER / STUDENT
+        // =====================================================
+
+        return buildResearcherStats(user);
     }
 
 
@@ -109,9 +131,6 @@ public class AnalyticsService {
 
         // =====================================================
         // TOTAL USAGE HOURS
-        //
-        // Only CONFIRMED and COMPLETED bookings
-        // are counted as actual usage.
         // =====================================================
 
         int totalHours =
@@ -132,6 +151,7 @@ public class AnalyticsService {
                         )
 
                         .sum();
+
 
         response.setMyTotalUsageHours(
                 totalHours
@@ -161,6 +181,7 @@ public class AnalyticsService {
 
         List<Map<String, Object>> favorites =
                 countByEquipment.entrySet()
+
                         .stream()
 
                         .sorted(
@@ -203,11 +224,6 @@ public class AnalyticsService {
 
         // =====================================================
         // USAGE HISTORY
-        //
-        // Shows the researcher's recent bookings.
-        //
-        // We include CONFIRMED and COMPLETED bookings
-        // because these represent actual/approved usage.
         // =====================================================
 
         List<Map<String, Object>> usageHistory =
@@ -237,16 +253,10 @@ public class AnalyticsService {
                             Map<String, Object> history =
                                     new LinkedHashMap<>();
 
-
-                            // Booking ID
-
                             history.put(
                                     "id",
                                     b.getId()
                             );
-
-
-                            // Equipment name
 
                             history.put(
                                     "equipmentName",
@@ -256,32 +266,20 @@ public class AnalyticsService {
                                             : "Unknown Equipment"
                             );
 
-
-                            // Booking date
-
                             history.put(
                                     "bookingDate",
                                     b.getBookingDate()
                             );
-
-
-                            // Start time
 
                             history.put(
                                     "startTime",
                                     b.getStartTime()
                             );
 
-
-                            // End time
-
                             history.put(
                                     "endTime",
                                     b.getEndTime()
                             );
-
-
-                            // Duration
 
                             history.put(
                                     "durationHours",
@@ -290,16 +288,10 @@ public class AnalyticsService {
                                             : 0
                             );
 
-
-                            // Purpose
-
                             history.put(
                                     "purpose",
                                     b.getPurpose()
                             );
-
-
-                            // Status
 
                             history.put(
                                     "status",
@@ -307,7 +299,6 @@ public class AnalyticsService {
                                             ? b.getBookingStatus().name()
                                             : "UNKNOWN"
                             );
-
 
                             return history;
                         })
@@ -327,7 +318,7 @@ public class AnalyticsService {
 
 
     // =========================================================
-    // ADMIN / LAB MANAGER ANALYTICS
+    // LAB MANAGER / DEPARTMENT HEAD ANALYTICS
     // =========================================================
 
     private AnalyticsResponse buildAdminStats(User user) {
@@ -356,7 +347,7 @@ public class AnalyticsService {
 
 
         // =====================================================
-        // INSTITUTION EQUIPMENT
+        // GET INSTITUTION EQUIPMENT
         // =====================================================
 
         List<Equipment> institutionEquipment =
@@ -382,7 +373,7 @@ public class AnalyticsService {
 
 
         // =====================================================
-        // EQUIPMENT IDS
+        // GET EQUIPMENT IDS
         // =====================================================
 
         List<Long> equipmentIds =
@@ -396,7 +387,7 @@ public class AnalyticsService {
 
 
         // =====================================================
-        // INSTITUTION BOOKINGS
+        // GET INSTITUTION BOOKINGS
         // =====================================================
 
         List<Booking> institutionBookings =
@@ -423,46 +414,49 @@ public class AnalyticsService {
 
         // =====================================================
         // BOOKING STATUS ANALYTICS
-        //
-        // Used for:
-        // - Booking rate overview
-        // - No-show rate
-        // - Completion rate
         // =====================================================
 
         int confirmedBookings =
                 (int) institutionBookings.stream()
+
                         .filter(b ->
                                 b.getBookingStatus() ==
                                         BookingStatus.CONFIRMED
                         )
+
                         .count();
 
 
         int completedBookings =
                 (int) institutionBookings.stream()
+
                         .filter(b ->
                                 b.getBookingStatus() ==
                                         BookingStatus.COMPLETED
                         )
+
                         .count();
 
 
         int cancelledBookings =
                 (int) institutionBookings.stream()
+
                         .filter(b ->
                                 b.getBookingStatus() ==
                                         BookingStatus.CANCELLED
                         )
+
                         .count();
 
 
         int noShowBookings =
                 (int) institutionBookings.stream()
+
                         .filter(b ->
                                 b.getBookingStatus() ==
                                         BookingStatus.NO_SHOW
                         )
+
                         .count();
 
 
@@ -485,13 +479,6 @@ public class AnalyticsService {
 
         // =====================================================
         // NO-SHOW RATE
-        //
-        // Formula:
-        //
-        // No-show rate =
-        // (No-show bookings / Total bookings) * 100
-        //
-        // Rounded to one decimal place.
         // =====================================================
 
         double noShowRate = 0.0;
@@ -499,26 +486,21 @@ public class AnalyticsService {
         if (!institutionBookings.isEmpty()) {
 
             noShowRate =
-                    ((double) noShowBookings
-                            / institutionBookings.size())
+                    (
+                            (double) noShowBookings
+                                    / institutionBookings.size()
+                    )
                             * 100.0;
         }
 
 
         response.setInstitutionNoShowRate(
-                Math.round(noShowRate * 10.0) / 10.0
+                roundOneDecimal(noShowRate)
         );
 
 
         // =====================================================
         // COMPLETION RATE
-        //
-        // Formula:
-        //
-        // Completion rate =
-        // (Completed bookings / Total bookings) * 100
-        //
-        // Rounded to one decimal place.
         // =====================================================
 
         double completionRate = 0.0;
@@ -526,14 +508,16 @@ public class AnalyticsService {
         if (!institutionBookings.isEmpty()) {
 
             completionRate =
-                    ((double) completedBookings
-                            / institutionBookings.size())
+                    (
+                            (double) completedBookings
+                                    / institutionBookings.size()
+                    )
                             * 100.0;
         }
 
 
         response.setInstitutionCompletionRate(
-                Math.round(completionRate * 10.0) / 10.0
+                roundOneDecimal(completionRate)
         );
 
 
@@ -547,8 +531,7 @@ public class AnalyticsService {
 
         double avgUtil =
                 institutionEquipment.isEmpty()
-                        ? 0
-
+                        ? 0.0
                         : institutionEquipment.stream()
 
                         .mapToDouble(eq -> {
@@ -557,11 +540,13 @@ public class AnalyticsService {
                                     institutionBookings.stream()
 
                                             .filter(b ->
-                                                    b.getEquipment()
-                                                            .getId()
-                                                            .equals(
-                                                                    eq.getId()
-                                                            )
+                                                    b.getEquipment() != null
+                                                            &&
+                                                            b.getEquipment()
+                                                                    .getId()
+                                                                    .equals(
+                                                                            eq.getId()
+                                                                    )
                                             )
 
                                             .filter(b ->
@@ -590,13 +575,11 @@ public class AnalyticsService {
 
                         .average()
 
-                        .orElse(0);
+                        .orElse(0.0);
 
 
         response.setInstitutionAvgUtilization(
-                Math.round(
-                        avgUtil * 10.0
-                ) / 10.0
+                roundOneDecimal(avgUtil)
         );
 
 
@@ -623,6 +606,7 @@ public class AnalyticsService {
 
         List<Map<String, Object>> topEquipment =
                 bookingCountByEquipment.entrySet()
+
                         .stream()
 
                         .sorted(
@@ -669,6 +653,7 @@ public class AnalyticsService {
 
         long openWorkOrders =
                 workOrderRepository.findAll()
+
                         .stream()
 
                         .filter(w ->
@@ -689,6 +674,844 @@ public class AnalyticsService {
 
         response.setInstitutionOpenWorkOrders(
                 (int) openWorkOrders
+        );
+
+
+        return response;
+    }
+
+
+    // =========================================================
+    // INSTITUTION ADMINISTRATOR ANALYTICS
+    // =========================================================
+
+    private AnalyticsResponse buildInstitutionAdminStats(
+            User user) {
+
+        AnalyticsResponse response =
+                new AnalyticsResponse();
+
+        response.setViewType("INSTITUTION_ADMIN");
+
+
+        // =====================================================
+        // INSTITUTION CHECK
+        // =====================================================
+
+        if (user.getInstitution() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Your account has no institution assigned"
+            );
+        }
+
+
+        Integer institutionId =
+                user.getInstitution().getId();
+
+
+        // =====================================================
+        // GET ORGANIZATION EQUIPMENT
+        // =====================================================
+
+        List<Equipment> equipment =
+                equipmentRepository.findAll()
+
+                        .stream()
+
+                        .filter(e ->
+                                e.getInstitution() != null
+                                        &&
+                                        e.getInstitution()
+                                                .getId()
+                                                .equals(institutionId)
+                        )
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
+
+        // =====================================================
+        // EQUIPMENT IDS
+        // =====================================================
+
+        List<Long> equipmentIds =
+                equipment.stream()
+
+                        .map(Equipment::getId)
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
+
+        // =====================================================
+        // ORGANIZATION BOOKINGS
+        // =====================================================
+
+        List<Booking> bookings =
+                bookingRepository.findAll()
+
+                        .stream()
+
+                        .filter(b ->
+                                b.getEquipment() != null
+                                        &&
+                                        equipmentIds.contains(
+                                                b.getEquipment().getId()
+                                        )
+                        )
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
+
+        // =====================================================
+        // TOTAL EQUIPMENT
+        // =====================================================
+
+        response.setOrganizationTotalEquipment(
+                equipment.size()
+        );
+
+
+        // =====================================================
+        // TOTAL BOOKINGS
+        // =====================================================
+
+        response.setOrganizationTotalBookings(
+                bookings.size()
+        );
+
+
+        // =====================================================
+        // TOTAL USAGE HOURS
+        // =====================================================
+
+        int totalUsageHours =
+                bookings.stream()
+
+                        .filter(b ->
+                                b.getBookingStatus() ==
+                                        BookingStatus.CONFIRMED
+                                        ||
+                                        b.getBookingStatus() ==
+                                                BookingStatus.COMPLETED
+                        )
+
+                        .mapToInt(b ->
+                                b.getDurationHours() != null
+                                        ? b.getDurationHours()
+                                        : 0
+                        )
+
+                        .sum();
+
+
+        response.setOrganizationTotalUsageHours(
+                totalUsageHours
+        );
+
+
+        // =====================================================
+        // ORGANIZATION AVERAGE UTILIZATION
+        // =====================================================
+
+        double maxHoursPerEquipment =
+                30 * 8;
+
+
+        double organizationUtilization =
+                equipment.isEmpty()
+                        ? 0.0
+                        : equipment.stream()
+
+                        .mapToDouble(eq -> {
+
+                            int hours =
+                                    bookings.stream()
+
+                                            .filter(b ->
+                                                    b.getEquipment() != null
+                                                            &&
+                                                            b.getEquipment()
+                                                                    .getId()
+                                                                    .equals(
+                                                                            eq.getId()
+                                                                    )
+                                            )
+
+                                            .filter(b ->
+                                                    b.getBookingStatus() ==
+                                                            BookingStatus.CONFIRMED
+                                                            ||
+                                                            b.getBookingStatus() ==
+                                                                    BookingStatus.COMPLETED
+                                            )
+
+                                            .mapToInt(b ->
+                                                    b.getDurationHours() != null
+                                                            ? b.getDurationHours()
+                                                            : 0
+                                            )
+
+                                            .sum();
+
+
+                            return Math.min(
+                                    (hours / maxHoursPerEquipment)
+                                            * 100,
+                                    100.0
+                            );
+
+                        })
+
+                        .average()
+
+                        .orElse(0.0);
+
+
+        response.setOrganizationAvgUtilization(
+                roundOneDecimal(
+                        organizationUtilization
+                )
+        );
+
+
+        // =====================================================
+        // RESOURCE SHARING
+        // =====================================================
+
+        long crossInstitutionBookings =
+                bookings.stream()
+
+                        .filter(b ->
+                                b.getUser() != null
+                                        &&
+                                        b.getUser()
+                                                .getInstitution() != null
+                                        &&
+                                        b.getEquipment() != null
+                                        &&
+                                        b.getEquipment()
+                                                .getInstitution() != null
+                        )
+
+                        .filter(b ->
+                                !b.getUser()
+                                        .getInstitution()
+                                        .getId()
+                                        .equals(
+                                                b.getEquipment()
+                                                        .getInstitution()
+                                                        .getId()
+                                        )
+                        )
+
+                        .count();
+
+
+        response.setOrganizationCrossInstitutionBookings(
+                (int) crossInstitutionBookings
+        );
+
+
+        // =====================================================
+        // SHARED RESOURCE COUNT
+        // =====================================================
+
+        long sharedResources =
+                bookings.stream()
+
+                        .filter(b ->
+                                b.getUser() != null
+                                        &&
+                                        b.getUser()
+                                                .getInstitution() != null
+                                        &&
+                                        b.getEquipment() != null
+                        )
+
+                        .filter(b ->
+                                !b.getUser()
+                                        .getInstitution()
+                                        .getId()
+                                        .equals(
+                                                b.getEquipment()
+                                                        .getInstitution()
+                                                        .getId()
+                                        )
+                        )
+
+                        .map(b ->
+                                b.getEquipment().getId()
+                        )
+
+                        .distinct()
+
+                        .count();
+
+
+        response.setOrganizationSharedResourceCount(
+                (int) sharedResources
+        );
+
+
+        // =====================================================
+        // COST ANALYSIS
+        // =====================================================
+
+        double totalPurchaseCost =
+                equipment.stream()
+
+                        .filter(e ->
+                                e.getPurchaseCost() != null
+                        )
+
+                        .mapToDouble(e ->
+                                e.getPurchaseCost().doubleValue()
+                        )
+
+                        .sum();
+
+
+        response.setOrganizationTotalPurchaseCost(
+                roundTwoDecimal(
+                        totalPurchaseCost
+                )
+        );
+
+
+        // =====================================================
+        // AVERAGE EQUIPMENT COST
+        // =====================================================
+
+        double averageEquipmentCost =
+                equipment.stream()
+
+                        .filter(e ->
+                                e.getPurchaseCost() != null
+                        )
+
+                        .mapToDouble(e ->
+                                e.getPurchaseCost().doubleValue()
+                        )
+
+                        .average()
+
+                        .orElse(0.0);
+
+
+        response.setOrganizationAverageEquipmentCost(
+                roundTwoDecimal(
+                        averageEquipmentCost
+                )
+        );
+
+
+        // =====================================================
+        // ESTIMATED USAGE VALUE
+        //
+        // Usage value =
+        // duration hours × hourly rate
+        // =====================================================
+
+        double estimatedUsageValue =
+                bookings.stream()
+
+                        .filter(b ->
+                                b.getEquipment() != null
+                                        &&
+                                        b.getDurationHours() != null
+                        )
+
+                        .filter(b ->
+                                b.getBookingStatus() ==
+                                        BookingStatus.CONFIRMED
+                                        ||
+                                        b.getBookingStatus() ==
+                                                BookingStatus.COMPLETED
+                        )
+
+                        .mapToDouble(b -> {
+
+                            if (
+                                    b.getEquipment()
+                                            .getHourlyRate() == null
+                            ) {
+                                return 0.0;
+                            }
+
+
+                            double hourlyRate =
+                                    b.getEquipment()
+                                            .getHourlyRate()
+                                            .doubleValue();
+
+
+                            return hourlyRate *
+                                    b.getDurationHours();
+
+                        })
+
+                        .sum();
+
+
+        response.setOrganizationEstimatedUsageValue(
+                roundTwoDecimal(
+                        estimatedUsageValue
+                )
+        );
+
+
+        // =====================================================
+        // PROCUREMENT INSIGHTS
+        // =====================================================
+
+        int withPurchaseData =
+                (int) equipment.stream()
+
+                        .filter(e ->
+                                e.getPurchaseDate() != null
+                                        ||
+                                        e.getPurchaseCost() != null
+                        )
+
+                        .count();
+
+
+        int withoutPurchaseData =
+                equipment.size() -
+                        withPurchaseData;
+
+
+        response.setOrganizationEquipmentWithPurchaseData(
+                withPurchaseData
+        );
+
+        response.setOrganizationEquipmentWithoutPurchaseData(
+                withoutPurchaseData
+        );
+
+
+        // =====================================================
+        // TOP SUPPLIERS
+        // =====================================================
+
+        List<Map<String, Object>> topSuppliers =
+                equipment.stream()
+
+                        .filter(e ->
+                                e.getSupplier() != null
+                                        &&
+                                        !e.getSupplier()
+                                                .trim()
+                                                .isEmpty()
+                        )
+
+                        .collect(
+                                Collectors.groupingBy(
+                                        e ->
+                                                e.getSupplier()
+                                                        .trim(),
+                                        Collectors.counting()
+                                )
+                        )
+
+                        .entrySet()
+
+                        .stream()
+
+                        .sorted(
+                                Map.Entry
+                                        .<String, Long>
+                                                comparingByValue()
+                                        .reversed()
+                        )
+
+                        .limit(5)
+
+                        .map(entry -> {
+
+                            Map<String, Object> supplier =
+                                    new LinkedHashMap<>();
+
+                            supplier.put(
+                                    "supplier",
+                                    entry.getKey()
+                            );
+
+                            supplier.put(
+                                    "equipmentCount",
+                                    entry.getValue()
+                            );
+
+                            return supplier;
+                        })
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
+
+        response.setOrganizationTopSuppliers(
+                topSuppliers
+        );
+
+
+        // =====================================================
+        // RECENT PURCHASES
+        // =====================================================
+
+        List<Map<String, Object>> recentPurchases =
+                equipment.stream()
+
+                        .filter(e ->
+                                e.getPurchaseDate() != null
+                        )
+
+                        .sorted(
+                                Comparator.comparing(
+                                        Equipment::getPurchaseDate,
+                                        Comparator.reverseOrder()
+                                )
+                        )
+
+                        .limit(5)
+
+                        .map(e -> {
+
+                            Map<String, Object> purchase =
+                                    new LinkedHashMap<>();
+
+                            purchase.put(
+                                    "equipmentName",
+                                    e.getEquipmentName()
+                            );
+
+                            purchase.put(
+                                    "purchaseDate",
+                                    e.getPurchaseDate()
+                            );
+
+                            purchase.put(
+                                    "purchaseCost",
+                                    e.getPurchaseCost()
+                            );
+
+                            purchase.put(
+                                    "supplier",
+                                    e.getSupplier()
+                            );
+
+                            return purchase;
+                        })
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
+
+        response.setOrganizationRecentPurchases(
+                recentPurchases
+        );
+
+
+        // =====================================================
+        // EQUIPMENT LIFECYCLE
+        // =====================================================
+
+        LocalDate today =
+                LocalDate.now();
+
+
+        int activeEquipment = 0;
+
+        int oldEquipment = 0;
+
+        int veryOldEquipment = 0;
+
+
+        List<Map<String, Object>> lifecycleEquipment =
+                new ArrayList<>();
+
+
+        for (Equipment eq : equipment) {
+
+            if (eq.getPurchaseDate() == null) {
+                continue;
+            }
+
+
+            int age =
+                    Period.between(
+                            eq.getPurchaseDate(),
+                            today
+                    ).getYears();
+
+
+            String lifecycleStatus;
+
+
+            if (age >= 10) {
+
+                veryOldEquipment++;
+
+                lifecycleStatus =
+                        "VERY_OLD";
+
+            } else if (age >= 5) {
+
+                oldEquipment++;
+
+                lifecycleStatus =
+                        "OLD";
+
+            } else {
+
+                activeEquipment++;
+
+                lifecycleStatus =
+                        "ACTIVE";
+            }
+
+
+            Map<String, Object> item =
+                    new LinkedHashMap<>();
+
+
+            item.put(
+                    "equipmentName",
+                    eq.getEquipmentName()
+            );
+
+            item.put(
+                    "purchaseDate",
+                    eq.getPurchaseDate()
+            );
+
+            item.put(
+                    "ageYears",
+                    age
+            );
+
+            item.put(
+                    "lifecycleStatus",
+                    lifecycleStatus
+            );
+
+
+            lifecycleEquipment.add(
+                    item
+            );
+        }
+
+
+        response.setOrganizationActiveEquipment(
+                activeEquipment
+        );
+
+        response.setOrganizationOldEquipment(
+                oldEquipment
+        );
+
+        response.setOrganizationVeryOldEquipment(
+                veryOldEquipment
+        );
+
+
+        lifecycleEquipment.sort(
+                (a, b) ->
+                        Integer.compare(
+                                (Integer) b.get("ageYears"),
+                                (Integer) a.get("ageYears")
+                        )
+        );
+
+
+        response.setOrganizationLifecycleEquipment(
+                lifecycleEquipment.stream()
+
+                        .limit(10)
+
+                        .collect(
+                                Collectors.toList()
+                        )
+        );
+
+
+        // =====================================================
+        // ROI
+        //
+        // ROI =
+        // ((usage value - purchase cost)
+        // / purchase cost) × 100
+        // =====================================================
+
+        double estimatedROI =
+                0.0;
+
+
+        if (totalPurchaseCost > 0) {
+
+            estimatedROI =
+                    (
+                            (
+                                    estimatedUsageValue
+                                            - totalPurchaseCost
+                            )
+                                    /
+                                    totalPurchaseCost
+                    )
+                            * 100.0;
+        }
+
+
+        response.setOrganizationEstimatedROI(
+                roundTwoDecimal(
+                        estimatedROI
+                )
+        );
+
+
+        // =====================================================
+        // TOP ROI EQUIPMENT
+        // =====================================================
+
+        List<Map<String, Object>> topROIEquipment =
+                equipment.stream()
+
+                        .filter(e ->
+                                e.getPurchaseCost() != null
+                                        &&
+                                        e.getPurchaseCost()
+                                                .doubleValue() > 0
+                        )
+
+                        .map(eq -> {
+
+                            double usageValue =
+                                    bookings.stream()
+
+                                            .filter(b ->
+                                                    b.getEquipment() != null
+                                                            &&
+                                                            b.getEquipment()
+                                                                    .getId()
+                                                                    .equals(
+                                                                            eq.getId()
+                                                                    )
+                                            )
+
+                                            .filter(b ->
+                                                    b.getBookingStatus() ==
+                                                            BookingStatus.CONFIRMED
+                                                            ||
+                                                            b.getBookingStatus() ==
+                                                                    BookingStatus.COMPLETED
+                                            )
+
+                                            .mapToDouble(b -> {
+
+                                                if (
+                                                        b.getDurationHours()
+                                                                == null
+                                                ) {
+                                                    return 0.0;
+                                                }
+
+
+                                                if (
+                                                        eq.getHourlyRate()
+                                                                == null
+                                                ) {
+                                                    return 0.0;
+                                                }
+
+
+                                                double rate =
+                                                        eq.getHourlyRate()
+                                                                .doubleValue();
+
+
+                                                return rate *
+                                                        b.getDurationHours();
+
+                                            })
+
+                                            .sum();
+
+
+                            double purchaseCost =
+                                    eq.getPurchaseCost()
+                                            .doubleValue();
+
+
+                            double roi =
+                                    (
+                                            (
+                                                    usageValue
+                                                            - purchaseCost
+                                            )
+                                                    /
+                                                    purchaseCost
+                                    )
+                                            * 100.0;
+
+
+                            Map<String, Object> item =
+                                    new LinkedHashMap<>();
+
+
+                            item.put(
+                                    "equipmentName",
+                                    eq.getEquipmentName()
+                            );
+
+                            item.put(
+                                    "purchaseCost",
+                                    eq.getPurchaseCost()
+                            );
+
+                            item.put(
+                                    "usageValue",
+                                    roundTwoDecimal(
+                                            usageValue
+                                    )
+                            );
+
+                            item.put(
+                                    "roi",
+                                    roundTwoDecimal(
+                                            roi
+                                    )
+                            );
+
+
+                            return item;
+
+                        })
+
+                        .sorted(
+                                (a, b) ->
+                                        Double.compare(
+                                                (Double) b.get("roi"),
+                                                (Double) a.get("roi")
+                                        )
+                        )
+
+                        .limit(5)
+
+                        .collect(
+                                Collectors.toList()
+                        );
+
+
+        response.setOrganizationTopROIEquipment(
+                topROIEquipment
         );
 
 
@@ -741,16 +1564,19 @@ public class AnalyticsService {
 
         long crossInstitution =
                 bookingRepository.findAll()
+
                         .stream()
 
                         .filter(b ->
                                 b.getUser() != null
                                         &&
-                                        b.getUser().getInstitution() != null
+                                        b.getUser()
+                                                .getInstitution() != null
                                         &&
                                         b.getEquipment() != null
                                         &&
-                                        b.getEquipment().getInstitution() != null
+                                        b.getEquipment()
+                                                .getInstitution() != null
                         )
 
                         .filter(b ->
@@ -773,5 +1599,27 @@ public class AnalyticsService {
 
 
         return response;
+    }
+
+
+    // =========================================================
+    // UTILITY METHODS
+    // =========================================================
+
+    private double roundOneDecimal(
+            double value) {
+
+        return Math.round(
+                value * 10.0
+        ) / 10.0;
+    }
+
+
+    private double roundTwoDecimal(
+            double value) {
+
+        return Math.round(
+                value * 100.0
+        ) / 100.0;
     }
 }

@@ -1553,7 +1553,465 @@ export default function Analytics() {
             </>
 
           )}
+{/* =================================================
+    INSTITUTION ADMINISTRATOR
+================================================= */}
 
+{data?.viewType === "INSTITUTION_ADMIN" && (
+
+  <>
+
+    {/* =================================================
+        INTRO
+    ================================================= */}
+
+    <section className="analytics-intro">
+
+      <div>
+
+        <span>
+          INSTITUTION ADMINISTRATOR INSIGHTS
+        </span>
+
+        <h2>
+          Institution Analytics
+        </h2>
+
+        <p>
+          Monitor organization-wide utilization,
+          resource sharing, costs and equipment lifecycle.
+        </p>
+
+      </div>
+
+      <div className="intro-icon purple">
+
+        <Icon
+          name="bi-building-fill"
+        />
+
+      </div>
+
+    </section>
+
+
+    {/* =================================================
+        MAIN STATISTICS
+    ================================================= */}
+
+    <div className="analytics-stat-grid admin-grid">
+
+      <StatCard
+        icon="bi-box-seam-fill"
+        label="TOTAL EQUIPMENT"
+        value={
+          data.institutionTotalEquipment ?? 0
+        }
+        description="Equipment across institution"
+        gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
+        glow="rgba(37,99,235,0.35)"
+      />
+
+
+      <StatCard
+        icon="bi-calendar2-check-fill"
+        label="TOTAL BOOKINGS"
+        value={
+          data.institutionTotalBookings ?? 0
+        }
+        description="Bookings across institution"
+        gradient="linear-gradient(135deg, #059669, #0f766e)"
+        glow="rgba(5,150,105,0.35)"
+      />
+
+
+      <StatCard
+        icon="bi-speedometer2"
+        label="AVG UTILIZATION"
+        value={
+          `${data.institutionAvgUtilization ?? 0}%`
+        }
+        description="Organization-wide utilization"
+        gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
+        glow="rgba(124,58,237,0.35)"
+      />
+
+
+      <StatCard
+        icon="bi-graph-up-arrow"
+        label="ESTIMATED ROI"
+        value={
+          `${data.institutionEstimatedRoi ?? 0}%`
+        }
+        description="Estimated equipment return"
+        gradient="linear-gradient(135deg, #dc2626, #ea580c)"
+        glow="rgba(220,38,38,0.35)"
+      />
+
+    </div>
+
+
+    {/* =================================================
+        RESOURCE SHARING
+    ================================================= */}
+
+    <section className="analytics-panel">
+
+      <div className="analytics-panel-header">
+
+        <div className="panel-title-icon blue">
+
+          <Icon
+            name="bi-share-fill"
+          />
+
+        </div>
+
+        <div>
+
+          <h3>
+            Resource Sharing
+          </h3>
+
+          <p>
+            Equipment sharing requests across the institution
+          </p>
+
+        </div>
+
+        <div className="panel-badge">
+
+          <Icon
+            name="bi-diagram-3-fill"
+          />
+
+          Sharing
+
+        </div>
+
+      </div>
+
+
+      <div className="booking-metrics-grid">
+
+        <BookingMetricCard
+          icon="bi-hourglass-split"
+          title="PENDING"
+          value={
+            data.institutionPendingSharingRequests ?? 0
+          }
+          description="Requests awaiting approval"
+          gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+        />
+
+
+        <BookingMetricCard
+          icon="bi-check-circle-fill"
+          title="APPROVED"
+          value={
+            data.institutionApprovedSharingRequests ?? 0
+          }
+          description="Approved sharing requests"
+          gradient="linear-gradient(135deg, #059669 0%, #0d9488 100%)"
+        />
+
+
+        <BookingMetricCard
+          icon="bi-x-circle-fill"
+          title="REJECTED"
+          value={
+            data.institutionRejectedSharingRequests ?? 0
+          }
+          description="Rejected sharing requests"
+          gradient="linear-gradient(135deg, #dc2626 0%, #be123c 100%)"
+        />
+
+
+        <BookingMetricCard
+          icon="bi-share-fill"
+          title="TOTAL"
+          value={
+            data.institutionSharingRequests ?? 0
+          }
+          description="All sharing requests"
+          gradient="linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)"
+        />
+
+      </div>
+
+    </section>
+
+
+    {/* =================================================
+        PROCUREMENT & COST ANALYSIS
+    ================================================= */}
+
+    <section className="analytics-panel">
+
+      <div className="analytics-panel-header">
+
+        <div className="panel-title-icon orange">
+
+          <Icon
+            name="bi-cash-stack"
+          />
+
+        </div>
+
+        <div>
+
+          <h3>
+            Procurement & Cost Analysis
+          </h3>
+
+          <p>
+            Equipment investment and estimated usage value
+          </p>
+
+        </div>
+
+        <div className="panel-badge orange-badge">
+
+          <Icon
+            name="bi-bar-chart-fill"
+          />
+
+          Financial
+
+        </div>
+
+      </div>
+
+
+      <div className="analytics-stat-grid">
+
+        <StatCard
+          icon="bi-cart-check-fill"
+          label="PURCHASE COST"
+          value={
+            `₹${Number(
+              data.institutionTotalPurchaseCost ?? 0
+            ).toLocaleString("en-IN")}`
+          }
+          description="Total equipment purchase cost"
+          gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
+          glow="rgba(37,99,235,0.35)"
+        />
+
+
+        <StatCard
+          icon="bi-graph-up"
+          label="USAGE VALUE"
+          value={
+            `₹${Number(
+              data.institutionEstimatedUsageValue ?? 0
+            ).toLocaleString("en-IN")}`
+          }
+          description="Estimated value from usage"
+          gradient="linear-gradient(135deg, #059669, #0f766e)"
+          glow="rgba(5,150,105,0.35)"
+        />
+
+
+        <StatCard
+          icon="bi-percent"
+          label="ESTIMATED ROI"
+          value={
+            `${data.institutionEstimatedRoi ?? 0}%`
+          }
+          description="Estimated return on investment"
+          gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
+          glow="rgba(124,58,237,0.35)"
+        />
+
+      </div>
+
+    </section>
+
+
+    {/* =================================================
+        EQUIPMENT LIFECYCLE
+    ================================================= */}
+
+    <section className="analytics-panel">
+
+      <div className="analytics-panel-header">
+
+        <div className="panel-title-icon teal">
+
+          <Icon
+            name="bi-arrow-repeat"
+          />
+
+        </div>
+
+        <div>
+
+          <h3>
+            Equipment Lifecycle
+          </h3>
+
+          <p>
+            Monitor equipment age, calibration and certification
+          </p>
+
+        </div>
+
+        <div className="panel-badge">
+
+          <Icon
+            name="bi-tools"
+          />
+
+          Lifecycle
+
+        </div>
+
+      </div>
+
+
+      <div className="analytics-stat-grid">
+
+        <StatCard
+          icon="bi-calendar3"
+          label="AVERAGE AGE"
+          value={
+            `${data.institutionAverageEquipmentAgeYears ?? 0} yrs`
+          }
+          description="Average equipment age"
+          gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
+          glow="rgba(37,99,235,0.35)"
+        />
+
+
+        <StatCard
+          icon="bi-exclamation-triangle-fill"
+          label="LIFECYCLE REVIEW"
+          value={
+            data.institutionLifecycleReviewEquipment ?? 0
+          }
+          description="Equipment older than 5 years"
+          gradient="linear-gradient(135deg, #f97316, #ea580c)"
+          glow="rgba(249,115,22,0.35)"
+        />
+
+
+        <StatCard
+          icon="bi-wrench-adjustable-circle-fill"
+          label="CALIBRATION DUE"
+          value={
+            data.institutionCalibrationDueSoon ?? 0
+          }
+          description="Due within 30 days"
+          gradient="linear-gradient(135deg, #dc2626, #be123c)"
+          glow="rgba(220,38,38,0.35)"
+        />
+
+
+        <StatCard
+          icon="bi-patch-check-fill"
+          label="CERTIFICATION EXPIRING"
+          value={
+            data.institutionCertificationExpiringSoon ?? 0
+          }
+          description="Expiring within 30 days"
+          gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
+          glow="rgba(124,58,237,0.35)"
+        />
+
+      </div>
+
+    </section>
+
+
+    {/* =================================================
+        TOP EQUIPMENT
+    ================================================= */}
+
+    <section className="analytics-panel top-equipment-panel">
+
+      <div className="analytics-panel-header">
+
+        <div className="panel-title-icon orange">
+
+          <Icon
+            name="bi-trophy-fill"
+          />
+
+        </div>
+
+        <div>
+
+          <h3>
+            Top Equipment by Bookings
+          </h3>
+
+          <p>
+            Most requested equipment across the institution
+          </p>
+
+        </div>
+
+        <div className="panel-badge orange-badge">
+
+          <Icon
+            name="bi-fire"
+          />
+
+          High Demand
+
+        </div>
+
+      </div>
+
+
+      {data.institutionTopEquipment?.length === 0 ? (
+
+        <div className="analytics-empty">
+
+          <div>
+
+            <Icon
+              name="bi-box-seam"
+            />
+
+          </div>
+
+          <h3>
+            No booking data
+          </h3>
+
+          <p>
+            Equipment booking activity will appear here.
+          </p>
+
+        </div>
+
+      ) : (
+
+        <div className="equipment-list">
+
+          {data.institutionTopEquipment?.map(
+            (equipment, index) => (
+
+              <EquipmentCard
+                key={index}
+                equipment={equipment}
+                index={index}
+              />
+
+            )
+          )}
+
+        </div>
+
+      )}
+
+    </section>
+
+  </>
+
+)}
 
           {/* =================================================
               NO DATA
