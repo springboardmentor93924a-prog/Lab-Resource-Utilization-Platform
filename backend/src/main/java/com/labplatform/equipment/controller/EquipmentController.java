@@ -19,8 +19,10 @@ import com.labplatform.equipment.dto.CalibrationAlertResponse;
 import com.labplatform.equipment.dto.UtilizationCostReportRow;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
-
+import com.labplatform.equipment.dto.ProcurementCostReportRow;
+import java.math.BigDecimal;
 import java.util.List;
+import com.labplatform.equipment.dto.UtilizationHeatmapResponse;
 
 @RestController
 @RequestMapping("/api/equipment")
@@ -39,6 +41,15 @@ public class EquipmentController {
     @GetMapping("/utilization")
     public ResponseEntity<List<EquipmentUtilizationResponse>> getUtilizationData() {
         return ResponseEntity.ok(equipmentService.getUtilizationData());
+    }
+    @GetMapping("/utilization/heatmap")
+    public ResponseEntity<List<UtilizationHeatmapResponse>> getUtilizationHeatmap(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+
+        return ResponseEntity.ok(
+                equipmentService.getUtilizationHeatmap(from, to)
+        );
     }
     @GetMapping("/calibration-alerts")
     public ResponseEntity<List<CalibrationAlertResponse>> getCalibrationAlerts() {
@@ -71,6 +82,92 @@ public class EquipmentController {
                 .header("Content-Disposition", "attachment; filename=\"utilization_cost_report.csv\"")
                 .contentType(org.springframework.http.MediaType.parseMediaType("text/csv"))
                 .body(csvBytes);
+    }
+    @GetMapping("/reports/procurement-cost")
+    public ResponseEntity<List<ProcurementCostReportRow>>
+    getProcurementCostReport(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+
+        return ResponseEntity.ok(
+                equipmentService.generateProcurementCostReport(
+                        from,
+                        to));
+    }
+    @GetMapping("/reports/procurement-cost/csv")
+    public ResponseEntity<byte[]> downloadProcurementCostReportCsv(
+            @RequestParam("from") LocalDate from,
+            @RequestParam("to") LocalDate to) {
+
+        List<ProcurementCostReportRow> rows =
+                equipmentService.generateProcurementCostReport(
+                        from,
+                        to);
+
+        StringBuilder csv = new StringBuilder();
+
+        csv.append(
+                "Equipment,Asset Tag,Category,Department,Manufacturer,"
+                        + "Supplier,Purchase Date,Purchase Cost,"
+                        + "Usage Hours,Operating Cost,Total Cost\n"
+        );
+
+        for (ProcurementCostReportRow row : rows) {
+
+            csv.append(String.format(
+                    "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%s,%s,%d,%s,%s\n",
+
+                    safe(row.getEquipmentName()),
+                    safe(row.getAssetTag()),
+                    safe(row.getCategory()),
+                    safe(row.getDepartment()),
+                    safe(row.getManufacturer()),
+                    safe(row.getSupplier()),
+
+                    row.getPurchaseDate() != null
+                            ? row.getPurchaseDate()
+                            : "",
+
+                    row.getPurchaseCost() != null
+                            ? row.getPurchaseCost()
+                            : BigDecimal.ZERO,
+
+                    row.getUsageHours() != null
+                            ? row.getUsageHours()
+                            : 0,
+
+                    row.getOperatingCost() != null
+                            ? row.getOperatingCost()
+                            : BigDecimal.ZERO,
+
+                    row.getTotalCost() != null
+                            ? row.getTotalCost()
+                            : BigDecimal.ZERO
+            ));
+        }
+
+        byte[] csvBytes =
+                csv.toString()
+                        .getBytes(
+                                java.nio.charset.StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .header(
+                        "Content-Disposition",
+                        "attachment; filename=\"procurement_cost_report.csv\"")
+                .contentType(
+                        org.springframework.http.MediaType
+                                .parseMediaType("text/csv"))
+                .body(csvBytes);
+    }
+
+    private String safe(String value) {
+
+        if (value == null) {
+            return "";
+        }
+
+        return value.replace("\"", "\"\"");
     }
     @GetMapping("/{id}")
     public ResponseEntity<EquipmentResponse> getEquipmentById(@PathVariable Long id) {

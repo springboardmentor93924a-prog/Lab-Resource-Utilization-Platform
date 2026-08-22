@@ -1,19 +1,21 @@
 package com.labplatform.equipment.model;
+
 import com.labplatform.institution.model.Institution;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.FetchType;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -32,10 +34,12 @@ public class Equipment {
     private String assetTag;
 
     private String category;
+
     @Column(name = "hourly_rate")
-    private java.math.BigDecimal hourlyRate;
+    private BigDecimal hourlyRate;
 
     private String department;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institution_id", nullable = false)
     private Institution institution;
@@ -64,15 +68,52 @@ public class Equipment {
 
     private LocalDate certificationExpiryDate;
 
+    /*
+     * ============================================================
+     * PROCUREMENT INFORMATION
+     * ============================================================
+     */
+
+    @Column(name = "supplier")
+    private String supplier;
+
+    @Column(name = "purchase_date")
+    private LocalDate purchaseDate;
+
+    @Column(name = "purchase_cost")
+    private BigDecimal purchaseCost;
+
+    /*
+     * ============================================================
+     * CREATED DATE
+     * ============================================================
+     */
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    /*
+     * ============================================================
+     * CONSTRUCTORS
+     * ============================================================
+     */
 
     public Equipment() {
     }
 
-    public Equipment(String equipmentName, String assetTag, String category, String department,
-                     String manufacturer, String model, String imageUrl, EquipmentStatus status,
-                     LocalDate calibrationDueDate, String manualDocument, String calibrationCertificate) {
+    public Equipment(
+            String equipmentName,
+            String assetTag,
+            String category,
+            String department,
+            String manufacturer,
+            String model,
+            String imageUrl,
+            EquipmentStatus status,
+            LocalDate calibrationDueDate,
+            String manualDocument,
+            String calibrationCertificate) {
+
         this.equipmentName = equipmentName;
         this.assetTag = assetTag;
         this.category = category;
@@ -86,13 +127,27 @@ public class Equipment {
         this.calibrationCertificate = calibrationCertificate;
     }
 
+    /*
+     * ============================================================
+     * PRE-PERSIST
+     * ============================================================
+     */
+
     @PrePersist
     protected void onCreate() {
+
         this.createdAt = LocalDateTime.now();
+
         if (this.status == null) {
             this.status = EquipmentStatus.AVAILABLE;
         }
     }
+
+    /*
+     * ============================================================
+     * ID
+     * ============================================================
+     */
 
     public Long getId() {
         return id;
@@ -102,6 +157,12 @@ public class Equipment {
         this.id = id;
     }
 
+    /*
+     * ============================================================
+     * EQUIPMENT NAME
+     * ============================================================
+     */
+
     public String getEquipmentName() {
         return equipmentName;
     }
@@ -109,6 +170,12 @@ public class Equipment {
     public void setEquipmentName(String equipmentName) {
         this.equipmentName = equipmentName;
     }
+
+    /*
+     * ============================================================
+     * ASSET TAG
+     * ============================================================
+     */
 
     public String getAssetTag() {
         return assetTag;
@@ -118,6 +185,12 @@ public class Equipment {
         this.assetTag = assetTag;
     }
 
+    /*
+     * ============================================================
+     * CATEGORY
+     * ============================================================
+     */
+
     public String getCategory() {
         return category;
     }
@@ -125,6 +198,26 @@ public class Equipment {
     public void setCategory(String category) {
         this.category = category;
     }
+
+    /*
+     * ============================================================
+     * HOURLY RATE
+     * ============================================================
+     */
+
+    public BigDecimal getHourlyRate() {
+        return hourlyRate;
+    }
+
+    public void setHourlyRate(BigDecimal hourlyRate) {
+        this.hourlyRate = hourlyRate;
+    }
+
+    /*
+     * ============================================================
+     * DEPARTMENT
+     * ============================================================
+     */
 
     public String getDepartment() {
         return department;
@@ -134,6 +227,26 @@ public class Equipment {
         this.department = department;
     }
 
+    /*
+     * ============================================================
+     * INSTITUTION
+     * ============================================================
+     */
+
+    public Institution getInstitution() {
+        return institution;
+    }
+
+    public void setInstitution(Institution institution) {
+        this.institution = institution;
+    }
+
+    /*
+     * ============================================================
+     * MANUFACTURER
+     * ============================================================
+     */
+
     public String getManufacturer() {
         return manufacturer;
     }
@@ -141,6 +254,12 @@ public class Equipment {
     public void setManufacturer(String manufacturer) {
         this.manufacturer = manufacturer;
     }
+
+    /*
+     * ============================================================
+     * MODEL
+     * ============================================================
+     */
 
     public String getModel() {
         return model;
@@ -150,6 +269,12 @@ public class Equipment {
         this.model = model;
     }
 
+    /*
+     * ============================================================
+     * IMAGE URL
+     * ============================================================
+     */
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -157,6 +282,12 @@ public class Equipment {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    /*
+     * ============================================================
+     * STATUS
+     * ============================================================
+     */
 
     public EquipmentStatus getStatus() {
         return status;
@@ -166,6 +297,12 @@ public class Equipment {
         this.status = status;
     }
 
+    /*
+     * ============================================================
+     * CALIBRATION DUE DATE
+     * ============================================================
+     */
+
     public LocalDate getCalibrationDueDate() {
         return calibrationDueDate;
     }
@@ -173,6 +310,12 @@ public class Equipment {
     public void setCalibrationDueDate(LocalDate calibrationDueDate) {
         this.calibrationDueDate = calibrationDueDate;
     }
+
+    /*
+     * ============================================================
+     * MANUAL DOCUMENT
+     * ============================================================
+     */
 
     public String getManualDocument() {
         return manualDocument;
@@ -182,6 +325,12 @@ public class Equipment {
         this.manualDocument = manualDocument;
     }
 
+    /*
+     * ============================================================
+     * CALIBRATION CERTIFICATE
+     * ============================================================
+     */
+
     public String getCalibrationCertificate() {
         return calibrationCertificate;
     }
@@ -189,29 +338,12 @@ public class Equipment {
     public void setCalibrationCertificate(String calibrationCertificate) {
         this.calibrationCertificate = calibrationCertificate;
     }
-    public Institution getInstitution() {
-        return institution;
-    }
 
-    public void setInstitution(Institution institution) {
-        this.institution = institution;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public java.math.BigDecimal getHourlyRate() {
-        return hourlyRate;
-    }
-
-    public void setHourlyRate(java.math.BigDecimal hourlyRate) {
-        this.hourlyRate = hourlyRate;
-    }
+    /*
+     * ============================================================
+     * LAST CALIBRATION DATE
+     * ============================================================
+     */
 
     public LocalDate getLastCalibrationDate() {
         return lastCalibrationDate;
@@ -221,6 +353,12 @@ public class Equipment {
         this.lastCalibrationDate = lastCalibrationDate;
     }
 
+    /*
+     * ============================================================
+     * NEXT CALIBRATION DATE
+     * ============================================================
+     */
+
     public LocalDate getNextCalibrationDate() {
         return nextCalibrationDate;
     }
@@ -228,6 +366,12 @@ public class Equipment {
     public void setNextCalibrationDate(LocalDate nextCalibrationDate) {
         this.nextCalibrationDate = nextCalibrationDate;
     }
+
+    /*
+     * ============================================================
+     * CERTIFICATION DETAILS
+     * ============================================================
+     */
 
     public String getCertificationDetails() {
         return certificationDetails;
@@ -237,12 +381,75 @@ public class Equipment {
         this.certificationDetails = certificationDetails;
     }
 
+    /*
+     * ============================================================
+     * CERTIFICATION EXPIRY DATE
+     * ============================================================
+     */
+
     public LocalDate getCertificationExpiryDate() {
         return certificationExpiryDate;
     }
 
-    public void setCertificationExpiryDate(LocalDate certificationExpiryDate) {
+    public void setCertificationExpiryDate(
+            LocalDate certificationExpiryDate) {
+
         this.certificationExpiryDate = certificationExpiryDate;
     }
-}
 
+    /*
+     * ============================================================
+     * SUPPLIER
+     * ============================================================
+     */
+
+    public String getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(String supplier) {
+        this.supplier = supplier;
+    }
+
+    /*
+     * ============================================================
+     * PURCHASE DATE
+     * ============================================================
+     */
+
+    public LocalDate getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDate purchaseDate) {
+        this.purchaseDate = purchaseDate;
+    }
+
+    /*
+     * ============================================================
+     * PURCHASE COST
+     * ============================================================
+     */
+
+    public BigDecimal getPurchaseCost() {
+        return purchaseCost;
+    }
+
+    public void setPurchaseCost(BigDecimal purchaseCost) {
+        this.purchaseCost = purchaseCost;
+    }
+
+    /*
+     * ============================================================
+     * CREATED AT
+     * ============================================================
+     */
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}

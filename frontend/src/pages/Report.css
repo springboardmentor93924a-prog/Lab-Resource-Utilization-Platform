@@ -1281,4 +1281,133 @@
         width: 100%;
     }
 
+    /* =========================================================
+   PROCUREMENT & COST REPORT
+========================================================= */
+
+.procurement-report-card {
+    margin-bottom: 28px;
+}
+
+/* Procurement report heading */
+
+.procurement-report-card .table-header {
+    background: linear-gradient(
+        135deg,
+        rgba(34, 197, 94, 0.05),
+        rgba(6, 182, 212, 0.03)
+    );
+}
+
+
+/* Procurement table */
+
+.procurement-report-card table {
+    min-width: 950px;
+}
+
+
+/* Purchase cost */
+
+.procurement-report-card .cost-value {
+    color: #4ade80;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+/* Supplier */
+
+.procurement-report-card td:nth-child(5) {
+    color: #a9c1dc;
+}
+
+
+/* Purchase date */
+
+.procurement-report-card td:nth-child(6) {
+    color: #9bb4d0;
+    white-space: nowrap;
+}
+
+
+/* Asset tag */
+
+.procurement-report-card td:nth-child(2) {
+    color: #8fa6c3;
+    font-family: monospace;
+}
+
+
+/* Procurement table row hover */
+
+.procurement-report-card tbody tr:hover {
+    background: rgba(34, 197, 94, 0.04);
+}
+
+
+/* Procurement summary footer */
+
+.procurement-report-card .department-footer {
+    background: rgba(34, 197, 94, 0.025);
+}
+
+
+/* Procurement empty state */
+
+.procurement-report-card .empty-row {
+    min-height: 150px;
+}
+
+
+/* =========================================================
+   PROCUREMENT CARD - GREEN ACCENT
+========================================================= */
+
+.report-type-card:has(.report-type-icon.green).active {
+    border-color: #22c55e;
+
+    box-shadow:
+        0 0 0 1px rgba(34, 197, 94, 0.15),
+        0 12px 30px rgba(34, 197, 94, 0.10);
+}
+
+
+/* =========================================================
+   PROCUREMENT RESPONSIVE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .procurement-report-card .table-header {
+        align-items: flex-start;
+    }
+
+}
+/* DOWNLOAD BUTTON GROUP */
+.download-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.download-buttons > .download-btn {
+    margin: 0;
+    height: 43px;
+    box-sizing: border-box;
+}
+
+.download-buttons > .download-btn + .download-btn {
+    margin-left: 10px;
+}
+
+.excel-download-btn {
+    background: #0f5132;
+    border: 1px solid #198754;
+}
+
+.excel-download-btn:hover {
+    background: #198754;
+}
+
 }

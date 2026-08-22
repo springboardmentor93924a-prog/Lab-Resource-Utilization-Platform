@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-
+import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
+  getAllEquipment,
   getUtilizationCostReport,
-  downloadUtilizationCostReportCsv,
 } from "../services/equipmentService";
 
 import { getDepartmentUsageReport } from "../services/bookingService";
@@ -34,6 +36,7 @@ export default function Reports() {
   const [departmentRows, setDepartmentRows] = useState([]);
   const [maintenanceRows, setMaintenanceRows] = useState([]);
   const [sharingRows, setSharingRows] = useState([]);
+  const [procurementRows, setProcurementRows] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
@@ -68,6 +71,10 @@ export default function Reports() {
       setLoading(true);
       setGenerated(false);
 
+      // =====================================================
+      // EQUIPMENT UTILIZATION
+      // =====================================================
+
       if (reportType === "equipment") {
         const data = await getUtilizationCostReport(from, to);
 
@@ -75,24 +82,42 @@ export default function Reports() {
         setDepartmentRows([]);
         setMaintenanceRows([]);
         setSharingRows([]);
+        setProcurementRows([]);
+      }
 
-      } else if (reportType === "department") {
+      // =====================================================
+      // DEPARTMENT USAGE
+      // =====================================================
+
+      else if (reportType === "department") {
         const data = await getDepartmentUsageReport(from, to);
 
         setDepartmentRows(data || []);
         setEquipmentRows([]);
         setMaintenanceRows([]);
         setSharingRows([]);
+        setProcurementRows([]);
+      }
 
-      } else if (reportType === "maintenance") {
+      // =====================================================
+      // MAINTENANCE
+      // =====================================================
+
+      else if (reportType === "maintenance") {
         const data = await getMaintenanceDowntimeReport(from, to);
 
         setMaintenanceRows(data || []);
         setEquipmentRows([]);
         setDepartmentRows([]);
         setSharingRows([]);
+        setProcurementRows([]);
+      }
 
-      } else if (reportType === "sharing") {
+      // =====================================================
+      // INTER-INSTITUTION SHARING
+      // =====================================================
+
+      else if (reportType === "sharing") {
         const data =
           await getInterInstitutionSharingReport(from, to);
 
@@ -100,6 +125,40 @@ export default function Reports() {
         setEquipmentRows([]);
         setDepartmentRows([]);
         setMaintenanceRows([]);
+        setProcurementRows([]);
+      }
+
+      // =====================================================
+      // PROCUREMENT & COST
+      // =====================================================
+
+      else if (reportType === "procurement") {
+        const data = await getAllEquipment();
+
+        /*
+         * Procurement report is based on purchaseDate.
+         *
+         * Only equipment having a purchase date inside
+         * the selected date range will be included.
+         */
+
+        const filteredData = (data || []).filter((equipment) => {
+          if (!equipment.purchaseDate) {
+            return false;
+          }
+
+          return (
+            equipment.purchaseDate >= from &&
+            equipment.purchaseDate <= to
+          );
+        });
+
+        setProcurementRows(filteredData);
+
+        setEquipmentRows([]);
+        setDepartmentRows([]);
+        setMaintenanceRows([]);
+        setSharingRows([]);
       }
 
       setGenerated(true);
@@ -118,7 +177,7 @@ export default function Reports() {
   }
 
   // =========================================================
-  // DOWNLOAD EQUIPMENT CSV
+  // DOWNLOAD REPORT
   // =========================================================
 
   async function handleDownload() {
@@ -132,44 +191,668 @@ export default function Reports() {
       return;
     }
 
-    if (reportType !== "equipment") {
+    try {
+      // Equipment Utilization already has a backend CSV endpoint.
+      if (reportType === "equipment") {
+        const { downloadUtilizationCostReportCsv } =
+          await import("../services/equipmentService");
+        await downloadUtilizationCostReportCsv(from, to);
+        return;
+      }
+
+      let rows = [];
+      let headers = [];
+      let filename = "";
+
+      // Department Usage
+      if (reportType === "department") {
+        rows = departmentRows;
+        if (!generated) {
+          rows = (await getDepartmentUsageReport(from, to)) || [];
+        }
+        headers = [
+          "Department",
+          "Total Bookings",
+          "Usage Hours",
+          "Equipment Count",
+          "Utilization Rate",
+        ];
+        filename = "department_usage_report.csv";
+      }
+
+      // Maintenance & Downtime
+      else if (reportType === "maintenance") {
+        rows = maintenanceRows;
+        if (!generated) {
+          rows = (await getMaintenanceDowntimeReport(from, to)) || [];
+        }
+        headers = [
+          "Equipment",
+          "Total Work Orders",
+          "Completed Work Orders",
+          "In Progress Work Orders",
+          "Downtime Minutes",
+        ];
+        filename = "maintenance_downtime_report.csv";
+      }
+
+      // Inter-Institution Sharing
+      else if (reportType === "sharing") {
+        rows = sharingRows;
+        if (!generated) {
+          rows = (await getInterInstitutionSharingReport(from, to)) || [];
+        }
+        headers = [
+          "Requesting Institution",
+          "Owning Institution",
+          "Total Requests",
+          "Approved Requests",
+          "Rejected Requests",
+          "Pending Requests",
+          "Shared Equipment",
+        ];
+        filename = "inter_institution_sharing_report.csv";
+      }
+
+      // Procurement & Cost
+      else if (reportType === "procurement") {
+        rows = procurementRows;
+        if (!generated) {
+          const data = await getAllEquipment();
+          rows = (data || []).filter((equipment) =>
+            equipment.purchaseDate &&
+            equipment.purchaseDate >= from &&
+            equipment.purchaseDate <= to
+          );
+        }
+        headers = [
+          "Equipment",
+          "Asset Tag",
+          "Category",
+          "Department",
+          "Supplier",
+          "Purchase Date",
+          "Purchase Cost",
+        ];
+        filename = "procurement_cost_report.csv";
+      } else {
+        alert("CSV download is not available for this report.");
+        return;
+      }
+
+      const csvHeader = headers.map(csvEscape).join(",");
+      let csvRows = [];
+
+      if (reportType === "department") {
+        csvRows = rows.map((row) => [
+          csvEscape(row.department),
+          csvEscape(row.totalBookings ?? 0),
+          csvEscape(row.usageHours ?? 0),
+          csvEscape(row.equipmentCount ?? 0),
+          csvEscape(
+            row.utilizationRate !== null && row.utilizationRate !== undefined
+              ? Number(row.utilizationRate).toFixed(1)
+              : "0.0"
+          ),
+        ].join(","));
+      } else if (reportType === "maintenance") {
+        csvRows = rows.map((row) => [
+          csvEscape(row.equipmentName || "Unknown Equipment"),
+          csvEscape(row.totalWorkOrders ?? 0),
+          csvEscape(row.completedWorkOrders ?? 0),
+          csvEscape(row.inProgressWorkOrders ?? 0),
+          csvEscape(row.totalDowntimeMinutes ?? 0),
+        ].join(","));
+      } else if (reportType === "sharing") {
+        csvRows = rows.map((row) => [
+          csvEscape(row.requestingInstitutionName || "Unknown Institution"),
+          csvEscape(row.owningInstitutionName || "Unknown Institution"),
+          csvEscape(row.totalRequests ?? 0),
+          csvEscape(row.approvedRequests ?? 0),
+          csvEscape(row.rejectedRequests ?? 0),
+          csvEscape(row.pendingRequests ?? 0),
+          csvEscape(row.sharedEquipment ?? 0),
+        ].join(","));
+      } else if (reportType === "procurement") {
+        csvRows = rows.map((row) => [
+          csvEscape(row.equipmentName),
+          csvEscape(row.assetTag),
+          csvEscape(row.category),
+          csvEscape(row.department),
+          csvEscape(row.supplier),
+          csvEscape(row.purchaseDate || ""),
+          csvEscape(row.purchaseCost ?? ""),
+        ].join(","));
+      }
+
+      const csv = csvHeader + (csvRows.length ? "\n" + csvRows.join("\n") : "");
+      const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("CSV download error:", err);
       alert(
-        "CSV download is currently available for the Equipment Utilization report."
+        err.response?.data?.message ||
+        "Failed to download CSV."
       );
+    }
+  }
+  // =========================================================
+// DOWNLOAD EXCEL REPORT
+// =========================================================
+
+async function handleExcelDownload() {
+  if (!from || !to) {
+    alert("Please select both a start and end date.");
+    return;
+  }
+
+  if (from > to) {
+    alert("The From date cannot be after the To date.");
+    return;
+  }
+
+  try {
+    let rows = [];
+
+    // =====================================================
+    // GET DATA
+    // =====================================================
+
+    if (reportType === "equipment") {
+      rows = equipmentRows;
+
+      if (!generated) {
+        rows = (await getUtilizationCostReport(from, to)) || [];
+      }
+    }
+
+    else if (reportType === "department") {
+      rows = departmentRows;
+
+      if (!generated) {
+        rows = (await getDepartmentUsageReport(from, to)) || [];
+      }
+    }
+
+    else if (reportType === "maintenance") {
+      rows = maintenanceRows;
+
+      if (!generated) {
+        rows = (await getMaintenanceDowntimeReport(from, to)) || [];
+      }
+    }
+
+    else if (reportType === "sharing") {
+      rows = sharingRows;
+
+      if (!generated) {
+        rows = (await getInterInstitutionSharingReport(from, to)) || [];
+      }
+    }
+
+    else if (reportType === "procurement") {
+      rows = procurementRows;
+
+      if (!generated) {
+        const data = await getAllEquipment();
+
+        rows = (data || []).filter(
+          (equipment) =>
+            equipment.purchaseDate &&
+            equipment.purchaseDate >= from &&
+            equipment.purchaseDate <= to
+        );
+      }
+    }
+
+    // =====================================================
+    // PREPARE EXCEL DATA
+    // =====================================================
+
+    let excelData = [];
+    let filename = "";
+
+    // =====================================================
+    // EQUIPMENT UTILIZATION
+    // =====================================================
+
+    if (reportType === "equipment") {
+      excelData = rows.map((row) => ({
+        "Equipment": row.equipmentName || "",
+        "Category": row.category || "",
+        "Total Bookings": Number(row.totalBookings || 0),
+        "Usage Hours": Number(row.usageHours || 0),
+        "Utilization (%)": Number(row.utilizationRate || 0),
+        "Total Cost (₹)": Number(row.totalCost || 0),
+      }));
+
+      filename = "equipment_utilization_report.xlsx";
+    }
+
+    // =====================================================
+    // DEPARTMENT USAGE
+    // =====================================================
+
+    else if (reportType === "department") {
+      excelData = rows.map((row) => ({
+        "Department": row.department || "Unknown",
+        "Total Bookings": Number(row.totalBookings || 0),
+        "Usage Hours": Number(row.usageHours || 0),
+        "Equipment Count": Number(row.equipmentCount || 0),
+        "Utilization (%)": Number(row.utilizationRate || 0),
+      }));
+
+      filename = "department_usage_report.xlsx";
+    }
+
+    // =====================================================
+    // MAINTENANCE & DOWNTIME
+    // =====================================================
+
+    else if (reportType === "maintenance") {
+      excelData = rows.map((row) => ({
+        "Equipment": row.equipmentName || "Unknown Equipment",
+        "Total Work Orders": Number(row.totalWorkOrders || 0),
+        "Completed Work Orders": Number(
+          row.completedWorkOrders || 0
+        ),
+        "In Progress Work Orders": Number(
+          row.inProgressWorkOrders || 0
+        ),
+        "Downtime Minutes": Number(
+          row.totalDowntimeMinutes || 0
+        ),
+      }));
+
+      filename = "maintenance_downtime_report.xlsx";
+    }
+
+    // =====================================================
+    // INTER-INSTITUTION SHARING
+    // =====================================================
+
+    else if (reportType === "sharing") {
+      excelData = rows.map((row) => ({
+        "Requesting Institution":
+          row.requestingInstitutionName ||
+          "Unknown Institution",
+
+        "Owning Institution":
+          row.owningInstitutionName ||
+          "Unknown Institution",
+
+        "Total Requests":
+          Number(row.totalRequests || 0),
+
+        "Approved Requests":
+          Number(row.approvedRequests || 0),
+
+        "Rejected Requests":
+          Number(row.rejectedRequests || 0),
+
+        "Pending Requests":
+          Number(row.pendingRequests || 0),
+
+        "Shared Equipment":
+          Number(row.sharedEquipment || 0),
+      }));
+
+      filename = "inter_institution_sharing_report.xlsx";
+    }
+
+    // =====================================================
+    // PROCUREMENT & COST
+    // =====================================================
+
+    else if (reportType === "procurement") {
+      excelData = rows.map((row) => ({
+        "Equipment":
+          row.equipmentName || "Unknown Equipment",
+
+        "Asset Tag":
+          row.assetTag || "",
+
+        "Category":
+          row.category || "",
+
+        "Department":
+          row.department || "",
+
+        "Supplier":
+          row.supplier || "Not specified",
+
+        "Purchase Date":
+          row.purchaseDate || "",
+
+        "Purchase Cost (₹)":
+          Number(row.purchaseCost || 0),
+      }));
+
+      filename = "procurement_cost_report.xlsx";
+    }
+
+    // =====================================================
+    // CREATE WORKBOOK
+    // =====================================================
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    const columnWidths = [];
+
+    if (excelData.length > 0) {
+      const headers = Object.keys(excelData[0]);
+
+      headers.forEach((header) => {
+        let maxLength = header.length;
+
+        excelData.forEach((row) => {
+          const value = row[header];
+
+          if (value !== null && value !== undefined) {
+            maxLength = Math.max(
+              maxLength,
+              String(value).length
+            );
+          }
+        });
+
+        columnWidths.push({
+          wch: Math.min(maxLength + 3, 40),
+        });
+      });
+
+      worksheet["!cols"] = columnWidths;
+    }
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Report"
+    );
+
+    // =====================================================
+    // DOWNLOAD
+    // =====================================================
+
+    XLSX.writeFile(workbook, filename);
+
+  } catch (err) {
+
+    console.error(
+      "Excel download error:",
+      err
+    );
+
+    alert(
+      err.response?.data?.message ||
+      "Failed to download Excel report."
+    );
+  }
+}
+
+  // =========================================================
+  // DOWNLOAD PDF REPORT
+  // =========================================================
+
+  async function handlePdfDownload() {
+    if (!from || !to) {
+      alert("Please select both a start and end date.");
+      return;
+    }
+
+    if (from > to) {
+      alert("The From date cannot be after the To date.");
       return;
     }
 
     try {
-      await downloadUtilizationCostReportCsv(from, to);
+      let rows = [];
+
+      if (reportType === "equipment") {
+        rows = equipmentRows;
+        if (!generated) {
+          rows = (await getUtilizationCostReport(from, to)) || [];
+        }
+      } else if (reportType === "department") {
+        rows = departmentRows;
+        if (!generated) {
+          rows = (await getDepartmentUsageReport(from, to)) || [];
+        }
+      } else if (reportType === "maintenance") {
+        rows = maintenanceRows;
+        if (!generated) {
+          rows = (await getMaintenanceDowntimeReport(from, to)) || [];
+        }
+      } else if (reportType === "sharing") {
+        rows = sharingRows;
+        if (!generated) {
+          rows = (await getInterInstitutionSharingReport(from, to)) || [];
+        }
+      } else if (reportType === "procurement") {
+        rows = procurementRows;
+        if (!generated) {
+          const data = await getAllEquipment();
+          rows = (data || []).filter(
+            (equipment) =>
+              equipment.purchaseDate &&
+              equipment.purchaseDate >= from &&
+              equipment.purchaseDate <= to
+          );
+        }
+      }
+
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      let title = "";
+      let head = [];
+      let body = [];
+
+      if (reportType === "equipment") {
+        title = "Equipment Utilization & Cost Report";
+        head = [[
+          "Equipment", "Category", "Bookings",
+          "Usage Hours", "Utilization (%)", "Total Cost (₹)"
+        ]];
+        body = rows.map((row) => [
+          row.equipmentName || "",
+          row.category || "General",
+          Number(row.totalBookings || 0),
+          Number(row.usageHours || 0),
+          Number(row.utilizationRate || 0).toFixed(1),
+          Number(row.totalCost || 0).toFixed(2),
+        ]);
+      } else if (reportType === "department") {
+        title = "Department Usage Report";
+        head = [[
+          "Department", "Total Bookings", "Usage Hours",
+          "Equipment Count", "Utilization (%)"
+        ]];
+        body = rows.map((row) => [
+          row.department || "Unknown",
+          Number(row.totalBookings || 0),
+          Number(row.usageHours || 0),
+          Number(row.equipmentCount || 0),
+          Number(row.utilizationRate || 0).toFixed(1),
+        ]);
+      } else if (reportType === "maintenance") {
+        title = "Maintenance & Downtime Report";
+        head = [[
+          "Equipment", "Total Work Orders",
+          "Completed", "In Progress", "Downtime"
+        ]];
+        body = rows.map((row) => [
+          row.equipmentName || "Unknown Equipment",
+          Number(row.totalWorkOrders || 0),
+          Number(row.completedWorkOrders || 0),
+          Number(row.inProgressWorkOrders || 0),
+          formatDowntime(row.totalDowntimeMinutes),
+        ]);
+      } else if (reportType === "sharing") {
+        title = "Inter-Institution Sharing Report";
+        head = [[
+          "Requesting Institution", "Owning Institution",
+          "Total Requests", "Approved", "Rejected",
+          "Pending", "Shared Equipment"
+        ]];
+        body = rows.map((row) => [
+          row.requestingInstitutionName || "Unknown Institution",
+          row.owningInstitutionName || "Unknown Institution",
+          Number(row.totalRequests || 0),
+          Number(row.approvedRequests || 0),
+          Number(row.rejectedRequests || 0),
+          Number(row.pendingRequests || 0),
+          Number(row.sharedEquipment || 0),
+        ]);
+      } else if (reportType === "procurement") {
+        title = "Procurement & Cost Report";
+        head = [[
+          "Equipment", "Asset Tag", "Category", "Department",
+          "Supplier", "Purchase Date", "Purchase Cost (₹)"
+        ]];
+        body = rows.map((row) => [
+          row.equipmentName || "Unknown Equipment",
+          row.assetTag || "",
+          row.category || "",
+          row.department || "",
+          row.supplier || "Not specified",
+          row.purchaseDate || "-",
+          Number(row.purchaseCost || 0).toFixed(2),
+        ]);
+      }
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, 14, 15);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Date Range: ${from} to ${to}`, 14, 22);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+
+      autoTable(doc, {
+        startY: 34,
+        head,
+        body,
+        theme: "grid",
+        styles: {
+          fontSize: 8,
+          cellPadding: 2.5,
+          overflow: "linebreak",
+        },
+        headStyles: {
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 247, 250],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      const pageCount = doc.getNumberOfPages();
+
+      for (let page = 1; page <= pageCount; page++) {
+        doc.setPage(page);
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Laboratory Reports | Page ${page} of ${pageCount}`,
+          14,
+          pageHeight - 8
+        );
+      }
+
+      const filenameMap = {
+        equipment: "equipment_utilization_report.pdf",
+        department: "department_usage_report.pdf",
+        maintenance: "maintenance_downtime_report.pdf",
+        sharing: "inter_institution_sharing_report.pdf",
+        procurement: "procurement_cost_report.pdf",
+      };
+
+      doc.save(filenameMap[reportType] || "laboratory_report.pdf");
+
     } catch (err) {
-      console.error(err);
-      alert("Failed to download CSV.");
+      console.error("PDF download error:", err);
+      alert(
+        err.response?.data?.message ||
+        "Failed to download PDF report."
+      );
     }
+  }
+
+  // =========================================================
+  // CSV ESCAPE HELPER
+  // =========================================================
+
+  function csvEscape(value) {
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
+
+    const stringValue = String(value);
+
+    if (
+      stringValue.includes(",") ||
+      stringValue.includes('"') ||
+      stringValue.includes("\n")
+    ) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+
+    return stringValue;
   }
 
   // =========================================================
   // EQUIPMENT SUMMARY CALCULATIONS
   // =========================================================
 
-  const totalEquipment = equipmentRows.length;
+  const totalEquipment =
+    equipmentRows.length;
 
-  const totalBookings = equipmentRows.reduce(
-    (sum, row) =>
-      sum + Number(row.totalBookings || 0),
-    0
-  );
+  const totalBookings =
+    equipmentRows.reduce(
+      (sum, row) =>
+        sum +
+        Number(row.totalBookings || 0),
+      0
+    );
 
-  const totalUsageHours = equipmentRows.reduce(
-    (sum, row) =>
-      sum + Number(row.usageHours || 0),
-    0
-  );
+  const totalUsageHours =
+    equipmentRows.reduce(
+      (sum, row) =>
+        sum +
+        Number(row.usageHours || 0),
+      0
+    );
 
-  const totalCost = equipmentRows.reduce(
-    (sum, row) =>
-      sum + Number(row.totalCost || 0),
-    0
-  );
+  const totalCost =
+    equipmentRows.reduce(
+      (sum, row) =>
+        sum +
+        Number(row.totalCost || 0),
+      0
+    );
 
   const averageUtilization =
     equipmentRows.length > 0
@@ -177,7 +860,9 @@ export default function Reports() {
           equipmentRows.reduce(
             (sum, row) =>
               sum +
-              Number(row.utilizationRate || 0),
+              Number(
+                row.utilizationRate || 0
+              ),
             0
           ) / equipmentRows.length
         ).toFixed(1)
@@ -187,31 +872,35 @@ export default function Reports() {
   // DEPARTMENT SUMMARY CALCULATIONS
   // =========================================================
 
-  const totalDepartments = departmentRows.length;
+  const totalDepartments =
+    departmentRows.length;
 
   const totalDepartmentBookings =
     departmentRows.reduce(
       (sum, row) =>
-        sum + Number(row.totalBookings || 0),
+        sum +
+        Number(row.totalBookings || 0),
       0
     );
 
   const totalDepartmentUsage =
     departmentRows.reduce(
       (sum, row) =>
-        sum + Number(row.usageHours || 0),
+        sum +
+        Number(row.usageHours || 0),
       0
     );
 
   const totalDepartmentEquipment =
     departmentRows.reduce(
       (sum, row) =>
-        sum + Number(row.equipmentCount || 0),
+        sum +
+        Number(row.equipmentCount || 0),
       0
     );
 
   // =========================================================
-  // MAINTENANCE / DOWNTIME SUMMARY CALCULATIONS
+  // MAINTENANCE SUMMARY CALCULATIONS
   // =========================================================
 
   const totalMaintenanceEquipment =
@@ -220,37 +909,41 @@ export default function Reports() {
   const totalMaintenanceWorkOrders =
     maintenanceRows.reduce(
       (sum, row) =>
-        sum + Number(row.totalWorkOrders || 0),
+        sum +
+        Number(row.totalWorkOrders || 0),
       0
     );
 
   const totalCompletedWorkOrders =
     maintenanceRows.reduce(
       (sum, row) =>
-        sum + Number(row.completedWorkOrders || 0),
+        sum +
+        Number(row.completedWorkOrders || 0),
       0
     );
 
   const totalInProgressWorkOrders =
     maintenanceRows.reduce(
       (sum, row) =>
-        sum + Number(row.inProgressWorkOrders || 0),
+        sum +
+        Number(row.inProgressWorkOrders || 0),
       0
     );
 
   const totalDowntimeMinutes =
     maintenanceRows.reduce(
       (sum, row) =>
-        sum + Number(row.totalDowntimeMinutes || 0),
+        sum +
+        Number(row.totalDowntimeMinutes || 0),
       0
     );
 
   const formatDowntime = (minutes) => {
-    const totalMinutes = Number(minutes || 0);
+    const totalMinutes =
+      Number(minutes || 0);
 
-    const hours = Math.floor(
-      totalMinutes / 60
-    );
+    const hours =
+      Math.floor(totalMinutes / 60);
 
     const remainingMinutes =
       totalMinutes % 60;
@@ -269,37 +962,80 @@ export default function Reports() {
   const totalSharingRequests =
     sharingRows.reduce(
       (sum, row) =>
-        sum + Number(row.totalRequests || 0),
+        sum +
+        Number(row.totalRequests || 0),
       0
     );
 
   const totalApprovedSharingRequests =
     sharingRows.reduce(
       (sum, row) =>
-        sum + Number(row.approvedRequests || 0),
+        sum +
+        Number(row.approvedRequests || 0),
       0
     );
 
   const totalRejectedSharingRequests =
     sharingRows.reduce(
       (sum, row) =>
-        sum + Number(row.rejectedRequests || 0),
+        sum +
+        Number(row.rejectedRequests || 0),
       0
     );
 
   const totalPendingSharingRequests =
     sharingRows.reduce(
       (sum, row) =>
-        sum + Number(row.pendingRequests || 0),
+        sum +
+        Number(row.pendingRequests || 0),
       0
     );
 
   const totalSharedEquipment =
     sharingRows.reduce(
       (sum, row) =>
-        sum + Number(row.sharedEquipment || 0),
+        sum +
+        Number(row.sharedEquipment || 0),
       0
     );
+
+  // =========================================================
+  // PROCUREMENT SUMMARY CALCULATIONS
+  // =========================================================
+
+  const totalProcurementEquipment =
+    procurementRows.length;
+
+  const totalProcurementCost =
+    procurementRows.reduce(
+      (sum, row) =>
+        sum +
+        Number(row.purchaseCost || 0),
+      0
+    );
+
+  const averagePurchaseCost =
+    totalProcurementEquipment > 0
+      ? totalProcurementCost /
+        totalProcurementEquipment
+      : 0;
+
+  const highestPurchaseCost =
+    procurementRows.length > 0
+      ? Math.max(
+          ...procurementRows.map(
+            (row) =>
+              Number(row.purchaseCost || 0)
+          )
+        )
+      : 0;
+
+  const procurementWithSupplier =
+    procurementRows.filter(
+      (row) =>
+        row.supplier &&
+        row.supplier.trim() !== ""
+    ).length;
 
   // =========================================================
   // RETURN
@@ -508,7 +1244,16 @@ export default function Reports() {
 
           {/* PROCUREMENT */}
 
-          <div className="report-type-card">
+          <div
+            className={`report-type-card ${
+              reportType === "procurement"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setReportType("procurement")
+            }
+          >
 
             <div className="report-type-icon green">
               💰
@@ -527,8 +1272,8 @@ export default function Reports() {
 
             </div>
 
-            <span className="coming-badge">
-              Coming Soon
+            <span className="active-badge">
+              Available
             </span>
 
           </div>
@@ -597,6 +1342,10 @@ export default function Reports() {
                   Inter-Institution Sharing
                 </option>
 
+                <option value="procurement">
+                  Procurement & Cost
+                </option>
+
               </select>
 
             </div>
@@ -661,13 +1410,40 @@ export default function Reports() {
 
             {/* DOWNLOAD */}
 
-            <button
-              className="download-btn"
-              onClick={handleDownload}
-              disabled={reportType !== "equipment"}
+            <div
+              className="download-buttons"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
             >
-              📥 Download CSV
-            </button>
+              <button
+                className="download-btn"
+                style={{ marginRight: "10px" }}
+                onClick={handleDownload}
+                disabled={loading}
+              >
+                📥 Download CSV
+              </button>
+
+              <button
+                className="download-btn excel-download-btn"
+                style={{ marginRight: "10px" }}
+                onClick={handleExcelDownload}
+                disabled={loading}
+              >
+                📊 Download Excel
+              </button>
+
+              <button
+                className="download-btn pdf-download-btn"
+                onClick={handlePdfDownload}
+                disabled={loading}
+              >
+                📄 Download PDF
+              </button>
+            </div>
 
           </div>
 
@@ -1130,6 +1906,127 @@ export default function Reports() {
 
 
         {/* ===================================================
+            PROCUREMENT SUMMARY
+        =================================================== */}
+
+        {generated &&
+          reportType === "procurement" && (
+
+          <section className="summary-grid">
+
+            {/* EQUIPMENT PROCURED */}
+
+            <div className="summary-card blue-card">
+
+              <div className="summary-card-icon">
+                🧪
+              </div>
+
+              <div>
+
+                <span>
+                  EQUIPMENT PROCURED
+                </span>
+
+                <strong>
+                  {totalProcurementEquipment}
+                </strong>
+
+                <small>
+                  equipment purchased
+                </small>
+
+              </div>
+
+            </div>
+
+
+            {/* TOTAL PROCUREMENT COST */}
+
+            <div className="summary-card green-card">
+
+              <div className="summary-card-icon">
+                💰
+              </div>
+
+              <div>
+
+                <span>
+                  TOTAL PROCUREMENT COST
+                </span>
+
+                <strong>
+                  ₹{totalProcurementCost.toFixed(2)}
+                </strong>
+
+                <small>
+                  total purchase expenditure
+                </small>
+
+              </div>
+
+            </div>
+
+
+            {/* AVERAGE COST */}
+
+            <div className="summary-card purple-card">
+
+              <div className="summary-card-icon">
+                📊
+              </div>
+
+              <div>
+
+                <span>
+                  AVERAGE PURCHASE COST
+                </span>
+
+                <strong>
+                  ₹{averagePurchaseCost.toFixed(2)}
+                </strong>
+
+                <small>
+                  average cost per equipment
+                </small>
+
+              </div>
+
+            </div>
+
+
+            {/* HIGHEST COST */}
+
+            <div className="summary-card cyan-card">
+
+              <div className="summary-card-icon">
+                📈
+              </div>
+
+              <div>
+
+                <span>
+                  HIGHEST PURCHASE COST
+                </span>
+
+                <strong>
+                  ₹{highestPurchaseCost.toFixed(2)}
+                </strong>
+
+                <small>
+                  highest individual purchase
+                </small>
+
+              </div>
+
+            </div>
+
+          </section>
+
+        )}
+
+
+        {/* ===================================================
             EQUIPMENT UTILIZATION OVERVIEW
         =================================================== */}
 
@@ -1355,8 +2252,10 @@ export default function Reports() {
                         <td>
 
                           <span className="category-badge">
+
                             {row.category ||
                               "General"}
+
                           </span>
 
                         </td>
@@ -1743,9 +2642,11 @@ export default function Reports() {
                         <td>
 
                           <strong className="downtime-value">
+
                             {formatDowntime(
                               row.totalDowntimeMinutes
                             )}
+
                           </strong>
 
                         </td>
@@ -1819,8 +2720,6 @@ export default function Reports() {
 
             </div>
 
-
-            {/* SHARING SUMMARY */}
 
             {sharingRows.length > 0 && (
 
@@ -2020,6 +2919,260 @@ export default function Reports() {
                 {" "}
                 {totalPendingSharingRequests}
                 {" "}pending.
+
+              </div>
+
+            )}
+
+          </section>
+
+        )}
+
+
+        {/* ===================================================
+            PROCUREMENT & COST REPORT
+        =================================================== */}
+
+        {generated &&
+          reportType === "procurement" && (
+
+          <section className="report-table-card procurement-report-card">
+
+            <div className="table-header">
+
+              <div>
+
+                <h2>
+                  💰 Procurement & Cost Analysis
+                </h2>
+
+                <p>
+                  Equipment procurement and
+                  purchase cost breakdown.
+                </p>
+
+              </div>
+
+              <div className="date-range-display">
+                📅 {from} → {to}
+              </div>
+
+            </div>
+
+
+            {/* PROCUREMENT SUMMARY MESSAGE */}
+
+            {procurementRows.length > 0 && (
+
+              <div className="department-footer">
+
+                <span>
+                  💰
+                </span>
+
+                {totalProcurementEquipment}
+                {" "}equipment procured during
+                the selected period for a total
+                cost of{" "}
+                ₹{totalProcurementCost.toFixed(2)}.
+
+              </div>
+
+            )}
+
+
+            {/* TABLE */}
+
+            <div className="table-wrapper">
+
+              <table>
+
+                <thead>
+
+                  <tr>
+
+                    <th>
+                      EQUIPMENT
+                    </th>
+
+                    <th>
+                      ASSET TAG
+                    </th>
+
+                    <th>
+                      CATEGORY
+                    </th>
+
+                    <th>
+                      DEPARTMENT
+                    </th>
+
+                    <th>
+                      SUPPLIER
+                    </th>
+
+                    <th>
+                      PURCHASE DATE
+                    </th>
+
+                    <th>
+                      PURCHASE COST
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                  {procurementRows.length === 0 ? (
+
+                    <tr>
+
+                      <td
+                        colSpan="7"
+                        className="empty-row"
+                      >
+
+                        <div>
+                          💰
+                        </div>
+
+                        No procurement data
+                        available for this
+                        date range.
+
+                      </td>
+
+                    </tr>
+
+                  ) : (
+
+                    procurementRows.map(
+                      (row, index) => (
+
+                        <tr
+                          key={
+                            row.id ||
+                            row.assetTag ||
+                            index
+                          }
+                        >
+
+                          {/* EQUIPMENT */}
+
+                          <td>
+
+                            <div className="table-equipment">
+
+                              <div>
+                                ⚙
+                              </div>
+
+                              <strong>
+                                {row.equipmentName ||
+                                  "Unknown Equipment"}
+                              </strong>
+
+                            </div>
+
+                          </td>
+
+
+                          {/* ASSET TAG */}
+
+                          <td>
+                            {row.assetTag ||
+                              "-"}
+                          </td>
+
+
+                          {/* CATEGORY */}
+
+                          <td>
+
+                            <span className="category-badge">
+
+                              {row.category ||
+                                "General"}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* DEPARTMENT */}
+
+                          <td>
+                            {row.department ||
+                              "-"}
+
+                          </td>
+
+
+                          {/* SUPPLIER */}
+
+                          <td>
+
+                            {row.supplier ||
+                              "Not specified"}
+
+                          </td>
+
+
+                          {/* PURCHASE DATE */}
+
+                          <td>
+                            {row.purchaseDate ||
+                              "-"}
+                          </td>
+
+
+                          {/* PURCHASE COST */}
+
+                          <td>
+
+                            <strong className="cost-value">
+
+                              ₹
+                              {Number(
+                                row.purchaseCost || 0
+                              ).toFixed(2)}
+
+                            </strong>
+
+                          </td>
+
+                        </tr>
+
+                      )
+                    )
+
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+
+            {/* PROCUREMENT FOOTER */}
+
+            {procurementRows.length > 0 && (
+
+              <div className="department-footer">
+
+                <span>
+                  📊
+                </span>
+
+                {procurementWithSupplier}
+                {" "}of{" "}
+                {totalProcurementEquipment}
+                {" "}procured equipment records
+                have supplier information.
 
               </div>
 

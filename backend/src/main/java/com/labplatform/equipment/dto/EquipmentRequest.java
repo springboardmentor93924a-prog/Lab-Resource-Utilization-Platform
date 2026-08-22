@@ -2,6 +2,7 @@ package com.labplatform.equipment.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class EquipmentRequest {
@@ -13,43 +14,36 @@ public class EquipmentRequest {
     private String assetTag;
 
     private String category;
-
     private String department;
-
     private String manufacturer;
-
     private String model;
-
     private String imageUrl;
-
     private String status;
 
-    /*
-     * Existing field - kept for backward compatibility.
-     */
     private LocalDate calibrationDueDate;
 
-    /*
-     * Calibration tracking
-     */
     private LocalDate lastCalibrationDate;
-
     private LocalDate nextCalibrationDate;
 
-    /*
-     * Certification tracking
-     */
     private String certificationDetails;
-
     private LocalDate certificationExpiryDate;
 
     private String manualDocument;
-
     private String calibrationCertificate;
 
     private Integer institutionId;
 
-    private java.math.BigDecimal hourlyRate;
+    private BigDecimal hourlyRate;
+
+    /*
+     * ============================================================
+     * PROCUREMENT INFORMATION
+     * ============================================================
+     */
+
+    private String supplier;
+    private LocalDate purchaseDate;
+    private BigDecimal purchaseCost;
 
     public EquipmentRequest() {
     }
@@ -182,11 +176,41 @@ public class EquipmentRequest {
         this.institutionId = institutionId;
     }
 
-    public java.math.BigDecimal getHourlyRate() {
+    public BigDecimal getHourlyRate() {
         return hourlyRate;
     }
 
-    public void setHourlyRate(java.math.BigDecimal hourlyRate) {
+    public void setHourlyRate(BigDecimal hourlyRate) {
         this.hourlyRate = hourlyRate;
+    }
+
+    /*
+     * ============================================================
+     * PROCUREMENT GETTERS / SETTERS
+     * ============================================================
+     */
+
+    public String getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(String supplier) {
+        this.supplier = supplier;
+    }
+
+    public LocalDate getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDate purchaseDate) {
+        this.purchaseDate = purchaseDate;
+    }
+
+    public BigDecimal getPurchaseCost() {
+        return purchaseCost;
+    }
+
+    public void setPurchaseCost(BigDecimal purchaseCost) {
+        this.purchaseCost = purchaseCost;
     }
 }

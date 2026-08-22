@@ -2,6 +2,7 @@ package com.labplatform.equipment.dto;
 
 import com.labplatform.equipment.model.Equipment;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -17,14 +18,12 @@ public class EquipmentResponse {
     private String imageUrl;
     private String status;
 
-    // Existing calibration field - kept for compatibility
+    // Calibration
     private LocalDate calibrationDueDate;
-
-    // New calibration fields
     private LocalDate lastCalibrationDate;
     private LocalDate nextCalibrationDate;
 
-    // Certification fields
+    // Certification
     private String certificationDetails;
     private LocalDate certificationExpiryDate;
 
@@ -33,10 +32,24 @@ public class EquipmentResponse {
 
     private LocalDateTime createdAt;
 
+    // Institution
     private Integer institutionId;
     private String institutionName;
 
-    private java.math.BigDecimal hourlyRate;
+    // Usage cost
+    private BigDecimal hourlyRate;
+
+    // =========================================================
+    // PROCUREMENT
+    // =========================================================
+
+    private String supplier;
+    private LocalDate purchaseDate;
+    private BigDecimal purchaseCost;
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public EquipmentResponse() {
     }
@@ -44,44 +57,115 @@ public class EquipmentResponse {
     public EquipmentResponse(Equipment equipment) {
 
         this.id = equipment.getId();
-        this.equipmentName = equipment.getEquipmentName();
-        this.assetTag = equipment.getAssetTag();
-        this.category = equipment.getCategory();
-        this.department = equipment.getDepartment();
-        this.manufacturer = equipment.getManufacturer();
-        this.model = equipment.getModel();
-        this.imageUrl = equipment.getImageUrl();
 
-        this.status = equipment.getStatus() != null
-                ? equipment.getStatus().name()
-                : null;
+        this.equipmentName =
+                equipment.getEquipmentName();
 
-        // Existing calibration field
-        this.calibrationDueDate = equipment.getCalibrationDueDate();
+        this.assetTag =
+                equipment.getAssetTag();
 
-        // New calibration fields
-        this.lastCalibrationDate = equipment.getLastCalibrationDate();
-        this.nextCalibrationDate = equipment.getNextCalibrationDate();
+        this.category =
+                equipment.getCategory();
 
-        // Certification fields
-        this.certificationDetails = equipment.getCertificationDetails();
-        this.certificationExpiryDate = equipment.getCertificationExpiryDate();
+        this.department =
+                equipment.getDepartment();
 
-        this.manualDocument = equipment.getManualDocument();
-        this.calibrationCertificate = equipment.getCalibrationCertificate();
+        this.manufacturer =
+                equipment.getManufacturer();
 
-        this.createdAt = equipment.getCreatedAt();
+        this.model =
+                equipment.getModel();
 
-        this.institutionId = equipment.getInstitution() != null
-                ? equipment.getInstitution().getId()
-                : null;
+        this.imageUrl =
+                equipment.getImageUrl();
 
-        this.institutionName = equipment.getInstitution() != null
-                ? equipment.getInstitution().getName()
-                : null;
+        this.status =
+                equipment.getStatus() != null
+                        ? equipment.getStatus().name()
+                        : null;
 
-        this.hourlyRate = equipment.getHourlyRate();
+        // =====================================================
+        // CALIBRATION
+        // =====================================================
+
+        this.calibrationDueDate =
+                equipment.getCalibrationDueDate();
+
+        this.lastCalibrationDate =
+                equipment.getLastCalibrationDate();
+
+        this.nextCalibrationDate =
+                equipment.getNextCalibrationDate();
+
+        // =====================================================
+        // CERTIFICATION
+        // =====================================================
+
+        this.certificationDetails =
+                equipment.getCertificationDetails();
+
+        this.certificationExpiryDate =
+                equipment.getCertificationExpiryDate();
+
+        // =====================================================
+        // DOCUMENTS
+        // =====================================================
+
+        this.manualDocument =
+                equipment.getManualDocument();
+
+        this.calibrationCertificate =
+                equipment.getCalibrationCertificate();
+
+        // =====================================================
+        // CREATED DATE
+        // =====================================================
+
+        this.createdAt =
+                equipment.getCreatedAt();
+
+        // =====================================================
+        // INSTITUTION
+        // =====================================================
+
+        if (equipment.getInstitution() != null) {
+
+            this.institutionId =
+                    equipment.getInstitution().getId();
+
+            this.institutionName =
+                    equipment.getInstitution().getName();
+
+        } else {
+
+            this.institutionId = null;
+            this.institutionName = null;
+        }
+
+        // =====================================================
+        // HOURLY RATE
+        // =====================================================
+
+        this.hourlyRate =
+                equipment.getHourlyRate();
+
+        // =====================================================
+        // PROCUREMENT
+        // =====================================================
+
+        this.supplier =
+                equipment.getSupplier();
+
+        this.purchaseDate =
+                equipment.getPurchaseDate();
+
+        this.purchaseCost =
+                equipment.getPurchaseCost();
     }
+
+    // =========================================================
+    // GETTERS AND SETTERS
+    // =========================================================
 
     public Long getId() {
         return id;
@@ -191,8 +275,11 @@ public class EquipmentResponse {
         return certificationExpiryDate;
     }
 
-    public void setCertificationExpiryDate(LocalDate certificationExpiryDate) {
-        this.certificationExpiryDate = certificationExpiryDate;
+    public void setCertificationExpiryDate(
+            LocalDate certificationExpiryDate) {
+
+        this.certificationExpiryDate =
+                certificationExpiryDate;
     }
 
     public String getManualDocument() {
@@ -207,8 +294,11 @@ public class EquipmentResponse {
         return calibrationCertificate;
     }
 
-    public void setCalibrationCertificate(String calibrationCertificate) {
-        this.calibrationCertificate = calibrationCertificate;
+    public void setCalibrationCertificate(
+            String calibrationCertificate) {
+
+        this.calibrationCertificate =
+                calibrationCertificate;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -235,11 +325,39 @@ public class EquipmentResponse {
         this.institutionName = institutionName;
     }
 
-    public java.math.BigDecimal getHourlyRate() {
+    public BigDecimal getHourlyRate() {
         return hourlyRate;
     }
 
-    public void setHourlyRate(java.math.BigDecimal hourlyRate) {
+    public void setHourlyRate(BigDecimal hourlyRate) {
         this.hourlyRate = hourlyRate;
+    }
+
+    // =========================================================
+    // PROCUREMENT GETTERS / SETTERS
+    // =========================================================
+
+    public String getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(String supplier) {
+        this.supplier = supplier;
+    }
+
+    public LocalDate getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDate purchaseDate) {
+        this.purchaseDate = purchaseDate;
+    }
+
+    public BigDecimal getPurchaseCost() {
+        return purchaseCost;
+    }
+
+    public void setPurchaseCost(BigDecimal purchaseCost) {
+        this.purchaseCost = purchaseCost;
     }
 }

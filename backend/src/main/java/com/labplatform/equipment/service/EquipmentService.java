@@ -18,13 +18,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.scheduling.annotation.Scheduled;
-
+import com.labplatform.equipment.dto.ProcurementCostReportRow;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.labplatform.equipment.dto.UtilizationHeatmapResponse;
 
 @Service
 public class EquipmentService {
@@ -243,6 +245,95 @@ public class EquipmentService {
 
         return rows;
     }
+
+    public List<ProcurementCostReportRow> generateProcurementCostReport(
+            LocalDate from,
+            LocalDate to) {
+
+        List<Equipment> allEquipment =
+                equipmentRepository.findAll();
+
+        List<ProcurementCostReportRow> rows =
+                new ArrayList<>();
+
+        for (Equipment equipment : allEquipment) {
+
+            /*
+             * Only equipment with procurement information
+             * and purchase date inside the selected range.
+             */
+            if (equipment.getPurchaseDate() == null) {
+                continue;
+            }
+
+            if (equipment.getPurchaseDate().isBefore(from)
+                    || equipment.getPurchaseDate().isAfter(to)) {
+                continue;
+            }
+
+            /*
+             * Find bookings for this equipment
+             * inside the selected date range.
+             */
+            List<Booking> bookingsInRange =
+                    bookingRepository
+                            .findByEquipmentId(equipment.getId())
+                            .stream()
+                            .filter(b ->
+                                    !b.getBookingDate().isBefore(from)
+                                            && !b.getBookingDate().isAfter(to))
+                            .filter(b ->
+                                    b.getBookingStatus()
+                                            == BookingStatus.CONFIRMED
+                                            ||
+                                            b.getBookingStatus()
+                                                    == BookingStatus.COMPLETED)
+                            .collect(Collectors.toList());
+
+            int usageHours =
+                    bookingsInRange.stream()
+                            .mapToInt(b ->
+                                    b.getDurationHours() != null
+                                            ? b.getDurationHours()
+                                            : 0)
+                            .sum();
+
+            BigDecimal operatingCost =
+                    equipment.getHourlyRate() != null
+                            ? equipment.getHourlyRate()
+                            .multiply(
+                                    BigDecimal.valueOf(usageHours))
+                            : BigDecimal.ZERO;
+
+            BigDecimal purchaseCost =
+                    equipment.getPurchaseCost() != null
+                            ? equipment.getPurchaseCost()
+                            : BigDecimal.ZERO;
+
+            BigDecimal totalCost =
+                    purchaseCost.add(operatingCost);
+
+            rows.add(
+                    new ProcurementCostReportRow(
+                            equipment.getId(),
+                            equipment.getEquipmentName(),
+                            equipment.getAssetTag(),
+                            equipment.getCategory(),
+                            equipment.getDepartment(),
+                            equipment.getManufacturer(),
+                            equipment.getSupplier(),
+                            equipment.getPurchaseDate(),
+                            purchaseCost,
+                            usageHours,
+                            operatingCost,
+                            totalCost
+                    )
+            );
+        }
+
+        return rows;
+    }
+
     public void generateCalibrationAndCertificationNotifications() {
 
         List<Equipment> allEquipment =
@@ -509,7 +600,135 @@ public class EquipmentService {
 
         return results;
     }
+    public List<UtilizationHeatmapResponse> getUtilizationHeatmap(
+            LocalDate from,
+            LocalDate to) {
 
+        if (from == null || to == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "From and to dates are required"
+            );
+        }
+
+        if (to.isBefore(from)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "To date must be after or equal to from date"
+            );
+        }
+
+        List<Equipment> allEquipment =
+                equipmentRepository.findAll();
+
+        List<Booking> bookings =
+                bookingRepository.findByBookingDateBetween(from, to)
+                        .stream()
+                        .filter(b ->
+                                b.getBookingStatus() == BookingStatus.CONFIRMED
+                                        || b.getBookingStatus() == BookingStatus.COMPLETED
+                        )
+                        .collect(Collectors.toList());
+
+        List<UtilizationHeatmapResponse> results =
+                new ArrayList<>();
+
+        for (Equipment equipment : allEquipment) {
+
+            List<UtilizationHeatmapResponse.DailyUtilization>
+                    dailyData = new ArrayList<>();
+
+            LocalDate currentDate = from;
+
+            double totalUtilization = 0;
+            int numberOfDays = 0;
+
+            while (!currentDate.isAfter(to)) {
+
+                final LocalDate date = currentDate;
+
+                List<Booking> dailyBookings =
+                        bookings.stream()
+                                .filter(b ->
+                                        b.getEquipment() != null
+                                                && b.getEquipment().getId()
+                                                .equals(equipment.getId())
+                                                && date.equals(b.getBookingDate())
+                                )
+                                .collect(Collectors.toList());
+
+                int usageHours =
+                        dailyBookings.stream()
+                                .mapToInt(b -> {
+
+                                    if (b.getDurationHours() != null) {
+                                        return b.getDurationHours();
+                                    }
+
+                                    if (b.getStartTime() != null
+                                            && b.getEndTime() != null) {
+
+                                        return (int) java.time.Duration
+                                                .between(
+                                                        b.getStartTime(),
+                                                        b.getEndTime()
+                                                )
+                                                .toHours();
+                                    }
+
+                                    return 0;
+                                })
+                                .sum();
+
+                /*
+                 * Laboratory equipment is considered
+                 * available for 8 working hours per day.
+                 */
+                double utilization =
+                        Math.min(
+                                (usageHours / 8.0) * 100.0,
+                                100.0
+                        );
+
+                utilization =
+                        Math.round(utilization * 10.0) / 10.0;
+
+                dailyData.add(
+                        new UtilizationHeatmapResponse.DailyUtilization(
+                                currentDate.toString(),
+                                utilization,
+                                usageHours,
+                                dailyBookings.size()
+                        )
+                );
+
+                totalUtilization += utilization;
+                numberOfDays++;
+
+                currentDate = currentDate.plusDays(1);
+            }
+
+            double averageUtilization =
+                    numberOfDays > 0
+                            ? totalUtilization / numberOfDays
+                            : 0;
+
+            averageUtilization =
+                    Math.round(averageUtilization * 10.0) / 10.0;
+
+            results.add(
+                    new UtilizationHeatmapResponse(
+                            equipment.getId(),
+                            equipment.getEquipmentName(),
+                            equipment.getCategory(),
+                            averageUtilization,
+                            dailyData
+                    )
+            );
+        }
+
+        return results;
+    }
     /*
      * ============================================================
      * APPLY EQUIPMENT REQUEST
@@ -581,7 +800,17 @@ public class EquipmentService {
          */
         equipment.setHourlyRate(
                 request.getHourlyRate());
+        /*
+         * Procurement information
+         */
+        equipment.setSupplier(
+                request.getSupplier());
 
+        equipment.setPurchaseDate(
+                request.getPurchaseDate());
+
+        equipment.setPurchaseCost(
+                request.getPurchaseCost());
         /*
          * Equipment status.
          */

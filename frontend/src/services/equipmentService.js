@@ -50,6 +50,12 @@ export async function getUtilizationCostReport(from, to) {
   const { data } = await api.get(`/reports/utilization-cost?from=${from}&to=${to}`);
   return data;
 }
+export async function getUtilizationHeatmap(from, to) {
+  const { data } = await api.get(
+    `/utilization/heatmap?from=${from}&to=${to}`
+  );
+  return data;
+}
 
 export function getUtilizationCostReportCsvUrl(from, to) {
   return `${API_BASE_URL}/reports/utilization-cost/csv?from=${from}&to=${to}`;

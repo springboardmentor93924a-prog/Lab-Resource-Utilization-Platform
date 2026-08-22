@@ -1,313 +1,940 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import { getEquipmentUtilization } from "../services/equipmentService";
+import { getUtilizationHeatmap } from "../services/equipmentService";
+import "./UtilizationHeatmap.css";
 
-function getColor(rate) {
-  if (rate <= 40) return "#22c55e";
-  if (rate <= 70) return "#f59e0b";
-  return "#ef4444";
+// ============================================================
+// HEATMAP COLOR
+// ============================================================
+
+function getHeatColor(rate) {
+  if (rate === 0) return "heat-zero";
+  if (rate <= 20) return "heat-very-low";
+  if (rate <= 40) return "heat-low";
+  if (rate <= 70) return "heat-medium";
+  if (rate <= 90) return "heat-high";
+  return "heat-critical";
 }
+
+// ============================================================
+// HEATMAP LABEL
+// ============================================================
+
+function getHeatLabel(rate) {
+  if (rate === 0) return "No Usage";
+  if (rate <= 20) return "Very Low";
+  if (rate <= 40) return "Low";
+  if (rate <= 70) return "Medium";
+  if (rate <= 90) return "High";
+  return "Very High";
+}
+
+// ============================================================
+// FORMAT DATE
+// ============================================================
+
+function formatDate(dateString) {
+  const date = new Date(`${dateString}T00:00:00`);
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+// ============================================================
+// DAY NAME
+// ============================================================
+
+function getDayName(dateString) {
+  const date = new Date(`${dateString}T00:00:00`);
+
+  return date.toLocaleDateString("en-IN", {
+    weekday: "short",
+  });
+}
+
+// ============================================================
+// EQUIPMENT ICON
+// ============================================================
+
+function getEquipmentIcon(category = "", equipmentName = "") {
+  const value =
+    `${category} ${equipmentName}`.toLowerCase();
+
+  if (
+    value.includes("microscope") ||
+    value.includes("confocal")
+  ) {
+    return "🔬";
+  }
+
+  if (
+    value.includes("spectro") ||
+    value.includes("spectrometer")
+  ) {
+    return "📡";
+  }
+
+  if (value.includes("centrif")) {
+    return "⚙️";
+  }
+
+  if (
+    value.includes("autoclave") ||
+    value.includes("steril")
+  ) {
+    return "🧫";
+  }
+
+  if (
+    value.includes("chromat") ||
+    value.includes("hplc")
+  ) {
+    return "🧪";
+  }
+
+  if (
+    value.includes("prep") ||
+    value.includes("sample")
+  ) {
+    return "🧬";
+  }
+
+  if (
+    value.includes("uv") ||
+    value.includes("measurement")
+  ) {
+    return "☀️";
+  }
+
+  if (value.includes("laser")) {
+    return "🔦";
+  }
+
+  return "🧪";
+}
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 
 export default function UtilizationHeatmap() {
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // ==========================================================
+  // CURRENT WEEK
+  // ==========================================================
+
+  const getCurrentWeek = () => {
+    const today = new Date();
+
+    const day = today.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    return {
+      from: monday.toISOString().split("T")[0],
+      to: sunday.toISOString().split("T")[0],
+    };
+  };
+
+  const initialWeek = getCurrentWeek();
+
+  const [fromDate, setFromDate] =
+    useState(initialWeek.from);
+
+  const [toDate, setToDate] =
+    useState(initialWeek.to);
+
+  // ==========================================================
+  // LOAD DATA
+  // ==========================================================
 
   useEffect(() => {
-    async function loadEquipment() {
+    let cancelled = false;
+
+    const fetchData = async () => {
       try {
-        const data = await getEquipmentUtilization();
-        setEquipment(data);
+        setLoading(true);
+        setError("");
+
+        const data =
+          await getUtilizationHeatmap(
+            fromDate,
+            toDate
+          );
+
+        if (!cancelled) {
+          setEquipment(
+            Array.isArray(data)
+              ? data
+              : []
+          );
+        }
       } catch (err) {
-        console.error("Failed to load equipment utilization:", err);
+        console.error(
+          "Failed to load utilization heatmap:",
+          err
+        );
+
+        if (!cancelled) {
+          setError(
+            err?.response?.data?.message ||
+              "Unable to load utilization data."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
+    };
+
+    fetchData();
+
+    const interval =
+      setInterval(fetchData, 30000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [fromDate, toDate]);
+
+  // ==========================================================
+  // DATES
+  // ==========================================================
+
+  const dates = useMemo(() => {
+    const result = [];
+
+    const start =
+      new Date(`${fromDate}T00:00:00`);
+
+    const end =
+      new Date(`${toDate}T00:00:00`);
+
+    let current = new Date(start);
+
+    while (current <= end) {
+      result.push(
+        current.toISOString().split("T")[0]
+      );
+
+      current.setDate(
+        current.getDate() + 1
+      );
     }
 
-    // Load immediately
-    loadEquipment();
+    return result;
+  }, [fromDate, toDate]);
 
-    // Refresh every 5 seconds
-    const interval = setInterval(loadEquipment, 5000);
+  // ==========================================================
+  // STATISTICS
+  // ==========================================================
 
-    // Cleanup interval when component unmounts
-    return () => clearInterval(interval);
-  }, []);
+  const statistics = useMemo(() => {
+    if (!equipment.length) {
+      return {
+        average: 0,
+        highest: 0,
+        totalBookings: 0,
+        totalHours: 0,
+      };
+    }
+
+    let totalUtilization = 0;
+    let totalBookings = 0;
+    let totalHours = 0;
+    let highest = 0;
+
+    equipment.forEach((item) => {
+      totalUtilization += Number(
+        item.averageUtilization || 0
+      );
+
+      item.dailyUtilization?.forEach(
+        (day) => {
+          totalBookings += Number(
+            day.bookings || 0
+          );
+
+          totalHours += Number(
+            day.usageHours || 0
+          );
+
+          highest = Math.max(
+            highest,
+            Number(day.utilization || 0)
+          );
+        }
+      );
+    });
+
+    return {
+      average:
+        Math.round(
+          (totalUtilization /
+            equipment.length) *
+            10
+        ) / 10,
+
+      highest,
+      totalBookings,
+      totalHours,
+    };
+  }, [equipment]);
+
+  // ==========================================================
+  // CURRENT WEEK
+  // ==========================================================
+
+  const setCurrentWeek = () => {
+    const week = getCurrentWeek();
+
+    setFromDate(week.from);
+    setToDate(week.to);
+  };
+
+  // ==========================================================
+  // SHIFT WEEK
+  // ==========================================================
+
+  const shiftWeek = (direction) => {
+    const start =
+      new Date(`${fromDate}T00:00:00`);
+
+    const end =
+      new Date(`${toDate}T00:00:00`);
+
+    start.setDate(
+      start.getDate() +
+        direction * 7
+    );
+
+    end.setDate(
+      end.getDate() +
+        direction * 7
+    );
+
+    setFromDate(
+      start.toISOString().split("T")[0]
+    );
+
+    setToDate(
+      end.toISOString().split("T")[0]
+    );
+  };
+
+  // ==========================================================
+  // GRID TEMPLATE
+  // ==========================================================
+
+  const gridTemplate =
+    `minmax(320px, 2.4fr) ` +
+    `repeat(${dates.length}, minmax(82px, 1fr)) ` +
+    `95px`;
+
+  // ==========================================================
+  // UI
+  // ==========================================================
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#020b1c",
-      }}
-    >
-      {/* ================= SIDEBAR ================= */}
+    <div className="heatmap-page">
+
+      {/* SIDEBAR */}
+
       <aside className="sidebar">
         <Sidebar />
       </aside>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <main
-        style={{
-          flex: 1,
-          padding: "30px",
-          background: "#020b1c",
-          color: "#ffffff",
-          minWidth: 0,
-        }}
-      >
-        {/* ================= PAGE TITLE ================= */}
-        <h2
-          style={{
-            fontWeight: 700,
-            color: "#ffffff",
-            marginBottom: "25px",
-            fontSize: "22px",
-          }}
-        >
-          Equipment Utilization Heatmap
-        </h2>
+      {/* MAIN */}
 
-        {/* ================= LOADING ================= */}
-        {loading && (
-          <p
-            style={{
-              color: "#ffffff",
-              fontSize: "15px",
-            }}
-          >
-            Loading...
-          </p>
+      <main className="heatmap-main">
+
+        {/* ==================================================
+            HEADER
+        ================================================== */}
+
+        <section className="heatmap-header">
+
+          <div className="heatmap-title-wrapper">
+
+            <div className="heatmap-title-icon">
+              📊
+            </div>
+
+            <div>
+
+              <div className="heatmap-eyebrow">
+                RESOURCE ANALYTICS
+              </div>
+
+              <h1>
+                Utilization Heatmap
+              </h1>
+
+              <p>
+                Visualize laboratory equipment
+                usage and identify high-demand
+                resources.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="live-indicator">
+            <span className="live-dot"></span>
+            Live Data
+          </div>
+
+        </section>
+
+        {/* ==================================================
+            DATE CONTROLS
+        ================================================== */}
+
+        <section className="heatmap-controls">
+
+          <div className="control-title">
+
+            <span className="control-icon">
+              📅
+            </span>
+
+            <div>
+              <strong>
+                Analysis Period
+              </strong>
+
+              <small>
+                Select the period you want to analyze
+              </small>
+            </div>
+
+          </div>
+
+          <div className="date-controls">
+
+            <button
+              className="week-arrow"
+              onClick={() =>
+                shiftWeek(-1)
+              }
+            >
+              ←
+            </button>
+
+            <div className="date-field">
+
+              <label>
+                FROM
+              </label>
+
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) =>
+                  setFromDate(
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+            <span className="date-separator">
+              →
+            </span>
+
+            <div className="date-field">
+
+              <label>
+                TO
+              </label>
+
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) =>
+                  setToDate(
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+            <button
+              className="week-arrow"
+              onClick={() =>
+                shiftWeek(1)
+              }
+            >
+              →
+            </button>
+
+            <button
+              className="current-week-btn"
+              onClick={setCurrentWeek}
+            >
+              ✨ This Week
+            </button>
+
+          </div>
+
+        </section>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="heatmap-error">
+            ⚠️ {error}
+          </div>
         )}
 
-        {/* ================= EQUIPMENT GRID ================= */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {equipment.map((item) => {
-            const color = getColor(item.utilizationRate);
+        {/* ==================================================
+            SUMMARY
+        ================================================== */}
 
-            return (
+        <section className="heatmap-summary">
+
+          <div className="summary-card blue-card">
+            <div className="summary-icon">
+              📊
+            </div>
+
+            <div>
+              <span>
+                AVERAGE UTILIZATION
+              </span>
+
+              <strong>
+                {statistics.average}%
+              </strong>
+
+              <small>
+                Across all equipment
+              </small>
+            </div>
+          </div>
+
+          <div className="summary-card purple-card">
+            <div className="summary-icon">
+              ⚡
+            </div>
+
+            <div>
+              <span>
+                PEAK UTILIZATION
+              </span>
+
+              <strong>
+                {statistics.highest}%
+              </strong>
+
+              <small>
+                Highest recorded usage
+              </small>
+            </div>
+          </div>
+
+          <div className="summary-card green-card">
+            <div className="summary-icon">
+              ⏱
+            </div>
+
+            <div>
+              <span>
+                USAGE HOURS
+              </span>
+
+              <strong>
+                {statistics.totalHours}
+              </strong>
+
+              <small>
+                Total equipment hours
+              </small>
+            </div>
+          </div>
+
+          <div className="summary-card orange-card">
+            <div className="summary-icon">
+              📋
+            </div>
+
+            <div>
+              <span>
+                BOOKINGS
+              </span>
+
+              <strong>
+                {statistics.totalBookings}
+              </strong>
+
+              <small>
+                Confirmed & completed
+              </small>
+            </div>
+          </div>
+
+        </section>
+
+        {/* ==================================================
+            HEATMAP
+        ================================================== */}
+
+        <section className="heatmap-card">
+
+          {/* CARD HEADER */}
+
+          <div className="heatmap-card-header">
+
+            <div className="section-heading">
+
+              <div className="section-heading-icon">
+                🔥
+              </div>
+
+              <div>
+
+                <h2>
+                  Equipment Utilization
+                </h2>
+
+                <p>
+                  Daily resource utilization
+                  by equipment
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* LEGEND */}
+
+            <div className="heatmap-legend">
+
+              <span>
+                Utilization
+              </span>
+
+              <div className="legend-item">
+                <i className="legend-dot heat-zero"></i>
+                0%
+              </div>
+
+              <div className="legend-item">
+                <i className="legend-dot heat-very-low"></i>
+                1–20%
+              </div>
+
+              <div className="legend-item">
+                <i className="legend-dot heat-low"></i>
+                21–40%
+              </div>
+
+              <div className="legend-item">
+                <i className="legend-dot heat-medium"></i>
+                41–70%
+              </div>
+
+              <div className="legend-item">
+                <i className="legend-dot heat-high"></i>
+                71–90%
+              </div>
+
+              <div className="legend-item">
+                <i className="legend-dot heat-critical"></i>
+                91–100%
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* ==================================================
+              LOADING
+          ================================================== */}
+
+          {loading ? (
+
+            <div className="heatmap-loading">
+
+              <div className="loading-orb">
+                ✨
+              </div>
+
+              <h3>
+                Loading utilization data...
+              </h3>
+
+              <p>
+                Fetching laboratory resource
+                activity
+              </p>
+
+            </div>
+
+          ) : equipment.length === 0 ? (
+
+            <div className="heatmap-empty">
+
+              <div className="empty-icon">
+                🔍
+              </div>
+
+              <h3>
+                No equipment data
+              </h3>
+
+              <p>
+                No utilization information is
+                available for the selected period.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <div className="heatmap-scroll">
+
+              {/* ==================================================
+                  TABLE HEADER
+              ================================================== */}
+
               <div
-                key={item.id}
+                className="heatmap-header-grid"
                 style={{
-                  background: "#ffffff",
-                  borderRadius: "12px",
-                  padding: "18px",
-                  borderTop: `5px solid ${color}`,
-                  boxShadow:
-                    "0 6px 18px rgba(0,0,0,0.25)",
-                  color: "#0f1b2d",
-                  overflow: "hidden",
+                  gridTemplateColumns:
+                    gridTemplate,
                 }}
               >
-                {/* ================= EQUIPMENT IMAGE ================= */}
-                <div
-                  style={{
-                    width: "100%",
-                    height: "160px",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    background: "#e2e8f0",
-                    marginBottom: "15px",
-                  }}
-                >
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.equipmentName}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#64748b",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      No image available
-                    </div>
-                  )}
-                </div>
 
-                {/* ================= NAME + BADGES ================= */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: "10px",
-                  }}
-                >
-                  {/* EQUIPMENT NAME */}
-                  <h4
-                    style={{
-                      color: "#0f1b2d",
-                      margin: 0,
-                      fontSize: "17px",
-                      fontWeight: 700,
-                      lineHeight: "1.3",
-                      flex: 1,
-                    }}
-                  >
-                    {item.equipmentName}
-                  </h4>
+                <div className="equipment-header">
+                  <span className="header-icon">
+                    ✦
+                  </span>
 
-                  {/* BADGES */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "5px",
-                      alignItems: "flex-end",
-                    }}
-                  >
-                    {/* HIGH DEMAND */}
-                    {item.highDemand && (
-                      <span
-                        style={{
-                          background: "#fb923c",
-                          color: "#ffffff",
-                          padding: "5px 10px",
-                          borderRadius: "999px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        High demand
-                      </span>
-                    )}
-
-                    {/* IDLE */}
-                    {item.isIdle && (
-                      <span
-                        style={{
-                          background: "#64748b",
-                          color: "#ffffff",
-                          padding: "5px 10px",
-                          borderRadius: "999px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Idle
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* ================= DIVIDER ================= */}
-                <hr
-                  style={{
-                    border: "none",
-                    borderTop: "1px solid #dbe3ec",
-                    margin: "15px 0",
-                  }}
-                />
-
-                {/* ================= DETAILS ================= */}
-                <div
-                  style={{
-                    color: "#1e293b",
-                    fontSize: "14px",
-                    lineHeight: "1.8",
-                  }}
-                >
-                  <p style={{ margin: "4px 0" }}>
-                    <strong style={{ color: "#0f1b2d" }}>
-                      Category:
-                    </strong>{" "}
-                    {item.category}
-                  </p>
-
-                  <p style={{ margin: "4px 0" }}>
-                    <strong style={{ color: "#0f1b2d" }}>
-                      Status:
-                    </strong>{" "}
-                    {item.status}
-                  </p>
-
-                  <p style={{ margin: "4px 0" }}>
-                    <strong style={{ color: "#0f1b2d" }}>
-                      Usage hours:
-                    </strong>{" "}
-                    {item.usageHours}
-                  </p>
-
-                  <p style={{ margin: "4px 0" }}>
-                    <strong style={{ color: "#0f1b2d" }}>
-                      Total bookings:
-                    </strong>{" "}
-                    {item.totalBookings}
-                  </p>
-                </div>
-
-                {/* ================= UTILIZATION BAR ================= */}
-                <div
-                  style={{
-                    position: "relative",
-                    background: "#e2e8f0",
-                    borderRadius: "6px",
-                    height: "24px",
-                    overflow: "hidden",
-                    marginTop: "15px",
-                  }}
-                >
-                  {/* FILLED PORTION */}
-                  <div
-                    style={{
-                      width: `${item.utilizationRate}%`,
-                      background: color,
-                      height: "100%",
-                      transition: "width 0.4s ease",
-                    }}
-                  />
-
-                  {/* PERCENTAGE TEXT */}
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      color: "#0f1b2d",
-                    }}
-                  >
-                    {item.utilizationRate}%
+                  <span>
+                    EQUIPMENT
                   </span>
                 </div>
+
+                {dates.map((date) => (
+                  <div
+                    key={date}
+                    className="date-header"
+                  >
+                    <strong>
+                      {getDayName(date)}
+                    </strong>
+
+                    <span>
+                      {formatDate(date)}
+                    </span>
+                  </div>
+                ))}
+
+                <div className="average-header">
+                  AVG
+                </div>
+
               </div>
-            );
-          })}
-        </div>
+
+              {/* ==================================================
+                  EQUIPMENT ROWS
+              ================================================== */}
+
+              <div className="equipment-rows">
+
+                {equipment.map((item) => {
+
+                  const dailyMap = {};
+
+                  item.dailyUtilization?.forEach(
+                    (day) => {
+                      dailyMap[day.date] = day;
+                    }
+                  );
+
+                  return (
+
+                    <div
+                      className="equipment-row"
+                      key={item.equipmentId}
+                      style={{
+                        gridTemplateColumns:
+                          gridTemplate,
+                      }}
+                    >
+
+                      {/* ==================================================
+                          EQUIPMENT INFORMATION
+                      ================================================== */}
+
+                      <div className="equipment-info-cell">
+
+                        <div className="equipment-icon">
+                          {getEquipmentIcon(
+                            item.category,
+                            item.equipmentName
+                          )}
+                        </div>
+
+                        <div className="equipment-details">
+
+                          <div className="equipment-name">
+                            {item.equipmentName}
+                          </div>
+
+                          <div className="equipment-category">
+                            {item.category ||
+                              "Laboratory Equipment"}
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                      {/* ==================================================
+                          DAILY CELLS
+                      ================================================== */}
+
+                      {dates.map((date) => {
+
+                        const day =
+                          dailyMap[date];
+
+                        const rate =
+                          Number(
+                            day?.utilization || 0
+                          );
+
+                        return (
+
+                          <div
+                            key={`${item.equipmentId}-${date}`}
+                            className={`heat-cell ${getHeatColor(
+                              rate
+                            )}`}
+                          >
+
+                            <span className="heat-cell-value">
+                              {rate}%
+                            </span>
+
+                            <div className="heat-tooltip">
+
+                              <strong>
+                                {item.equipmentName}
+                              </strong>
+
+                              <span>
+                                📅{" "}
+                                {formatDate(date)}
+                              </span>
+
+                              <span>
+                                ⚡ {rate}%
+                                utilization
+                              </span>
+
+                              <span>
+                                ⏱{" "}
+                                {day?.usageHours ||
+                                  0}{" "}
+                                hours
+                              </span>
+
+                              <span>
+                                📋{" "}
+                                {day?.bookings ||
+                                  0}{" "}
+                                bookings
+                              </span>
+
+                              <small>
+                                {getHeatLabel(rate)}
+                              </small>
+
+                            </div>
+
+                          </div>
+
+                        );
+                      })}
+
+                      {/* ==================================================
+                          AVERAGE
+                      ================================================== */}
+
+                      <div className="average-cell">
+
+                        <strong>
+                          {Number(
+                            item.averageUtilization ||
+                              0
+                          ).toFixed(1)}
+                          %
+                        </strong>
+
+                      </div>
+
+                    </div>
+                  );
+                })}
+
+              </div>
+
+            </div>
+          )}
+
+        </section>
+
+        {/* ==================================================
+            INSIGHT
+        ================================================== */}
+
+        {!loading &&
+          equipment.length > 0 && (
+
+            <section className="heatmap-insight">
+
+              <div className="insight-icon">
+                ✨
+              </div>
+
+              <div>
+
+                <strong>
+                  Resource Optimization Insight
+                </strong>
+
+                <p>
+                  Use this heatmap to identify
+                  highly utilized equipment,
+                  detect underused resources,
+                  and make better scheduling
+                  and resource-sharing decisions.
+                </p>
+
+              </div>
+
+            </section>
+
+          )}
+
       </main>
     </div>
   );
