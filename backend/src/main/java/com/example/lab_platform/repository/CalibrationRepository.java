@@ -27,4 +27,8 @@ public interface CalibrationRepository
     Optional<EquipmentCalibration> findTopByEquipment_EquipmentIdOrderByCalibrationDateDesc(
             Integer equipmentId
     );
+
+    List<EquipmentCalibration> findByCertificateExpiryDateLessThanEqual(LocalDate date);
+    
+    List<EquipmentCalibration> findByCertificateExpiryDateBetween(LocalDate start, LocalDate end);
 }

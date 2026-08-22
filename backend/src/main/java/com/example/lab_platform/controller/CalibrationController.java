@@ -68,4 +68,17 @@ public class CalibrationController {
     public ResponseEntity<List<EquipmentCalibration>> getOverdue() {
         return ResponseEntity.ok(calibrationService.getOverdue());
     }
+
+    @GetMapping("/certifications/due-soon")
+@PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+public ResponseEntity<List<EquipmentCalibration>> getCertificationDueSoon(
+        @RequestParam(defaultValue = "30") int days) {
+    return ResponseEntity.ok(calibrationService.getCertificationExpiringSoon(days));
+}
+
+@GetMapping("/certifications/overdue")
+@PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+public ResponseEntity<List<EquipmentCalibration>> getCertificationOverdue() {
+    return ResponseEntity.ok(calibrationService.getCertificationExpired());
+}
 }

@@ -40,6 +40,11 @@ function MainLayout({ children }) {
   title: "Utilization Heatmap",
   subtitle: "View equipment usage intensity by weekday",
 },
+
+"/calibration": {
+  title: "Calibration & Certification",
+  subtitle: "Track calibration cycles and certification renewals",
+},
   };
 
   const currentPage = pageTitles[location.pathname] || {

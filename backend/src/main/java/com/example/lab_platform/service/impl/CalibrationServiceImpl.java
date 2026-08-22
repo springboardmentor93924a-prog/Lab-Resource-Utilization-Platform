@@ -90,6 +90,11 @@ public class CalibrationServiceImpl implements CalibrationService {
         if (!calibration.getNextCalibrationDate().isAfter(calibration.getCalibrationDate())) {
             throw new RuntimeException("Next calibration date must be after the calibration date");
         }
+        // EDGE CASE: certificate can't expire before it was even calibrated
+        if (calibration.getCertificateExpiryDate() != null
+            && !calibration.getCertificateExpiryDate().isAfter(calibration.getCalibrationDate())) {
+            throw new RuntimeException("Certificate expiry date must be after the calibration date");
+        }
 
         Equipment equipment = equipmentRepository.findById(calibration.getEquipment().getEquipmentId())
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
@@ -135,6 +140,9 @@ public class CalibrationServiceImpl implements CalibrationService {
         }
 
         EquipmentCalibration saved = calibrationRepository.save(existing);
+        if (updated.getCertificateExpiryDate() != null) {
+            existing.setCertificateExpiryDate(updated.getCertificateExpiryDate());
+        }
 
         syncEquipmentStatus(existing.getEquipment());
 
@@ -230,5 +238,20 @@ public class CalibrationServiceImpl implements CalibrationService {
     @Override
     public List<EquipmentCalibration> getOverdue() {
         return calibrationRepository.findByNextCalibrationDateLessThanEqual(LocalDate.now());
+    }
+
+    @Override
+    public List<EquipmentCalibration> getCertificationExpiringSoon(int withinDays) {
+        LocalDate today = LocalDate.now();
+    // EDGE CASE: certificateExpiryDate is optional — records that never
+    // set it are simply excluded by the query (null never matches a range).
+        return calibrationRepository.findByCertificateExpiryDateBetween(
+            today, today.plusDays(withinDays)
+        );
+    }   
+
+    @Override
+    public List<EquipmentCalibration> getCertificationExpired() {
+        return calibrationRepository.findByCertificateExpiryDateLessThanEqual(LocalDate.now());
     }
 }

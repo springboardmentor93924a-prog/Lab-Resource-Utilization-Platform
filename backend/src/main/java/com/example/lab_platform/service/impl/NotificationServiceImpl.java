@@ -5,19 +5,25 @@ import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.NotificationRepository;
 import com.example.lab_platform.service.NotificationService;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository) {
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository,
+            SimpMessagingTemplate messagingTemplate) {
         this.notificationRepository = notificationRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     private User getLoggedInUser() {
@@ -28,6 +34,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public Notification create(User user, String notificationType, String title, String message, Integer referenceId) {
+        // EDGE CASE: no recipient — nothing to create or push
         if (user == null) {
             return null;
         }
@@ -40,7 +47,45 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setReferenceId(referenceId);
         notification.setIsRead(false);
 
-        return notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Real-time push. EDGE CASE: if the user isn't connected right now,
+        // this silently no-ops (no subscriber on that queue) — the row is
+        // still saved, so getMyNotifications()/unread on next login/poll
+        // still shows it. No exception should ever bubble up from a push
+        // failure and break the actual notification-creation transaction.
+        try {
+            if (user.getEmail() != null) {
+                messagingTemplate.convertAndSendToUser(
+                        user.getEmail(), "/queue/notifications", saved
+                );
+            }
+        } catch (Exception ignored) {
+        }
+
+        return saved;
+    }
+
+    @Override
+    public Notification createIfNotAlreadyNotifiedToday(
+            User user, String notificationType, String title, String message, Integer referenceId) {
+
+        // EDGE CASE: nothing to dedup against without a recipient or a referenceId
+        if (user == null || referenceId == null) {
+            return create(user, notificationType, title, message, referenceId);
+        }
+
+        boolean alreadyNotifiedToday = notificationRepository
+                .existsByUser_UserIdAndNotificationTypeAndReferenceIdAndCreatedAtAfter(
+                        user.getUserId(), notificationType, referenceId,
+                        LocalDate.now().atStartOfDay()
+                );
+
+        if (alreadyNotifiedToday) {
+            return null; // already reminded today — skip, no duplicate spam
+        }
+
+        return create(user, notificationType, title, message, referenceId);
     }
 
     @Override

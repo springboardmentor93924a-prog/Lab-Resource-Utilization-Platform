@@ -49,6 +49,15 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  const canAccessCalibration = [
+    "STUDENT",
+    "LAB_TECHNICIAN",
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
   const canAccessUtilization = [
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
@@ -192,6 +201,19 @@ function Sidebar() {
           >
             <span>🔧</span>
             Maintenance
+          </Link>
+        )}
+
+        {/* Calibration - Task 2 */}
+        {canAccessCalibration && (
+          <Link
+            to="/calibration"
+            className={`sidebar-link ${
+              isActive("/calibration") ? "active" : ""
+            }`}
+          >
+            <span>🧪</span>
+            Calibration
           </Link>
         )}
 

@@ -1,12 +1,9 @@
 package com.example.lab_platform.scheduler;
 
-import com.example.lab_platform.entity.Booking;
-import com.example.lab_platform.entity.Equipment;
-import com.example.lab_platform.entity.Maintenance;
-import com.example.lab_platform.repository.BookingRepository;
-import com.example.lab_platform.repository.EquipmentRepository;
-import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.entity.*;
+import com.example.lab_platform.repository.*;
 import com.example.lab_platform.service.BookingService;
+import com.example.lab_platform.service.NotificationService;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -22,233 +19,287 @@ public class EquipmentStatusScheduler {
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceRepository maintenanceRepository;
     private final BookingService bookingService;
+    private final CalibrationRepository calibrationRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     public EquipmentStatusScheduler(
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
             MaintenanceRepository maintenanceRepository,
-            BookingService bookingService) {
+            BookingService bookingService,
+            CalibrationRepository calibrationRepository,
+            NotificationService notificationService,
+            UserRepository userRepository) {
 
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.maintenanceRepository = maintenanceRepository;
         this.bookingService = bookingService;
+        this.calibrationRepository = calibrationRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
-    /*
-     * Run immediately after application startup,
-     * then every 60 seconds.
-     */
-    @Scheduled(
-            initialDelay = 1000,
-            fixedRate = 60000
-    )
+    // =====================================================================
+    // EXISTING: equipment status tick — unchanged, still every 60s
+    // =====================================================================
+    @Scheduled(initialDelay = 1000, fixedRate = 60000)
     public void updateEquipmentStatus() {
-
         LocalDateTime now = LocalDateTime.now();
 
         activateDueMaintenance();
-
-        // Confirmed bookings whose endTime has already passed get
-        // auto-completed here — otherwise they sit at "Confirmed"
-        // forever with no path to "Completed" except a manual click.
         bookingService.autoCompleteOverdueBookings();
 
-        List<Equipment> equipmentList =
-                equipmentRepository.findAll();
+        List<Equipment> equipmentList = equipmentRepository.findAll();
 
         for (Equipment equipment : equipmentList) {
+            String newStatus = calculateStatus(equipment, now);
 
-            String newStatus =
-                    calculateStatus(
-                            equipment,
-                            now
-                    );
-
-            if (!newStatus.equalsIgnoreCase(
-                    equipment.getStatus())) {
-
+            if (!newStatus.equalsIgnoreCase(equipment.getStatus())) {
                 equipment.setStatus(newStatus);
-
                 equipmentRepository.save(equipment);
             }
         }
     }
 
-    /*
-     * Auto-transition: any maintenance record still marked
-     * "Scheduled" whose maintenanceDate has arrived (today
-     * or already passed) is flipped to "Active", so the
-     * equipment correctly shows Under Maintenance starting
-     * on the scheduled day.
-     */
     private void activateDueMaintenance() {
+        LocalDate today = LocalDate.now();
+        List<Maintenance> scheduledMaintenance = maintenanceRepository.findByMaintenanceStatus("Scheduled");
 
-        LocalDate today =
-                LocalDate.now();
-
-        List<Maintenance> scheduledMaintenance =
-                maintenanceRepository
-                        .findByMaintenanceStatus(
-                                "Scheduled"
-                        );
-
-        for (Maintenance maintenance :
-                scheduledMaintenance) {
-
-            LocalDate maintenanceDate =
-                    maintenance.getMaintenanceDate();
-
-            if (maintenanceDate == null) {
-                continue;
-            }
+        for (Maintenance maintenance : scheduledMaintenance) {
+            LocalDate maintenanceDate = maintenance.getMaintenanceDate();
+            if (maintenanceDate == null) continue;
 
             if (!maintenanceDate.isAfter(today)) {
+                maintenance.setMaintenanceStatus("Active");
+                maintenanceRepository.save(maintenance);
+            }
+        }
+    }
 
-                maintenance.setMaintenanceStatus(
-                        "Active"
+    private String calculateStatus(Equipment equipment, LocalDateTime now) {
+        String existingStatus = equipment.getStatus();
+
+        if (existingStatus != null
+                && (existingStatus.equalsIgnoreCase("Out of Service")
+                || existingStatus.equalsIgnoreCase("Retired"))) {
+            return existingStatus;
+        }
+
+        Integer equipmentId = equipment.getEquipmentId();
+
+        List<Maintenance> maintenanceList = maintenanceRepository.findByEquipment_EquipmentId(equipmentId);
+
+        for (Maintenance maintenance : maintenanceList) {
+            String maintenanceStatus = maintenance.getMaintenanceStatus();
+            if (maintenanceStatus == null) continue;
+
+            if (maintenanceStatus.equalsIgnoreCase("Active")
+                    || maintenanceStatus.equalsIgnoreCase("In Progress")) {
+                return "Under Maintenance";
+            }
+        }
+
+        List<Booking> bookings = bookingRepository.findByEquipment_EquipmentId(equipmentId);
+        boolean futureBooking = false;
+
+        for (Booking booking : bookings) {
+            if (booking.getStartTime() == null || booking.getEndTime() == null) continue;
+
+            String bookingStatus = booking.getBookingStatus();
+            if (bookingStatus == null || !bookingStatus.equalsIgnoreCase("Confirmed")) continue;
+
+            LocalDateTime start = booking.getStartTime();
+            LocalDateTime end = booking.getEndTime();
+
+            if (!now.isBefore(start) && now.isBefore(end)) {
+                return "In Use";
+            }
+            if (now.isBefore(start)) {
+                futureBooking = true;
+            }
+        }
+
+        if (futureBooking) return "Booked";
+        return "Available";
+    }
+
+    // =====================================================================
+    // NEW: daily reminder sweep (calibration due/overdue, certification
+    // expiry, maintenance due, idle equipment). Runs once a day; the
+    // dedup guard (createIfNotAlreadyNotifiedToday) means running it more
+    // than once a day is also harmless if the app restarts.
+    // Cron: 8:00 AM server time, every day.
+    // =====================================================================
+    @Scheduled(initialDelay = 15000, cron = "0 0 8 * * *")
+    public void dailyReminderSweep() {
+        sendCalibrationReminders();
+        sendCertificationExpiryReminders();
+        sendMaintenanceDueReminders();
+        sendIdleEquipmentAlerts();
+    }
+
+    private List<User> techsAndManagersFor(Equipment equipment) {
+        // EDGE CASE: equipment with no institution set (shouldn't happen,
+        // but don't NPE if it does) — nobody to notify, return empty.
+        if (equipment.getInstitution() == null) return List.of();
+
+        return userRepository.findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(u -> u.getRole() != null
+                        && ("LAB_TECHNICIAN".equalsIgnoreCase(u.getRole().getRoleName())
+                            || "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName())))
+                .toList();
+    }
+
+    private void sendCalibrationReminders() {
+        LocalDate today = LocalDate.now();
+
+        List<EquipmentCalibration> dueSoon =
+                calibrationRepository.findByNextCalibrationDateBetween(today, today.plusDays(7));
+        List<EquipmentCalibration> overdue =
+                calibrationRepository.findByNextCalibrationDateLessThanEqual(today);
+
+        for (EquipmentCalibration c : dueSoon) {
+            notifyForCalibration(c, "CALIBRATION_DUE_SOON",
+                    "Calibration due soon",
+                    c.getEquipment().getEquipmentName() + " is due for calibration on " + c.getNextCalibrationDate() + ".");
+        }
+        for (EquipmentCalibration c : overdue) {
+            notifyForCalibration(c, "CALIBRATION_OVERDUE",
+                    "Calibration overdue",
+                    c.getEquipment().getEquipmentName() + " calibration was due " + c.getNextCalibrationDate() + " and is now overdue.");
+        }
+    }
+
+    private void sendCertificationExpiryReminders() {
+        LocalDate today = LocalDate.now();
+
+        List<EquipmentCalibration> expiringSoon =
+                calibrationRepository.findByCertificateExpiryDateBetween(today, today.plusDays(30));
+        List<EquipmentCalibration> expired =
+                calibrationRepository.findByCertificateExpiryDateLessThanEqual(today);
+
+        for (EquipmentCalibration c : expiringSoon) {
+            notifyForCalibration(c, "CERTIFICATION_EXPIRING",
+                    "Certification expiring soon",
+                    c.getEquipment().getEquipmentName() + "'s certificate expires " + c.getCertificateExpiryDate() + ".");
+        }
+        for (EquipmentCalibration c : expired) {
+            notifyForCalibration(c, "CERTIFICATION_EXPIRED",
+                    "Certification expired",
+                    c.getEquipment().getEquipmentName() + "'s certificate expired " + c.getCertificateExpiryDate() + ".");
+        }
+    }
+
+    private void notifyForCalibration(EquipmentCalibration c, String type, String title, String message) {
+        // EDGE CASE: calibration record with equipment somehow null — skip safely
+        if (c.getEquipment() == null) return;
+
+        for (User u : techsAndManagersFor(c.getEquipment())) {
+            notificationService.createIfNotAlreadyNotifiedToday(
+                    u, type, title, message, c.getCalibrationId()
+            );
+        }
+    }
+
+    private void sendMaintenanceDueReminders() {
+        LocalDate today = LocalDate.now();
+
+        List<Maintenance> scheduled = maintenanceRepository.findByMaintenanceStatus("Scheduled");
+
+        for (Maintenance m : scheduled) {
+            // EDGE CASE: no date set on the record — nothing to compare, skip
+            if (m.getMaintenanceDate() == null) continue;
+            // Only alert once it's within 3 days or already overdue —
+            // matches the calibration due-soon window pattern.
+            if (m.getMaintenanceDate().isAfter(today.plusDays(3))) continue;
+
+            boolean overdue = m.getMaintenanceDate().isBefore(today);
+            String title = overdue ? "Maintenance overdue" : "Maintenance due soon";
+            String type = overdue ? "MAINTENANCE_OVERDUE" : "MAINTENANCE_DUE_SOON";
+            String equipName = m.getEquipment() != null ? m.getEquipment().getEquipmentName() : "Equipment";
+
+            // EDGE CASE: unassigned maintenance record — fall back to
+            // notifying the equipment's techs/managers instead of no one.
+            if (m.getAssignedTechnician() != null) {
+                notificationService.createIfNotAlreadyNotifiedToday(
+                        m.getAssignedTechnician(), type, title,
+                        equipName + " maintenance is " + (overdue ? "overdue (was due " : "due ")
+                                + m.getMaintenanceDate() + (overdue ? ")." : "."),
+                        m.getMaintenanceId()
                 );
+            } else if (m.getEquipment() != null) {
+                for (User u : techsAndManagersFor(m.getEquipment())) {
+                    notificationService.createIfNotAlreadyNotifiedToday(
+                            u, type, title,
+                            equipName + " maintenance is unassigned and " + (overdue ? "overdue." : "due soon."),
+                            m.getMaintenanceId()
+                    );
+                }
+            }
+        }
+    }
 
-                maintenanceRepository.save(
-                        maintenance
+    private void sendIdleEquipmentAlerts() {
+        LocalDate today = LocalDate.now();
+        List<Equipment> allEquipment = equipmentRepository.findAll();
+
+        for (Equipment e : allEquipment) {
+            // EDGE CASE: skip equipment that's out of service/retired/in
+            // maintenance/in calibration — idleness there is expected,
+            // not a problem worth alerting on.
+            String status = e.getStatus();
+            if (status != null && !status.equalsIgnoreCase("Available")) continue;
+
+            LocalDate lastUsed = e.getLastUsedDate();
+            long idleDays = (lastUsed == null)
+                    ? Long.MAX_VALUE  // EDGE CASE: never used at all
+                    : java.time.temporal.ChronoUnit.DAYS.between(lastUsed, today);
+
+            if (idleDays < 14) continue; // threshold: 14+ idle days triggers an alert
+
+            for (User u : techsAndManagersFor(e)) {
+                if (!"LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName())) continue; // managers only, per spec
+
+                notificationService.createIfNotAlreadyNotifiedToday(
+                        u, "IDLE_EQUIPMENT",
+                        "Idle equipment alert",
+                        e.getEquipmentName() + " has been idle for "
+                                + (idleDays == Long.MAX_VALUE ? "a long time (never used)" : idleDays + " days") + ".",
+                        e.getEquipmentId()
                 );
             }
         }
     }
 
-    private String calculateStatus(
-            Equipment equipment,
-            LocalDateTime now) {
+    // =====================================================================
+    // NEW: booking-start reminders. Needs finer granularity than the
+    // daily sweep, so it runs every 15 minutes; the dedup guard still
+    // prevents repeat notifications within the same day.
+    // =====================================================================
+    @Scheduled(initialDelay = 20000, fixedRate = 900000)
+    public void sendBookingReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime windowEnd = now.plusHours(1);
 
-        /*
-         * ==========================================
-         * 0. MANUAL / PERMANENT STATUS
-         * ==========================================
-         *
-         * Out of Service and Retired should not be
-         * automatically changed to another status.
-         */
-        String existingStatus =
-                equipment.getStatus();
+        List<Booking> confirmed = bookingRepository.findByBookingStatus("Confirmed");
 
-        if (existingStatus != null
-                && (existingStatus.equalsIgnoreCase("Out of Service")
-                || existingStatus.equalsIgnoreCase("Retired"))) {
+        for (Booking b : confirmed) {
+            // EDGE CASE: malformed booking with no start time — skip
+            if (b.getStartTime() == null) continue;
 
-            return existingStatus;
+            // Only bookings starting within the next hour, that haven't started yet
+            if (b.getStartTime().isBefore(now) || b.getStartTime().isAfter(windowEnd)) continue;
+
+            String equipName = b.getEquipment() != null ? b.getEquipment().getEquipmentName() : "your equipment";
+
+            notificationService.createIfNotAlreadyNotifiedToday(
+                    b.getUser(), "BOOKING_REMINDER", "Upcoming booking reminder",
+                    "Your booking for " + equipName + " starts at " + b.getStartTime() + ".",
+                    b.getBookingId()
+            );
         }
-
-        Integer equipmentId =
-                equipment.getEquipmentId();
-
-        /*
-         * ------------------------------------------------
-         * 1. MAINTENANCE HAS HIGHEST PRIORITY
-         * ------------------------------------------------
-         */
-        List<Maintenance> maintenanceList =
-                maintenanceRepository
-                        .findByEquipment_EquipmentId(
-                                equipmentId
-                        );
-
-        for (Maintenance maintenance :
-                maintenanceList) {
-
-            String maintenanceStatus =
-                    maintenance.getMaintenanceStatus();
-
-            if (maintenanceStatus == null) {
-                continue;
-            }
-
-            /*
-             * Accept both statuses currently used
-             * in the project/database.
-             */
-            if (maintenanceStatus.equalsIgnoreCase("Active")
-                    || maintenanceStatus.equalsIgnoreCase(
-                            "In Progress")) {
-
-                return "Under Maintenance";
-            }
-        }
-
-        /*
-         * ------------------------------------------------
-         * 2. CHECK CONFIRMED BOOKINGS
-         * ------------------------------------------------
-         */
-        List<Booking> bookings =
-                bookingRepository
-                        .findByEquipment_EquipmentId(
-                                equipmentId
-                        );
-
-        boolean futureBooking = false;
-
-        for (Booking booking : bookings) {
-
-            if (booking.getStartTime() == null
-                    || booking.getEndTime() == null) {
-
-                continue;
-            }
-
-            String bookingStatus =
-                    booking.getBookingStatus();
-
-            if (bookingStatus == null) {
-                continue;
-            }
-
-            /*
-             * Only confirmed bookings affect
-             * equipment availability.
-             */
-            if (!bookingStatus.equalsIgnoreCase(
-                    "Confirmed")) {
-
-                continue;
-            }
-
-            LocalDateTime start =
-                    booking.getStartTime();
-
-            LocalDateTime end =
-                    booking.getEndTime();
-
-            /*
-             * ------------------------------------------------
-             * CURRENT BOOKING → IN USE
-             * ------------------------------------------------
-             */
-            if (!now.isBefore(start)
-                    && now.isBefore(end)) {
-
-                return "In Use";
-            }
-
-            /*
-             * ------------------------------------------------
-             * FUTURE BOOKING → BOOKED
-             * ------------------------------------------------
-             */
-            if (now.isBefore(start)) {
-
-                futureBooking = true;
-            }
-        }
-
-        if (futureBooking) {
-            return "Booked";
-        }
-
-        /*
-         * ------------------------------------------------
-         * 3. NO MAINTENANCE / NO ACTIVE BOOKING
-         * ------------------------------------------------
-         */
-        return "Available";
     }
 }

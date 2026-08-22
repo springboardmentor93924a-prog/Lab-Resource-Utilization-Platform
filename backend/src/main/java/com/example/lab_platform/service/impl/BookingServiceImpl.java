@@ -437,19 +437,33 @@ if (hasUrgentUnresolvedIssue) {
         boolean requiresApproval = booking.getEquipment().getRequiresApproval() == null
         || booking.getEquipment().getRequiresApproval();
 
-if (requiresApproval) {
-    booking.setBookingStatus("Pending Approval");
-} else {
-    booking.setBookingStatus("Confirmed");
+// new:
+        if (requiresApproval) {
+        booking.setBookingStatus("Pending Approval");
+        } else {
+        booking.setBookingStatus("Confirmed");
 
-    Equipment eq = booking.getEquipment();
-    eq.setStatus("Booked");
-    equipmentRepository.save(eq);
-}
+        Equipment eq = booking.getEquipment();
+        eq.setStatus("Booked");
+        equipmentRepository.save(eq);
+        }
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+// EDGE CASE: notify the actual booking owner, not necessarily the
+// caller — a manager can book on behalf of a student (booking.getUser()
+// is set earlier in this method for both branches).
+        notificationService.create(
+        saved.getUser(),
+        "BOOKING_CONFIRMATION",
+        saved.getBookingStatus().equals("Confirmed") ? "Booking confirmed" : "Booking request submitted",
+        "Your booking for " + saved.getEquipment().getEquipmentName()
+                + " is " + saved.getBookingStatus().toLowerCase() + ".",
+        saved.getBookingId()
+        );
+
+        return saved;
     }
-
     private boolean isUnderMaintenanceDuring(
             Integer equipmentId,
             LocalDateTime start,
