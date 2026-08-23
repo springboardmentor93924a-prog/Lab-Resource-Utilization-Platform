@@ -36,6 +36,17 @@ function notificationConfig(type) {
         color: "#dc2626",
         background: "#fef2f2",
       };
+      
+      case "BOOKING_REMINDER":
+    return {
+        icon: "bi-alarm-fill",
+        label: "Booking Reminder",
+        gradient: "linear-gradient(135deg, #f59e0b, #d97706)",
+        color: "#d97706",
+        background: "#fffbeb",
+    };
+    
+
 
     case "WAITLIST_SLOT_OPEN":
       return {

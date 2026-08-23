@@ -15,6 +15,9 @@ import com.labplatform.maintenance.repository.WorkOrderRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.labplatform.sharing.model.AccessRequest;
+import com.labplatform.sharing.model.AccessRequestStatus;
+import com.labplatform.sharing.repository.AccessRequestRepository;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -29,19 +32,22 @@ public class AnalyticsService {
     private final EquipmentRepository equipmentRepository;
     private final InstitutionRepository institutionRepository;
     private final WorkOrderRepository workOrderRepository;
+    private final AccessRequestRepository accessRequestRepository;
 
     public AnalyticsService(
             UserRepository userRepository,
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
             InstitutionRepository institutionRepository,
-            WorkOrderRepository workOrderRepository) {
+            WorkOrderRepository workOrderRepository,
+            AccessRequestRepository accessRequestRepository) {
 
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.institutionRepository = institutionRepository;
         this.workOrderRepository = workOrderRepository;
+        this.accessRequestRepository = accessRequestRepository;
     }
 
 
@@ -674,6 +680,53 @@ public class AnalyticsService {
 
         response.setInstitutionOpenWorkOrders(
                 (int) openWorkOrders
+        );
+        // =====================================================
+// RESOURCE SHARING ANALYTICS
+// =====================================================
+
+        List<AccessRequest> pendingSharingRequests =
+                accessRequestRepository
+                        .findByOwningInstitutionIdAndStatus(
+                                institutionId,
+                                AccessRequestStatus.PENDING
+                        );
+
+        List<AccessRequest> approvedSharingRequests =
+                accessRequestRepository
+                        .findByOwningInstitutionIdAndStatus(
+                                institutionId,
+                                AccessRequestStatus.APPROVED
+                        );
+
+        List<AccessRequest> rejectedSharingRequests =
+                accessRequestRepository
+                        .findByOwningInstitutionIdAndStatus(
+                                institutionId,
+                                AccessRequestStatus.REJECTED
+                        );
+
+        int pendingSharing = pendingSharingRequests.size();
+        int approvedSharing = approvedSharingRequests.size();
+        int rejectedSharing = rejectedSharingRequests.size();
+
+        int totalSharing =
+                pendingSharing
+                        + approvedSharing
+                        + rejectedSharing;
+
+        response.setInstitutionSharingRequests(totalSharing);
+
+        response.setInstitutionApprovedSharingRequests(
+                approvedSharing
+        );
+
+        response.setInstitutionPendingSharingRequests(
+                pendingSharing
+        );
+
+        response.setInstitutionRejectedSharingRequests(
+                rejectedSharing
         );
 
 

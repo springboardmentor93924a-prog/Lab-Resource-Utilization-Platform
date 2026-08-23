@@ -577,6 +577,61 @@ public class BookingService {
         );
     }
 
+
+    // ==========================================
+    // BOOKING REMINDERS
+    // ==========================================
+
+    private final Set<Long> bookingRemindersSent = new HashSet<>();
+
+    @Scheduled(fixedRate = 30000)
+    public void sendBookingReminders() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        bookingRepository.findAll()
+                .stream()
+                .filter(booking ->
+                        booking.getBookingStatus() == BookingStatus.CONFIRMED
+                )
+                .forEach(booking -> {
+
+                    LocalDateTime bookingStart =
+                            LocalDateTime.of(
+                                    booking.getBookingDate(),
+                                    booking.getStartTime()
+                            );
+
+                    long minutesUntilBooking =
+                            java.time.Duration
+                                    .between(now, bookingStart)
+                                    .toMinutes();
+
+                    // Send reminder approximately 24 hours before booking.
+                    if (minutesUntilBooking >= 1439
+                            && minutesUntilBooking <= 1441
+                            && !bookingRemindersSent.contains(booking.getId())) {
+
+                        String message =
+                                "Reminder: Your booking for "
+                                        + booking.getEquipment().getEquipmentName()
+                                        + " is scheduled for "
+                                        + booking.getBookingDate()
+                                        + " at "
+                                        + booking.getStartTime()
+                                        + ".";
+
+                        notificationService.create(
+                                booking.getUser(),
+                                "BOOKING_REMINDER",
+                                message
+                        );
+
+                        bookingRemindersSent.add(booking.getId());
+                    }
+                });
+    }
+
     // ==========================================
 // AUTO COMPLETE EXPIRED BOOKINGS
 // ==========================================

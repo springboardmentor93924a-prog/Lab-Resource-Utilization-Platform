@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { getMyAnalytics } from "../services/analyticsService";
+import { getAllEquipment, getUtilizationHeatmap } from "../services/equipmentService";
+import { getMyWaitlistEntries } from "../services/waitlistService";
+import { getUnreadCount } from "../services/notificationService";
 
 import "./Analytics.css";
 
@@ -887,6 +890,357 @@ function UsageHistory({ history }) {
 }
 
 
+
+/* =========================================================
+   RESEARCHER AVAILABILITY / WAITLIST / NOTIFICATIONS
+========================================================= */
+
+function ResearcherResourceOverview({
+  availableCount,
+  waitlistCount,
+  unreadCount,
+  onNavigate,
+}) {
+  return (
+    <section className="analytics-panel">
+      <div className="analytics-panel-header">
+        <div className="panel-title-icon teal">
+          <Icon name="bi-grid-1x2-fill" />
+        </div>
+
+        <div>
+          <h3>Resource Overview</h3>
+          <p>
+            Equipment availability, waitlist status and notifications
+          </p>
+        </div>
+
+        <div className="panel-badge">
+          <Icon name="bi-person-check-fill" />
+          Personal
+        </div>
+      </div>
+
+      <div className="booking-metrics-grid">
+        <div
+          className="booking-metric-card"
+          style={{
+            "--metric-gradient":
+              "linear-gradient(135deg, #059669 0%, #0d9488 100%)",
+            cursor: "pointer",
+          }}
+          onClick={() => onNavigate("/equipment?status=AVAILABLE")}
+        >
+          <div className="booking-metric-top">
+            <div className="booking-metric-icon">
+              <Icon name="bi-check-circle-fill" />
+            </div>
+            <span className="booking-metric-title">
+              AVAILABLE NOW
+            </span>
+          </div>
+
+          <div className="booking-metric-content">
+            <strong className="booking-metric-value">
+              {availableCount}
+            </strong>
+            <span className="booking-metric-description">
+              Equipment currently available
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="booking-metric-card"
+          style={{
+            "--metric-gradient":
+              "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+            cursor: "pointer",
+          }}
+          onClick={() => onNavigate("/my-waitlist")}
+        >
+          <div className="booking-metric-top">
+            <div className="booking-metric-icon">
+              <Icon name="bi-hourglass-split" />
+            </div>
+            <span className="booking-metric-title">
+              WAITLIST
+            </span>
+          </div>
+
+          <div className="booking-metric-content">
+            <strong className="booking-metric-value">
+              {waitlistCount}
+            </strong>
+            <span className="booking-metric-description">
+              Active waitlist entries
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="booking-metric-card"
+          style={{
+            "--metric-gradient":
+              "linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)",
+            cursor: "pointer",
+          }}
+          onClick={() => onNavigate("/notifications")}
+        >
+          <div className="booking-metric-top">
+            <div className="booking-metric-icon">
+              <Icon name="bi-bell-fill" />
+            </div>
+            <span className="booking-metric-title">
+              NOTIFICATIONS
+            </span>
+          </div>
+
+          <div className="booking-metric-content">
+            <strong className="booking-metric-value">
+              {unreadCount}
+            </strong>
+            <span className="booking-metric-description">
+              Unread notifications
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+/* =========================================================
+   LAB MANAGER UTILIZATION HEATMAP
+========================================================= */
+
+function ManagerUtilizationHeatmap() {
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  function getCurrentWeek() {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
+
+    const dates = [];
+
+    for (let i = 0; i < 7; i += 1) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      dates.push(date.toISOString().split("T")[0]);
+    }
+
+    return dates;
+  }
+
+  const [dates] = useState(getCurrentWeek);
+
+  function heatClass(rate) {
+    if (rate === 0) return "heat-zero";
+    if (rate <= 20) return "heat-very-low";
+    if (rate <= 40) return "heat-low";
+    if (rate <= 70) return "heat-medium";
+    if (rate <= 90) return "heat-high";
+    return "heat-critical";
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getUtilizationHeatmap(
+          dates[0],
+          dates[dates.length - 1]
+        );
+
+        if (!cancelled) {
+          setEquipment(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Manager heatmap error:", err);
+          setError(
+            err?.response?.data?.message ||
+              "Unable to load utilization heatmap."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dates]);
+
+  return (
+    <section className="analytics-panel">
+      <div className="analytics-panel-header">
+        <div className="panel-title-icon purple">
+          <Icon name="bi-grid-3x3-gap-fill" />
+        </div>
+
+        <div>
+          <h3>Department Utilization Heatmap</h3>
+          <p>
+            Equipment utilization across the current week
+          </p>
+        </div>
+
+        <div className="panel-badge">
+          <Icon name="bi-fire" />
+          Utilization
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="analytics-empty">
+          <div>
+            <Icon name="bi-arrow-repeat" />
+          </div>
+          <h3>Loading heatmap...</h3>
+          <p>Fetching current equipment utilization.</p>
+        </div>
+      ) : error ? (
+        <div className="analytics-empty">
+          <div>
+            <Icon name="bi-exclamation-triangle-fill" />
+          </div>
+          <h3>Heatmap unavailable</h3>
+          <p>{error}</p>
+        </div>
+      ) : equipment.length === 0 ? (
+        <div className="analytics-empty">
+          <div>
+            <Icon name="bi-bar-chart" />
+          </div>
+          <h3>No utilization data</h3>
+          <p>No equipment activity is available for this week.</p>
+        </div>
+      ) : (
+        <div
+          style={{
+            overflowX: "auto",
+            padding: "10px 0 4px",
+          }}
+        >
+          <div
+            style={{
+              minWidth: "760px",
+              display: "grid",
+              gridTemplateColumns:
+                "minmax(180px, 1.8fr) repeat(7, minmax(65px, 1fr))",
+              gap: "8px",
+              alignItems: "stretch",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 800,
+                padding: "12px",
+                fontSize: "12px",
+              }}
+            >
+              EQUIPMENT
+            </div>
+
+            {dates.map((date) => {
+              const d = new Date(`${date}T00:00:00`);
+
+              return (
+                <div
+                  key={date}
+                  style={{
+                    textAlign: "center",
+                    padding: "10px 4px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {d.toLocaleDateString("en-IN", {
+                    weekday: "short",
+                  })}
+                  <br />
+                  {d.toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                  })}
+                </div>
+              );
+            })}
+
+            {equipment.map((item) => {
+              const dailyMap = {};
+
+              (item.dailyUtilization || []).forEach((day) => {
+                dailyMap[day.date] = day;
+              });
+
+              return (
+                <div key={item.equipmentId} style={{ display: "contents" }}>
+                  <div
+                    style={{
+                      padding: "12px",
+                      borderRadius: "10px",
+                      background: "#f8fafc",
+                      fontWeight: 700,
+                      minHeight: "52px",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {item.equipmentName}
+                  </div>
+
+                  {dates.map((date) => {
+                    const rate = Number(
+                      dailyMap[date]?.utilization || 0
+                    );
+
+                    return (
+                      <div
+                        key={`${item.equipmentId}-${date}`}
+                        className={`heat-cell ${heatClass(rate)}`}
+                        title={`${item.equipmentName} • ${rate}% utilization`}
+                        style={{
+                          minHeight: "52px",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {rate}%
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+
 /* =========================================================
    ANALYTICS PAGE
 ========================================================= */
@@ -900,6 +1254,15 @@ export default function Analytics() {
 
   const [loading, setLoading] =
     useState(true);
+
+  const [availableCount, setAvailableCount] =
+    useState(0);
+
+  const [waitlistCount, setWaitlistCount] =
+    useState(0);
+
+  const [unreadCount, setUnreadCount] =
+    useState(0);
 
 
   /* =======================================================
@@ -922,6 +1285,54 @@ export default function Analytics() {
 
         setData(result);
 
+        // Researcher / Student resource overview
+        if (result?.viewType === "RESEARCHER") {
+          try {
+            const equipment = await getAllEquipment();
+
+            setAvailableCount(
+              (equipment || []).filter(
+                (item) =>
+                  String(item.status || "").toUpperCase() ===
+                  "AVAILABLE"
+              ).length
+            );
+          } catch (error) {
+            console.error(
+              "Failed to load equipment availability:",
+              error
+            );
+            setAvailableCount(0);
+          }
+
+          try {
+            const waitlist = await getMyWaitlistEntries();
+
+            setWaitlistCount(
+              (waitlist || []).filter(
+                (entry) =>
+                  entry.status !== "EXPIRED"
+              ).length
+            );
+          } catch (error) {
+            console.error(
+              "Failed to load waitlist:",
+              error
+            );
+            setWaitlistCount(0);
+          }
+
+          try {
+            const count = await getUnreadCount();
+            setUnreadCount(Number(count) || 0);
+          } catch (error) {
+            console.error(
+              "Failed to load notifications:",
+              error
+            );
+            setUnreadCount(0);
+          }
+        }
       }
 
       catch (err) {
@@ -1213,6 +1624,13 @@ export default function Analytics() {
                 history={data.myUsageHistory}
               />
 
+              <ResearcherResourceOverview
+                availableCount={availableCount}
+                waitlistCount={waitlistCount}
+                unreadCount={unreadCount}
+                onNavigate={navigate}
+              />
+
             </>
 
           )}
@@ -1264,8 +1682,8 @@ export default function Analytics() {
                   icon="bi-box-seam-fill"
                   label="EQUIPMENT"
                   value={
-                    data.institutionTotalEquipment ?? 0
-                  }
+  data.organizationTotalEquipment ?? 0
+}
                   description="Registered equipment"
                   gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
                   glow="rgba(37,99,235,0.35)"
@@ -1276,8 +1694,8 @@ export default function Analytics() {
                   icon="bi-calendar-check-fill"
                   label="TOTAL BOOKINGS"
                   value={
-                    data.institutionTotalBookings ?? 0
-                  }
+  data.organizationTotalBookings ?? 0
+}
                   description="Bookings across laboratory"
                   gradient="linear-gradient(135deg, #059669, #0f766e)"
                   glow="rgba(5,150,105,0.35)"
@@ -1288,8 +1706,8 @@ export default function Analytics() {
                   icon="bi-speedometer"
                   label="AVG UTILIZATION"
                   value={
-                    `${data.institutionAvgUtilization ?? 0}%`
-                  }
+  `${data.organizationAvgUtilization ?? 0}%`
+}
                   description="Equipment utilization"
                   gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
                   glow="rgba(124,58,237,0.35)"
@@ -1315,6 +1733,67 @@ export default function Analytics() {
               <BookingAnalytics
                 data={data}
               />
+
+              <ManagerUtilizationHeatmap />
+
+              <section className="analytics-panel">
+                <div className="analytics-panel-header">
+                  <div className="panel-title-icon orange">
+                    <Icon name="bi-tools" />
+                  </div>
+
+                  <div>
+                    <h3>Maintenance & Resource Sharing</h3>
+                    <p>
+                      Maintenance workload and sharing requests
+                      requiring attention
+                    </p>
+                  </div>
+
+                  <div className="panel-badge orange-badge">
+                    <Icon name="bi-shield-check" />
+                    Operations
+                  </div>
+                </div>
+
+                <div className="booking-metrics-grid">
+                  <BookingMetricCard
+                    icon="bi-tools"
+                    title="OPEN WORK ORDERS"
+                    value={data.institutionOpenWorkOrders ?? 0}
+                    description="Maintenance requiring attention"
+                    gradient="linear-gradient(135deg, #dc2626 0%, #ea580c 100%)"
+                  />
+
+                  <BookingMetricCard
+                    icon="bi-hourglass-split"
+                    title="PENDING SHARING"
+                    value={
+                      data.institutionPendingSharingRequests ?? 0
+                    }
+                    description="Sharing requests awaiting approval"
+                    gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                  />
+
+                  <BookingMetricCard
+                    icon="bi-check-circle-fill"
+                    title="APPROVED SHARING"
+                    value={
+                      data.institutionApprovedSharingRequests ?? 0
+                    }
+                    description="Approved sharing requests"
+                    gradient="linear-gradient(135deg, #059669 0%, #0d9488 100%)"
+                  />
+
+                  <BookingMetricCard
+                    icon="bi-share-fill"
+                    title="TOTAL SHARING"
+                    value={data.institutionSharingRequests ?? 0}
+                    description="All sharing requests"
+                    gradient="linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)"
+                  />
+                </div>
+              </section>
 
 
               {/* TOP EQUIPMENT */}
@@ -1605,7 +2084,7 @@ export default function Analytics() {
         icon="bi-box-seam-fill"
         label="TOTAL EQUIPMENT"
         value={
-          data.institutionTotalEquipment ?? 0
+          data.organizationTotalEquipment ?? 0
         }
         description="Equipment across institution"
         gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
@@ -1617,7 +2096,7 @@ export default function Analytics() {
         icon="bi-calendar2-check-fill"
         label="TOTAL BOOKINGS"
         value={
-          data.institutionTotalBookings ?? 0
+          data.organizationTotalBookings ?? 0
         }
         description="Bookings across institution"
         gradient="linear-gradient(135deg, #059669, #0f766e)"
@@ -1629,7 +2108,7 @@ export default function Analytics() {
         icon="bi-speedometer2"
         label="AVG UTILIZATION"
         value={
-          `${data.institutionAvgUtilization ?? 0}%`
+          `${data.organizationAvgUtilization ?? 0}%`
         }
         description="Organization-wide utilization"
         gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
@@ -1641,7 +2120,7 @@ export default function Analytics() {
         icon="bi-graph-up-arrow"
         label="ESTIMATED ROI"
         value={
-          `${data.institutionEstimatedRoi ?? 0}%`
+          `${data.organizationEstimatedROI ?? 0}%`
         }
         description="Estimated equipment return"
         gradient="linear-gradient(135deg, #dc2626, #ea580c)"
@@ -1790,7 +2269,7 @@ export default function Analytics() {
           label="PURCHASE COST"
           value={
             `₹${Number(
-              data.institutionTotalPurchaseCost ?? 0
+              data.organizationTotalPurchaseCost ?? 0
             ).toLocaleString("en-IN")}`
           }
           description="Total equipment purchase cost"
@@ -1804,7 +2283,7 @@ export default function Analytics() {
           label="USAGE VALUE"
           value={
             `₹${Number(
-              data.institutionEstimatedUsageValue ?? 0
+              data.organizationEstimatedUsageValue ?? 0
             ).toLocaleString("en-IN")}`
           }
           description="Estimated value from usage"
@@ -1817,7 +2296,7 @@ export default function Analytics() {
           icon="bi-percent"
           label="ESTIMATED ROI"
           value={
-            `${data.institutionEstimatedRoi ?? 0}%`
+            `${data.organizationEstimatedROI ?? 0}%`
           }
           description="Estimated return on investment"
           gradient="linear-gradient(135deg, #7c3aed, #9333ea)"
@@ -1876,7 +2355,15 @@ export default function Analytics() {
           icon="bi-calendar3"
           label="AVERAGE AGE"
           value={
-            `${data.institutionAverageEquipmentAgeYears ?? 0} yrs`
+            `${(
+              Array.isArray(data.organizationLifecycleEquipment) &&
+              data.organizationLifecycleEquipment.length > 0
+                ? data.organizationLifecycleEquipment.reduce(
+                    (sum, item) => sum + (Number(item.ageYears) || 0),
+                    0
+                  ) / data.organizationLifecycleEquipment.length
+                : 0
+            ).toFixed(1)} yrs`
           }
           description="Average equipment age"
           gradient="linear-gradient(135deg, #2563eb, #4f46e5)"
@@ -1888,7 +2375,7 @@ export default function Analytics() {
           icon="bi-exclamation-triangle-fill"
           label="LIFECYCLE REVIEW"
           value={
-            data.institutionLifecycleReviewEquipment ?? 0
+            data.organizationOldEquipment ?? 0
           }
           description="Equipment older than 5 years"
           gradient="linear-gradient(135deg, #f97316, #ea580c)"
