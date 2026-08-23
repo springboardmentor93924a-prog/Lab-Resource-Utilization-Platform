@@ -52,6 +52,9 @@ public class EquipmentIssueReport {
     @Column(name = "status", nullable = false, length = 30)
     private String status = "OPEN"; // OPEN, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED, CANCELLED
 
+    @Column(name = "maintenance_id")
+    private Long maintenanceId;
+
     @Column(name = "assigned_technician_id")
     private Long assignedTechnicianId;
 

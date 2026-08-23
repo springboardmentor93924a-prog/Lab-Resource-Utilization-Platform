@@ -9,4 +9,8 @@ import java.util.Optional;
 public interface UtilizationLogRepository extends JpaRepository<UtilizationLog, Long> {
     Optional<UtilizationLog> findByBookingId(Long bookingId);
     List<UtilizationLog> findByEquipmentId(Long equipmentId);
+    List<UtilizationLog> findByEquipmentIdInAndUsageStartTimeAfter(List<Long> equipmentIds, java.time.LocalDateTime start);
+    List<UtilizationLog> findByBookingIdIn(List<Long> bookingIds);
 }
+
+

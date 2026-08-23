@@ -17,9 +17,13 @@ import java.time.LocalDateTime;
 public class MaintenanceRequest {
 
     public static final String OPEN = "OPEN";
+    public static final String ASSIGNED = "ASSIGNED";
     public static final String IN_PROGRESS = "IN_PROGRESS";
     public static final String WAITING_FOR_PARTS = "WAITING_FOR_PARTS";
+    public static final String PENDING_VERIFICATION = "PENDING_VERIFICATION";
     public static final String COMPLETED = "COMPLETED";
+    public static final String REJECTED = "REJECTED";
+    public static final String ON_HOLD = "ON_HOLD";
     public static final String CANCELLED = "CANCELLED";
 
     @Id
@@ -71,6 +75,24 @@ public class MaintenanceRequest {
 
     @Column(name = "downtime_hours")
     private BigDecimal downtimeHours;
+
+    @Column(name = "issue_report_id")
+    private Long issueReportId;
+
+    @Column(name = "department_id")
+    private Long departmentId;
+
+    @Column(name = "downtime_started_at")
+    private LocalDateTime downtimeStartedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "scheduled_start_datetime")
+    private LocalDateTime scheduledStartDatetime;
+
+    @Column(name = "scheduled_end_datetime")
+    private LocalDateTime scheduledEndDatetime;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

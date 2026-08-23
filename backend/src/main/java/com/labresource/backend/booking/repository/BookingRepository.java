@@ -18,6 +18,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     long countByUserIdAndStatus(Long userId, String status);
 
+    List<Booking> findByEquipmentIdInAndStatus(List<Long> equipmentIds, String status);
+
+    long countByEquipmentIdInAndStatus(List<Long> equipmentIds, String status);
+
     @Query("SELECT b FROM Booking b WHERE b.equipmentId = :equipmentId " +
            "AND b.status IN ('PENDING_APPROVAL','CONFIRMED','IN_USE') " +
            "AND b.startTime < :end AND b.endTime > :start " +
@@ -26,4 +30,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                    @Param("start") LocalDateTime start,
                                    @Param("end") LocalDateTime end,
                                    @Param("excludeBookingId") Long excludeBookingId);
+
+    List<Booking> findByEquipmentIdInAndStartTimeBetween(List<Long> equipmentIds, LocalDateTime start, LocalDateTime end);
+
+    List<Booking> findByEquipmentIdIn(List<Long> equipmentIds);
 }
+
+

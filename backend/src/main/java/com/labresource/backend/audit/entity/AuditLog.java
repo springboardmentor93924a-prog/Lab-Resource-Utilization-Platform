@@ -31,10 +31,12 @@ public class AuditLog {
     @Column(name = "entity_id", nullable = false)
     private Long entityId;
 
-    @Column(name = "old_value", columnDefinition = "json")
+    @Column(name = "old_value", columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String oldValue; // JSON representation of old value
 
-    @Column(name = "new_value", columnDefinition = "json")
+    @Column(name = "new_value", columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String newValue; // JSON representation of new value
 
     @Column(name = "timestamp", insertable = false, updatable = false)

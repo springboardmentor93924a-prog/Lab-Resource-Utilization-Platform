@@ -14,4 +14,6 @@ public interface SharingAgreementRepository extends JpaRepository<SharingAgreeme
     @Query("SELECT sa FROM SharingAgreement sa WHERE sa.equipmentId = :equipmentId " +
            "AND sa.status = 'APPROVED' AND :date >= sa.startDate AND :date <= sa.endDate")
     List<SharingAgreement> findActiveAgreement(@Param("equipmentId") Long equipmentId, @Param("date") LocalDate date);
+
+    List<SharingAgreement> findByEquipmentIdIn(List<Long> equipmentIds);
 }

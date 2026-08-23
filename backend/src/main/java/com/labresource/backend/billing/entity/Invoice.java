@@ -42,6 +42,12 @@ public class Invoice {
     @Column(name = "paid_date")
     private LocalDate paidDate;
 
+    @Column(name = "sharing_agreement_id")
+    private Long sharingAgreementId;
+
+    @Column(name = "external_institution_id")
+    private Long externalInstitutionId;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }

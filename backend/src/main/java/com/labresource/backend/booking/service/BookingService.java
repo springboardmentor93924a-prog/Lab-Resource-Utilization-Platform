@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -97,6 +98,17 @@ public class BookingService {
         booking.setIsRecurring(Boolean.TRUE.equals(request.getIsRecurring()));
         booking.setRecurrencePattern(request.getRecurrencePattern());
 
+        double hours = java.time.Duration.between(request.getStartTime(), request.getEndTime()).toMinutes() / 60.0;
+        BigDecimal hourlyRate = equipment.getHourlyRate();
+        if (hourlyRate != null) {
+            booking.setEstimatedCost(hourlyRate.multiply(BigDecimal.valueOf(hours)));
+            booking.setPaymentStatus("PENDING");
+        } else {
+            booking.setEstimatedCost(BigDecimal.ZERO);
+            booking.setPaymentStatus("NOT_APPLICABLE");
+        }
+        booking.setActualCost(BigDecimal.ZERO);
+
         Booking saved = bookingRepository.save(booking);
 
         if (!equipment.getInstitutionId().equals(institutionId)) {
@@ -110,6 +122,14 @@ public class BookingService {
             sharedBooking.setBookingId(saved.getBookingId());
             sharedBooking.setExternalInstitutionId(institutionId);
             sharedBooking.setUsageFee(java.math.BigDecimal.ZERO);
+            
+            BigDecimal extHourlyRate = equipment.getExternalHourlyRate();
+            if (extHourlyRate != null) {
+                sharedBooking.setEstimatedFee(extHourlyRate.multiply(BigDecimal.valueOf(hours)));
+            } else {
+                sharedBooking.setEstimatedFee(BigDecimal.ZERO);
+            }
+            sharedBooking.setPaymentStatus("PENDING");
             sharedBookingRepository.save(sharedBooking);
         }
 
@@ -133,10 +153,20 @@ public class BookingService {
                 ? bookingRepository.findByUserIdAndStatusInOrderByStartTimeDesc(userId, statuses)
                 : bookingRepository.findByUserIdAndStatusInOrderByStartTimeAsc(userId, statuses);
 
+        List<Long> equipmentIds = bookings.stream()
+                .map(Booking::getEquipmentId)
+                .distinct()
+                .toList();
+
+        List<Equipment> equipments = equipmentService.getEntities(equipmentIds);
+        java.util.Map<Long, String> equipmentNameMap = equipments.stream()
+                .collect(java.util.stream.Collectors.toMap(Equipment::getEquipmentId, Equipment::getName, (a, b) -> a));
+
         return bookings.stream()
-                .map(b -> BookingDto.fromEntity(b, equipmentService.getEntity(b.getEquipmentId()).getName()))
+                .map(b -> BookingDto.fromEntity(b, equipmentNameMap.getOrDefault(b.getEquipmentId(), "Unknown Equipment")))
                 .toList();
     }
+
 
     @Transactional
     public BookingDto cancelBooking(Long userId, Long bookingId) {

@@ -18,6 +18,14 @@ public class MaintenanceRequestSummaryDto {
     private String priority;
     private String status;
     private LocalDateTime createdAt;
+    private Long issueReportId;
+    private Long departmentId;
+    private Long assignedTechnicianId;
+    private LocalDateTime downtimeStartedAt;
+    private LocalDateTime completedAt;
+    private LocalDateTime scheduledStartDatetime;
+    private LocalDateTime scheduledEndDatetime;
+    private java.math.BigDecimal downtimeHours;
 
     public static MaintenanceRequestSummaryDto fromEntity(MaintenanceRequest m, String equipmentName) {
         MaintenanceRequestSummaryDto dto = new MaintenanceRequestSummaryDto();
@@ -30,6 +38,14 @@ public class MaintenanceRequestSummaryDto {
         dto.setPriority(m.getPriority());
         dto.setStatus(m.getStatus());
         dto.setCreatedAt(m.getCreatedAt());
+        dto.setIssueReportId(m.getIssueReportId());
+        dto.setDepartmentId(m.getDepartmentId());
+        dto.setAssignedTechnicianId(m.getAssignedTechnicianId());
+        dto.setDowntimeStartedAt(m.getDowntimeStartedAt());
+        dto.setCompletedAt(m.getCompletedAt());
+        dto.setScheduledStartDatetime(m.getScheduledStartDatetime());
+        dto.setScheduledEndDatetime(m.getScheduledEndDatetime());
+        dto.setDowntimeHours(m.getDowntimeHours());
         return dto;
     }
 }

@@ -158,6 +158,11 @@ public class EquipmentService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Equipment not found."));
     }
 
+    public List<Equipment> getEntities(List<Long> equipmentIds) {
+        return equipmentRepository.findAllById(equipmentIds);
+    }
+
+
     public EquipmentCalibration latestCalibration(Long equipmentId) {
         return calibrationRepository.findByEquipmentIdOrderByNextDueDateDesc(equipmentId).stream()
                 .max(Comparator.comparing(EquipmentCalibration::getNextDueDate))

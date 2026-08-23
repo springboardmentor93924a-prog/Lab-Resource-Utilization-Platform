@@ -11,4 +11,6 @@ public interface UtilizationMetricRepository extends JpaRepository<UtilizationMe
     List<UtilizationMetric> findByEquipmentIdAndPeriodTypeOrderByPeriodDateAsc(Long equipmentId, String periodType);
     List<UtilizationMetric> findByDepartmentIdAndPeriodTypeOrderByPeriodDateAsc(Long departmentId, String periodType);
     Optional<UtilizationMetric> findByEquipmentIdAndPeriodTypeAndPeriodDate(Long equipmentId, String periodType, LocalDate periodDate);
+    List<UtilizationMetric> findByEquipmentIdInAndPeriodDateBetween(List<Long> equipmentIds, LocalDate from, LocalDate to);
 }
+

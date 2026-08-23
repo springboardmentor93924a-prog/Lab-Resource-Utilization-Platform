@@ -44,6 +44,9 @@ public class CostRecord {
     @Column(name = "billing_period", length = 20)
     private String billingPeriod;
 
+    @Column(name = "sharing_agreement_id")
+    private Long sharingAgreementId;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }

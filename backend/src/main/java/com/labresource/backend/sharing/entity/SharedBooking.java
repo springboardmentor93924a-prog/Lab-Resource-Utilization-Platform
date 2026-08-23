@@ -29,6 +29,12 @@ public class SharedBooking {
     @Column(name = "external_institution_id", nullable = false)
     private Long externalInstitutionId;
 
+    @Column(name = "estimated_fee")
+    private BigDecimal estimatedFee;
+
+    @Column(name = "payment_status", nullable = false)
+    private String paymentStatus = "PENDING";
+
     @Column(name = "usage_fee", nullable = false)
     private BigDecimal usageFee = BigDecimal.ZERO;
 

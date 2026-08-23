@@ -8,4 +8,6 @@ import java.util.List;
 public interface ResourceSharingRequestRepository extends JpaRepository<ResourceSharingRequest, Long> {
     List<ResourceSharingRequest> findByOwningInstitutionIdOrderByCreatedAtDesc(Long owningInstitutionId);
     List<ResourceSharingRequest> findByRequestingInstitutionIdOrderByCreatedAtDesc(Long requestingInstitutionId);
+    List<ResourceSharingRequest> findByEquipmentIdIn(List<Long> equipmentIds);
 }
+

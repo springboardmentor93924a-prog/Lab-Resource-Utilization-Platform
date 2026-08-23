@@ -21,4 +21,10 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
                             @Param("departmentId") Long departmentId,
                             @Param("institutionId") Long institutionId,
                             @Param("status") String status);
+
+    List<Equipment> findByDepartmentId(Long departmentId);
+    List<Equipment> findByInstitutionId(Long institutionId);
+    long countByDepartmentIdAndStatus(Long departmentId, String status);
+    long countByInstitutionIdAndStatus(Long institutionId, String status);
 }
+

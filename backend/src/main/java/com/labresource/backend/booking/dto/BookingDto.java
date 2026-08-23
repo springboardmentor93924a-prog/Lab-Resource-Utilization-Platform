@@ -4,6 +4,7 @@ import com.labresource.backend.booking.entity.Booking;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -18,6 +19,9 @@ public class BookingDto {
     private String purpose;
     private Boolean isRecurring;
     private String recurrencePattern;
+    private BigDecimal estimatedCost;
+    private BigDecimal actualCost;
+    private String paymentStatus;
     private LocalDateTime createdAt;
 
     public static BookingDto fromEntity(Booking b, String equipmentName) {
@@ -31,7 +35,11 @@ public class BookingDto {
         dto.setPurpose(b.getPurpose());
         dto.setIsRecurring(b.getIsRecurring());
         dto.setRecurrencePattern(b.getRecurrencePattern());
+        dto.setEstimatedCost(b.getEstimatedCost());
+        dto.setActualCost(b.getActualCost());
+        dto.setPaymentStatus(b.getPaymentStatus());
         dto.setCreatedAt(b.getCreatedAt());
         return dto;
     }
 }
+

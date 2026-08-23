@@ -8,4 +8,6 @@ import java.util.List;
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findByInstitutionId(Long institutionId);
     List<Invoice> findByDepartmentId(Long departmentId);
+    List<Invoice> findBySharingAgreementIdIn(List<Long> sharingAgreementIds);
 }
+

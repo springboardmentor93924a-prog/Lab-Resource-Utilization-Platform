@@ -12,4 +12,7 @@ public interface EquipmentCalibrationRepository extends JpaRepository<EquipmentC
 
     Optional<EquipmentCalibration> findFirstByEquipmentIdAndNextDueDateGreaterThanEqualOrderByNextDueDateDesc(
             Long equipmentId, LocalDate today);
+
+    List<EquipmentCalibration> findByEquipmentIdIn(List<Long> equipmentIds);
 }
+

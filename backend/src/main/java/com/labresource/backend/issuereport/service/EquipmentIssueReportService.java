@@ -126,11 +126,9 @@ public class EquipmentIssueReportService {
         report.setResolvedAt(LocalDateTime.now());
         EquipmentIssueReport saved = issueReportRepository.save(report);
 
-        // Restore equipment status back to AVAILABLE
-        equipmentRepository.findById(report.getEquipmentId()).ifPresent(eq -> {
-            eq.setStatus(Equipment.AVAILABLE);
-            equipmentRepository.save(eq);
-        });
+        // NOTE: Equipment status is NOT reset here. Equipment status transitions
+        // (UNDER_MAINTENANCE → AVAILABLE / OUT_OF_SERVICE) are controlled exclusively
+        // by the Lab Manager during work order verification (MaintenanceService.verifyWork).
 
         // Notify reporter
         notificationService.notifyUser(report.getReportedBy(), "ISSUE_RESOLVED", "Issue Resolved",
@@ -139,3 +137,4 @@ public class EquipmentIssueReportService {
         return saved;
     }
 }
+

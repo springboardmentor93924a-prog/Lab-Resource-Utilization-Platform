@@ -15,4 +15,9 @@ public interface EquipmentIssueReportRepository extends JpaRepository<EquipmentI
 
     @Query("SELECT r FROM EquipmentIssueReport r JOIN Equipment e ON r.equipmentId = e.equipmentId WHERE e.departmentId = :departmentId AND r.status = :status ORDER BY r.createdAt DESC")
     List<EquipmentIssueReport> findByDepartmentIdAndStatusOrderByCreatedAtDesc(@Param("departmentId") Long departmentId, @Param("status") String status);
+
+    List<EquipmentIssueReport> findByEquipmentIdInAndCreatedAtBetween(List<Long> equipmentIds, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    List<EquipmentIssueReport> findByEquipmentIdIn(List<Long> equipmentIds);
 }
+

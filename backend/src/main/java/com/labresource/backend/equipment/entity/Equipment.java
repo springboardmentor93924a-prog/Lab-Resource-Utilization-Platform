@@ -56,7 +56,8 @@ public class Equipment {
     @Column(name = "purchase_cost")
     private BigDecimal purchaseCost;
 
-    @Column(name = "specifications", columnDefinition = "json")
+    @Column(name = "specifications", columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String specifications; // JSON string representing specifications
 
     @Column(name = "status", nullable = false, length = 30)
@@ -88,6 +89,12 @@ public class Equipment {
 
     @Column(name = "image_content_type", length = 100)
     private String imageContentType;
+
+    @Column(name = "hourly_rate")
+    private BigDecimal hourlyRate;
+
+    @Column(name = "external_hourly_rate")
+    private BigDecimal externalHourlyRate;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

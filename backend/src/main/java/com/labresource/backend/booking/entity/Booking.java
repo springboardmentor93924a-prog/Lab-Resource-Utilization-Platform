@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -61,6 +62,15 @@ public class Booking {
 
     @Column(name = "approved_by")
     private Long approvedBy;
+
+    @Column(name = "estimated_cost")
+    private BigDecimal estimatedCost;
+
+    @Column(name = "actual_cost")
+    private BigDecimal actualCost;
+
+    @Column(name = "payment_status", nullable = false)
+    private String paymentStatus = "NOT_APPLICABLE";
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

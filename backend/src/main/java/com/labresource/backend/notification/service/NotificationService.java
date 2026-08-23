@@ -3,10 +3,10 @@ package com.labresource.backend.notification.service;
 import com.labresource.backend.notification.dto.NotificationDto;
 import com.labresource.backend.auth.entity.AppUser;
 import com.labresource.backend.notification.entity.Notification;
+import com.labresource.backend.notification.repository.NotificationRepository;
 import com.labresource.backend.role.entity.Role;
 import com.labresource.backend.common.exception.ApiException;
 import com.labresource.backend.auth.repository.AppUserRepository;
-import com.labresource.backend.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +20,8 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final AppUserRepository appUserRepository;
 
+    // ─── Core ────────────────────────────────────────────────────────────
+
     public void notifyUser(Long userId, String type, String title, String message) {
         Notification n = new Notification();
         n.setUserId(userId);
@@ -31,13 +33,47 @@ public class NotificationService {
         notificationRepository.save(n);
     }
 
-    /** Notify every Lab Manager attached to the given department (e.g. when a booking/issue is created). */
+    /**
+     * Check if a notification of the given type already exists for the user
+     * with this referenceKey (e.g. "CERT-15-30DAYS").  Used to prevent duplicates.
+     */
+    public boolean notificationExists(Long userId, String type, String referenceKey) {
+        return notificationRepository.existsByUserIdAndTypeAndTitle(userId, type, referenceKey);
+    }
+
+    // ─── Broadcast helpers ────────────────────────────────────────────────
+
+    /** Notify every Lab Manager attached to the given department. */
     public void notifyDepartmentLabManagers(Long departmentId, String type, String title, String message) {
         List<AppUser> managers = appUserRepository.findByRoleNameAndDepartmentId(Role.LAB_MANAGER, departmentId);
         for (AppUser manager : managers) {
             notifyUser(manager.getUserId(), type, title, message);
         }
     }
+
+    /** Notify every Department Head attached to the given department. */
+    public void notifyDepartmentHeads(Long departmentId, String type, String title, String message) {
+        List<AppUser> heads = appUserRepository.findByRoleNameAndDepartmentId(Role.DEPARTMENT_HEAD, departmentId);
+        for (AppUser head : heads) {
+            notifyUser(head.getUserId(), type, title, message);
+        }
+    }
+
+    public void notifySystemAdmins(String type, String title, String message) {
+        List<AppUser> systemAdmins = appUserRepository.findByRoleName(Role.SYSTEM_ADMIN);
+        for (AppUser admin : systemAdmins) {
+            notifyUser(admin.getUserId(), type, title, message);
+        }
+    }
+
+    public void notifyInstitutionAdmins(Long institutionId, String type, String title, String message) {
+        List<AppUser> instAdmins = appUserRepository.findByRoleNameAndInstitutionId(Role.INSTITUTION_ADMIN, institutionId);
+        for (AppUser admin : instAdmins) {
+            notifyUser(admin.getUserId(), type, title, message);
+        }
+    }
+
+    // ─── Query helpers ────────────────────────────────────────────────────
 
     public List<NotificationDto> myNotifications(Long userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
@@ -58,18 +94,5 @@ public class NotificationService {
     public long unreadCount(Long userId) {
         return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
-
-    public void notifySystemAdmins(String type, String title, String message) {
-        List<AppUser> systemAdmins = appUserRepository.findByRoleName(Role.SYSTEM_ADMIN);
-        for (AppUser admin : systemAdmins) {
-            notifyUser(admin.getUserId(), type, title, message);
-        }
-    }
-
-    public void notifyInstitutionAdmins(Long institutionId, String type, String title, String message) {
-        List<AppUser> instAdmins = appUserRepository.findByRoleNameAndInstitutionId(Role.INSTITUTION_ADMIN, institutionId);
-        for (AppUser admin : instAdmins) {
-            notifyUser(admin.getUserId(), type, title, message);
-        }
-    }
 }
+
