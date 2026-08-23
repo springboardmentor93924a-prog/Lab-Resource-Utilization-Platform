@@ -75,6 +75,20 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  const canAccessCostManagement = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessAnalytics = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
   return (
     <aside className="sidebar">
 
@@ -218,6 +232,32 @@ function Sidebar() {
           >
             <span>📊</span>
             Reports
+          </Link>
+        )}
+
+        {/* Cost Management - Task 3 */}
+        {canAccessCostManagement && (
+          <Link
+            to="/cost-management"
+            className={`sidebar-link ${
+              isActive("/cost-management") ? "active" : ""
+            }`}
+          >
+            <span>💰</span>
+            Cost Management
+          </Link>
+        )}
+
+        {/* Analytics Dashboard - Task 4 */}
+        {canAccessAnalytics && (
+          <Link
+            to="/analytics"
+            className={`sidebar-link ${
+              isActive("/analytics") ? "active" : ""
+            }`}
+          >
+            <span>📈</span>
+            Analytics
           </Link>
         )}
 
