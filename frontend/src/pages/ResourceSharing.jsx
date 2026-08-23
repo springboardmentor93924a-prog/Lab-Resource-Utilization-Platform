@@ -131,7 +131,7 @@ export default function ResourceSharing() {
             requests.map((req) => (
               <tr key={req.id}>
                 <td>{req.id}</td>
-                <td>{req.equipmentName} (ID: {req.equipmentId})</td>
+                <td>{req.equipment?.equipmentName} (ID: {req.equipment?.equipmentId})</td>
                 <td>{req.senderInstitution?.institutionName}</td>
                 <td>{req.receiverInstitution?.institutionName}</td>
                 <td>

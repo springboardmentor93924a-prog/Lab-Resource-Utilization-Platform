@@ -49,14 +49,17 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
-  const canAccessCalibration = [
-    "STUDENT",
-    "LAB_TECHNICIAN",
-    "LAB_MANAGER",
-    "DEPARTMENT_HEAD",
-    "INSTITUTION_ADMIN",
-    "SYSTEM_ADMIN"
-  ].includes(role);
+  // NEW — Calibration: same visibility as Equipment/Waitlist/Bookings.
+  // Students can view (read-only per CalibrationController's
+  // @PreAuthorize on GET /equipment/{id}); the "Log Calibration"
+  // button inside the page itself is hidden for them via canLog.
+const canAccessCalibration = [
+  "LAB_TECHNICIAN",
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
 
   const canAccessUtilization = [
     "LAB_MANAGER",
@@ -204,7 +207,7 @@ function Sidebar() {
           </Link>
         )}
 
-        {/* Calibration - Task 2 */}
+        {/* Calibration - Task 2 (NEW) */}
         {canAccessCalibration && (
           <Link
             to="/calibration"

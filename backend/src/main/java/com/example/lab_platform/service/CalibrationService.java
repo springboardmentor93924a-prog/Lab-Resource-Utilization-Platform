@@ -20,8 +20,4 @@ public interface CalibrationService {
     List<EquipmentCalibration> getDueSoon(int withinDays);
 
     List<EquipmentCalibration> getOverdue();
-
-    List<EquipmentCalibration> getCertificationExpiringSoon(int withinDays);
-    
-    List<EquipmentCalibration> getCertificationExpired();
 }

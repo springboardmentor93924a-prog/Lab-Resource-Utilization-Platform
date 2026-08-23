@@ -151,14 +151,13 @@ function AppRoutes() {
       />
 
       {/* =====================================================
-          CALIBRATION - TASK 2
+          CALIBRATION - TASK 2 (NEW)
           ===================================================== */}
       <Route
         path="/calibration"
         element={
           <ProtectedRoute
             allowedRoles={[
-              "STUDENT",
               "LAB_TECHNICIAN",
               "LAB_MANAGER",
               "DEPARTMENT_HEAD",

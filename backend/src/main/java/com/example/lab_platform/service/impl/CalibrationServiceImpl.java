@@ -27,14 +27,6 @@ public class CalibrationServiceImpl implements CalibrationService {
     private final NotificationService notificationService;
     private final BookingService bookingService;
 
-    /*
-     * Calibration statuses that actually take the equipment out of
-     * service. "COMPLETED" (the default, used when a technician is
-     * just logging calibration work that's already finished) and
-     * "CANCELLED" are non-blocking — only a calibration that is
-     * SCHEDULED or IN_PROGRESS locks the equipment the same way an
-     * Active/Scheduled Maintenance record does.
-     */
     private static boolean isBlockingStatus(String status) {
         return status != null
                 && (status.equalsIgnoreCase("SCHEDULED")
@@ -90,18 +82,10 @@ public class CalibrationServiceImpl implements CalibrationService {
         if (!calibration.getNextCalibrationDate().isAfter(calibration.getCalibrationDate())) {
             throw new RuntimeException("Next calibration date must be after the calibration date");
         }
-        // EDGE CASE: certificate can't expire before it was even calibrated
-        if (calibration.getCertificateExpiryDate() != null
-            && !calibration.getCertificateExpiryDate().isAfter(calibration.getCalibrationDate())) {
-            throw new RuntimeException("Certificate expiry date must be after the calibration date");
-        }
 
         Equipment equipment = equipmentRepository.findById(calibration.getEquipment().getEquipmentId())
                 .orElseThrow(() -> new RuntimeException("Equipment not found"));
 
-        // calibratedBy is derived from the logged-in technician, never trusted
-        // from the request body — same reasoning as receiverInstitution in
-        // ResourceSharingServiceImpl.
         User loggedInUser = getLoggedInUser();
 
         calibration.setEquipment(equipment);
@@ -140,30 +124,12 @@ public class CalibrationServiceImpl implements CalibrationService {
         }
 
         EquipmentCalibration saved = calibrationRepository.save(existing);
-        if (updated.getCertificateExpiryDate() != null) {
-            existing.setCertificateExpiryDate(updated.getCertificateExpiryDate());
-        }
 
         syncEquipmentStatus(existing.getEquipment());
 
         return saved;
     }
 
-    /*
-     * Keeps Equipment.status in step with its calibration records,
-     * the same way MaintenanceServiceImpl.syncEquipmentStatus() does
-     * for maintenance:
-     *
-     *   - If any SCHEDULED/IN_PROGRESS calibration record exists for
-     *     this equipment, it is locked to "In Calibration" (blocks
-     *     new bookings the same way "Under Maintenance" does), and —
-     *     the FIRST time it enters that state — everyone currently
-     *     WAITING/NOTIFIED on its waitlist is notified.
-     *   - Otherwise (only COMPLETED/CANCELLED records, or none), the
-     *     equipment is released back to "Available" and the waitlist
-     *     cascade is run so anyone queued gets auto-allocated if their
-     *     requested window is free.
-     */
     private void syncEquipmentStatus(Equipment equipment) {
         if (equipment == null) {
             return;
@@ -190,22 +156,10 @@ public class CalibrationServiceImpl implements CalibrationService {
         if (wasAlreadyInCalibration) {
             equipment.setStatus("Available");
             equipmentRepository.save(equipment);
-
-            // Same cascade used everywhere else equipment frees up —
-            // walks the whole active queue (priority first, then
-            // earliest queueDate), not just the first entry, so no one
-            // silently stalls if the person ahead of them can't be
-            // auto-allocated.
             bookingService.processWaitlistForEquipment(equipment.getEquipmentId());
         }
     }
 
-    /*
-     * Notifies everyone currently active (WAITING/NOTIFIED) on this
-     * equipment's waitlist that it has just gone into calibration, so
-     * they know why it isn't bookable right now instead of finding out
-     * only when their own allocation attempt silently fails.
-     */
     private void notifyWaitlistOfCalibration(Equipment equipment) {
         List<Waitlist> activeEntries =
                 waitlistRepository
@@ -238,20 +192,5 @@ public class CalibrationServiceImpl implements CalibrationService {
     @Override
     public List<EquipmentCalibration> getOverdue() {
         return calibrationRepository.findByNextCalibrationDateLessThanEqual(LocalDate.now());
-    }
-
-    @Override
-    public List<EquipmentCalibration> getCertificationExpiringSoon(int withinDays) {
-        LocalDate today = LocalDate.now();
-    // EDGE CASE: certificateExpiryDate is optional — records that never
-    // set it are simply excluded by the query (null never matches a range).
-        return calibrationRepository.findByCertificateExpiryDateBetween(
-            today, today.plusDays(withinDays)
-        );
-    }   
-
-    @Override
-    public List<EquipmentCalibration> getCertificationExpired() {
-        return calibrationRepository.findByCertificateExpiryDateLessThanEqual(LocalDate.now());
     }
 }

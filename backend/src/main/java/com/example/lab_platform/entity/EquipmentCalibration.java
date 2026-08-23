@@ -1,4 +1,4 @@
- package com.example.lab_platform.entity;
+package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -30,9 +30,6 @@ public class EquipmentCalibration {
 
     @Column(name = "certificate_number", length = 100)
     private String certificateNumber;
-
-    @Column(name = "certificate_expiry_date")
-    private LocalDate certificateExpiryDate;
 
     @Column(name = "remarks")
     private String remarks;
@@ -94,14 +91,6 @@ public class EquipmentCalibration {
 
     public void setCertificateNumber(String certificateNumber) {
         this.certificateNumber = certificateNumber;
-    }
-
-    public LocalDate getCertificateExpiryDate() {
-        return certificateExpiryDate;
-    }
-
-    public void setCertificateExpiryDate(LocalDate certificateExpiryDate) {
-        this.certificateExpiryDate = certificateExpiryDate;
     }
 
     public String getRemarks() {

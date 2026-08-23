@@ -15,31 +15,35 @@ import java.util.List;
 @Component
 public class EquipmentStatusScheduler {
 
-    private final BookingRepository bookingRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final MaintenanceRepository maintenanceRepository;
-    private final BookingService bookingService;
-    private final CalibrationRepository calibrationRepository;
-    private final NotificationService notificationService;
-    private final UserRepository userRepository;
+    // change the field list:
+private final BookingRepository bookingRepository;
+private final EquipmentRepository equipmentRepository;
+private final MaintenanceRepository maintenanceRepository;
+private final BookingService bookingService;
+private final CalibrationRepository calibrationRepository;
+private final CertificationRepository certificationRepository; // NEW
+private final NotificationService notificationService;
+private final UserRepository userRepository;
 
-    public EquipmentStatusScheduler(
-            BookingRepository bookingRepository,
-            EquipmentRepository equipmentRepository,
-            MaintenanceRepository maintenanceRepository,
-            BookingService bookingService,
-            CalibrationRepository calibrationRepository,
-            NotificationService notificationService,
-            UserRepository userRepository) {
+public EquipmentStatusScheduler(
+        BookingRepository bookingRepository,
+        EquipmentRepository equipmentRepository,
+        MaintenanceRepository maintenanceRepository,
+        BookingService bookingService,
+        CalibrationRepository calibrationRepository,
+        CertificationRepository certificationRepository, // NEW
+        NotificationService notificationService,
+        UserRepository userRepository) {
 
-        this.bookingRepository = bookingRepository;
-        this.equipmentRepository = equipmentRepository;
-        this.maintenanceRepository = maintenanceRepository;
-        this.bookingService = bookingService;
-        this.calibrationRepository = calibrationRepository;
-        this.notificationService = notificationService;
-        this.userRepository = userRepository;
-    }
+    this.bookingRepository = bookingRepository;
+    this.equipmentRepository = equipmentRepository;
+    this.maintenanceRepository = maintenanceRepository;
+    this.bookingService = bookingService;
+    this.calibrationRepository = calibrationRepository;
+    this.certificationRepository = certificationRepository; // NEW
+    this.notificationService = notificationService;
+    this.userRepository = userRepository;
+}
 
     // =====================================================================
     // EXISTING: equipment status tick — unchanged, still every 60s
@@ -174,24 +178,39 @@ public class EquipmentStatusScheduler {
     }
 
     private void sendCertificationExpiryReminders() {
-        LocalDate today = LocalDate.now();
+    LocalDate today = LocalDate.now();
 
-        List<EquipmentCalibration> expiringSoon =
-                calibrationRepository.findByCertificateExpiryDateBetween(today, today.plusDays(30));
-        List<EquipmentCalibration> expired =
-                calibrationRepository.findByCertificateExpiryDateLessThanEqual(today);
+    // Uses the REAL certification module (EquipmentCertification),
+    // not EquipmentCalibration — see the Task 2 audit fix.
+    List<EquipmentCertification> expiringSoon =
+            certificationRepository.findByExpiryDateBetween(today, today.plusDays(30));
+    List<EquipmentCertification> expired =
+            certificationRepository.findByExpiryDateLessThanEqual(today);
 
-        for (EquipmentCalibration c : expiringSoon) {
-            notifyForCalibration(c, "CERTIFICATION_EXPIRING",
-                    "Certification expiring soon",
-                    c.getEquipment().getEquipmentName() + "'s certificate expires " + c.getCertificateExpiryDate() + ".");
-        }
-        for (EquipmentCalibration c : expired) {
-            notifyForCalibration(c, "CERTIFICATION_EXPIRED",
-                    "Certification expired",
-                    c.getEquipment().getEquipmentName() + "'s certificate expired " + c.getCertificateExpiryDate() + ".");
-        }
+    for (EquipmentCertification c : expiringSoon) {
+        notifyForCertification(c, "CERTIFICATION_EXPIRING",
+                "Certification expiring soon",
+                c.getEquipment().getEquipmentName() + "'s " + c.getCertificationName()
+                        + " certificate expires " + c.getExpiryDate() + ".");
     }
+    for (EquipmentCertification c : expired) {
+        notifyForCertification(c, "CERTIFICATION_EXPIRED",
+                "Certification expired",
+                c.getEquipment().getEquipmentName() + "'s " + c.getCertificationName()
+                        + " certificate expired " + c.getExpiryDate() + ".");
+    }
+}
+
+private void notifyForCertification(EquipmentCertification c, String type, String title, String message) {
+    // EDGE CASE: certification record with equipment somehow null — skip safely
+    if (c.getEquipment() == null) return;
+
+    for (User u : techsAndManagersFor(c.getEquipment())) {
+        notificationService.createIfNotAlreadyNotifiedToday(
+                u, type, title, message, c.getCertificationId()
+        );
+    }
+}
 
     private void notifyForCalibration(EquipmentCalibration c, String type, String title, String message) {
         // EDGE CASE: calibration record with equipment somehow null — skip safely

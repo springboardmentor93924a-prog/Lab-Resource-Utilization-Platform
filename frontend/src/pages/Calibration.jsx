@@ -13,7 +13,7 @@ function Calibration() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // "all" | "due-soon" | "overdue" | "cert-expiring" | "cert-expired"
+  // "all" | "due-soon" | "overdue"
   const [filterView, setFilterView] = useState("all");
 
   const [formData, setFormData] = useState({
@@ -21,15 +21,11 @@ function Calibration() {
     calibrationDate: "",
     nextCalibrationDate: "",
     certificateNumber: "",
-    certificateExpiryDate: "",
     calibrationStatus: "COMPLETED",
     remarks: "",
   });
 
   const token = sessionStorage.getItem("token");
-  const role = sessionStorage.getItem("role");
-
-  const canLog = ["LAB_TECHNICIAN", "LAB_MANAGER", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
 
   const getHeaders = () => ({
     "Content-Type": "application/json",
@@ -52,7 +48,6 @@ function Calibration() {
       setRecords(await recordsRes.json());
       setEquipment(await equipmentRes.json());
     } catch (err) {
-      // EDGE CASE: surface the real error, don't silently show an empty table
       setError(err.message);
     } finally {
       setLoading(false);
@@ -69,8 +64,6 @@ function Calibration() {
     const endpointMap = {
       "due-soon": "/calibrations/due-soon",
       overdue: "/calibrations/overdue",
-      "cert-expiring": "/calibrations/certifications/due-soon",
-      "cert-expired": "/calibrations/certifications/overdue",
     };
 
     try {
@@ -100,7 +93,6 @@ function Calibration() {
       calibrationDate: "",
       nextCalibrationDate: "",
       certificateNumber: "",
-      certificateExpiryDate: "",
       calibrationStatus: "COMPLETED",
       remarks: "",
     });
@@ -113,7 +105,6 @@ function Calibration() {
       calibrationDate: record.calibrationDate || "",
       nextCalibrationDate: record.nextCalibrationDate || "",
       certificateNumber: record.certificateNumber || "",
-      certificateExpiryDate: record.certificateExpiryDate || "",
       calibrationStatus: record.calibrationStatus || "COMPLETED",
       remarks: record.remarks || "",
     });
@@ -125,8 +116,6 @@ function Calibration() {
     e.preventDefault();
     setError("");
 
-    // EDGE CASE: client-side guard mirroring the backend validation,
-    // so the user sees the message immediately instead of after a round trip
     if (
       formData.nextCalibrationDate &&
       formData.calibrationDate &&
@@ -135,21 +124,12 @@ function Calibration() {
       setError("Next calibration date must be after the calibration date.");
       return;
     }
-    if (
-      formData.certificateExpiryDate &&
-      formData.calibrationDate &&
-      formData.certificateExpiryDate <= formData.calibrationDate
-    ) {
-      setError("Certificate expiry date must be after the calibration date.");
-      return;
-    }
 
     const payload = {
       equipment: { equipmentId: Number(formData.equipmentId) },
       calibrationDate: formData.calibrationDate,
       nextCalibrationDate: formData.nextCalibrationDate,
       certificateNumber: formData.certificateNumber || null,
-      certificateExpiryDate: formData.certificateExpiryDate || null,
       calibrationStatus: formData.calibrationStatus,
       remarks: formData.remarks || null,
     };
@@ -189,32 +169,26 @@ function Calibration() {
       {error && <div className="calibration-error">{error}</div>}
 
       <div className="calibration-toolbar">
-        {/* Buttons, not a dropdown — structured filter choices */}
         <div className="calibration-filters">
           <button className={filterView === "all" ? "filter-btn active" : "filter-btn"} onClick={() => fetchFiltered("all")}>All</button>
           <button className={filterView === "due-soon" ? "filter-btn active" : "filter-btn"} onClick={() => fetchFiltered("due-soon")}>Due Soon</button>
           <button className={filterView === "overdue" ? "filter-btn active" : "filter-btn"} onClick={() => fetchFiltered("overdue")}>Overdue</button>
-          <button className={filterView === "cert-expiring" ? "filter-btn active" : "filter-btn"} onClick={() => fetchFiltered("cert-expiring")}>Cert Expiring</button>
-          <button className={filterView === "cert-expired" ? "filter-btn active" : "filter-btn"} onClick={() => fetchFiltered("cert-expired")}>Cert Expired</button>
         </div>
 
-        {canLog && (
-          <button
-            className="primary-btn"
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-          >
-            + Log Calibration
-          </button>
-        )}
+        <button
+          className="primary-btn"
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+        >
+          + Log Calibration
+        </button>
       </div>
 
       {loading ? (
         <p>Loading...</p>
       ) : records.length === 0 ? (
-        // EDGE CASE: empty state, not a blank table
         <div className="calibration-empty">No calibration records found for this view.</div>
       ) : (
         <table className="calibration-table">
@@ -224,10 +198,9 @@ function Calibration() {
               <th>Calibrated On</th>
               <th>Next Due</th>
               <th>Certificate #</th>
-              <th>Cert Expiry</th>
               <th>Status</th>
               <th>Calibrated By</th>
-              {canLog && <th>Actions</th>}
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -237,14 +210,11 @@ function Calibration() {
                 <td>{r.calibrationDate}</td>
                 <td>{r.nextCalibrationDate}</td>
                 <td>{r.certificateNumber || "—"}</td>
-                <td>{r.certificateExpiryDate || "—"}</td>
                 <td><span className={statusBadgeClass(r.calibrationStatus)}>{r.calibrationStatus}</span></td>
                 <td>{r.calibratedBy || "—"}</td>
-                {canLog && (
-                  <td>
-                    <button className="link-btn" onClick={() => openEditForm(r)}>Edit</button>
-                  </td>
-                )}
+                <td>
+                  <button className="link-btn" onClick={() => openEditForm(r)}>Edit</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -263,7 +233,7 @@ function Calibration() {
                 value={formData.equipmentId}
                 onChange={handleChange}
                 required
-                disabled={!!editingId} // EDGE CASE: don't allow swapping equipment mid-edit
+                disabled={!!editingId}
               >
                 <option value="">Select equipment</option>
                 {equipment.map((eq) => (
@@ -281,9 +251,6 @@ function Calibration() {
 
               <label>Certificate Number</label>
               <input type="text" name="certificateNumber" value={formData.certificateNumber} onChange={handleChange} />
-
-              <label>Certificate Expiry Date</label>
-              <input type="date" name="certificateExpiryDate" value={formData.certificateExpiryDate} onChange={handleChange} />
 
               <label>Status</label>
               <div className="status-btn-group">
