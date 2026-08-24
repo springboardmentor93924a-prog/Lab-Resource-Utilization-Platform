@@ -7,6 +7,7 @@ import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.service.BookingService;
+import com.example.lab_platform.service.CostManagementService;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -22,17 +23,20 @@ public class EquipmentStatusScheduler {
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceRepository maintenanceRepository;
     private final BookingService bookingService;
+    private final CostManagementService costManagementService;
 
     public EquipmentStatusScheduler(
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
             MaintenanceRepository maintenanceRepository,
-            BookingService bookingService) {
+            BookingService bookingService,
+            CostManagementService costManagementService) {
 
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
         this.maintenanceRepository = maintenanceRepository;
         this.bookingService = bookingService;
+        this.costManagementService = costManagementService;
     }
 
     /*
@@ -53,6 +57,11 @@ public class EquipmentStatusScheduler {
         // auto-completed here — otherwise they sit at "Confirmed"
         // forever with no path to "Completed" except a manual click.
         bookingService.autoCompleteOverdueBookings();
+
+        // Task 3: as soon as a booking is auto-completed above, turn
+        // it into a billable usage-cost record (and department cost
+        // allocation) so Cost Management stays in sync automatically.
+        costManagementService.generateMissingCostRecords();
 
         List<Equipment> equipmentList =
                 equipmentRepository.findAll();

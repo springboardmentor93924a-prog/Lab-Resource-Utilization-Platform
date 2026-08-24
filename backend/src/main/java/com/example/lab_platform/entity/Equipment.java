@@ -30,6 +30,13 @@ public class Equipment {
     @Column(name = "requires_approval")
 private Boolean requiresApproval = true;
 
+    // Task 3 - Cost Management: hourly billing rate used to compute
+    // usage cost for every completed booking of this equipment.
+    // Defaults to 0 so existing rows (created before this column
+    // existed) don't silently generate incorrect non-zero costs.
+    @Column(name = "rate_per_hour")
+    private Double ratePerHour = 0.0;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(
         name = "department_id",
@@ -142,5 +149,13 @@ public Boolean getRequiresApproval() {
 
 public void setRequiresApproval(Boolean requiresApproval) {
     this.requiresApproval = requiresApproval;
+}
+
+public Double getRatePerHour() {
+    return ratePerHour;
+}
+
+public void setRatePerHour(Double ratePerHour) {
+    this.ratePerHour = ratePerHour;
 }
 }
