@@ -9,8 +9,8 @@ import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.entity.Waitlist;
 import com.example.lab_platform.repository.WaitlistRepository;
-import com.example.lab_platform.entity.Maintenance;
-import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.entity.WorkOrder;
+import com.example.lab_platform.repository.WorkOrderRepository;
 import com.example.lab_platform.repository.ResourceSharingRepository;
 import com.example.lab_platform.service.NotificationService;
 
@@ -28,7 +28,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final EquipmentRepository equipmentRepository;
     private final WaitlistRepository waitlistRepository;
-    private final MaintenanceRepository maintenanceRepository;
+    private final WorkOrderRepository workOrderRepository;
     private final ResourceSharingRepository resourceSharingRepository;
     private final EquipmentFeedbackRepository equipmentFeedbackRepository;
     private final NotificationService notificationService;
@@ -37,7 +37,7 @@ public BookingServiceImpl(
         BookingRepository bookingRepository,
         EquipmentRepository equipmentRepository,
         WaitlistRepository waitlistRepository,
-        MaintenanceRepository maintenanceRepository,
+        WorkOrderRepository workOrderRepository,
         ResourceSharingRepository resourceSharingRepository,
         EquipmentFeedbackRepository equipmentFeedbackRepository,
         NotificationService notificationService) {
@@ -45,7 +45,7 @@ public BookingServiceImpl(
     this.bookingRepository = bookingRepository;
     this.equipmentRepository = equipmentRepository;
     this.waitlistRepository = waitlistRepository;
-    this.maintenanceRepository = maintenanceRepository;
+    this.workOrderRepository = workOrderRepository;
     this.resourceSharingRepository = resourceSharingRepository;
     this.equipmentFeedbackRepository = equipmentFeedbackRepository;
     this.notificationService = notificationService;
@@ -450,42 +450,35 @@ if (requiresApproval) {
         return bookingRepository.save(booking);
     }
 
+    private static final List<String> CLOSED_WORK_ORDER_STATUSES = List.of("completed", "cancelled");
+
     private boolean isUnderMaintenanceDuring(
             Integer equipmentId,
             LocalDateTime start,
             LocalDateTime end) {
 
-        List<Maintenance> maintenanceList =
-                maintenanceRepository
+        List<WorkOrder> workOrders =
+                workOrderRepository
                         .findByEquipment_EquipmentId(
                                 equipmentId
                         );
 
-        for (Maintenance maintenance :
-                maintenanceList) {
+        for (WorkOrder workOrder : workOrders) {
 
-            String status =
-                    maintenance.getMaintenanceStatus();
-
-            if (status == null) {
-                continue;
-            }
+            String status = workOrder.getWorkOrderStatus();
 
             boolean blocksBooking =
-                    status.equalsIgnoreCase("Scheduled")
-                            || status.equalsIgnoreCase("Active");
+                    status == null
+                            || !CLOSED_WORK_ORDER_STATUSES.contains(status.toLowerCase());
 
-            if (!blocksBooking
-                    || maintenance.getMaintenanceDate() == null) {
+            java.time.LocalDate workOrderDate = workOrder.getStartDate();
 
+            if (!blocksBooking || workOrderDate == null) {
                 continue;
             }
 
-            java.time.LocalDate maintenanceDate =
-                    maintenance.getMaintenanceDate();
-
-            if (!maintenanceDate.isBefore(start.toLocalDate())
-                    && !maintenanceDate.isAfter(end.toLocalDate())) {
+            if (!workOrderDate.isBefore(start.toLocalDate())
+                    && !workOrderDate.isAfter(end.toLocalDate())) {
 
                 return true;
             }

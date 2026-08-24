@@ -41,6 +41,18 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+
+	// TASK 1: added for the new WorkOrderServiceImpl unit tests
+	// (see src/test/.../WorkOrderServiceImplTest.java). These are
+	// plain Mockito unit tests with no Spring context and no
+	// database, so they only need Mockito + JUnit 5 directly -
+	// added explicitly rather than relying on the test-starter
+	// lines above, whose artifact coordinates look non-standard
+	// and were not modified here (pre-existing, out of scope for
+	// Task 1).
+	testImplementation 'org.mockito:mockito-core:5.14.2'
+	testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
 }
 
 tasks.named('test') {

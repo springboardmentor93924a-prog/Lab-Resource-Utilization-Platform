@@ -31,6 +31,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     // Scopes the user-management list to one institution — used so
     // an Institution Admin/Lab Manager only sees their own
-    // institution's users, not every institution's combined.
+    // institution's users, not every institution's combined. Also
+    // reused by UserService.getTechnicians() (Task 1), which filters
+    // this list in-memory with normalized role-name matching instead
+    // of an exact-match query — see UserService for why.
     java.util.List<User> findByInstitution_InstitutionId(Integer institutionId);
 }

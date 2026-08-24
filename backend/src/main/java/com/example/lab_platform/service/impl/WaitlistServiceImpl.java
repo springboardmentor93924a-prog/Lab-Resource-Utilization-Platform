@@ -8,8 +8,8 @@ import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.service.WaitlistService;
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.repository.BookingRepository;
-import com.example.lab_platform.entity.Maintenance;
-import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.entity.WorkOrder;
+import com.example.lab_platform.repository.WorkOrderRepository;
 import com.example.lab_platform.repository.EquipmentFeedbackRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,18 +26,18 @@ public class WaitlistServiceImpl implements WaitlistService {
     private final WaitlistRepository waitlistRepository;
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;
-    private final MaintenanceRepository maintenanceRepository;
+    private final WorkOrderRepository workOrderRepository;
     private final EquipmentFeedbackRepository equipmentFeedbackRepository;
 
     public WaitlistServiceImpl(WaitlistRepository waitlistRepository,
                                 EquipmentRepository equipmentRepository,
                                 BookingRepository bookingRepository,
-                                MaintenanceRepository maintenanceRepository,
+                                WorkOrderRepository workOrderRepository,
                                 EquipmentFeedbackRepository equipmentFeedbackRepository) {
         this.waitlistRepository = waitlistRepository;
         this.equipmentRepository = equipmentRepository;
         this.bookingRepository = bookingRepository;
-        this.maintenanceRepository = maintenanceRepository;
+        this.workOrderRepository = workOrderRepository;
         this.equipmentFeedbackRepository = equipmentFeedbackRepository;
     }
 private String getRole(User user) {
@@ -207,36 +207,34 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
     }
 
     /*
-     * Same maintenance-blocking rule as BookingServiceImpl —
-     * a Scheduled or Active maintenance record on a date within
-     * the requested window disqualifies the equipment.
+     * Same maintenance-blocking rule as BookingServiceImpl — a work
+     * order that isn't Completed/Cancelled, whose start date falls
+     * within the requested window, disqualifies the equipment.
      */
     private boolean isUnderMaintenanceDuring(Integer equipmentId,
                                               LocalDateTime start,
                                               LocalDateTime end) {
 
-        List<Maintenance> maintenanceList =
-                maintenanceRepository.findByEquipment_EquipmentId(equipmentId);
+        List<WorkOrder> workOrders =
+                workOrderRepository.findByEquipment_EquipmentId(equipmentId);
 
-        for (Maintenance maintenance : maintenanceList) {
+        for (WorkOrder workOrder : workOrders) {
 
-            String status = maintenance.getMaintenanceStatus();
-            if (status == null) {
-                continue;
-            }
+            String status = workOrder.getWorkOrderStatus();
 
             boolean blocksBooking =
-                    status.equalsIgnoreCase("Scheduled")
-                            || status.equalsIgnoreCase("Active");
+                    status == null
+                            || !(status.equalsIgnoreCase("Completed")
+                            || status.equalsIgnoreCase("Cancelled"));
 
-            if (!blocksBooking || maintenance.getMaintenanceDate() == null) {
+            java.time.LocalDate workOrderDate = workOrder.getStartDate();
+
+            if (!blocksBooking || workOrderDate == null) {
                 continue;
             }
 
-            java.time.LocalDate maintenanceDate = maintenance.getMaintenanceDate();
-
-            if (!maintenanceDate.isBefore(start.toLocalDate())
-                    && !maintenanceDate.isAfter(end.toLocalDate())) {
+            if (!workOrderDate.isBefore(start.toLocalDate())
+                    && !workOrderDate.isAfter(end.toLocalDate())) {
                 return true;
             }
         }

@@ -12,8 +12,12 @@ public class WorkOrder {
     @Column(name = "work_order_id")
     private Integer workOrderId;
 
+    // TASK 1 FIX: was "nullable = false", which made every work order
+    // require a MaintenanceRequest and blocked directly-raised work
+    // orders (a required Task 1 capability - "Create and manage work
+    // orders" is not limited to converting an existing request).
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id", nullable = false)
+    @JoinColumn(name = "request_id", nullable = true)
     private MaintenanceRequest maintenanceRequest;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -41,6 +45,13 @@ public class WorkOrder {
 
     @Column(name = "description")
     private String description;
+
+    // Free-form technician notes recorded/updated over the life of the
+    // work order (progress notes, findings, follow-up actions) — kept
+    // separate from "description", which holds the original issue
+    // statement the work order was raised for.
+    @Column(name = "notes", length = 2000)
+    private String notes;
 
     public WorkOrder() {
     }
@@ -123,5 +134,22 @@ public class WorkOrder {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    // The date work on this order actually starts. Prefers the planned
+    // scheduledDate; falls back to the date the work order was raised
+    // if no schedule has been set yet. Not persisted — derived from the
+    // two stored date columns above.
+    @Transient
+    public LocalDate getStartDate() {
+        return scheduledDate != null ? scheduledDate : workOrderDate;
     }
 }

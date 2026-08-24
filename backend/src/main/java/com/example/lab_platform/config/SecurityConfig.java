@@ -107,6 +107,25 @@ public class SecurityConfig {
                 .authenticated()
 
                 // -------------------------------------------------
+                // USERS - TECHNICIAN LOOKUP (TASK 1)
+                // Narrower match evaluated before the general
+                // "/api/users/**" admin-only rule below (Spring
+                // Security uses first-match-wins), so technicians
+                // and managers can load the "assign technician"
+                // dropdown without being granted full user-management
+                // access. Fine-grained enforcement still lives in
+                // @PreAuthorize on UserController#getTechnicians.
+                // -------------------------------------------------
+                .requestMatchers("/api/users/technicians")
+                .hasAnyRole(
+                    "LAB_TECHNICIAN",
+                    "LAB_MANAGER",
+                    "DEPARTMENT_HEAD",
+                    "INSTITUTION_ADMIN",
+                    "SYSTEM_ADMIN"
+                )
+
+                // -------------------------------------------------
                 // USERS
                 // Only administrators should access this API.
                 // -------------------------------------------------
@@ -115,6 +134,21 @@ public class SecurityConfig {
                     "INSTITUTION_ADMIN",
                     "SYSTEM_ADMIN"
                 )
+
+                // -------------------------------------------------
+                // MAINTENANCE / WORK ORDERS / SERVICE LOGS / DOWNTIME
+                // (TASK 1: Maintenance & Work Order Management)
+                // Role restrictions are enforced with @PreAuthorize
+                // on each controller, matching the pattern already
+                // used for EQUIPMENT and BOOKINGS above.
+                // -------------------------------------------------
+                .requestMatchers(
+                    "/api/maintenance-requests/**",
+                    "/api/work-orders/**",
+                    "/api/service-logs/**",
+                    "/api/equipment-downtime/**"
+                )
+                .authenticated()
 
                 // -------------------------------------------------
                 // EVERYTHING ELSE

@@ -17,7 +17,7 @@ function Dashboard() {
   const [utilData, setUtilData] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [myWaitlist, setMyWaitlist] = useState([]);
-  const [maintenanceRecords, setMaintenanceRecords] = useState([]);
+  const [myWorkOrders, setMyWorkOrders] = useState([]);
 
   const role = sessionStorage.getItem("role");
   const myInstitutionId = sessionStorage.getItem("institutionId");
@@ -134,11 +134,14 @@ function Dashboard() {
       }
 
       if (role === "LAB_TECHNICIAN") {
-        fetch("http://localhost:8080/api/maintenance", {
+        // Maintenance Module: work orders assigned to the logged-in
+        // technician (the old /api/maintenance endpoint no longer
+        // exists on the backend).
+        fetch("http://localhost:8080/api/work-orders/my-work-orders", {
           headers: { Authorization: `Bearer ${token}` },
         })
-          .then((res) => res.json())
-          .then(setMaintenanceRecords)
+          .then((res) => (res.ok ? res.json() : []))
+          .then(setMyWorkOrders)
           .catch(console.error);
       }
     };
@@ -370,7 +373,7 @@ function Dashboard() {
           <div className="section-header">
             <div>
               <h2>Maintenance Tasks</h2>
-              <p>Scheduled and active maintenance records</p>
+              <p>Work orders assigned to you</p>
             </div>
           </div>
 
@@ -379,27 +382,27 @@ function Dashboard() {
               <thead>
                 <tr>
                   <th>Equipment</th>
-                  <th>Type</th>
-                  <th>Date</th>
+                  <th>Priority</th>
+                  <th>Scheduled</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {maintenanceRecords.length === 0 ? (
+                {myWorkOrders.length === 0 ? (
                   <tr>
                     <td colSpan="4" className="empty-state">
-                      No maintenance records found.
+                      No work orders assigned to you.
                     </td>
                   </tr>
                 ) : (
-                  maintenanceRecords.slice(0, 8).map((m) => (
-                    <tr key={m.maintenanceId}>
+                  myWorkOrders.slice(0, 8).map((wo) => (
+                    <tr key={wo.workOrderId}>
                       <td className="equipment-name">
-                        {m.equipment?.equipmentName}
+                        {wo.equipmentName}
                       </td>
-                      <td>{m.maintenanceType}</td>
-                      <td>{m.maintenanceDate}</td>
-                      <td>{m.maintenanceStatus}</td>
+                      <td>{wo.priority}</td>
+                      <td>{wo.startDate}</td>
+                      <td>{wo.workOrderStatus}</td>
                     </tr>
                   ))
                 )}

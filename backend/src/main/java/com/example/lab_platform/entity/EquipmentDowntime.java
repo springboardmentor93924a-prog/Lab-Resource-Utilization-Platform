@@ -1,7 +1,7 @@
- package com.example.lab_platform.entity;
+package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,9 +17,13 @@ public class EquipmentDowntime {
     @JoinColumn(name = "equipment_id", nullable = false)
     private Equipment equipment;
 
+    // The work order (if any) this downtime window was opened for.
+    // Nullable — a downtime window can also be logged manually with no
+    // work order behind it (e.g. an unplanned outage discovered by a
+    // technician before a work order is raised).
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maintenance_id")
-    private Maintenance maintenance;
+    @JoinColumn(name = "work_order_id")
+    private WorkOrder workOrder;
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -52,12 +56,12 @@ public class EquipmentDowntime {
         this.equipment = equipment;
     }
 
-    public Maintenance getMaintenance() {
-        return maintenance;
+    public WorkOrder getWorkOrder() {
+        return workOrder;
     }
 
-    public void setMaintenance(Maintenance maintenance) {
-        this.maintenance = maintenance;
+    public void setWorkOrder(WorkOrder workOrder) {
+        this.workOrder = workOrder;
     }
 
     public LocalDateTime getStartDate() {
@@ -90,5 +94,22 @@ public class EquipmentDowntime {
 
     public void setDowntimeStatus(String downtimeStatus) {
         this.downtimeStatus = downtimeStatus;
+    }
+
+    /*
+     * Duration is deliberately NOT a stored/live-ticking value — it is
+     * derived on demand from the two persisted timestamps only.
+     * - If endDate has not been recorded yet, the window is still
+     *   ongoing and duration is unknown/not reported (never computed
+     *   against the current clock).
+     * - Once endDate is stored, duration is fixed and simply the
+     *   difference between the two stored timestamps.
+     */
+    @Transient
+    public Long getDurationMinutes() {
+        if (startDate == null || endDate == null) {
+            return null;
+        }
+        return Duration.between(startDate, endDate).toMinutes();
     }
 }

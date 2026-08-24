@@ -227,4 +227,45 @@ public void resetPassword(String token, String newPassword) {
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
     }
+
+    // =========================
+    // GET LAB TECHNICIANS
+    // Institution-scoped list used to populate "assign to technician"
+    // dropdowns on Work Orders / Maintenance scheduling. SYSTEM_ADMIN
+    // sees every technician across institutions.
+    //
+    // FIX: was doing an exact-string DB match on role_name
+    // ("LAB_TECHNICIAN"), which silently returned nothing if the
+    // roles table stores the name differently (e.g. "Lab Technician").
+    // JwtAuthenticationFilter already normalizes role names the same
+    // way for login (role.toUpperCase().replace(" ", "_")) - this now
+    // does the identical normalization instead of assuming an exact
+    // match, so it works no matter how the role was typed into the
+    // roles table.
+    // =========================
+    public List<User> getTechnicians() {
+        User loggedInUser = getLoggedInUser();
+
+        List<User> candidates;
+
+        if (loggedInUser != null
+                && "SYSTEM_ADMIN".equalsIgnoreCase(loggedInUser.getRole().getRoleName())) {
+            candidates = userRepository.findAll();
+        } else if (loggedInUser == null || loggedInUser.getInstitution() == null) {
+            return new java.util.ArrayList<>();
+        } else {
+            candidates = userRepository.findByInstitution_InstitutionId(
+                    loggedInUser.getInstitution().getInstitutionId()
+            );
+        }
+
+        return candidates.stream()
+                .filter(u -> u.getRole() != null && u.getRole().getRoleName() != null)
+                .filter(u -> normalizeRoleName(u.getRole().getRoleName()).equals("LAB_TECHNICIAN"))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private String normalizeRoleName(String roleName) {
+        return roleName.trim().toUpperCase().replace(" ", "_");
+    }
 }

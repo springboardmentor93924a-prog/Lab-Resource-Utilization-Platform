@@ -2,36 +2,37 @@ package com.example.lab_platform.scheduler;
 
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
-import com.example.lab_platform.entity.Maintenance;
+import com.example.lab_platform.entity.WorkOrder;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
-import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.repository.WorkOrderRepository;
 import com.example.lab_platform.service.BookingService;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
 public class EquipmentStatusScheduler {
 
+    private static final List<String> CLOSED_WORK_ORDER_STATUSES = List.of("completed", "cancelled");
+
     private final BookingRepository bookingRepository;
     private final EquipmentRepository equipmentRepository;
-    private final MaintenanceRepository maintenanceRepository;
+    private final WorkOrderRepository workOrderRepository;
     private final BookingService bookingService;
 
     public EquipmentStatusScheduler(
             BookingRepository bookingRepository,
             EquipmentRepository equipmentRepository,
-            MaintenanceRepository maintenanceRepository,
+            WorkOrderRepository workOrderRepository,
             BookingService bookingService) {
 
         this.bookingRepository = bookingRepository;
         this.equipmentRepository = equipmentRepository;
-        this.maintenanceRepository = maintenanceRepository;
+        this.workOrderRepository = workOrderRepository;
         this.bookingService = bookingService;
     }
 
@@ -46,8 +47,6 @@ public class EquipmentStatusScheduler {
     public void updateEquipmentStatus() {
 
         LocalDateTime now = LocalDateTime.now();
-
-        activateDueMaintenance();
 
         // Confirmed bookings whose endTime has already passed get
         // auto-completed here — otherwise they sit at "Confirmed"
@@ -75,45 +74,8 @@ public class EquipmentStatusScheduler {
         }
     }
 
-    /*
-     * Auto-transition: any maintenance record still marked
-     * "Scheduled" whose maintenanceDate has arrived (today
-     * or already passed) is flipped to "Active", so the
-     * equipment correctly shows Under Maintenance starting
-     * on the scheduled day.
-     */
-    private void activateDueMaintenance() {
-
-        LocalDate today =
-                LocalDate.now();
-
-        List<Maintenance> scheduledMaintenance =
-                maintenanceRepository
-                        .findByMaintenanceStatus(
-                                "Scheduled"
-                        );
-
-        for (Maintenance maintenance :
-                scheduledMaintenance) {
-
-            LocalDate maintenanceDate =
-                    maintenance.getMaintenanceDate();
-
-            if (maintenanceDate == null) {
-                continue;
-            }
-
-            if (!maintenanceDate.isAfter(today)) {
-
-                maintenance.setMaintenanceStatus(
-                        "Active"
-                );
-
-                maintenanceRepository.save(
-                        maintenance
-                );
-            }
-        }
+    private boolean isClosedWorkOrderStatus(String status) {
+        return status != null && CLOSED_WORK_ORDER_STATUSES.contains(status.toLowerCase());
     }
 
     private String calculateStatus(
@@ -143,32 +105,21 @@ public class EquipmentStatusScheduler {
 
         /*
          * ------------------------------------------------
-         * 1. MAINTENANCE HAS HIGHEST PRIORITY
+         * 1. WORK ORDERS HAVE HIGHEST PRIORITY
+         * Any work order that hasn't been completed or
+         * cancelled keeps the equipment "Under Maintenance"
+         * regardless of bookings.
          * ------------------------------------------------
          */
-        List<Maintenance> maintenanceList =
-                maintenanceRepository
+        List<WorkOrder> workOrders =
+                workOrderRepository
                         .findByEquipment_EquipmentId(
                                 equipmentId
                         );
 
-        for (Maintenance maintenance :
-                maintenanceList) {
+        for (WorkOrder workOrder : workOrders) {
 
-            String maintenanceStatus =
-                    maintenance.getMaintenanceStatus();
-
-            if (maintenanceStatus == null) {
-                continue;
-            }
-
-            /*
-             * Accept both statuses currently used
-             * in the project/database.
-             */
-            if (maintenanceStatus.equalsIgnoreCase("Active")
-                    || maintenanceStatus.equalsIgnoreCase(
-                            "In Progress")) {
+            if (!isClosedWorkOrderStatus(workOrder.getWorkOrderStatus())) {
 
                 return "Under Maintenance";
             }
@@ -246,7 +197,7 @@ public class EquipmentStatusScheduler {
 
         /*
          * ------------------------------------------------
-         * 3. NO MAINTENANCE / NO ACTIVE BOOKING
+         * 3. NO OPEN WORK ORDER / NO ACTIVE BOOKING
          * ------------------------------------------------
          */
         return "Available";

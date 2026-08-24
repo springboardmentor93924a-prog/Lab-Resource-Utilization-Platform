@@ -2,10 +2,10 @@ package com.example.lab_platform.service.impl;
 
 import com.example.lab_platform.entity.Booking;
 import com.example.lab_platform.entity.Equipment;
-import com.example.lab_platform.entity.Maintenance;
+import com.example.lab_platform.entity.WorkOrder;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
-import com.example.lab_platform.repository.MaintenanceRepository;
+import com.example.lab_platform.repository.WorkOrderRepository;
 import com.example.lab_platform.service.EquipmentService;
 
 import org.springframework.stereotype.Service;
@@ -19,12 +19,12 @@ public class EquipmentServiceImpl
 
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;
-    private final MaintenanceRepository maintenanceRepository;
+    private final WorkOrderRepository workOrderRepository;
 
     public EquipmentServiceImpl(
             EquipmentRepository equipmentRepository,
             BookingRepository bookingRepository,
-            MaintenanceRepository maintenanceRepository) {
+            WorkOrderRepository workOrderRepository) {
 
         this.equipmentRepository =
                 equipmentRepository;
@@ -32,8 +32,8 @@ public class EquipmentServiceImpl
         this.bookingRepository =
                 bookingRepository;
 
-        this.maintenanceRepository =
-                maintenanceRepository;
+        this.workOrderRepository =
+                workOrderRepository;
     }
 
     @Override
@@ -142,28 +142,27 @@ public class EquipmentServiceImpl
 
         /*
          * ==========================================
-         * 1. MAINTENANCE
+         * 1. WORK ORDERS (MAINTENANCE)
+         * Any work order not yet completed/cancelled
+         * keeps the equipment Under Maintenance.
          * ==========================================
          */
-        List<Maintenance> maintenanceList =
-                maintenanceRepository
+        List<WorkOrder> workOrders =
+                workOrderRepository
                         .findByEquipment_EquipmentId(
                                 equipmentId
                         );
 
-        for (Maintenance maintenance :
-                maintenanceList) {
+        for (WorkOrder workOrder : workOrders) {
 
-            String status =
-                    maintenance.getMaintenanceStatus();
+            String status = workOrder.getWorkOrderStatus();
 
-            if (status == null) {
-                continue;
-            }
+            boolean closed =
+                    status != null
+                            && (status.equalsIgnoreCase("Completed")
+                            || status.equalsIgnoreCase("Cancelled"));
 
-            if (status.equalsIgnoreCase("Active")
-                    || status.equalsIgnoreCase("In Progress")) {
-
+            if (!closed) {
                 return "Under Maintenance";
             }
         }

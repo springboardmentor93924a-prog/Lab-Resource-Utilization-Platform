@@ -41,4 +41,22 @@ public class UserController {
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
+
+    // Technician list for "assign to technician" dropdowns — opened up
+    // to technicians/managers as well, not just admins, since this
+    // endpoint sits under a class-level @PreAuthorize that would
+    // otherwise block them.
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_TECHNICIAN',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+        """)
+    @GetMapping("/technicians")
+    public ResponseEntity<List<User>> getTechnicians() {
+        return ResponseEntity.ok(userService.getTechnicians());
+    }
 }

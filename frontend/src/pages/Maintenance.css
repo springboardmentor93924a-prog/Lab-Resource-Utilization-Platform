@@ -356,3 +356,68 @@
         grid-template-columns: 1fr;
     }
 }
+/* ===================================================
+   TASK 1 (Milestone 3): Maintenance & Work Order Management
+   Tabs, and the service-log / history panel inside a
+   work order card. Nothing above this line was changed.
+   =================================================== */
+.maintenance-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.maintenance-tab {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.maintenance-tab.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+.service-log-panel {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.service-log-empty {
+    color: #9ca3af;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.service-log-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: #374151;
+}
+
+.service-log-list li {
+    padding: 6px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.service-log-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.service-log-form input {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+}

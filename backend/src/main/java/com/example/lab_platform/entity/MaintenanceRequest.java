@@ -32,6 +32,11 @@ public class MaintenanceRequest {
     @Column(name = "request_status", length = 30)
     private String requestStatus;
 
+    // Reviewer notes (e.g. reason for rejection, approval notes, or
+    // any follow-up comment attached when the request is actioned).
+    @Column(name = "remarks", length = 1000)
+    private String remarks;
+
     public MaintenanceRequest() {
     }
 
@@ -89,5 +94,13 @@ public class MaintenanceRequest {
 
     public void setRequestStatus(String requestStatus) {
         this.requestStatus = requestStatus;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
     }
 }
