@@ -11,6 +11,10 @@ import User from "../pages/User";
 import Waitlist from "../pages/Waitlist";
 import ResourceSharing from "../pages/ResourceSharing";
 import DemandAnalysis from "../pages/DemandAnalysis";
+import CostManagement from "../pages/CostManagement";
+import AnalyticsDashboard from "../pages/AnalyticsDashboard";
+
+// Task 2
 import Utilization from "../pages/Utilization";
 import Heatmap from "../pages/Heatmap";
 import Calibration from "../pages/Calibration";
@@ -271,6 +275,48 @@ function AppRoutes() {
           >
             <MainLayout>
               <Reports />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =====================================================
+          COST MANAGEMENT - TASK 3
+          ===================================================== */}
+      <Route
+        path="/cost-management"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <CostManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =====================================================
+          ANALYTICS DASHBOARD - TASK 4
+          ===================================================== */}
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <AnalyticsDashboard />
             </MainLayout>
           </ProtectedRoute>
         }

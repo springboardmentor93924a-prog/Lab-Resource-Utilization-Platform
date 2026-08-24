@@ -4,6 +4,7 @@ import com.example.lab_platform.entity.*;
 import com.example.lab_platform.repository.*;
 import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.service.NotificationService;
+import com.example.lab_platform.service.CostManagementService;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -49,13 +50,47 @@ public EquipmentStatusScheduler(
     // EXISTING: equipment status tick — unchanged, still every 60s
     // =====================================================================
     @Scheduled(initialDelay = 1000, fixedRate = 60000)
+    private final BookingRepository bookingRepository;
+    private final EquipmentRepository equipmentRepository;
+    private final MaintenanceRepository maintenanceRepository;
+    private final BookingService bookingService;
+    private final CostManagementService costManagementService;
+
+    public EquipmentStatusScheduler(
+            BookingRepository bookingRepository,
+            EquipmentRepository equipmentRepository,
+            MaintenanceRepository maintenanceRepository,
+            BookingService bookingService,
+            CostManagementService costManagementService) {
+
+        this.bookingRepository = bookingRepository;
+        this.equipmentRepository = equipmentRepository;
+        this.maintenanceRepository = maintenanceRepository;
+        this.bookingService = bookingService;
+        this.costManagementService = costManagementService;
+    }
+
+    /*
+     * Run immediately after application startup,
+     * then every 60 seconds.
+     */
+    @Scheduled(
+            initialDelay = 1000,
+            fixedRate = 60000
+    )
     public void updateEquipmentStatus() {
         LocalDateTime now = LocalDateTime.now();
 
         activateDueMaintenance();
         bookingService.autoCompleteOverdueBookings();
 
-        List<Equipment> equipmentList = equipmentRepository.findAll();
+        // Task 3: as soon as a booking is auto-completed above, turn
+        // it into a billable usage-cost record (and department cost
+        // allocation) so Cost Management stays in sync automatically.
+        costManagementService.generateMissingCostRecords();
+
+        List<Equipment> equipmentList =
+                equipmentRepository.findAll();
 
         for (Equipment equipment : equipmentList) {
             String newStatus = calculateStatus(equipment, now);
