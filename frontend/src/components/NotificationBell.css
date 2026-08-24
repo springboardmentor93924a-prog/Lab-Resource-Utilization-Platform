@@ -113,3 +113,29 @@
 .notification-mark-read-btn:hover {
   background: #4338ca;
 }
+
+.notification-item-buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.notification-action-btn {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.notification-action-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.notification-action-btn:hover:not(:disabled) {
+  background: #4338ca;
+}

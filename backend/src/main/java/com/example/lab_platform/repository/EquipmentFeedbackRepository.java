@@ -16,9 +16,10 @@ public interface EquipmentFeedbackRepository
     List<EquipmentFeedback> findByStatus(String status);
 
     // Live check — no cached flag anywhere, always hits the DB fresh.
-    // Blocks on PENDING or REVIEWED; only lifts once explicitly RESOLVED.
-    // Called on every booking attempt, every approval, and every
-    // waitlist auto-allocation, so the block state is always current.
+    // Blocks on anything that isn't RESOLVED (PENDING, PENDING_APPROVAL,
+    // REJECTED all still block); only lifts once a manager/dept-head
+    // explicitly approves the fix. Called on every booking attempt, every
+    // approval, and every waitlist auto-allocation.
     boolean existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
             Integer equipmentId, String urgency, String status
     );

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 function Reservations() {
   const [bookings, setBookings] = useState([]);
@@ -6,6 +7,7 @@ function Reservations() {
 const [sharingBlock, setSharingBlock] = useState(null); // will hold the equipmentId, or null
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     equipmentId: "",
@@ -60,15 +62,31 @@ const [sharingBlock, setSharingBlock] = useState(null); // will hold the equipme
       });
   };
 
-  useEffect(() => {
-    fetchBookings();
-    fetchEquipmentList();
+ // replace the existing useEffect:
+useEffect(() => {
+  fetchBookings();
+  fetchEquipmentList();
 
-    // Poll so approvals/rejections made by a manager on another
-    // screen show up here without a manual refresh.
-    const interval = setInterval(fetchBookings, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  const interval = setInterval(fetchBookings, 15000);
+  return () => clearInterval(interval);
+}, []);
+
+// with:
+useEffect(() => {
+  fetchBookings();
+  fetchEquipmentList();
+
+  // Deep link from a notification action button: /reservations?equipmentId=5
+  const prefillId = searchParams.get("equipmentId");
+  if (prefillId) {
+    setFormData((prev) => ({ ...prev, equipmentId: prefillId }));
+    setShowForm(true);
+  }
+
+  const interval = setInterval(fetchBookings, 15000);
+  return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   const handleChange = (e) => {
     setFormData({

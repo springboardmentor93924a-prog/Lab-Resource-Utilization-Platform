@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./Waitlist.css";
 
 function Waitlist() {
@@ -6,6 +7,7 @@ function Waitlist() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [equipmentList, setEquipmentList] = useState([]);
+  const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     equipmentId: "",
@@ -57,15 +59,30 @@ function Waitlist() {
       .catch((err) => console.error("Equipment list error:", err));
   };
 
-  useEffect(() => {
-    fetchMyWaitlist();
-    fetchEquipmentList();
+  // replace:
+useEffect(() => {
+  fetchMyWaitlist();
+  fetchEquipmentList();
 
-    // Poll so a promotion/fulfillment triggered by someone else's
-    // booking shows up here without a manual refresh.
-    const interval = setInterval(fetchMyWaitlist, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  const interval = setInterval(fetchMyWaitlist, 15000);
+  return () => clearInterval(interval);
+}, []);
+
+// with:
+useEffect(() => {
+  fetchMyWaitlist();
+  fetchEquipmentList();
+
+  const prefillId = searchParams.get("equipmentId");
+  if (prefillId && !isTechnicianView) {
+    setFormData((prev) => ({ ...prev, equipmentId: prefillId }));
+    setShowForm(true);
+  }
+
+  const interval = setInterval(fetchMyWaitlist, 15000);
+  return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   const handleChange = (e) => {
     setFormData({

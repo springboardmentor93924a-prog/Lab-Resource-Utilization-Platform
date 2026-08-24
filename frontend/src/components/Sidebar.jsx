@@ -87,6 +87,23 @@ const canAccessCalibration = [
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  const canAccessFeedback = [
+  "STUDENT",
+  "LAB_TECHNICIAN",
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
+
+const canAccessCertification = [
+  "LAB_TECHNICIAN",
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
+
   return (
     <aside className="sidebar">
 
@@ -219,6 +236,20 @@ const canAccessCalibration = [
             Calibration
           </Link>
         )}
+
+{canAccessFeedback && (
+  <Link to="/feedback" className={`sidebar-link ${isActive("/feedback") ? "active" : ""}`}>
+    <span>⚠️</span>
+    Report Issue
+  </Link>
+)}
+
+{canAccessCertification && (
+  <Link to="/certification" className={`sidebar-link ${isActive("/certification") ? "active" : ""}`}>
+    <span>📜</span>
+    Certification
+  </Link>
+)}
 
         {/* Resource Sharing */}
         {canAccessResourceSharing && (

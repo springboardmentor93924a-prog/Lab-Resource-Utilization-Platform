@@ -45,8 +45,16 @@ function MainLayout({ children }) {
   title: "Calibration & Certification",
   subtitle: "Track calibration cycles and certification renewals",
 },
+"/feedback": {
+  title: "Equipment Feedback",
+  subtitle: "Report and resolve equipment issues",
+},
+"/certification": {
+  title: "Certification Tracking",
+  subtitle: "Track certificate validity and renewals",
+},
   };
-
+  
   const currentPage = pageTitles[location.pathname] || {
     title: "Lab Resource Utilization Platform",
     subtitle: "",
