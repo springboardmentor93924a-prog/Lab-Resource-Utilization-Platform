@@ -239,4 +239,16 @@ return saved;
         notificationService.create(u, "EQUIPMENT_FEEDBACK_REPORTED", title, message, feedback.getFeedbackId());
     }
 }
+
+    @Override
+    public EquipmentFeedback markAsFixed(Integer id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'markAsFixed'");
+    }
+
+    @Override
+    public EquipmentFeedback decideOnFix(Integer id, String decision) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'decideOnFix'");
+    }
 }
