@@ -7,6 +7,8 @@ import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.repository.InstitutionRepository;
 import com.example.lab_platform.repository.ResourceSharingRepository;
+import com.example.lab_platform.repository.UserRepository;
+import com.example.lab_platform.service.NotificationService;
 import com.example.lab_platform.service.ResourceSharingService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,14 +23,20 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
     private final ResourceSharingRepository repository;
     private final InstitutionRepository institutionRepository;
     private final EquipmentRepository equipmentRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ResourceSharingServiceImpl(
             ResourceSharingRepository repository,
             InstitutionRepository institutionRepository,
-            EquipmentRepository equipmentRepository) {
+            EquipmentRepository equipmentRepository,
+            UserRepository userRepository,
+            NotificationService notificationService) {
         this.repository = repository;
         this.institutionRepository = institutionRepository;
         this.equipmentRepository = equipmentRepository;
+        this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     private User getLoggedInUser() {
@@ -46,12 +54,26 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
     }
 
     /*
-     * Sender = the institution that OWNS the equipment being shared
-     * (validated below against the equipment's actual institution).
-     * Receiver = the institution asking for access.
-     * This matches the convention already established and relied on
-     * in BookingServiceImpl.createBooking()'s cross-institution check.
+     * No single "requester" user is stored on ResourceSharingRequest
+     * (only sender/receiver institutions) — so notifications here are
+     * institution-wide, to every LAB_MANAGER/INSTITUTION_ADMIN at the
+     * relevant institution, not to one specific person. Adding a
+     * requestedBy FK would let this target the actual requester; noted
+     * as a possible follow-up, out of scope for this fix.
      */
+    private void notifyInstitutionManagers(Institution institution, String type, String title, String message, Integer refId) {
+        if (institution == null) return;
+
+        List<User> staff = userRepository.findByInstitution_InstitutionId(institution.getInstitutionId());
+
+        for (User u : staff) {
+            String role = u.getRole() != null ? u.getRole().getRoleName() : null;
+            if ("LAB_MANAGER".equalsIgnoreCase(role) || "INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+                notificationService.create(u, type, title, message, refId);
+            }
+        }
+    }
+
     @Override
     public ResourceSharingRequest createRequest(ResourceSharingRequest request) {
         if (request.getEquipment() == null || request.getEquipment().getEquipmentId() == null) {
@@ -66,15 +88,6 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
 
         Integer senderId = request.getSenderInstitution().getInstitutionId();
 
-        /*
-         * The receiver institution (the party asking for access) is
-         * never trusted from the request body — it's always the
-         * caller's own institution. A manager can only request
-         * access on behalf of their own institution, not spoof a
-         * request as coming from someone else. SYSTEM_ADMIN is
-         * exempt since they operate platform-wide and may set up
-         * sharing between two institutions directly.
-         */
         Integer receiverId;
 
         if (isSystemAdmin(role)) {
@@ -114,14 +127,21 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
         request.setReceiverInstitution(receiver);
         request.setStatus("PENDING");
 
-        return repository.save(request);
+        ResourceSharingRequest saved = repository.save(request);
+
+        // Notify the equipment-owning (sender) institution's managers —
+        // they're the ones who need to act on it.
+        notifyInstitutionManagers(
+                sender,
+                "SHARING_REQUEST_RECEIVED",
+                "New resource sharing request",
+                receiver.getInstitutionName() + " has requested access to " + equipment.getEquipmentName() + ".",
+                saved.getId().intValue()
+        );
+
+        return saved;
     }
 
-    /*
-     * Only requests where the caller's own institution is on one
-     * side (sender or receiver) are visible. SYSTEM_ADMIN sees
-     * everything, since they operate platform-wide.
-     */
     @Override
     public List<ResourceSharingRequest> getAllRequests() {
         User loggedInUser = getLoggedInUser();
@@ -153,12 +173,6 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
         return result;
     }
 
-    /*
-     * Only the equipment-owning (sender) institution's staff can
-     * approve or reject a request against their own equipment.
-     * SYSTEM_ADMIN can act on any request. Status can only move out
-     * of PENDING, and only to APPROVED or REJECTED.
-     */
     @Override
     public ResourceSharingRequest updateStatus(Long id, String status) {
         ResourceSharingRequest req = repository.findById(id)
@@ -190,6 +204,18 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
         }
 
         req.setStatus(normalizedStatus);
-        return repository.save(req);
+        ResourceSharingRequest saved = repository.save(req);
+
+        // Notify the requesting (receiver) institution's managers of the outcome.
+        notifyInstitutionManagers(
+                saved.getReceiverInstitution(),
+                "SHARING_REQUEST_" + normalizedStatus,
+                "Sharing request " + normalizedStatus.toLowerCase(),
+                "Your request for " + saved.getEquipment().getEquipmentName()
+                        + " was " + normalizedStatus.toLowerCase() + ".",
+                saved.getId().intValue()
+        );
+
+        return saved;
     }
 }

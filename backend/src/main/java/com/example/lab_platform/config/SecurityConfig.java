@@ -79,12 +79,13 @@ public class SecurityConfig {
                 // PUBLIC ENDPOINTS
                 // -------------------------------------------------
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/api/departments/**",
-                    "/api/roles/**",
-                    "/api/institutions/**",
-                    "/error"
-                ).permitAll()
+    "/api/auth/**",
+    "/api/departments/**",
+    "/api/roles/**",
+    "/api/institutions/**",
+    "/error",
+    "/ws/**"
+).permitAll()
 
                 // -------------------------------------------------
                 // EQUIPMENT

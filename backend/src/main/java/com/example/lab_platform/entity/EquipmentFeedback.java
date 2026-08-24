@@ -27,9 +27,16 @@ public class EquipmentFeedback {
     @Column(name = "urgency", length = 20)
     private String urgency = "NORMAL";
 
-    // PENDING, REVIEWED, RESOLVED
+    // PENDING -> PENDING_APPROVAL -> RESOLVED
+    //                             -> REJECTED -> (technician retries) -> PENDING_APPROVAL
     @Column(name = "status", length = 20)
     private String status = "PENDING";
+
+    // The technician who clicked "Mark as Fixed" — set each time a fix is
+    // submitted, so a rejection notification can go back to the right person.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "handled_by")
+    private User handledBy;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate = LocalDateTime.now();
@@ -53,6 +60,9 @@ public class EquipmentFeedback {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public User getHandledBy() { return handledBy; }
+    public void setHandledBy(User handledBy) { this.handledBy = handledBy; }
 
     public LocalDateTime getCreatedDate() { return createdDate; }
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }

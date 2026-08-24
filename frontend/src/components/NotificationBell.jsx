@@ -1,0 +1,159 @@
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import useNotifications from "../hooks/useNotifications";
+import "./NotificationBell.css";
+
+const API_BASE_URL = "http://localhost:8080/api";
+
+function timeAgo(dateString) {
+  if (!dateString) return "just now";
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// Static type -> button label + destination map. referenceId's MEANING
+// depends on the type (equipmentId vs bookingId vs calibrationId etc) —
+// this is documented per-entry since the backend doesn't send that
+// distinction explicitly.
+const STATIC_ACTIONS = {
+  BOOKING_CONFIRMATION: { label: "View Booking", path: () => "/reservations" },
+  BOOKING_REMINDER: { label: "View Booking", path: () => "/reservations" },
+  WAITLIST_FULFILLED: { label: "View Booking", path: () => "/reservations" },
+  EQUIPMENT_IN_CALIBRATION: { label: "Join Waitlist", path: (n) => `/waitlist?equipmentId=${n.referenceId}` },
+  EQUIPMENT_ISSUE_REPORTED: { label: "View Waitlist", path: () => "/waitlist" },
+  CALIBRATION_DUE_SOON: { label: "Go to Calibration", path: () => "/calibration" },
+  CALIBRATION_OVERDUE: { label: "Go to Calibration", path: () => "/calibration" },
+  CERTIFICATION_EXPIRING: { label: "Go to Certification", path: () => "/certification" },
+  CERTIFICATION_EXPIRED: { label: "Go to Certification", path: () => "/certification" },
+  MAINTENANCE_DUE_SOON: { label: "Go to Maintenance", path: () => "/maintenance" },
+  MAINTENANCE_OVERDUE: { label: "Go to Maintenance", path: () => "/maintenance" },
+  IDLE_EQUIPMENT: { label: "View Equipment", path: () => "/equipment" },
+  SHARING_REQUEST_RECEIVED: { label: "View Requests", path: () => "/resource-sharing" },
+  SHARING_REQUEST_APPROVED: { label: "View Requests", path: () => "/resource-sharing" },
+  SHARING_REQUEST_REJECTED: { label: "View Requests", path: () => "/resource-sharing" },
+  EQUIPMENT_FEEDBACK_REPORTED: { label: "Solve Error", path: (n) => `/feedback?feedbackId=${n.referenceId}` },
+};
+
+// Types where referenceId is an equipmentId and the "right" next step
+// genuinely depends on whether that equipment is bookable right now —
+// so instead of a fixed destination, check live status first.
+const SMART_EQUIPMENT_TYPES = new Set(["EQUIPMENT_ISSUE_RESOLVED"]);
+
+function NotificationBell() {
+  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const [open, setOpen] = useState(false);
+  const [resolvingId, setResolvingId] = useState(null);
+  const containerRef = useRef(null);
+  const navigate = useNavigate();
+  const token = sessionStorage.getItem("token");
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleAction = async (n) => {
+    if (!n.isRead) markAsRead(n.notificationId);
+    setOpen(false);
+
+    if (SMART_EQUIPMENT_TYPES.has(n.notificationType)) {
+      // Dynamic action: check the equipment's live status, then route
+      // to Reservations (book) if it's free, or Waitlist if it's not.
+      setResolvingId(n.notificationId);
+      try {
+        const res = await fetch(`${API_BASE_URL}/equipment/${n.referenceId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Equipment lookup failed");
+        const equipment = await res.json();
+
+        if (equipment.status === "Available") {
+          navigate(`/reservations?equipmentId=${n.referenceId}`);
+        } else {
+          navigate(`/waitlist?equipmentId=${n.referenceId}`);
+        }
+      } catch {
+        // EDGE CASE: lookup failed (equipment deleted, network error) —
+        // fall back to the waitlist page rather than dead-ending the click
+        navigate("/waitlist");
+      } finally {
+        setResolvingId(null);
+      }
+      return;
+    }
+
+    const action = STATIC_ACTIONS[n.notificationType];
+    if (action) {
+      navigate(action.path(n));
+    }
+    // EDGE CASE: unrecognized/future notification type — no button is
+    // rendered for it at all (see render logic below), so this branch
+    // is just a safety net and intentionally does nothing.
+  };
+
+  return (
+    <div className="notification-bell-container" ref={containerRef}>
+      <button className="notification-bell-btn" onClick={() => setOpen((o) => !o)} aria-label="Notifications">
+        🔔
+        {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>}
+      </button>
+
+      {open && (
+        <div className="notification-dropdown">
+          <div className="notification-dropdown-header"><strong>Notifications</strong></div>
+
+          <div className="notification-list">
+            {notifications.length === 0 && (
+              <div className="notification-empty">You're all caught up.</div>
+            )}
+
+            {notifications.map((n) => {
+              const hasAction = SMART_EQUIPMENT_TYPES.has(n.notificationType) || STATIC_ACTIONS[n.notificationType];
+
+              return (
+                <div key={n.notificationId} className={`notification-item ${n.isRead ? "" : "unread"}`}>
+                  <div className="notification-item-text">
+                    <strong>{n.title}</strong>
+                    <p>{n.message}</p>
+                    <span className="notification-time">{timeAgo(n.createdAt)}</span>
+
+                    <div className="notification-item-buttons">
+                      {hasAction && (
+                        <button
+                          className="notification-action-btn"
+                          disabled={resolvingId === n.notificationId}
+                          onClick={() => handleAction(n)}
+                        >
+                          {resolvingId === n.notificationId
+                            ? "Checking..."
+                            : STATIC_ACTIONS[n.notificationType]?.label || "Take Action"}
+                        </button>
+                      )}
+                      {!n.isRead && (
+                        <button className="notification-mark-read-btn" onClick={() => markAsRead(n.notificationId)}>
+                          Mark read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default NotificationBell;
