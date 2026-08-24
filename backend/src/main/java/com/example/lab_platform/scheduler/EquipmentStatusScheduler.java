@@ -16,7 +16,6 @@ import java.util.List;
 @Component
 public class EquipmentStatusScheduler {
 
-    // change the field list:
 private final BookingRepository bookingRepository;
 private final EquipmentRepository equipmentRepository;
 private final MaintenanceRepository maintenanceRepository;
@@ -25,6 +24,7 @@ private final CalibrationRepository calibrationRepository;
 private final CertificationRepository certificationRepository; // NEW
 private final NotificationService notificationService;
 private final UserRepository userRepository;
+private final CostManagementService costManagementService;
 
 public EquipmentStatusScheduler(
         BookingRepository bookingRepository,
@@ -34,6 +34,7 @@ public EquipmentStatusScheduler(
         CalibrationRepository calibrationRepository,
         CertificationRepository certificationRepository, // NEW
         NotificationService notificationService,
+        CostManagementService costManagementService,
         UserRepository userRepository) {
 
     this.bookingRepository = bookingRepository;
@@ -44,31 +45,8 @@ public EquipmentStatusScheduler(
     this.certificationRepository = certificationRepository; // NEW
     this.notificationService = notificationService;
     this.userRepository = userRepository;
-}
-
-    // =====================================================================
-    // EXISTING: equipment status tick — unchanged, still every 60s
-    // =====================================================================
-    @Scheduled(initialDelay = 1000, fixedRate = 60000)
-    private final BookingRepository bookingRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final MaintenanceRepository maintenanceRepository;
-    private final BookingService bookingService;
-    private final CostManagementService costManagementService;
-
-    public EquipmentStatusScheduler(
-            BookingRepository bookingRepository,
-            EquipmentRepository equipmentRepository,
-            MaintenanceRepository maintenanceRepository,
-            BookingService bookingService,
-            CostManagementService costManagementService) {
-
-        this.bookingRepository = bookingRepository;
-        this.equipmentRepository = equipmentRepository;
-        this.maintenanceRepository = maintenanceRepository;
-        this.bookingService = bookingService;
-        this.costManagementService = costManagementService;
-    }
+    this.costManagementService = costManagementService;
+        }
 
     /*
      * Run immediately after application startup,

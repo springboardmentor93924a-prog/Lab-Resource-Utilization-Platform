@@ -18,4 +18,6 @@ public interface EquipmentFeedbackService {
     // Manager/Dept Head (Institution Admin as override) only:
     // PENDING_APPROVAL -> RESOLVED or REJECTED
     EquipmentFeedback decideOnFix(Integer id, String decision);
+
+    EquipmentFeedback updateStatus(Integer id, String status);
 }
