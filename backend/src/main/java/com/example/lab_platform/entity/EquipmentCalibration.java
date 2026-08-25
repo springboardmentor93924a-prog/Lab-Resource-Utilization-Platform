@@ -1,4 +1,4 @@
- package com.example.lab_platform.entity;
+package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;

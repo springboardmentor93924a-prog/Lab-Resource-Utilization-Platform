@@ -20,4 +20,8 @@ public interface NotificationService {
     List<Notification> getMyUnreadNotifications();
 
     Notification markAsRead(Integer id);
+
+    // add to the interface
+Notification createIfNotAlreadyNotifiedToday(
+        User user, String notificationType, String title, String message, Integer referenceId);
 }

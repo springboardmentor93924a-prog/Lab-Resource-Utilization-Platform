@@ -8,6 +8,7 @@ import com.example.lab_platform.entity.Waitlist;
 import com.example.lab_platform.repository.BookingRepository;
 import com.example.lab_platform.repository.EquipmentFeedbackRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
+import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.service.EquipmentFeedbackService;
@@ -23,26 +24,29 @@ import java.util.List;
 public class EquipmentFeedbackServiceImpl implements EquipmentFeedbackService {
 
     private final EquipmentFeedbackRepository feedbackRepository;
-    private final EquipmentRepository equipmentRepository;
-    private final BookingRepository bookingRepository;
-    private final WaitlistRepository waitlistRepository;
-    private final NotificationService notificationService;
-    private final BookingService bookingService;
+private final EquipmentRepository equipmentRepository;
+private final BookingRepository bookingRepository;
+private final WaitlistRepository waitlistRepository;
+private final NotificationService notificationService;
+private final BookingService bookingService;
+private final UserRepository userRepository; // NEW
 
-    public EquipmentFeedbackServiceImpl(
-            EquipmentFeedbackRepository feedbackRepository,
-            EquipmentRepository equipmentRepository,
-            BookingRepository bookingRepository,
-            WaitlistRepository waitlistRepository,
-            NotificationService notificationService,
-            BookingService bookingService) {
-        this.feedbackRepository = feedbackRepository;
-        this.equipmentRepository = equipmentRepository;
-        this.bookingRepository = bookingRepository;
-        this.waitlistRepository = waitlistRepository;
-        this.notificationService = notificationService;
-        this.bookingService = bookingService;
-    }
+public EquipmentFeedbackServiceImpl(
+        EquipmentFeedbackRepository feedbackRepository,
+        EquipmentRepository equipmentRepository,
+        BookingRepository bookingRepository,
+        WaitlistRepository waitlistRepository,
+        NotificationService notificationService,
+        BookingService bookingService,
+        UserRepository userRepository) { // NEW
+    this.feedbackRepository = feedbackRepository;
+    this.equipmentRepository = equipmentRepository;
+    this.bookingRepository = bookingRepository;
+    this.waitlistRepository = waitlistRepository;
+    this.notificationService = notificationService;
+    this.bookingService = bookingService;
+    this.userRepository = userRepository; // NEW
+}
 
     private User getLoggedInUser() {
         Authentication authentication =
@@ -87,11 +91,17 @@ public class EquipmentFeedbackServiceImpl implements EquipmentFeedbackService {
 
         EquipmentFeedback saved = feedbackRepository.save(feedback);
 
-        if ("URGENT".equals(urgency)) {
-            addDisplacedBookingHoldersToPriorityWaitlist(equipment);
-        }
+// NEW: tell the people who can actually fix it. Previously nothing
+// notified a technician/manager that an issue was even reported —
+// only the URGENT path notified displaced booking-holders, not the
+// people responsible for resolving it.
+notifyTechsAndManagersOfNewFeedback(saved, equipment);
 
-        return saved;
+if ("URGENT".equals(urgency)) {
+    addDisplacedBookingHoldersToPriorityWaitlist(equipment);
+}
+
+return saved;
     }
 
     /*
@@ -207,5 +217,38 @@ public class EquipmentFeedbackServiceImpl implements EquipmentFeedbackService {
         }
 
         bookingService.processWaitlistForEquipment(equipment.getEquipmentId());
+    }
+
+    private void notifyTechsAndManagersOfNewFeedback(EquipmentFeedback feedback, Equipment equipment) {
+    // EDGE CASE: equipment with no institution set — nobody to notify
+    if (equipment.getInstitution() == null) return;
+
+    List<User> recipients = userRepository
+            .findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+            .stream()
+            .filter(u -> u.getRole() != null
+                    && ("LAB_TECHNICIAN".equalsIgnoreCase(u.getRole().getRoleName())
+                        || "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName())))
+            .toList();
+
+    boolean urgent = "URGENT".equalsIgnoreCase(feedback.getUrgency());
+    String title = urgent ? "Urgent issue reported" : "Equipment issue reported";
+    String message = equipment.getEquipmentName() + ": " + feedback.getDescription();
+
+    for (User u : recipients) {
+        notificationService.create(u, "EQUIPMENT_FEEDBACK_REPORTED", title, message, feedback.getFeedbackId());
+    }
+}
+
+    @Override
+    public EquipmentFeedback markAsFixed(Integer id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'markAsFixed'");
+    }
+
+    @Override
+    public EquipmentFeedback decideOnFix(Integer id, String decision) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'decideOnFix'");
     }
 }

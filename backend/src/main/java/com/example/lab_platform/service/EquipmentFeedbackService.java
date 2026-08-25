@@ -12,5 +12,12 @@ public interface EquipmentFeedbackService {
 
     EquipmentFeedback submitFeedback(EquipmentFeedback feedback);
 
+    // Technician-only: PENDING or REJECTED -> PENDING_APPROVAL
+    EquipmentFeedback markAsFixed(Integer id);
+
+    // Manager/Dept Head (Institution Admin as override) only:
+    // PENDING_APPROVAL -> RESOLVED or REJECTED
+    EquipmentFeedback decideOnFix(Integer id, String decision);
+
     EquipmentFeedback updateStatus(Integer id, String status);
 }

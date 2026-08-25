@@ -11,10 +11,15 @@ import User from "../pages/User";
 import Waitlist from "../pages/Waitlist";
 import ResourceSharing from "../pages/ResourceSharing";
 import DemandAnalysis from "../pages/DemandAnalysis";
+import CostManagement from "../pages/CostManagement";
+import AnalyticsDashboard from "../pages/AnalyticsDashboard";
 
 // Task 2
 import Utilization from "../pages/Utilization";
 import Heatmap from "../pages/Heatmap";
+import Calibration from "../pages/Calibration";
+import Feedback from "../pages/Feedback";
+import Certification from "../pages/Certification";
 
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -150,6 +155,53 @@ function AppRoutes() {
       />
 
       {/* =====================================================
+          CALIBRATION - TASK 2 (NEW)
+          ===================================================== */}
+      <Route
+        path="/calibration"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_TECHNICIAN",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Calibration />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+<Route
+  path="/feedback"
+  element={
+    <ProtectedRoute allowedRoles={[
+      "STUDENT",
+      "LAB_TECHNICIAN",
+      "LAB_MANAGER",
+      "DEPARTMENT_HEAD",
+      "INSTITUTION_ADMIN",
+      "SYSTEM_ADMIN"
+    ]}>
+      <MainLayout>
+        <Feedback />
+        </MainLayout>
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/certification"
+  element={
+    <ProtectedRoute allowedRoles={["LAB_TECHNICIAN","LAB_MANAGER","DEPARTMENT_HEAD","INSTITUTION_ADMIN","SYSTEM_ADMIN"]}>
+      <MainLayout><Certification /></MainLayout>
+    </ProtectedRoute>
+  }
+/>
+      {/* =====================================================
           UTILIZATION - TASK 2
           ===================================================== */}
       <Route
@@ -190,7 +242,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
         <Route
   path="/demand-analysis"
   element={
@@ -223,6 +275,48 @@ function AppRoutes() {
           >
             <MainLayout>
               <Reports />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =====================================================
+          COST MANAGEMENT - TASK 3
+          ===================================================== */}
+      <Route
+        path="/cost-management"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <CostManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =====================================================
+          ANALYTICS DASHBOARD - TASK 4
+          ===================================================== */}
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <AnalyticsDashboard />
             </MainLayout>
           </ProtectedRoute>
         }

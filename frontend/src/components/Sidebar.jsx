@@ -49,6 +49,18 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  // NEW — Calibration: same visibility as Equipment/Waitlist/Bookings.
+  // Students can view (read-only per CalibrationController's
+  // @PreAuthorize on GET /equipment/{id}); the "Log Calibration"
+  // button inside the page itself is hidden for them via canLog.
+const canAccessCalibration = [
+  "LAB_TECHNICIAN",
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
+
   const canAccessUtilization = [
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
@@ -69,6 +81,36 @@ function Sidebar() {
   ].includes(role);
 
   const canAccessResourceSharing = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessFeedback = [
+  "STUDENT",
+  "LAB_TECHNICIAN",
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
+
+const canAccessCertification = [
+  "LAB_TECHNICIAN",
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMIN",
+  "SYSTEM_ADMIN"
+].includes(role);
+  const canAccessCostManagement = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessAnalytics = [
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
@@ -195,6 +237,33 @@ function Sidebar() {
           </Link>
         )}
 
+        {/* Calibration - Task 2 (NEW) */}
+        {canAccessCalibration && (
+          <Link
+            to="/calibration"
+            className={`sidebar-link ${
+              isActive("/calibration") ? "active" : ""
+            }`}
+          >
+            <span>🧪</span>
+            Calibration
+          </Link>
+        )}
+
+{canAccessFeedback && (
+  <Link to="/feedback" className={`sidebar-link ${isActive("/feedback") ? "active" : ""}`}>
+    <span>⚠️</span>
+    Report Issue
+  </Link>
+)}
+
+{canAccessCertification && (
+  <Link to="/certification" className={`sidebar-link ${isActive("/certification") ? "active" : ""}`}>
+    <span>📜</span>
+    Certification
+  </Link>
+)}
+
         {/* Resource Sharing */}
         {canAccessResourceSharing && (
           <Link
@@ -218,6 +287,32 @@ function Sidebar() {
           >
             <span>📊</span>
             Reports
+          </Link>
+        )}
+
+        {/* Cost Management - Task 3 */}
+        {canAccessCostManagement && (
+          <Link
+            to="/cost-management"
+            className={`sidebar-link ${
+              isActive("/cost-management") ? "active" : ""
+            }`}
+          >
+            <span>💰</span>
+            Cost Management
+          </Link>
+        )}
+
+        {/* Analytics Dashboard - Task 4 */}
+        {canAccessAnalytics && (
+          <Link
+            to="/analytics"
+            className={`sidebar-link ${
+              isActive("/analytics") ? "active" : ""
+            }`}
+          >
+            <span>📈</span>
+            Analytics
           </Link>
         )}
 
