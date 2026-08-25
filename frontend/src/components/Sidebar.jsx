@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getCurrentUserRole } from "../utils/auth";
 import { getUnreadCount } from "../services/notificationService";
 import { useAuth } from "../context/AuthContext";
+import Settings from "./Settings";
 
 // roles: undefined = visible to everyone.
 // Otherwise, only listed roles see it.
@@ -262,13 +263,38 @@ export default function Sidebar() {
         ))}
       </ul>
 
-      <div
-        className="sidebar-logout"
-        onClick={handleLogout}
-      >
-        <i className="bi bi-box-arrow-right"></i>
-        Logout
-      </div>
+      {/* =================================================
+    SETTINGS
+================================================= */}
+
+<Settings />
+
+
+{/* =================================================
+    LOGOUT
+================================================= */}
+
+<div
+  className="sidebar-logout"
+  onClick={handleLogout}
+  role="button"
+  tabIndex={0}
+  onKeyDown={(event) => {
+
+    if (event.key === "Enter") {
+      handleLogout();
+    }
+
+  }}
+>
+
+  <i className="bi bi-box-arrow-right"></i>
+
+  <span>
+    Logout
+  </span>
+
+</div>
     </>
   );
 }

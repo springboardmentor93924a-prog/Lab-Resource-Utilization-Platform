@@ -1,1 +1,170 @@
 @import "tailwindcss";
+/* =========================================================
+   GLOBAL APPLICATION THEME
+========================================================= */
+
+:root {
+  --app-background: #020817;
+  --app-surface: #0f1b2d;
+  --app-surface-secondary: #16243a;
+  --app-border: #1e293b;
+  --app-text: #e5f3ff;
+  --app-text-secondary: #7895b2;
+  --app-primary: #2dd4bf;
+  --app-primary-blue: #38bdf8;
+}
+
+
+/* =========================================================
+   DARK
+========================================================= */
+
+.global-dark-theme {
+  background: var(--app-background);
+  color: var(--app-text);
+}
+
+
+/* =========================================================
+   LIGHT
+========================================================= */
+
+.global-light-theme {
+  --app-background: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-secondary: #f1f5f9;
+  --app-border: #dbe5ef;
+  --app-text: #0f172a;
+  --app-text-secondary: #64748b;
+  --app-primary: #2563eb;
+  --app-primary-blue: #2563eb;
+
+  background: #f8fafc !important;
+  color: #0f172a;
+}
+
+
+/* =========================================================
+   BODY
+========================================================= */
+
+body.global-light-theme {
+  background: #f8fafc !important;
+
+  color: #0f172a !important;
+}
+
+body.global-dark-theme {
+  background: #020817;
+
+  color: #e5f3ff;
+}
+
+
+/* =========================================================
+   GENERIC LIGHT THEME OVERRIDES
+========================================================= */
+
+.global-light-theme .content,
+.global-light-theme .container-main,
+.global-light-theme .main-content {
+  background: #f8fafc !important;
+
+  color: #0f172a !important;
+}
+
+
+/* =========================================================
+   COMMON CARDS
+========================================================= */
+
+.global-light-theme .card,
+.global-light-theme .dashboard-card,
+.global-light-theme .equipment-card,
+.global-light-theme .booking-card,
+.global-light-theme .stat-card,
+.global-light-theme .analytics-card,
+.global-light-theme .report-card,
+.global-light-theme .maintenance-card {
+  background: #ffffff !important;
+
+  color: #0f172a !important;
+
+  border-color: #dbe5ef !important;
+
+  box-shadow:
+    0 4px 18px rgba(15, 23, 42, 0.06);
+}
+
+
+/* =========================================================
+   COMMON TEXT
+========================================================= */
+
+.global-light-theme h1,
+.global-light-theme h2,
+.global-light-theme h3,
+.global-light-theme h4,
+.global-light-theme h5,
+.global-light-theme h6 {
+  color: #0f172a;
+}
+
+.global-light-theme p {
+  color: #475569;
+}
+
+
+/* =========================================================
+   COMMON INPUTS
+========================================================= */
+
+.global-light-theme input,
+.global-light-theme textarea,
+.global-light-theme select {
+  background: #ffffff !important;
+
+  color: #0f172a !important;
+
+  border-color: #cbd5e1 !important;
+}
+
+.global-light-theme input::placeholder,
+.global-light-theme textarea::placeholder {
+  color: #94a3b8;
+}
+
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+.global-light-theme table {
+  color: #0f172a;
+}
+
+.global-light-theme th {
+  background: #f1f5f9 !important;
+
+  color: #334155 !important;
+
+  border-color: #dbe5ef !important;
+}
+
+.global-light-theme td {
+  border-color: #e2e8f0 !important;
+
+  color: #475569 !important;
+}
+
+
+/* =========================================================
+   COMPACT MODE
+========================================================= */
+
+.global-compact-mode .card,
+.global-compact-mode .dashboard-card,
+.global-compact-mode .equipment-card,
+.global-compact-mode .booking-card {
+  padding: 14px !important;
+}

@@ -378,12 +378,12 @@ export default function Login() {
                     Password
                   </label>
 
-                  <a
-                    href="#"
-                    className="text-xs text-cyan-400 hover:text-cyan-300 transition"
-                  >
-                    Forgot password?
-                  </a>
+                  <Link
+  to="/forgot-password"
+  className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+>
+  Forgot password?
+</Link>
 
                 </div>
 

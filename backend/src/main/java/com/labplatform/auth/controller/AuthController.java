@@ -12,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import java.util.Map;
 import com.labplatform.auth.dto.GoogleRegisterRequest;
 import jakarta.servlet.http.HttpSession;
+import com.labplatform.auth.dto.ForgotPasswordRequest;
+import com.labplatform.auth.dto.ResetPasswordRequest;
 
 
 @RestController
@@ -88,6 +90,50 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid email or password"));
+        }
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(request.getEmail());
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "If an account exists for this email, "
+                                + "password reset instructions have been sent."
+                )
+        );
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        try {
+
+            authService.resetPassword(
+                    request.getToken(),
+                    request.getNewPassword()
+            );
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "message",
+                            "Password has been reset successfully."
+                    )
+            );
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                            Map.of(
+                                    "message",
+                                    e.getMessage()
+                            )
+                    );
         }
     }
     @GetMapping("/me")

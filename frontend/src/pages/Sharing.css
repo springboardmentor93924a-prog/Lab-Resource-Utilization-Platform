@@ -2717,3 +2717,33 @@ body {
 
     height: 38px !important;
 }
+/* =========================================================
+   FIX SHARING PAGE HEADINGS VISIBILITY
+   ========================================================= */
+
+.sharing-content .section-heading h2 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* Equipment names */
+.sharing-content .equipment-name {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* My Access Requests equipment names */
+.sharing-content .my-request-info h3 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* Admin request equipment names */
+.sharing-content .pending-info h3 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    opacity: 1 !important;
+}

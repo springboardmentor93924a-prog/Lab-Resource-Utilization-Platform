@@ -1,0 +1,556 @@
+/* =========================================================
+   SIDEBAR SETTINGS CONTAINER
+   ========================================================= */
+
+.sidebar-settings {
+  position: relative;
+  width: 100%;
+}
+
+
+/* =========================================================
+   SETTINGS BUTTON
+   ========================================================= */
+
+.sidebar-settings-button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+
+  display: flex;
+  align-items: center;
+
+  padding: 16px 24px;
+
+  cursor: pointer;
+
+  font-size: 16px;
+  font-weight: 500;
+
+  text-align: left;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.sidebar-settings-button:hover {
+  background: rgba(30, 64, 175, 0.18);
+  color: #ffffff;
+}
+
+
+.sidebar-settings-button.active {
+  background: rgba(30, 64, 175, 0.25);
+  color: #2dd4bf;
+}
+
+
+/* =========================================================
+   SETTINGS CONTENT
+   ========================================================= */
+
+.sidebar-settings-content {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+
+.sidebar-settings-content i {
+  width: 20px;
+  text-align: center;
+  font-size: 17px;
+}
+
+
+/* =========================================================
+   SETTINGS PANEL
+   ========================================================= */
+
+.sidebar-settings-panel {
+  position: absolute;
+
+  left: calc(100% + 10px);
+  bottom: 0;
+
+  width: 360px;
+
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  background: #0f1b2d;
+
+  border: 1px solid #1d3b5c;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.55);
+
+  color: #ffffff;
+
+  z-index: 99999;
+
+  animation:
+    sidebarSettingsOpen
+    0.18s ease;
+}
+
+
+@keyframes sidebarSettingsOpen {
+
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.sidebar-settings-header {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  padding: 18px;
+
+  background: #102238;
+
+  border-bottom: 1px solid #1d3b5c;
+}
+
+
+.sidebar-settings-header h4 {
+  margin: 0;
+
+  font-size: 18px;
+
+  font-weight: 700;
+}
+
+
+.sidebar-settings-header p {
+  margin: 5px 0 0;
+
+  color: #94a9c4;
+
+  font-size: 11px;
+}
+
+
+.sidebar-settings-close {
+  width: 30px;
+  height: 30px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #a8b8cc;
+
+  cursor: pointer;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+}
+
+
+.sidebar-settings-close:hover {
+  background: #1a3049;
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   SECTION
+   ========================================================= */
+
+.sidebar-settings-section {
+  padding: 15px 18px;
+
+  border-bottom: 1px solid #1d3b5c;
+}
+
+
+.sidebar-settings-section h5 {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin: 0 0 10px;
+
+  color: #2dd4bf;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+.sidebar-settings-section h5 i {
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   ROW
+   ========================================================= */
+
+.sidebar-settings-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 10px 0;
+}
+
+
+.sidebar-settings-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+
+  min-width: 0;
+}
+
+
+.sidebar-settings-info strong {
+  color: #ffffff;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+
+.sidebar-settings-info span {
+  color: #8fa3bc;
+
+  font-size: 10px;
+
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   SELECT
+   ========================================================= */
+
+.sidebar-settings-select {
+  min-width: 85px;
+
+  padding: 7px 8px;
+
+  border-radius: 7px;
+
+  border: 1px solid #28547b;
+
+  background: #071a30;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  outline: none;
+
+  font-size: 11px;
+}
+
+
+.sidebar-settings-select:focus {
+  border-color: #2dd4bf;
+}
+
+
+/* =========================================================
+   SWITCH
+   ========================================================= */
+
+.sidebar-settings-switch {
+  position: relative;
+
+  display: inline-block;
+
+  width: 40px;
+  height: 22px;
+
+  flex-shrink: 0;
+}
+
+
+.sidebar-settings-switch input {
+  opacity: 0;
+
+  width: 0;
+  height: 0;
+}
+
+
+.sidebar-settings-slider {
+  position: absolute;
+
+  inset: 0;
+
+  cursor: pointer;
+
+  background: #34485e;
+
+  border-radius: 999px;
+
+  transition: 0.2s;
+}
+
+
+.sidebar-settings-slider::before {
+  content: "";
+
+  position: absolute;
+
+  width: 16px;
+  height: 16px;
+
+  left: 3px;
+  top: 3px;
+
+  background: #ffffff;
+
+  border-radius: 50%;
+
+  transition: 0.2s;
+}
+
+
+.sidebar-settings-switch input:checked
++ .sidebar-settings-slider {
+  background: #2dd4bf;
+}
+
+
+.sidebar-settings-switch input:checked
++ .sidebar-settings-slider::before {
+  transform: translateX(18px);
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+.sidebar-settings-profile {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 10px 11px;
+
+  border: 1px solid #203d5b;
+
+  border-radius: 8px;
+
+  background: #0b2037;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+.sidebar-settings-profile span {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.sidebar-settings-profile:hover {
+  background: #14304d;
+
+  border-color: #2dd4bf;
+}
+
+
+.sidebar-settings-profile i {
+  color: #2dd4bf;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.sidebar-settings-footer {
+  padding: 14px 18px;
+}
+
+
+.sidebar-settings-reset {
+  width: 100%;
+
+  padding: 9px;
+
+  border: 1px solid #5a3340;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #f87171;
+
+  cursor: pointer;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  transition: 0.2s;
+}
+
+
+.sidebar-settings-reset:hover {
+  background: rgba(248, 113, 113, 0.08);
+
+  border-color: #f87171;
+}
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+body.global-light-theme
+.sidebar-settings-panel {
+  background: #ffffff;
+
+  border-color: #d7e0ea;
+
+  color: #172033;
+
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.18);
+}
+
+
+body.global-light-theme
+.sidebar-settings-header {
+  background: #f5f8fb;
+
+  border-color: #d7e0ea;
+}
+
+
+body.global-light-theme
+.sidebar-settings-header h4 {
+  color: #172033;
+}
+
+
+body.global-light-theme
+.sidebar-settings-info strong {
+  color: #172033;
+}
+
+
+body.global-light-theme
+.sidebar-settings-info span {
+  color: #66758a;
+}
+
+
+body.global-light-theme
+.sidebar-settings-section {
+  border-color: #e1e7ee;
+}
+
+
+body.global-light-theme
+.sidebar-settings-select {
+  background: #ffffff;
+
+  color: #172033;
+
+  border-color: #cbd5e1;
+}
+
+
+body.global-light-theme
+.sidebar-settings-profile {
+  background: #f7f9fc;
+
+  color: #172033;
+
+  border-color: #d7e0ea;
+}
+
+
+body.global-light-theme
+.sidebar-settings-profile:hover {
+  background: #eef5f7;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .sidebar-settings-panel {
+    left: auto;
+    right: 10px;
+
+    width: 330px;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .sidebar-settings-panel {
+    position: fixed;
+
+    left: 15px;
+    right: 15px;
+
+    bottom: 15px;
+
+    width: auto;
+
+    max-height: calc(100vh - 30px);
+  }
+
+}

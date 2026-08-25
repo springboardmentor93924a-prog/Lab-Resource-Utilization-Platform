@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
+
 import "./ResearcherDashboard.css";
 
 import { getAllEquipment } from "../services/equipmentService";
@@ -55,8 +56,6 @@ export default function ResearcherDashboard() {
 
   const [unreadCount, setUnreadCount] =
     useState(0);
-
-
   // =========================================================
   // SEARCH
   // =========================================================
@@ -306,7 +305,6 @@ export default function ResearcherDashboard() {
     <div
       className="container-main"
       style={{
-        background: "#020b1c",
         minHeight: "100vh",
       }}
     >
@@ -324,12 +322,7 @@ export default function ResearcherDashboard() {
           MAIN CONTENT
       ===================================================== */}
 
-      <main
-        className="content"
-        style={{
-          background: "#020b1c",
-        }}
-      >
+      <main className="content">
 
 
         {/* ===================================================
@@ -544,6 +537,7 @@ export default function ResearcherDashboard() {
             ================================================= */}
 
             <button
+              type="button"
               className="profile-circle"
               onClick={() =>
                 navigate("/profile")
