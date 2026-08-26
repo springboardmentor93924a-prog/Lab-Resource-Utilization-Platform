@@ -56,7 +56,13 @@ public EquipmentFeedbackServiceImpl(
 
     @Override
     public List<EquipmentFeedback> getAllFeedback() {
-        return feedbackRepository.findAll();
+        return feedbackRepository.findAllByOrderByCreatedDateDesc();
+    }
+
+    @Override
+    public List<EquipmentFeedback> getMyFeedback() {
+        User user = getLoggedInUser();
+        return feedbackRepository.findByReportedBy_UserIdOrderByCreatedDateDesc(user.getUserId());
     }
 
     @Override
@@ -242,13 +248,71 @@ return saved;
 
     @Override
     public EquipmentFeedback markAsFixed(Integer id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'markAsFixed'");
+        EquipmentFeedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+
+        User user = getLoggedInUser();
+        feedback.setHandledBy(user);
+        feedback.setStatus("PENDING_APPROVAL");
+        EquipmentFeedback saved = feedbackRepository.save(feedback);
+
+        // Notify managers that technician completed the fix and requested review
+        if (feedback.getEquipment() != null && feedback.getEquipment().getInstitution() != null) {
+            List<User> managers = userRepository
+                    .findByInstitution_InstitutionId(feedback.getEquipment().getInstitution().getInstitutionId())
+                    .stream()
+                    .filter(u -> u.getRole() != null && "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName()))
+                    .toList();
+            for (User mgr : managers) {
+                notificationService.create(
+                        mgr,
+                        "EQUIPMENT_FIX_SUBMITTED",
+                        "Fix submitted for " + feedback.getEquipment().getEquipmentName(),
+                        user.getFullName() + " marked issue #" + id + " on " + feedback.getEquipment().getEquipmentName() + " as fixed. Review and verify.",
+                        feedback.getFeedbackId()
+                );
+            }
+        }
+        return saved;
     }
 
     @Override
     public EquipmentFeedback decideOnFix(Integer id, String decision) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'decideOnFix'");
+        EquipmentFeedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+
+        String normalized = decision == null ? "" : decision.trim().toUpperCase();
+        if (!normalized.equals("RESOLVED") && !normalized.equals("REJECTED")) {
+            throw new RuntimeException("Decision must be RESOLVED or REJECTED");
+        }
+
+        feedback.setStatus(normalized);
+        EquipmentFeedback saved = feedbackRepository.save(feedback);
+
+        if ("RESOLVED".equals(normalized)) {
+            if ("URGENT".equalsIgnoreCase(feedback.getUrgency())) {
+                notifyWaitlistOfResolutionAndCascade(feedback.getEquipment());
+            }
+            // Notify the student/researcher who reported it
+            if (feedback.getReportedBy() != null) {
+                notificationService.create(
+                        feedback.getReportedBy(),
+                        "EQUIPMENT_ISSUE_RESOLVED",
+                        "Your reported issue on " + feedback.getEquipment().getEquipmentName() + " has been resolved",
+                        "The issue you reported on " + feedback.getEquipment().getEquipmentName() + " has been verified and resolved.",
+                        feedback.getEquipment().getEquipmentId()
+                );
+            }
+        } else if ("REJECTED".equals(normalized) && feedback.getHandledBy() != null) {
+            notificationService.create(
+                    feedback.getHandledBy(),
+                    "EQUIPMENT_FIX_REJECTED",
+                    "Fix rejected for " + feedback.getEquipment().getEquipmentName(),
+                    "The fix for issue #" + id + " was not approved. Please re-examine the equipment.",
+                    feedback.getFeedbackId()
+            );
+        }
+
+        return saved;
     }
 }

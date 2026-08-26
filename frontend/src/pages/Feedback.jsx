@@ -38,6 +38,8 @@ function Feedback() {
   const canReview = ["LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
   const isStudent = role === "STUDENT";
 
+  const isTech = role === "LAB_TECHNICIAN";
+
   const getHeaders = () => ({
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -48,13 +50,10 @@ function Feedback() {
       setLoading(true);
       setError("");
 
-      const requests = [fetch(`${API_BASE_URL}/equipment`, { headers: getHeaders() })];
-
-      // EDGE CASE: students can't GET /equipment-feedback (backend restricts
-      // it to tech+), so only fetch the list for roles that can see it.
-      if (!isStudent) {
-        requests.push(fetch(`${API_BASE_URL}/equipment-feedback`, { headers: getHeaders() }));
-      }
+      const requests = [
+        fetch(`${API_BASE_URL}/equipment`, { headers: getHeaders() }),
+        fetch(isStudent ? `${API_BASE_URL}/equipment-feedback/my` : `${API_BASE_URL}/equipment-feedback`, { headers: getHeaders() })
+      ];
 
       const results = await Promise.all(requests);
       for (const r of results) {
@@ -62,7 +61,7 @@ function Feedback() {
       }
 
       setEquipment(await results[0].json());
-      if (!isStudent) setFeedbackList(await results[1].json());
+      setFeedbackList(await results[1].json());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,6 +71,13 @@ function Feedback() {
 
   useEffect(() => {
     fetchAll();
+
+    // Check for deep link e.g. /feedback?equipmentId=3
+    const paramEqId = searchParams.get("equipmentId");
+    if (paramEqId) {
+      setFormData((prev) => ({ ...prev, equipmentId: paramEqId }));
+      setShowForm(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -83,7 +89,11 @@ function Feedback() {
     e.preventDefault();
     setError("");
 
-    // EDGE CASE: don't let "Other" go through with an empty description
+    if (!formData.equipmentId) {
+      setError("Please select the equipment.");
+      return;
+    }
+
     if (!formData.description.trim()) {
       setError("Please select or describe the issue.");
       return;
@@ -126,9 +136,37 @@ function Feedback() {
     }
   };
 
+  const handleMarkFixed = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/equipment-feedback/${id}/fix`, {
+        method: "PUT",
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to mark as fixed");
+      fetchAll();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDecide = async (id, decision) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/equipment-feedback/${id}/decide?decision=${decision}`, {
+        method: "PUT",
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to record decision");
+      fetchAll();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const statusBadgeClass = (status) => {
     if (status === "RESOLVED") return "badge badge-completed";
+    if (status === "PENDING_APPROVAL") return "badge badge-blocking";
     if (status === "REVIEWED") return "badge badge-blocking";
+    if (status === "REJECTED") return "badge badge-cancelled";
     return "badge badge-cancelled";
   };
 
@@ -140,16 +178,14 @@ function Feedback() {
         <button className="primary-btn" onClick={() => setShowForm(true)}>+ Report an Issue</button>
       </div>
 
-      {/* EDGE CASE: students don't have a list view (backend doesn't expose
-          GET /equipment-feedback to them) — show a simple confirmation state instead */}
-      {isStudent ? (
-        <div className="feedback-empty">
-          Submitted issues are reviewed by lab staff — you'll get a notification when there's an update.
-        </div>
-      ) : loading ? (
-        <p>Loading...</p>
+      {loading ? (
+        <p>Loading reports...</p>
       ) : feedbackList.length === 0 ? (
-        <div className="feedback-empty">No feedback reported yet.</div>
+        <div className="feedback-empty">
+          {isStudent
+            ? "You haven't reported any equipment issues yet."
+            : "No equipment feedback reported yet."}
+        </div>
       ) : (
         <table className="feedback-table">
           <thead>
@@ -159,7 +195,7 @@ function Feedback() {
               <th>Urgency</th>
               <th>Status</th>
               <th>Reported By</th>
-              {canReview && <th>Actions</th>}
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -167,19 +203,49 @@ function Feedback() {
               <tr key={f.feedbackId} className={String(f.feedbackId) === highlightId ? "row-highlight" : ""}>
                 <td>{f.equipment?.equipmentName || "—"}</td>
                 <td>{f.description}</td>
-                <td><span className={f.urgency === "URGENT" ? "badge badge-cancelled" : "badge badge-blocking"}>{f.urgency}</span></td>
+                <td>
+                  <span className={f.urgency === "URGENT" ? "badge badge-cancelled" : "badge badge-blocking"}>
+                    {f.urgency}
+                  </span>
+                </td>
                 <td><span className={statusBadgeClass(f.status)}>{f.status}</span></td>
                 <td>{f.reportedBy?.fullName || "—"}</td>
-                {canReview && (
-                  <td className="feedback-actions">
-                    {f.status === "PENDING" && (
-                      <button className="link-btn" onClick={() => updateStatus(f.feedbackId, "REVIEWED")}>Mark Reviewed</button>
-                    )}
-                    {f.status !== "RESOLVED" && (
-                      <button className="primary-btn small" onClick={() => updateStatus(f.feedbackId, "RESOLVED")}>Solve / Resolve</button>
-                    )}
-                  </td>
-                )}
+                <td className="feedback-actions">
+                  {canReview && f.status === "PENDING" && (
+                    <button className="link-btn" onClick={() => updateStatus(f.feedbackId, "REVIEWED")}>
+                      Mark Reviewed
+                    </button>
+                  )}
+
+                  {isTech && (f.status === "PENDING" || f.status === "REVIEWED" || f.status === "REJECTED") && (
+                    <button className="primary-btn small" onClick={() => handleMarkFixed(f.feedbackId)}>
+                      Mark Fixed
+                    </button>
+                  )}
+
+                  {canReview && f.status === "PENDING_APPROVAL" && (
+                    <>
+                      <button className="primary-btn small" onClick={() => handleDecide(f.feedbackId, "RESOLVED")}>
+                        Approve Fix
+                      </button>
+                      <button className="secondary-btn small" onClick={() => handleDecide(f.feedbackId, "REJECTED")}>
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                  {canReview && f.status !== "RESOLVED" && f.status !== "PENDING_APPROVAL" && (
+                    <button className="primary-btn small" onClick={() => updateStatus(f.feedbackId, "RESOLVED")}>
+                      Resolve
+                    </button>
+                  )}
+
+                  {isStudent && (
+                    <span style={{ fontSize: "11px", color: "#64748b" }}>
+                      {f.status === "RESOLVED" ? "Resolved by staff" : "Under review"}
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

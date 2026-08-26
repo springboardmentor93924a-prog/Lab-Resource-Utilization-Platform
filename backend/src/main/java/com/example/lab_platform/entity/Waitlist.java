@@ -39,7 +39,7 @@ public class Waitlist {
      * the issue is resolved. Ordinary joinWaitlist() entries always
      * default to false.
      */
-    @Column(name = "is_priority", nullable = false)
+    @Column(name = "is_priority", nullable = false, columnDefinition = "boolean default false")
     private Boolean isPriority = false;
 
     /*

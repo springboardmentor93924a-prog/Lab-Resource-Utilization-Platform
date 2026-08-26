@@ -13,6 +13,10 @@ public interface EquipmentFeedbackRepository
 
     List<EquipmentFeedback> findByEquipment_EquipmentId(Integer equipmentId);
 
+    List<EquipmentFeedback> findByReportedBy_UserIdOrderByCreatedDateDesc(Integer userId);
+
+    List<EquipmentFeedback> findAllByOrderByCreatedDateDesc();
+
     List<EquipmentFeedback> findByStatus(String status);
 
     // Live check — no cached flag anywhere, always hits the DB fresh.

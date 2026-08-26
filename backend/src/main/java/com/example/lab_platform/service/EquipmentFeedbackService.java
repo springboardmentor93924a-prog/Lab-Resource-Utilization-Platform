@@ -8,6 +8,8 @@ public interface EquipmentFeedbackService {
 
     List<EquipmentFeedback> getAllFeedback();
 
+    List<EquipmentFeedback> getMyFeedback();
+
     List<EquipmentFeedback> getFeedbackByEquipment(Integer equipmentId);
 
     EquipmentFeedback submitFeedback(EquipmentFeedback feedback);

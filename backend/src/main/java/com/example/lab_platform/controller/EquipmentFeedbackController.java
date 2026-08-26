@@ -28,6 +28,12 @@ public class EquipmentFeedbackController {
         return ResponseEntity.ok(feedbackService.submitFeedback(feedback));
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('STUDENT', 'LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    public ResponseEntity<List<EquipmentFeedback>> getMyFeedback() {
+        return ResponseEntity.ok(feedbackService.getMyFeedback());
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public List<EquipmentFeedback> getAll() {
@@ -38,6 +44,19 @@ public class EquipmentFeedbackController {
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<List<EquipmentFeedback>> getByEquipment(@PathVariable Integer equipmentId) {
         return ResponseEntity.ok(feedbackService.getFeedbackByEquipment(equipmentId));
+    }
+
+    @PutMapping("/{id}/fix")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    public ResponseEntity<EquipmentFeedback> markAsFixed(@PathVariable Integer id) {
+        return ResponseEntity.ok(feedbackService.markAsFixed(id));
+    }
+
+    @PutMapping("/{id}/decide")
+    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    public ResponseEntity<EquipmentFeedback> decideOnFix(
+            @PathVariable Integer id, @RequestParam String decision) {
+        return ResponseEntity.ok(feedbackService.decideOnFix(id, decision));
     }
 
     @PutMapping("/{id}/status")
