@@ -6,10 +6,55 @@ Full-stack platform for research institutions to manage shared lab equipment —
 **Team 7**
 
 ## Tech Stack
-- **Frontend:** React, React Router, Axios, Tailwind CSS
-- **Backend:** Spring Boot, Spring Security, JWT, PostgreSQL, Hibernate/JPA
-- **Build tools:** Maven (backend), Vite (frontend)
 
+### Frontend
+- React.js
+- React Router
+- Axios
+- Tailwind CSS
+- Vite
+
+### Backend
+- Java
+- Spring Boot
+- Spring Security
+- JWT Authentication
+- REST APIs
+- Hibernate / JPA
+- Maven
+
+### Database
+- PostgreSQL
+- pgAdmin 4
+
+### Authentication & Security
+- JWT-based authentication
+- Spring Security
+- Role-based access control
+
+### File Management
+- Multipart file upload
+- PDF document storage
+- File download and viewing
+- Equipment manuals and calibration certificates
+
+### Development Tools
+- Visual Studio Code
+- IntelliJ IDEA
+- Git
+- GitHub
+- Postman
+- pgAdmin 4
+
+### API & Communication
+- RESTful APIs
+- Axios
+- HTTP/JSON
+
+### Version Control
+- Git
+- GitHub
+- Feature-based Git branches
 
 ## Project Structure
 ├── frontend/ # React application
