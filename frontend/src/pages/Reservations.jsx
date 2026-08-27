@@ -18,6 +18,24 @@ function Reservations() {
   const [sharingBlock, setSharingBlock] = useState(null);
   const [conflictError, setConflictError] = useState(null);
 
+  // Inline "Submit Feedback" panel state — replaces the old navigate-to-
+  // /feedback-page flow. feedbackOpenFor holds the bookingId whose row
+  // currently has the panel expanded (only one open at a time).
+  const [feedbackOpenFor, setFeedbackOpenFor] = useState(null);
+  const [feedbackForm, setFeedbackForm] = useState({ description: "", urgency: "NORMAL" });
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+  const [submittedFeedbackBookingIds, setSubmittedFeedbackBookingIds] = useState(new Set());
+
+  const FEEDBACK_REASONS = [
+    "Not functioning properly",
+    "Improper / inaccurate results",
+    "Physical damage",
+    "Missing accessory or part",
+    "Unusual noise or overheating",
+    "Other",
+  ];
+
   const [formData, setFormData] = useState({
     equipmentId: "",
     startTime: "",
@@ -78,9 +96,30 @@ function Reservations() {
       });
   };
 
+  // Populates submittedFeedbackBookingIds so a booking that already has
+  // feedback on it shows "Feedback submitted ✓" instead of the button —
+  // prevents duplicate submissions from the UI side (backend also blocks
+  // it via existsByBooking_BookingId).
+  const fetchMyFeedback = () => {
+    fetch("http://localhost:8080/api/equipment-feedback/my", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        const ids = new Set(
+          (Array.isArray(data) ? data : [])
+            .filter((f) => f.booking && f.booking.bookingId)
+            .map((f) => f.booking.bookingId)
+        );
+        setSubmittedFeedbackBookingIds(ids);
+      })
+      .catch((err) => console.error("Feedback list error:", err));
+  };
+
   useEffect(() => {
     fetchBookings();
     fetchEquipmentList();
+    fetchMyFeedback();
 
     const prefillId = searchParams.get("equipmentId");
     if (prefillId) {
@@ -296,6 +335,72 @@ function Reservations() {
     }
   };
 
+  // Minutes remaining in the 1-hour post-completion feedback window for a
+  // Completed booking, based on its endTime. Returns null for bookings
+  // that aren't Completed (window doesn't apply — In Use has no deadline).
+  const getFeedbackMinutesLeft = (booking) => {
+    if (booking.bookingStatus !== "Completed" || !booking.endTime) return null;
+    const endMs = new Date(booking.endTime).getTime();
+    const deadlineMs = endMs + 60 * 60 * 1000;
+    const minutesLeft = Math.round((deadlineMs - Date.now()) / 60000);
+    return minutesLeft;
+  };
+
+  const openFeedbackPanel = (booking) => {
+    setFeedbackError("");
+    setFeedbackForm({ description: "", urgency: "NORMAL" });
+    setFeedbackOpenFor(booking.bookingId);
+  };
+
+  const closeFeedbackPanel = () => {
+    setFeedbackOpenFor(null);
+    setFeedbackError("");
+  };
+
+  const pickFeedbackReason = (reason) => {
+    setFeedbackForm((prev) => ({ ...prev, description: reason === "Other" ? "" : reason }));
+  };
+
+  // Submits the inline feedback form. `booking` is the Completed booking
+  // the panel is attached to — bookingId is included so the backend can
+  // validate ownership + the 1-hour window and prevent duplicates
+  // (see EquipmentFeedbackServiceImpl.submitFeedback).
+  const submitInlineFeedback = async (booking) => {
+    if (!feedbackForm.description.trim()) {
+      setFeedbackError("Please describe what happened.");
+      return;
+    }
+    setFeedbackSubmitting(true);
+    setFeedbackError("");
+    try {
+      const response = await fetch("http://localhost:8080/api/equipment-feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          equipment: { equipmentId: booking.equipment.equipmentId },
+          booking: { bookingId: booking.bookingId },
+          description: feedbackForm.description,
+          urgency: feedbackForm.urgency,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Could not submit feedback — the window may have closed.");
+      }
+
+      setSubmittedFeedbackBookingIds((prev) => new Set(prev).add(booking.bookingId));
+      setFeedbackOpenFor(null);
+    } catch (error) {
+      setFeedbackError(error.message);
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
   const getFilteredBookings = () => {
     return bookings.filter((b) => {
       if (activeTab === "ALL") return true;
@@ -505,7 +610,21 @@ function Reservations() {
                   </tr>
                 </thead>
                 <tbody>
-                  {getFilteredBookings().map((booking) => (
+                  {getFilteredBookings().map((booking) => {
+                    const isOwner = String(booking.user?.userId) === String(myUserId);
+                    const isInUseNow = booking.bookingStatus === "In Use";
+                    const isCompletedNow = booking.bookingStatus === "Completed";
+                    const minutesLeft = getFeedbackMinutesLeft(booking);
+                    const alreadySubmitted = submittedFeedbackBookingIds.has(booking.bookingId);
+                    // Students can report an issue two ways: anytime while
+                    // the booking is actively "In Use" (no deadline — the
+                    // equipment is right in front of them), or within 1
+                    // hour after it's "Completed" (see getFeedbackMinutesLeft).
+                    const feedbackEligible = (isInUseNow || isCompletedNow) && isOwner && booking.equipment;
+                    const panelOpen = feedbackOpenFor === booking.bookingId;
+
+                    return (
+                    <>
                     <tr key={booking.bookingId}>
                       <td>#{booking.bookingId}</td>
                       <td>
@@ -526,9 +645,9 @@ function Reservations() {
                       <td>{getStatusBadge(booking.bookingStatus)}</td>
                       <td>{booking.purpose || "—"}</td>
                       <td>
-                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
                           {/* Student Edit & Delete on Pending Approval */}
-                          {booking.bookingStatus === "Pending Approval" && (String(booking.user?.userId) === String(myUserId) || canManageBookings) && (
+                          {booking.bookingStatus === "Pending Approval" && (isOwner || canManageBookings) && (
                             <>
                               <button
                                 onClick={() => handleEdit(booking)}
@@ -573,10 +692,16 @@ function Reservations() {
                             </button>
                           )}
 
-                          {/* Direct Report Issue Button on active booking */}
-                          {booking.equipment && (booking.bookingStatus === "Confirmed" || booking.bookingStatus === "In Use" || booking.bookingStatus === "Pending Approval") && (
+                          {/* Inline issue reporting — two windows, same panel:
+                              anytime while "In Use" (no deadline), or within
+                              1 hour after "Completed". Right here in Actions,
+                              no separate page. */}
+                          {feedbackEligible && alreadySubmitted && (
+                            <span style={{ fontSize: "11px", color: "#166534" }}>Feedback submitted ✓</span>
+                          )}
+                          {feedbackEligible && !alreadySubmitted && isInUseNow && (
                             <button
-                              onClick={() => navigate(`/feedback?equipmentId=${booking.equipment.equipmentId}`)}
+                              onClick={() => (panelOpen ? closeFeedbackPanel() : openFeedbackPanel(booking))}
                               style={{
                                 padding: "4px 8px",
                                 fontSize: "11px",
@@ -586,15 +711,102 @@ function Reservations() {
                                 color: "#854d0e",
                                 cursor: "pointer",
                               }}
-                              title="Report defect or inaccurate results on this equipment"
+                              title="Report a problem with the equipment while you're using it"
                             >
-                              ⚠️ Report Issue
+                              ⚠️ {panelOpen ? "Close" : "Report Issue"}
                             </button>
+                          )}
+                          {feedbackEligible && !alreadySubmitted && isCompletedNow && minutesLeft > 0 && (
+                            <>
+                              <button
+                                onClick={() => (panelOpen ? closeFeedbackPanel() : openFeedbackPanel(booking))}
+                                style={{
+                                  padding: "4px 8px",
+                                  fontSize: "11px",
+                                  borderRadius: "4px",
+                                  background: "#fff3cd",
+                                  border: "1px solid #ffeeba",
+                                  color: "#854d0e",
+                                  cursor: "pointer",
+                                }}
+                                title="Report a defect or inaccurate results from this session"
+                              >
+                                ⚠️ {panelOpen ? "Close" : "Submit Feedback"}
+                              </button>
+                              <span style={{ fontSize: "10.5px", color: "#b45309", fontWeight: 600 }}>
+                                ⏱ {minutesLeft} min left
+                              </span>
+                            </>
+                          )}
+                          {feedbackEligible && !alreadySubmitted && isCompletedNow && minutesLeft <= 0 && (
+                            <span style={{ fontSize: "11px", color: "#94a3b8" }}>Feedback window closed</span>
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+
+                    {panelOpen && (
+                      <tr key={`${booking.bookingId}-feedback`}>
+                        <td colSpan={9} style={{ background: "#fdfaf5", borderTop: "1px dashed #d8cdbf", padding: "12px 16px" }}>
+                          <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: "8px" }}>
+                            {isInUseNow ? "Report an Issue — " : "Submit Feedback — "}{booking.equipment?.equipmentName}
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "8px" }}>
+                            {FEEDBACK_REASONS.map((reason) => (
+                              <button
+                                key={reason}
+                                onClick={() => pickFeedbackReason(reason)}
+                                style={{
+                                  padding: "3px 8px",
+                                  fontSize: "10.5px",
+                                  borderRadius: "999px",
+                                  border: "1px solid #d8cdbf",
+                                  background: feedbackForm.description === reason ? "#fdeecb" : "#fff",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {reason}
+                              </button>
+                            ))}
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: "8px", alignItems: "end" }}>
+                            <div>
+                              <label style={{ fontSize: "10.5px", color: "#64748b" }}>Description</label>
+                              <textarea
+                                value={feedbackForm.description}
+                                onChange={(e) => setFeedbackForm((prev) => ({ ...prev, description: e.target.value }))}
+                                rows={1}
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "12px", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: "10.5px", color: "#64748b" }}>Urgency</label>
+                              <select
+                                value={feedbackForm.urgency}
+                                onChange={(e) => setFeedbackForm((prev) => ({ ...prev, urgency: e.target.value }))}
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "12px", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+                              >
+                                <option value="NORMAL">Normal</option>
+                                <option value="URGENT">Urgent</option>
+                              </select>
+                            </div>
+                            <button
+                              onClick={() => submitInlineFeedback(booking)}
+                              disabled={feedbackSubmitting}
+                              style={{ padding: "8px", fontSize: "12px", borderRadius: "4px", border: "none", background: "#8a5a1a", color: "#fff", cursor: "pointer" }}
+                            >
+                              {feedbackSubmitting ? "Submitting…" : "Submit"}
+                            </button>
+                          </div>
+                          {feedbackError && (
+                            <div style={{ marginTop: "6px", fontSize: "11px", color: "#991b1b" }}>{feedbackError}</div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

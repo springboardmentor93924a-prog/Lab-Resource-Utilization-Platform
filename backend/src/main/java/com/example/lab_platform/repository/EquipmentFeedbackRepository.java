@@ -27,4 +27,9 @@ public interface EquipmentFeedbackRepository
     boolean existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
             Integer equipmentId, String urgency, String status
     );
+
+    // Used to stop a second feedback submission against the same
+    // booking once one has already gone in (the inline "Submit Feedback"
+    // action in My Bookings should disappear after first use).
+    boolean existsByBooking_BookingId(Integer bookingId);
 }

@@ -1,9 +1,25 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./Maintenance.css";
+import "./Feedback.css";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
+// Structured reason chips instead of free text — matches the button-first
+// UX used across the rest of the app. Selecting one fills the description;
+// the reporter can still edit it afterward.
+const REASON_OPTIONS = [
+    "Not functioning properly",
+    "Improper / inaccurate results",
+    "Physical damage",
+    "Missing accessory or part",
+    "Unusual noise or overheating",
+    "Other",
+];
+
 function Maintenance() {
+    const [searchParams] = useSearchParams();
+
     const [maintenanceRecords, setMaintenanceRecords] = useState([]);
     const [equipment, setEquipment] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -23,6 +39,28 @@ function Maintenance() {
     });
 
     const token = sessionStorage.getItem("token");
+    const role = sessionStorage.getItem("role");
+
+    const isTech = role === "LAB_TECHNICIAN";
+    const canDecide = ["LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
+
+    // ------------------------------------------------------------------
+    // Equipment Issue Reports (formerly the standalone /feedback page for
+    // staff). Students never had a route here — they submit inline from
+    // My Bookings (Reservations.jsx) within 1 hour of a booking completing,
+    // or a staff member files a general report below via the same "⚠️
+    // Report an Issue" flow the old Feedback page used, deep-linked from
+    // Equipment.jsx (?equipmentId=).
+    // ------------------------------------------------------------------
+    const [feedbackList, setFeedbackList] = useState([]);
+    const [feedbackLoading, setFeedbackLoading] = useState(true);
+    const [feedbackError, setFeedbackError] = useState("");
+    const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+    const [feedbackForm, setFeedbackForm] = useState({
+        equipmentId: "",
+        description: "",
+        urgency: "NORMAL",
+    });
 
     const getHeaders = () => ({
         "Content-Type": "application/json",
@@ -70,8 +108,36 @@ function Maintenance() {
         }
     };
 
+    const fetchFeedback = async () => {
+        try {
+            setFeedbackLoading(true);
+            setFeedbackError("");
+
+            const res = await fetch(`${API_BASE_URL}/equipment-feedback`, {
+                headers: getHeaders(),
+            });
+            if (!res.ok) throw new Error(`Failed to load issue reports: ${res.status}`);
+            setFeedbackList(await res.json());
+        } catch (err) {
+            console.error("Feedback fetch error:", err);
+            setFeedbackError(err.message);
+        } finally {
+            setFeedbackLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchData();
+        fetchFeedback();
+
+        // Deep link from Equipment.jsx's "⚠️ Report" button, e.g.
+        // /maintenance?equipmentId=3 — opens the report modal pre-filled.
+        const paramEqId = searchParams.get("equipmentId");
+        if (paramEqId) {
+            setFeedbackForm((prev) => ({ ...prev, equipmentId: paramEqId }));
+            setShowFeedbackForm(true);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleChange = (e) => {
@@ -222,6 +288,84 @@ function Maintenance() {
         }
 
         return "status-scheduled";
+    };
+
+    // ------------------------------------------------------------------
+    // Equipment Issue Reports handlers
+    // ------------------------------------------------------------------
+
+    const handleReasonClick = (reason) => {
+        setFeedbackForm({ ...feedbackForm, description: reason === "Other" ? "" : reason });
+    };
+
+    const handleFeedbackSubmit = async (e) => {
+        e.preventDefault();
+        setFeedbackError("");
+
+        if (!feedbackForm.equipmentId) {
+            setFeedbackError("Please select the equipment.");
+            return;
+        }
+        if (!feedbackForm.description.trim()) {
+            setFeedbackError("Please select or describe the issue.");
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/equipment-feedback`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    equipment: { equipmentId: Number(feedbackForm.equipmentId) },
+                    description: feedbackForm.description,
+                    urgency: feedbackForm.urgency,
+                }),
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || "Failed to submit report");
+            }
+
+            setShowFeedbackForm(false);
+            setFeedbackForm({ equipmentId: "", description: "", urgency: "NORMAL" });
+            fetchFeedback();
+        } catch (err) {
+            setFeedbackError(err.message);
+        }
+    };
+
+    const handleMarkFixed = async (id) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/equipment-feedback/${id}/fix`, {
+                method: "PUT",
+                headers: getHeaders(),
+            });
+            if (!res.ok) throw new Error("Failed to mark as fixed");
+            fetchFeedback();
+        } catch (err) {
+            setFeedbackError(err.message);
+        }
+    };
+
+    const handleDecide = async (id, decision) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/equipment-feedback/${id}/decide?decision=${decision}`, {
+                method: "PUT",
+                headers: getHeaders(),
+            });
+            if (!res.ok) throw new Error("Failed to record decision");
+            fetchFeedback();
+        } catch (err) {
+            setFeedbackError(err.message);
+        }
+    };
+
+    const feedbackStatusBadgeClass = (status) => {
+        if (status === "RESOLVED") return "badge badge-completed";
+        if (status === "PENDING_APPROVAL") return "badge badge-blocking";
+        if (status === "REJECTED") return "badge badge-cancelled";
+        return "badge badge-cancelled";
     };
 
     if (loading) {
@@ -552,6 +696,150 @@ function Maintenance() {
 
                 </div>
             )}
+
+            {/* ================================================================
+                Equipment Issue Reports — folded in from the old standalone
+                /feedback page. Any technician can pick an open report from
+                the shared queue and Mark as Fixed; a manager/dept head/admin
+                then Approves (→ Resolved) or Rejects (→ back to the queue).
+               ================================================================ */}
+            <div className="feedback-page" style={{ marginTop: "32px" }}>
+                <div className="maintenance-header" style={{ marginBottom: "12px" }}>
+                    <div>
+                        <h1 style={{ fontSize: "20px" }}>Equipment Issue Reports</h1>
+                        <p>Reports filed by researchers and staff — pick one up, fix it, get it verified.</p>
+                    </div>
+                    <button className="primary-btn" onClick={() => setShowFeedbackForm(true)}>
+                        + Report an Issue
+                    </button>
+                </div>
+
+                {feedbackError && <div className="feedback-error">{feedbackError}</div>}
+
+                {feedbackLoading ? (
+                    <p>Loading issue reports...</p>
+                ) : feedbackList.length === 0 ? (
+                    <div className="feedback-empty">No equipment issues reported yet.</div>
+                ) : (
+                    <table className="feedback-table">
+                        <thead>
+                            <tr>
+                                <th>Equipment</th>
+                                <th>Description</th>
+                                <th>Urgency</th>
+                                <th>Status</th>
+                                <th>Reported By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {feedbackList.map((f) => (
+                                <tr key={f.feedbackId}>
+                                    <td>{f.equipment?.equipmentName || "—"}</td>
+                                    <td>{f.description}</td>
+                                    <td>
+                                        <span className={f.urgency === "URGENT" ? "badge badge-cancelled" : "badge badge-blocking"}>
+                                            {f.urgency}
+                                        </span>
+                                    </td>
+                                    <td><span className={feedbackStatusBadgeClass(f.status)}>{f.status}</span></td>
+                                    <td>{f.reportedBy?.fullName || "—"}</td>
+                                    <td className="feedback-actions">
+                                        {isTech && (f.status === "PENDING" || f.status === "REJECTED") && (
+                                            <button className="primary-btn small" onClick={() => handleMarkFixed(f.feedbackId)}>
+                                                Mark Fixed
+                                            </button>
+                                        )}
+
+                                        {canDecide && f.status === "PENDING_APPROVAL" && (
+                                            <>
+                                                <button className="primary-btn small" onClick={() => handleDecide(f.feedbackId, "RESOLVED")}>
+                                                    Approve Fix
+                                                </button>
+                                                <button className="secondary-btn small" onClick={() => handleDecide(f.feedbackId, "REJECTED")}>
+                                                    Reject
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {f.status === "RESOLVED" && (
+                                            <span style={{ fontSize: "11px", color: "#64748b" }}>Resolved</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+
+                {showFeedbackForm && (
+                    <div className="feedback-modal-overlay">
+                        <div className="feedback-modal">
+                            <h3>Report an Issue</h3>
+
+                            <form onSubmit={handleFeedbackSubmit}>
+                                <label>Equipment</label>
+                                <select
+                                    value={feedbackForm.equipmentId}
+                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, equipmentId: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select equipment</option>
+                                    {equipment.map((eq) => (
+                                        <option key={eq.equipmentId} value={eq.equipmentId}>
+                                            {eq.equipmentName || eq.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <label>What's wrong?</label>
+                                <div className="reason-btn-group">
+                                    {REASON_OPTIONS.map((reason) => (
+                                        <button
+                                            type="button"
+                                            key={reason}
+                                            className={feedbackForm.description === reason ? "reason-btn active" : "reason-btn"}
+                                            onClick={() => handleReasonClick(reason)}
+                                        >
+                                            {reason}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <textarea
+                                    placeholder="Add more detail if needed..."
+                                    value={feedbackForm.description}
+                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })}
+                                    rows={3}
+                                />
+
+                                <label>Urgency</label>
+                                <div className="status-btn-group">
+                                    <button
+                                        type="button"
+                                        className={feedbackForm.urgency === "NORMAL" ? "status-btn active" : "status-btn"}
+                                        onClick={() => setFeedbackForm({ ...feedbackForm, urgency: "NORMAL" })}
+                                    >
+                                        Normal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={feedbackForm.urgency === "URGENT" ? "status-btn active urgent" : "status-btn"}
+                                        onClick={() => setFeedbackForm({ ...feedbackForm, urgency: "URGENT" })}
+                                    >
+                                        Urgent
+                                    </button>
+                                </div>
+
+                                <div className="feedback-modal-actions">
+                                    <button type="button" className="secondary-btn" onClick={() => setShowFeedbackForm(false)}>Cancel</button>
+                                    <button type="submit" className="primary-btn">Submit Report</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
 
         </div>
     );

@@ -18,7 +18,6 @@ import AnalyticsDashboard from "../pages/AnalyticsDashboard";
 import Utilization from "../pages/Utilization";
 import Heatmap from "../pages/Heatmap";
 import Calibration from "../pages/Calibration";
-import Feedback from "../pages/Feedback";
 import Certification from "../pages/Certification";
 
 import MainLayout from "../layouts/MainLayout";
@@ -175,23 +174,13 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-<Route
-  path="/feedback"
-  element={
-    <ProtectedRoute allowedRoles={[
-      "STUDENT",
-      "LAB_TECHNICIAN",
-      "LAB_MANAGER",
-      "DEPARTMENT_HEAD",
-      "INSTITUTION_ADMIN",
-      "SYSTEM_ADMIN"
-    ]}>
-      <MainLayout>
-        <Feedback />
-        </MainLayout>
-    </ProtectedRoute>
-  }
-/>
+{/* The standalone /feedback page/route has been removed. Students submit
+    inline from My Bookings (Reservations.jsx) within 1 hour of a booking
+    completing; staff (Lab Technician / Lab Manager / Department Head /
+    Institution Admin / System Admin) now work the same Equipment Issue
+    Reports queue from inside the existing /maintenance page instead
+    (Maintenance.jsx). Both flows call the same /api/equipment-feedback
+    endpoints, so no backend changes were needed for this move. */}
 
 <Route
   path="/certification"

@@ -33,4 +33,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     // an Institution Admin/Lab Manager only sees their own
     // institution's users, not every institution's combined.
     java.util.List<User> findByInstitution_InstitutionId(Integer institutionId);
+
+    // Scopes equipment-issue-report notifications to the department that
+    // owns the equipment, rather than the whole institution — used by
+    // EquipmentFeedbackServiceImpl so only the relevant department's
+    // technicians/managers/dept head are notified.
+    java.util.List<User> findByDepartment_DepartmentId(Integer departmentId);
 }

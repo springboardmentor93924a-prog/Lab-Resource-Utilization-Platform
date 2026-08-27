@@ -371,22 +371,28 @@ function Equipment() {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => navigate(`/feedback?equipmentId=${item.equipmentId}`)}
-                    style={{
-                      padding: "4px 8px",
-                      marginRight: "4px",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                      background: "#fff3cd",
-                      border: "1px solid #ffeeba",
-                      color: "#854d0e",
-                      borderRadius: "4px",
-                    }}
-                    title="Report a defect or inaccurate results"
-                  >
-                    ⚠️ Report
-                  </button>
+                  {role !== "STUDENT" && (
+                    <button
+                      // The standalone /feedback page is gone — general
+                      // (non-booking) issue reports now open inline from
+                      // the Equipment Issue Reports section on the
+                      // Maintenance page instead.
+                      onClick={() => navigate(`/maintenance?equipmentId=${item.equipmentId}`)}
+                      style={{
+                        padding: "4px 8px",
+                        marginRight: "4px",
+                        fontSize: "11px",
+                        cursor: "pointer",
+                        background: "#fff3cd",
+                        border: "1px solid #ffeeba",
+                        color: "#854d0e",
+                        borderRadius: "4px",
+                      }}
+                      title="Report a defect or inaccurate results"
+                    >
+                      ⚠️ Report
+                    </button>
+                  )}
 
                   {canManageEquipment && (
                     <button onClick={() => handleEdit(item)} style={btnEdit}>
