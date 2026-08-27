@@ -56,7 +56,13 @@ public EquipmentFeedbackServiceImpl(
 
     @Override
     public List<EquipmentFeedback> getAllFeedback() {
-        return feedbackRepository.findAll();
+        return feedbackRepository.findAllByOrderByCreatedDateDesc();
+    }
+
+    @Override
+    public List<EquipmentFeedback> getMyFeedback() {
+        User user = getLoggedInUser();
+        return feedbackRepository.findByReportedBy_UserIdOrderByCreatedDateDesc(user.getUserId());
     }
 
     @Override
@@ -82,19 +88,64 @@ public EquipmentFeedbackServiceImpl(
         }
         urgency = urgency.toUpperCase();
 
+        User currentUser = getLoggedInUser();
+
+        // When the report comes from the inline action on a specific
+        // booking (My Bookings → Actions column), validate ownership and
+        // attach it. Two windows are allowed: while the booking is
+        // actively "In Use" (no deadline — equipment is in front of them
+        // right now), or within 1 hour after it's "Completed". A report
+        // raised from the general Equipment page instead simply omits
+        // booking and skips all of this.
+        Booking booking = null;
+        if (feedback.getBooking() != null && feedback.getBooking().getBookingId() != null) {
+            booking = bookingRepository.findById(feedback.getBooking().getBookingId())
+                    .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+            if (booking.getUser() == null || !booking.getUser().getUserId().equals(currentUser.getUserId())) {
+                throw new RuntimeException("You can only submit feedback for your own booking");
+            }
+            if (booking.getEquipment() == null
+                    || !booking.getEquipment().getEquipmentId().equals(equipment.getEquipmentId())) {
+                throw new RuntimeException("Booking does not match the selected equipment");
+            }
+
+            boolean isInUse = "In Use".equals(booking.getBookingStatus());
+            boolean isCompleted = "Completed".equals(booking.getBookingStatus());
+
+            if (!isInUse && !isCompleted) {
+                throw new RuntimeException(
+                        "Feedback can only be submitted while the equipment is in use, "
+                                + "or within 1 hour after the booking is completed");
+            }
+
+            // Only the post-completion path has a deadline — while a
+            // booking is still "In Use" there's no window to enforce,
+            // since the student is actively using the equipment right now.
+            if (isCompleted && (booking.getEndTime() == null
+                    || java.time.LocalDateTime.now().isAfter(booking.getEndTime().plusHours(1)))) {
+                throw new RuntimeException("The 1-hour feedback window for this booking has closed");
+            }
+
+            if (feedbackRepository.existsByBooking_BookingId(booking.getBookingId())) {
+                throw new RuntimeException("Feedback has already been submitted for this booking");
+            }
+        }
+
         // reportedBy is derived from the logged-in user, never trusted
+
         // from the request body.
         feedback.setEquipment(equipment);
-        feedback.setReportedBy(getLoggedInUser());
+        feedback.setReportedBy(currentUser);
+        feedback.setBooking(booking);
         feedback.setUrgency(urgency);
         feedback.setStatus("PENDING");
 
         EquipmentFeedback saved = feedbackRepository.save(feedback);
 
-// NEW: tell the people who can actually fix it. Previously nothing
-// notified a technician/manager that an issue was even reported —
-// only the URGENT path notified displaced booking-holders, not the
-// people responsible for resolving it.
+// Tell the people who can actually fix it — scoped to the equipment's
+// department (falling back to institution-wide techs/managers only if
+// the equipment has no department set).
 notifyTechsAndManagersOfNewFeedback(saved, equipment);
 
 if ("URGENT".equals(urgency)) {
@@ -220,16 +271,34 @@ return saved;
     }
 
     private void notifyTechsAndManagersOfNewFeedback(EquipmentFeedback feedback, Equipment equipment) {
-    // EDGE CASE: equipment with no institution set — nobody to notify
-    if (equipment.getInstitution() == null) return;
-
-    List<User> recipients = userRepository
-            .findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
-            .stream()
-            .filter(u -> u.getRole() != null
-                    && ("LAB_TECHNICIAN".equalsIgnoreCase(u.getRole().getRoleName())
-                        || "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName())))
-            .toList();
+    // Prefer department-level scoping so only the relevant department's
+    // staff are paged, and include Department Head alongside the
+    // technician/manager pair that were already being notified. Falls
+    // back to institution-wide tech+manager (no dept head — there's no
+    // single dept head for a whole institution) only if this equipment
+    // has no department assigned.
+    List<User> recipients;
+    if (equipment.getDepartment() != null) {
+        recipients = userRepository
+                .findByDepartment_DepartmentId(equipment.getDepartment().getDepartmentId())
+                .stream()
+                .filter(u -> u.getRole() != null
+                        && ("LAB_TECHNICIAN".equalsIgnoreCase(u.getRole().getRoleName())
+                            || "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName())
+                            || "DEPARTMENT_HEAD".equalsIgnoreCase(u.getRole().getRoleName())))
+                .toList();
+    } else if (equipment.getInstitution() != null) {
+        recipients = userRepository
+                .findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(u -> u.getRole() != null
+                        && ("LAB_TECHNICIAN".equalsIgnoreCase(u.getRole().getRoleName())
+                            || "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName())))
+                .toList();
+    } else {
+        // EDGE CASE: equipment with no department and no institution — nobody to notify
+        return;
+    }
 
     boolean urgent = "URGENT".equalsIgnoreCase(feedback.getUrgency());
     String title = urgent ? "Urgent issue reported" : "Equipment issue reported";
@@ -242,13 +311,71 @@ return saved;
 
     @Override
     public EquipmentFeedback markAsFixed(Integer id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'markAsFixed'");
+        EquipmentFeedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+
+        User user = getLoggedInUser();
+        feedback.setHandledBy(user);
+        feedback.setStatus("PENDING_APPROVAL");
+        EquipmentFeedback saved = feedbackRepository.save(feedback);
+
+        // Notify managers that technician completed the fix and requested review
+        if (feedback.getEquipment() != null && feedback.getEquipment().getInstitution() != null) {
+            List<User> managers = userRepository
+                    .findByInstitution_InstitutionId(feedback.getEquipment().getInstitution().getInstitutionId())
+                    .stream()
+                    .filter(u -> u.getRole() != null && "LAB_MANAGER".equalsIgnoreCase(u.getRole().getRoleName()))
+                    .toList();
+            for (User mgr : managers) {
+                notificationService.create(
+                        mgr,
+                        "EQUIPMENT_FIX_SUBMITTED",
+                        "Fix submitted for " + feedback.getEquipment().getEquipmentName(),
+                        user.getFullName() + " marked issue #" + id + " on " + feedback.getEquipment().getEquipmentName() + " as fixed. Review and verify.",
+                        feedback.getFeedbackId()
+                );
+            }
+        }
+        return saved;
     }
 
     @Override
     public EquipmentFeedback decideOnFix(Integer id, String decision) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'decideOnFix'");
+        EquipmentFeedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+
+        String normalized = decision == null ? "" : decision.trim().toUpperCase();
+        if (!normalized.equals("RESOLVED") && !normalized.equals("REJECTED")) {
+            throw new RuntimeException("Decision must be RESOLVED or REJECTED");
+        }
+
+        feedback.setStatus(normalized);
+        EquipmentFeedback saved = feedbackRepository.save(feedback);
+
+        if ("RESOLVED".equals(normalized)) {
+            if ("URGENT".equalsIgnoreCase(feedback.getUrgency())) {
+                notifyWaitlistOfResolutionAndCascade(feedback.getEquipment());
+            }
+            // Notify the student/researcher who reported it
+            if (feedback.getReportedBy() != null) {
+                notificationService.create(
+                        feedback.getReportedBy(),
+                        "EQUIPMENT_ISSUE_RESOLVED",
+                        "Your reported issue on " + feedback.getEquipment().getEquipmentName() + " has been resolved",
+                        "The issue you reported on " + feedback.getEquipment().getEquipmentName() + " has been verified and resolved.",
+                        feedback.getEquipment().getEquipmentId()
+                );
+            }
+        } else if ("REJECTED".equals(normalized) && feedback.getHandledBy() != null) {
+            notificationService.create(
+                    feedback.getHandledBy(),
+                    "EQUIPMENT_FIX_REJECTED",
+                    "Fix rejected for " + feedback.getEquipment().getEquipmentName(),
+                    "The fix for issue #" + id + " was not approved. Please re-examine the equipment.",
+                    feedback.getFeedbackId()
+            );
+        }
+
+        return saved;
     }
 }

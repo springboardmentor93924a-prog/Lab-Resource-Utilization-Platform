@@ -87,14 +87,11 @@ const canAccessCalibration = [
     "SYSTEM_ADMIN"
   ].includes(role);
 
-  const canAccessFeedback = [
-  "STUDENT",
-  "LAB_TECHNICIAN",
-  "LAB_MANAGER",
-  "DEPARTMENT_HEAD",
-  "INSTITUTION_ADMIN",
-  "SYSTEM_ADMIN"
-].includes(role);
+  // The standalone /feedback page and its nav link are gone. Students
+  // submit inline from My Bookings (Actions column, within 1 hour of a
+  // booking completing); staff now work the same Equipment Issue Reports
+  // queue from inside the Maintenance page (Maintenance.jsx) instead, so
+  // there's no separate link to show them here either.
 
 const canAccessCertification = [
   "LAB_TECHNICIAN",
@@ -249,13 +246,6 @@ const canAccessCertification = [
             Calibration
           </Link>
         )}
-
-{canAccessFeedback && (
-  <Link to="/feedback" className={`sidebar-link ${isActive("/feedback") ? "active" : ""}`}>
-    <span>⚠️</span>
-    Report Issue
-  </Link>
-)}
 
 {canAccessCertification && (
   <Link to="/certification" className={`sidebar-link ${isActive("/certification") ? "active" : ""}`}>

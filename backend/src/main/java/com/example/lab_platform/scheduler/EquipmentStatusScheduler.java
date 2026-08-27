@@ -149,7 +149,7 @@ public EquipmentStatusScheduler(
     // than once a day is also harmless if the app restarts.
     // Cron: 8:00 AM server time, every day.
     // =====================================================================
-    @Scheduled(initialDelay = 15000, cron = "0 0 8 * * *")
+    @Scheduled(cron = "0 0 8 * * *")
     public void dailyReminderSweep() {
         sendCalibrationReminders();
         sendCertificationExpiryReminders();

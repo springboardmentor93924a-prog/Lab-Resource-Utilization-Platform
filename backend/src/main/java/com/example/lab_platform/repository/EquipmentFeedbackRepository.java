@@ -13,6 +13,10 @@ public interface EquipmentFeedbackRepository
 
     List<EquipmentFeedback> findByEquipment_EquipmentId(Integer equipmentId);
 
+    List<EquipmentFeedback> findByReportedBy_UserIdOrderByCreatedDateDesc(Integer userId);
+
+    List<EquipmentFeedback> findAllByOrderByCreatedDateDesc();
+
     List<EquipmentFeedback> findByStatus(String status);
 
     // Live check — no cached flag anywhere, always hits the DB fresh.
@@ -23,4 +27,9 @@ public interface EquipmentFeedbackRepository
     boolean existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
             Integer equipmentId, String urgency, String status
     );
+
+    // Used to stop a second feedback submission against the same
+    // booking once one has already gone in (the inline "Submit Feedback"
+    // action in My Bookings should disappear after first use).
+    boolean existsByBooking_BookingId(Integer bookingId);
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Equipment() {
+  const navigate = useNavigate();
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -263,7 +265,7 @@ function Equipment() {
             <th style={cellStyle}>Location</th>
             <th style={cellStyle}>Status</th>
             <th style={cellStyle}>Purchase Date</th>
-            {canManageEquipment && <th style={cellStyle}>Actions</th>}
+            <th style={cellStyle}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -272,7 +274,7 @@ function Equipment() {
               <tr key={item.equipmentId}>
                 {/* CHANGED: ID cell hidden for students */}
                 {role !== "STUDENT" && <td style={cellStyle}>{item.equipmentId}</td>}
-                <td style={cellStyle}>{item.equipmentName}</td>
+                <td style={cellStyle}><strong>{item.equipmentName}</strong></td>
                 <td style={cellStyle}>
                   {item.institution?.institutionName || "—"}
                   {myInstitutionId &&
@@ -295,28 +297,120 @@ function Equipment() {
                 <td style={cellStyle}>{item.category}</td>
                 <td style={cellStyle}>{item.serialNumber}</td>
                 <td style={cellStyle}>{item.location}</td>
-                <td style={cellStyle}>{item.status}</td>
-                <td style={cellStyle}>{item.purchaseDate}</td>
-                {canManageEquipment && (
-                  <td style={cellStyle}>
+                <td style={cellStyle}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      fontSize: "11.5px",
+                      fontWeight: 600,
+                      background:
+                        item.status === "Available"
+                          ? "#dcfce7"
+                          : item.status === "Booked"
+                          ? "#e0e7ff"
+                          : item.status === "In Use"
+                          ? "#dbeafe"
+                          : item.status === "Under Maintenance"
+                          ? "#fef3c7"
+                          : "#fee2e2",
+                      color:
+                        item.status === "Available"
+                          ? "#166534"
+                          : item.status === "Booked"
+                          ? "#3730a3"
+                          : item.status === "In Use"
+                          ? "#1e40af"
+                          : item.status === "Under Maintenance"
+                          ? "#92400e"
+                          : "#991b1b",
+                    }}
+                  >
+                    {item.status}
+                  </span>
+                </td>
+                <td style={cellStyle}>{item.purchaseDate || "—"}</td>
+                <td style={cellStyle}>
+                  {/* Quick Booking / Waitlist for Students & Users */}
+                  {item.status === "Available" && (
+                    <button
+                      onClick={() => navigate(`/reservations?equipmentId=${item.equipmentId}`)}
+                      style={{
+                        padding: "4px 8px",
+                        marginRight: "4px",
+                        fontSize: "11px",
+                        cursor: "pointer",
+                        background: "#2563eb",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                      }}
+                      title="Book a slot on this equipment"
+                    >
+                      📅 Book
+                    </button>
+                  )}
+
+                  {(item.status === "Booked" || item.status === "In Use") && (
+                    <button
+                      onClick={() => navigate(`/waitlist?equipmentId=${item.equipmentId}`)}
+                      style={{
+                        padding: "4px 8px",
+                        marginRight: "4px",
+                        fontSize: "11px",
+                        cursor: "pointer",
+                        background: "#f59e0b",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                      }}
+                      title="Join waitlist for this equipment"
+                    >
+                      ⏳ Waitlist
+                    </button>
+                  )}
+
+                  {role !== "STUDENT" && (
+                    <button
+                      // The standalone /feedback page is gone — general
+                      // (non-booking) issue reports now open inline from
+                      // the Equipment Issue Reports section on the
+                      // Maintenance page instead.
+                      onClick={() => navigate(`/maintenance?equipmentId=${item.equipmentId}`)}
+                      style={{
+                        padding: "4px 8px",
+                        marginRight: "4px",
+                        fontSize: "11px",
+                        cursor: "pointer",
+                        background: "#fff3cd",
+                        border: "1px solid #ffeeba",
+                        color: "#854d0e",
+                        borderRadius: "4px",
+                      }}
+                      title="Report a defect or inaccurate results"
+                    >
+                      ⚠️ Report
+                    </button>
+                  )}
+
+                  {canManageEquipment && (
                     <button onClick={() => handleEdit(item)} style={btnEdit}>
                       Edit
                     </button>
-                    {canDeleteEquipment && (
-                      <button onClick={() => handleDelete(item.equipmentId)} style={btnDelete}>
-                        Delete
-                      </button>
-                    )}
-                  </td>
-                )}
+                  )}
+                  {canDeleteEquipment && (
+                    <button onClick={() => handleDelete(item.equipmentId)} style={btnDelete}>
+                      Delete
+                    </button>
+                  )}
+                </td>
               </tr>
             ))
           ) : (
             <tr>
               <td
-                colSpan={
-                  (role !== "STUDENT" ? 1 : 0) + (canManageEquipment ? 7 : 6)
-                }
+                colSpan={(role !== "STUDENT" ? 1 : 0) + 8}
                 style={{ ...cellStyle, textAlign: "center" }}
               >
                 No equipment found.
