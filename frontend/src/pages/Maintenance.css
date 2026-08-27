@@ -1,69 +1,181 @@
+/* =========================================================
+   MAINTENANCE MODULE — MODERN DARK SAAS THEME
+   -----------------------------------------------------------
+   IMPORTANT: Every single rule in this file is scoped under
+   the ".maintenance-page" root so it can NEVER affect any
+   other page in the app — even pages that happen to reuse
+   generic class names like .form-group, .cancel-btn,
+   .save-btn, .empty-icon (Login, Register, Waitlist, etc.).
+   Do not add a bare/unscoped selector to this file.
+   ========================================================= */
+
 .maintenance-page {
-    padding: 30px;
-    min-height: 100vh;
-    background: #f7f9fc;
+    --mnt-bg: #0b1220;
+    --mnt-bg-alt: #0d1626;
+    --mnt-card: #131c2e;
+    --mnt-input: #0f1829;
+    --mnt-border: #253048;
+    --mnt-border-soft: #1c2740;
+    --mnt-text: #e7ecf5;
+    --mnt-text-dim: #9aa7bd;
+    --mnt-text-faint: #6b7890;
+    --mnt-accent: #6366f1;
+    --mnt-accent-soft: rgba(99, 102, 241, 0.14);
+    --mnt-success: #22c55e;
+    --mnt-success-soft: rgba(34, 197, 94, 0.14);
+    --mnt-warning-soft: rgba(245, 158, 11, 0.14);
+    --mnt-danger-soft: rgba(248, 113, 113, 0.14);
+    --mnt-info-soft: rgba(56, 189, 248, 0.14);
+
+    padding: clamp(20px, 2.5vw, 30px);
+    border-radius: 20px;
+
+    background: linear-gradient(180deg, var(--mnt-bg) 0%, var(--mnt-bg-alt) 100%);
+    color: var(--mnt-text);
+
+    font-family: inherit;
 }
 
-.maintenance-header {
+.maintenance-page *,
+.maintenance-page *::before,
+.maintenance-page *::after {
+    box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------
+   HEADER
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
 }
 
-.maintenance-header h1 {
+.maintenance-page .maintenance-header h1 {
     margin: 0;
-    font-size: 30px;
-    color: #1f2937;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--mnt-text);
 }
 
-.maintenance-header p {
-    margin-top: 7px;
-    color: #6b7280;
+.maintenance-page .maintenance-header p {
+    margin-top: 6px;
+    color: var(--mnt-text-dim);
+    font-size: 13.5px;
+    line-height: 1.5;
 }
 
-.add-maintenance-btn {
+.maintenance-page .add-maintenance-btn {
     border: none;
-    border-radius: 9px;
-    padding: 12px 18px;
-    background: #2563eb;
-    color: white;
-    font-size: 14px;
+    border-radius: 10px;
+    padding: 11px 18px;
+    background: linear-gradient(135deg, var(--mnt-accent), #7c3aed);
+    color: #ffffff;
+    font-size: 13.5px;
     font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-.add-maintenance-btn:hover {
-    opacity: 0.9;
+.maintenance-page .add-maintenance-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.38);
 }
 
-.maintenance-error {
-    padding: 14px;
+.maintenance-page .add-maintenance-btn:active {
+    transform: translateY(0);
+}
+
+.maintenance-page .maintenance-error {
+    padding: 13px 16px;
     margin-bottom: 20px;
-    border-radius: 8px;
-    background: #fee2e2;
-    color: #b91c1c;
+    border-radius: 10px;
+    background: var(--mnt-danger-soft);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: #fca5a5;
+    font-size: 13.5px;
 }
 
-.maintenance-form-card {
-    background: white;
-    border-radius: 14px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+/* ---------------------------------------------------------
+   SECTION TABS (Maintenance Request / Work Order / etc.)
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px;
+    padding: 5px;
+    background: var(--mnt-card);
+    border: 1px solid var(--mnt-border-soft);
+    border-radius: 12px;
+    flex-wrap: wrap;
 }
-/* --- Append below: card action buttons for Edit / Mark Complete --- */
-.maintenance-card-actions {
+
+.maintenance-page .maintenance-tab {
+    background: none;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--mnt-text-dim);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.maintenance-page .maintenance-tab:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--mnt-text);
+}
+
+.maintenance-page .maintenance-tab.active {
+    background: linear-gradient(135deg, var(--mnt-accent), #7c3aed);
+    color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   FORM CARDS
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-form-card {
+    background: var(--mnt-card);
+    border: 1px solid var(--mnt-border-soft);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.maintenance-page .maintenance-form-card h2 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--mnt-text);
+}
+
+/* ---------------------------------------------------------
+   CARD ACTION BUTTONS
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-card-actions {
     display: flex;
     gap: 10px;
-    margin-top: 14px;
+    margin-top: 16px;
 }
 
-.edit-maintenance-btn,
-.complete-maintenance-btn {
+.maintenance-page .edit-maintenance-btn,
+.maintenance-page .complete-maintenance-btn {
     flex: 1;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -71,353 +183,461 @@
     transition: all 0.15s ease;
 }
 
-.edit-maintenance-btn {
-    background: #f1f5f9;
-    color: #334155;
-    border-color: #e2e8f0;
+.maintenance-page .edit-maintenance-btn {
+    background: transparent;
+    color: #c7d2fe;
+    border-color: var(--mnt-border);
 }
 
-.edit-maintenance-btn:hover {
-    background: #e2e8f0;
+.maintenance-page .edit-maintenance-btn:hover {
+    background: var(--mnt-accent-soft);
+    border-color: rgba(99, 102, 241, 0.45);
+    color: #e0e7ff;
 }
 
-.complete-maintenance-btn {
+.maintenance-page .complete-maintenance-btn {
+    background: var(--mnt-success);
+    color: #052e16;
+}
+
+.maintenance-page .complete-maintenance-btn:hover {
     background: #16a34a;
-    color: #fff;
 }
 
-.complete-maintenance-btn:hover {
-    background: #15803d;
-}
-.maintenance-form-card h2 {
-    margin-top: 0;
-    color: #1f2937;
-}
+/* ---------------------------------------------------------
+   FORM FIELDS
+   --------------------------------------------------------- */
 
-.form-grid {
+.maintenance-page .form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 18px;
 }
 
-.form-group {
+.maintenance-page .form-group {
     display: flex;
     flex-direction: column;
 }
 
-.form-group.full-width {
+.maintenance-page .form-group.full-width {
     grid-column: 1 / -1;
 }
 
-.form-group label {
-    margin-bottom: 7px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #374151;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 11px 12px;
-    font-size: 14px;
-    outline: none;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    border-color: #2563eb;
-}
-
-.form-group textarea {
-    resize: vertical;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.cancel-btn,
-.save-btn {
-    border: none;
-    padding: 11px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.cancel-btn {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.save-btn {
-    background: #2563eb;
-    color: white;
-}
-
-.maintenance-summary {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    margin-bottom: 25px;
-}
-
-.summary-card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
-}
-
-.summary-card span {
-    display: block;
-    color: #6b7280;
-    font-size: 13px;
+.maintenance-page .form-group label {
     margin-bottom: 8px;
-}
-
-.summary-card strong {
-    font-size: 26px;
-    color: #111827;
-}
-
-.maintenance-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-}
-
-.maintenance-card {
-    background: white;
-    border-radius: 14px;
-    padding: 20px;
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
-    transition: transform 0.2s ease;
-}
-
-.maintenance-card:hover {
-    transform: translateY(-3px);
-}
-
-.maintenance-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.equipment-icon {
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: #eff6ff;
-    font-size: 22px;
-}
-
-.maintenance-card h2 {
-    margin: 18px 0;
-    font-size: 19px;
-    color: #1f2937;
-}
-
-.maintenance-status {
-    padding: 6px 10px;
-    border-radius: 20px;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 600;
+    color: var(--mnt-text-dim);
+    letter-spacing: 0.2px;
 }
 
-.status-scheduled {
-    background: #fef3c7;
-    color: #92400e;
+.maintenance-page .form-group input,
+.maintenance-page .form-group select,
+.maintenance-page .form-group textarea {
+    background: var(--mnt-input);
+    border: 1px solid var(--mnt-border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--mnt-text);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.status-progress {
-    background: #dbeafe;
-    color: #1d4ed8;
+.maintenance-page .form-group input::placeholder,
+.maintenance-page .form-group textarea::placeholder {
+    color: var(--mnt-text-faint);
 }
 
-.status-completed {
-    background: #dcfce7;
-    color: #166534;
+.maintenance-page .form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239aa7bd'%3e%3cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px;
 }
 
-.status-cancelled {
-    background: #fee2e2;
-    color: #b91c1c;
+.maintenance-page .form-group select option {
+    background: var(--mnt-card);
+    color: var(--mnt-text);
 }
 
-.status-default {
-    background: #f3f4f6;
-    color: #374151;
+.maintenance-page .form-group input:hover,
+.maintenance-page .form-group select:hover,
+.maintenance-page .form-group textarea:hover {
+    border-color: #34405f;
 }
 
-.maintenance-info {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.maintenance-page .form-group input:focus,
+.maintenance-page .form-group select:focus,
+.maintenance-page .form-group textarea:focus {
+    border-color: var(--mnt-accent);
+    background: #101a2d;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
-.maintenance-info div {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-}
-
-.maintenance-info span {
-    color: #6b7280;
-    font-size: 13px;
-}
-
-.maintenance-info strong {
-    color: #374151;
-    font-size: 13px;
-    text-align: right;
-}
-
-.maintenance-description {
-    margin-top: 18px;
-    padding-top: 15px;
-    border-top: 1px solid #e5e7eb;
-    color: #6b7280;
-    font-size: 13px;
+.maintenance-page .form-group textarea {
+    resize: vertical;
     line-height: 1.5;
 }
 
-.empty-maintenance {
-    background: white;
+.maintenance-page .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.maintenance-page .cancel-btn,
+.maintenance-page .save-btn {
+    border: none;
+    padding: 11px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13.5px;
+    transition: all 0.15s ease;
+}
+
+.maintenance-page .cancel-btn {
+    background: transparent;
+    border: 1px solid var(--mnt-border);
+    color: var(--mnt-text-dim);
+}
+
+.maintenance-page .cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--mnt-text);
+}
+
+.maintenance-page .save-btn {
+    background: linear-gradient(135deg, var(--mnt-accent), #7c3aed);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.28);
+}
+
+.maintenance-page .save-btn:hover {
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.38);
+    transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+   SUMMARY CARDS
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.maintenance-page .summary-card {
+    background: var(--mnt-card);
+    border: 1px solid var(--mnt-border-soft);
+    padding: 18px 20px;
     border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.maintenance-page .summary-card span {
+    display: block;
+    color: var(--mnt-text-dim);
+    font-size: 12.5px;
+    margin-bottom: 8px;
+}
+
+.maintenance-page .summary-card strong {
+    font-size: 24px;
+    color: var(--mnt-text);
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+   RECORD CARDS
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.maintenance-page .maintenance-card {
+    background: var(--mnt-card);
+    border: 1px solid var(--mnt-border-soft);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.maintenance-page .maintenance-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+}
+
+.maintenance-page .maintenance-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.maintenance-page .equipment-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: var(--mnt-accent-soft);
+    font-size: 20px;
+}
+
+.maintenance-page .maintenance-card h2 {
+    margin: 16px 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--mnt-text);
+}
+
+/* ---------------------------------------------------------
+   STATUS BADGES
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-status {
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.maintenance-page .status-scheduled {
+    background: var(--mnt-warning-soft);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.maintenance-page .status-progress {
+    background: var(--mnt-info-soft);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.35);
+}
+
+.maintenance-page .status-completed {
+    background: var(--mnt-success-soft);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+.maintenance-page .status-cancelled {
+    background: var(--mnt-danger-soft);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+.maintenance-page .status-default {
+    background: rgba(148, 163, 184, 0.14);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* ---------------------------------------------------------
+   CARD METADATA
+   --------------------------------------------------------- */
+
+.maintenance-page .maintenance-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.maintenance-page .maintenance-info div {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--mnt-border-soft);
+}
+
+.maintenance-page .maintenance-info div:last-child {
+    border-bottom: none;
+}
+
+.maintenance-page .maintenance-info span {
+    color: var(--mnt-text-faint);
+    font-size: 12.5px;
+}
+
+.maintenance-page .maintenance-info strong {
+    color: var(--mnt-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: right;
+}
+
+.maintenance-page .maintenance-description {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--mnt-border-soft);
+    color: var(--mnt-text-dim);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+/* ---------------------------------------------------------
+   EMPTY / LOADING STATES
+   --------------------------------------------------------- */
+
+.maintenance-page .empty-maintenance {
+    background: var(--mnt-card);
+    border: 1px solid var(--mnt-border-soft);
+    border-radius: 16px;
     padding: 60px 20px;
     text-align: center;
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
-.empty-icon {
-    font-size: 50px;
-    margin-bottom: 10px;
+.maintenance-page .empty-icon {
+    font-size: 46px;
+    margin-bottom: 12px;
+    opacity: 0.9;
 }
 
-.empty-maintenance h2 {
-    color: #1f2937;
+.maintenance-page .empty-maintenance h2 {
+    color: var(--mnt-text);
+    font-size: 18px;
+    margin: 0 0 8px;
 }
 
-.empty-maintenance p {
-    color: #6b7280;
+.maintenance-page .empty-maintenance p {
+    color: var(--mnt-text-dim);
     margin-bottom: 20px;
+    font-size: 13.5px;
 }
 
-.maintenance-loading {
+.maintenance-page .maintenance-loading {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 300px;
-    color: #6b7280;
+    color: var(--mnt-text-dim);
+    font-size: 14px;
 }
 
+/* ---------------------------------------------------------
+   SERVICE LOG PANELS
+   --------------------------------------------------------- */
+
+.maintenance-page .service-log-panel {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--mnt-border);
+}
+
+.maintenance-page .service-log-empty {
+    color: var(--mnt-text-faint);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.maintenance-page .service-log-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    color: var(--mnt-text-dim);
+}
+
+.maintenance-page .service-log-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mnt-border-soft);
+    line-height: 1.5;
+}
+
+.maintenance-page .service-log-list li:last-child {
+    border-bottom: none;
+}
+
+.maintenance-page .service-log-list strong {
+    color: var(--mnt-text);
+}
+
+.maintenance-page .service-log-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.maintenance-page .service-log-form input {
+    padding: 10px 12px;
+    background: var(--mnt-input);
+    border: 1px solid var(--mnt-border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--mnt-text);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.maintenance-page .service-log-form input::placeholder {
+    color: var(--mnt-text-faint);
+}
+
+.maintenance-page .service-log-form input:focus {
+    border-color: var(--mnt-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
 @media (max-width: 900px) {
-    .maintenance-grid {
+    .maintenance-page .maintenance-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .maintenance-summary {
+    .maintenance-page .maintenance-summary {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 600px) {
     .maintenance-page {
-        padding: 15px;
+        padding: 16px;
+        border-radius: 14px;
     }
 
-    .maintenance-header {
+    .maintenance-page .maintenance-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 14px;
     }
 
-    .form-grid {
+    .maintenance-page .maintenance-tabs {
+        flex-direction: column;
+    }
+
+    .maintenance-page .form-grid {
         grid-template-columns: 1fr;
     }
 
-    .maintenance-grid {
+    .maintenance-page .maintenance-grid {
         grid-template-columns: 1fr;
     }
 
-    .maintenance-summary {
+    .maintenance-page .maintenance-summary {
         grid-template-columns: 1fr;
     }
-}
-/* ===================================================
-   TASK 1 (Milestone 3): Maintenance & Work Order Management
-   Tabs, and the service-log / history panel inside a
-   work order card. Nothing above this line was changed.
-   =================================================== */
-.maintenance-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.maintenance-tab {
-    background: none;
-    border: none;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-}
-
-.maintenance-tab.active {
-    color: #2563eb;
-    border-bottom-color: #2563eb;
-}
-
-.service-log-panel {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed #e5e7eb;
-}
-
-.service-log-empty {
-    color: #9ca3af;
-    font-size: 13px;
-    margin-bottom: 10px;
-}
-
-.service-log-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 12px 0;
-    font-size: 13px;
-    color: #374151;
-}
-
-.service-log-list li {
-    padding: 6px 0;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.service-log-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.service-log-form input {
-    padding: 8px 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 13px;
 }

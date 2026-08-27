@@ -304,3 +304,171 @@ cd backend
 Watch the startup log for any bean or schema errors, then exercise
 the new endpoints (see the walkthrough at the bottom of the chat
 response) with a real JWT.
+
+---
+
+## 8. Post-delivery bug fix: `GET /api/maintenance-requests` throwing
+`EntityNotFoundException` for `Equipment`
+
+**Symptom:** `POST /api/maintenance-requests` returned 200 and the
+row was saved correctly, but `GET /api/maintenance-requests`
+returned HTTP 400/500 with:
+```
+No row with the given identifier exists for entity
+[com.example.lab_platform.entity.Equipment with id '7']
+```
+— even though `equipment_id = 7` genuinely exists in the `equipment`
+table.
+
+**Root cause — `entity/Equipment.java`:** the `institution` field
+was mapped:
+```java
+@ManyToOne(fetch = FetchType.EAGER)
+@JoinColumn(name = "institution_id", nullable = false)
+private Institution institution;
+```
+Hibernate uses `@JoinColumn(nullable = ...)` (not `@ManyToOne`'s
+`optional` flag) to pick **INNER JOIN vs LEFT OUTER JOIN** for an
+EAGER association's own load query. With `nullable = false`,
+Hibernate generated an INNER JOIN against `institutions`. The actual
+Postgres column (`public.equipment.institution_id`) has **no
+NOT NULL constraint**, and most existing equipment rows (legacy data
+predating multi-institution support) genuinely have
+`institution_id = NULL`. For those rows, the INNER JOIN returned
+zero rows on load, so Hibernate treated the row as not found —
+purely a metadata/data mismatch, not a missing row.
+
+This only surfaced on `GET` because listing requests fully
+initializes each request's `Equipment` (to read `equipmentName` in
+`MaintenanceRequestDTO`). `POST` never hit it, because creating a
+request only attaches a detached `Equipment` reference (just the ID)
+to the new row — it doesn't need to re-load Equipment's own eager
+join.
+
+**Fix:** changed `nullable = false` → `nullable = true` on that one
+`@JoinColumn`. Fetch type (`EAGER`) is unchanged, so no other code
+that reads `equipment.getInstitution()` synchronously
+(`BookingServiceImpl`, `ResourceSharingServiceImpl`,
+`UtilizationServiceImpl` — all already null-check it) is affected.
+`User.institution` was checked and left untouched: every `users` row
+has a non-null `institution_id`, so it was never exposed to this bug.
+
+**No database change needed** — the column was already nullable at
+the Postgres level; this was purely an entity-mapping bug.
+
+**Functionality:** `GET /api/maintenance-requests` (and any other
+endpoint that fully loads `Equipment` rows with a null
+`institution_id`, e.g. `/api/work-orders`, `/api/service-logs/**`,
+`/api/equipment-downtime/**`).
+
+---
+
+## 9. New: full `Maintenance` module (`/api/maintenance/**`)
+
+**Why:** the database has a pre-existing `maintenance` table (6 real
+rows: scheduled/preventive maintenance history — type, date, status,
+next-due date, assigned technician) with **no Java layer at all** —
+no entity, repository, service, or controller anywhere in the
+project. It is distinct from `maintenance_requests`
+(`MaintenanceRequest` — the student/technician/manager request
+lifecycle) and `maintenance_service_logs` (`MaintenanceServiceLog` —
+a technician's service entries against a `WorkOrder`), which already
+existed and already worked.
+
+**New files added:**
+
+| File | Layer | What it does |
+|---|---|---|
+| `entity/Maintenance.java` | Entity | Maps to the pre-existing `maintenance` table |
+| `repository/MaintenanceRepository.java` | Repository | By equipment, by status, by technician, "due/overdue" lookup |
+| `dto/MaintenanceDTO.java` | DTO | Flattened read shape, no lazy proxies |
+| `service/MaintenanceService.java` + `impl/MaintenanceServiceImpl.java` | Service | Schedule/update maintenance, resolve equipment + technician from ID, defaults `maintenanceDate`/`maintenanceStatus` |
+| `controller/MaintenanceController.java` | Controller | `/api/maintenance/**` REST endpoints |
+
+**Design notes (matches real DB, no assumptions):**
+- Every DB column on `maintenance` except `maintenance_id` is
+  nullable (checked against the actual `CREATE TABLE` in the backup),
+  and real rows have `assigned_technician_id = NULL`. Nothing is
+  mapped `nullable = false`.
+- Both associations (`equipment`, `assignedTechnician`) are
+  `FetchType.LAZY` — deliberately avoiding the exact
+  EAGER + `nullable = false` inner-join bug fixed in section 8
+  (`Equipment.institution`).
+- Role checks copy the existing `MaintenanceServiceLogController` /
+  `EquipmentDowntimeController` convention exactly: read access for
+  `LAB_TECHNICIAN, LAB_MANAGER, DEPARTMENT_HEAD, INSTITUTION_ADMIN,
+  SYSTEM_ADMIN`; write access (`POST`/`PUT`) narrowed to
+  `LAB_TECHNICIAN, LAB_MANAGER, INSTITUTION_ADMIN, SYSTEM_ADMIN`.
+
+**Endpoints added:**
+```
+GET  /api/maintenance                    - all records
+GET  /api/maintenance/{id}                - one record
+GET  /api/maintenance/equipment/{id}       - history for one equipment
+GET  /api/maintenance/upcoming             - due/overdue, not completed
+POST /api/maintenance                      - schedule a new record
+PUT  /api/maintenance/{id}                 - update status/date/technician
+```
+
+**No conflict with existing modules:** nothing in
+`MaintenanceRequest`, `WorkOrder`, or `MaintenanceServiceLog` was
+touched by this addition.
+
+---
+
+## 10. Fix: `equipment_downtime.maintenance_id` was a real, unmapped
+column (bonus finding while building the module above)
+
+**Found:** the actual `equipment_downtime` table has:
+```sql
+equipment_id integer NOT NULL,
+maintenance_id integer   -- real column, real FK -> maintenance(maintenance_id)
+```
+...but `entity/EquipmentDowntime.java` never mapped `maintenance_id`
+at all, and instead mapped a `work_order_id` column that **does not
+exist in this table** in the current database snapshot (it only
+exists once the `work_orders` table itself was created per section
+3/5 above — the FK column on `equipment_downtime` pointing back to
+it was never added).
+
+**Change:** added a new, additive `maintenance` field (`LAZY`,
+nullable) to `EquipmentDowntime.java`, mapped to the existing
+`maintenance_id` column/FK, with a getter/setter. The existing
+`workOrder` field was **not removed or altered** — `WorkOrderServiceImpl`
+depends on it directly (`openDowntimeWindow(equipment, workOrder,
+reason)` / `closeOpenDowntimeWindow(equipment)`), so removing it
+would break the work-order lifecycle. `EquipmentDowntimeDTO.java` was
+extended with `maintenanceId` the same way `workOrderId` was already
+exposed.
+
+**Database — correction, verified against the live DB after this
+section was first written:** the SQL originally suggested here
+(`ADD COLUMN work_order_id ...` + `ADD CONSTRAINT ...`) assumed the
+column was still missing, based on the dump analyzed at the time.
+Querying the live database (`information_schema.columns` +
+`pg_constraint`) afterward showed `ddl-auto=update` had *already*
+added both `work_order_id` and its FK
+(`fk7wlxgcu2wlretcqyr73dghswe`) automatically on an earlier app
+restart — same as it does for a normal new column. Running the
+`ADD COLUMN` statement correctly failed
+(`column "work_order_id" of relation "equipment_downtime" already
+exists`, SQLSTATE 42701); the `ADD CONSTRAINT` statement ran anyway
+and created a second, redundant FK
+(`fk_equipment_downtime_work_order`) on the same column pair.
+
+**No SQL is required for either association.** Both
+`maintenance_id → maintenance(maintenance_id)`
+(`fk1fx57cneoe7onkk8fp8nk65fc`, pre-existing) and
+`work_order_id → work_orders(work_order_id)`
+(`fk7wlxgcu2wlretcqyr73dghswe`, Hibernate-managed) are already
+correctly in place. The one cleanup needed is dropping the duplicate
+constraint this section's SQL created:
+```sql
+ALTER TABLE equipment_downtime
+    DROP CONSTRAINT fk_equipment_downtime_work_order;
+```
+
+**Functionality:** `GET/POST /api/equipment-downtime/**` (now able to
+report/accept a `maintenanceId` in addition to `workOrderId`); no
+change to `WorkOrderServiceImpl`'s automatic downtime open/close
+behavior.

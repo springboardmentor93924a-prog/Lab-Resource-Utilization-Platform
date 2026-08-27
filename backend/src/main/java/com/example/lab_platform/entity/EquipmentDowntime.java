@@ -21,9 +21,24 @@ public class EquipmentDowntime {
     // Nullable — a downtime window can also be logged manually with no
     // work order behind it (e.g. an unplanned outage discovered by a
     // technician before a work order is raised).
+    //
+    // NOTE: as of this database snapshot, public.equipment_downtime has
+    // no "work_order_id" column yet — see CHANGED_FILES.md section 9 for
+    // the one-line ALTER TABLE needed before this field will work.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "work_order_id")
     private WorkOrder workOrder;
+
+    // The scheduled/preventive Maintenance record (if any) this downtime
+    // window is associated with. Maps to the pre-existing
+    // "maintenance_id" column + FK that were already present in the
+    // database (equipment_downtime -> maintenance) but were previously
+    // unmapped in this entity entirely. Nullable, additive — does not
+    // replace workOrder above; a downtime window can be tied to either,
+    // both, or neither.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maintenance_id")
+    private Maintenance maintenance;
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -62,6 +77,14 @@ public class EquipmentDowntime {
 
     public void setWorkOrder(WorkOrder workOrder) {
         this.workOrder = workOrder;
+    }
+
+    public Maintenance getMaintenance() {
+        return maintenance;
+    }
+
+    public void setMaintenance(Maintenance maintenance) {
+        this.maintenance = maintenance;
     }
 
     public LocalDateTime getStartDate() {

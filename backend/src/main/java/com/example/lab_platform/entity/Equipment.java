@@ -44,10 +44,28 @@ private Boolean requiresApproval = true;
     @Column(name = "last_used_date")
     private LocalDate lastUsedDate;
 
+    // FIX: was "nullable = false". The actual DB column
+    // (public.equipment.institution_id) has NO NOT NULL constraint,
+    // and several existing rows genuinely have institution_id = NULL
+    // (legacy equipment created before multi-institution support).
+    // Hibernate uses @JoinColumn(nullable=...) — not @ManyToOne's
+    // "optional" flag — to decide INNER JOIN vs LEFT OUTER JOIN for
+    // this EAGER association's own SELECT. With nullable=false,
+    // Hibernate generated an INNER JOIN against institutions; any
+    // Equipment row whose institution_id is NULL then had ZERO rows
+    // returned by its own by-ID load, and Hibernate raised
+    // "EntityNotFoundException: No row with the given identifier
+    // exists for entity Equipment with id 'N'" the moment such a row
+    // needed to be initialized (e.g. while building
+    // MaintenanceRequestDTO for every request in GET /api/maintenance-requests).
+    // Setting nullable = true restores a LEFT OUTER JOIN, matching
+    // real data: institution loads normally when present, and is
+    // simply null when the column is null — no more false
+    // "entity not found" errors for equipment with no institution set.
     @ManyToOne(fetch = FetchType.EAGER)
 @JoinColumn(
         name = "institution_id",
-        nullable = false
+        nullable = true
 )
 private Institution institution;
 

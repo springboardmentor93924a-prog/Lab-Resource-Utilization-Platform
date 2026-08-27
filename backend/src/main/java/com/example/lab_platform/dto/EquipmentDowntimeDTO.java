@@ -17,6 +17,7 @@ public class EquipmentDowntimeDTO {
     private Integer equipmentId;
     private String equipmentName;
     private Integer workOrderId;
+    private Integer maintenanceId;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private String reason;
@@ -41,6 +42,10 @@ public class EquipmentDowntimeDTO {
 
         if (downtime.getWorkOrder() != null) {
             dto.setWorkOrderId(downtime.getWorkOrder().getWorkOrderId());
+        }
+
+        if (downtime.getMaintenance() != null) {
+            dto.setMaintenanceId(downtime.getMaintenance().getMaintenanceId());
         }
 
         dto.setStartDate(downtime.getStartDate());
@@ -82,6 +87,14 @@ public class EquipmentDowntimeDTO {
 
     public void setWorkOrderId(Integer workOrderId) {
         this.workOrderId = workOrderId;
+    }
+
+    public Integer getMaintenanceId() {
+        return maintenanceId;
+    }
+
+    public void setMaintenanceId(Integer maintenanceId) {
+        this.maintenanceId = maintenanceId;
     }
 
     public LocalDateTime getStartDate() {
