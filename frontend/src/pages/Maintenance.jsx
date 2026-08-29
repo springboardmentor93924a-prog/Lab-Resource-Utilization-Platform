@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "./Maintenance.css";
-import "./Feedback.css";
 
 const API_BASE_URL = "http://localhost:8080/api";
 

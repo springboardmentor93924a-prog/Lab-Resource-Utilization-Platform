@@ -85,12 +85,43 @@ public class MaintenanceServiceImpl implements MaintenanceService {
      * "Available" instead of waiting on the next scheduler pass,
      * unless another still-active maintenance record exists for
      * the same equipment.
+     *
+     * Role scoping: a Lab Technician may only touch a record already
+     * assigned to them (status/description/dates — logging their own
+     * work), and cannot reassign it to someone else. Reassignment and
+     * editing any other technician's record is a Lab Manager /
+     * Department Head / admin action only.
      */
     @Override
     public Maintenance updateMaintenance(Integer id, Maintenance updatedMaintenance) {
  
         Maintenance existing = maintenanceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Maintenance not found"));
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+        User loggedInUser = (User) authentication.getPrincipal();
+        String role = loggedInUser.getRole() != null
+                ? loggedInUser.getRole().getRoleName()
+                : null;
+        boolean isTechnician = "LAB_TECHNICIAN".equalsIgnoreCase(role);
+
+        if (isTechnician) {
+            boolean assignedToCaller = existing.getAssignedTechnician() != null
+                    && existing.getAssignedTechnician().getUserId().equals(loggedInUser.getUserId());
+
+            if (!assignedToCaller) {
+                throw new RuntimeException(
+                        "You can only update maintenance tasks assigned to you");
+            }
+
+            if (updatedMaintenance.getAssignedTechnician() != null
+                    && !updatedMaintenance.getAssignedTechnician().getUserId()
+                            .equals(loggedInUser.getUserId())) {
+                throw new RuntimeException(
+                        "Technicians cannot reassign a maintenance task — ask a Lab Manager or Department Head");
+            }
+        }
  
         if (updatedMaintenance.getMaintenanceType() != null) {
             existing.setMaintenanceType(updatedMaintenance.getMaintenanceType());
@@ -112,7 +143,10 @@ public class MaintenanceServiceImpl implements MaintenanceService {
             existing.setMaintenanceStatus(updatedMaintenance.getMaintenanceStatus());
         }
 
-        if (updatedMaintenance.getAssignedTechnician() != null) {
+        // Only a manager/dept head/admin can reach this with a non-null
+        // assignedTechnician (a technician either omits it or is blocked
+        // above unless it's their own id, which is a no-op anyway).
+        if (!isTechnician && updatedMaintenance.getAssignedTechnician() != null) {
             existing.setAssignedTechnician(updatedMaintenance.getAssignedTechnician());
         }
 
