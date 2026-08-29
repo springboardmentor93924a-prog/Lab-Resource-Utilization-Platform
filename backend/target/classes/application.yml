@@ -1,0 +1,29 @@
+﻿server:
+  port: 8080
+
+spring:
+  application:
+    name: lab-resource-utilization-platform
+  datasource:
+    url: jdbc:h2:mem:labdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+app:
+  jwt:
+    secret: 9a6e8b4e78b2a1649c0d12e5894f3a78c1b9d4e56f7a8b9c0d1e2f3a4b5c6d7e
+    expiration-ms: 86400000
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

@@ -1,0 +1,92 @@
+-- 1. INSTITUTIONS & DEPARTMENTS
+CREATE TABLE IF NOT EXISTS institutions (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    address TEXT,
+    contact_email VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. USERS & ROLES
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    role VARCHAR(50) NOT NULL, -- RESEARCHER, LAB_TECHNICIAN, LAB_MANAGER, DEPARTMENT_HEAD, INSTITUTION_ADMIN, SYSTEM_ADMIN
+    department VARCHAR(100),
+    institution_id BIGINT REFERENCES institutions(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. EQUIPMENT INVENTORY
+CREATE TABLE IF NOT EXISTS equipment (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    model_number VARCHAR(100),
+    category VARCHAR(100) NOT NULL, -- Imaging, Spectroscopy, Separation, Synthesis
+    specifications TEXT,
+    status VARCHAR(50) DEFAULT 'AVAILABLE', -- AVAILABLE, BOOKED, UNDER_MAINTENANCE, OUT_OF_SERVICE, RETIRED
+    hourly_rate NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    allow_inter_institution BOOLEAN DEFAULT TRUE,
+    department VARCHAR(100),
+    institution_id BIGINT REFERENCES institutions(id) ON DELETE CASCADE,
+    last_calibration_date TIMESTAMP,
+    next_calibration_due_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. BOOKING & SCHEDULING
+CREATE TABLE IF NOT EXISTS bookings (
+    id BIGSERIAL PRIMARY KEY,
+    equipment_id BIGINT NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    status VARCHAR(50) DEFAULT 'CONFIRMED', -- PENDING_APPROVAL, CONFIRMED, IN_USE, COMPLETED, CANCELLED, NO_SHOW
+    purpose TEXT NOT NULL,
+    total_cost NUMERIC(10, 2) NOT NULL,
+    is_inter_institution BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. WAITLIST MANAGEMENT
+CREATE TABLE IF NOT EXISTS waitlist_entries (
+    id BIGSERIAL PRIMARY KEY,
+    equipment_id BIGINT NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    preferred_start TIMESTAMP NOT NULL,
+    preferred_end TIMESTAMP NOT NULL,
+    status VARCHAR(50) DEFAULT 'PENDING', -- PENDING, NOTIFIED, EXPIRED, CONVERTED
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. MAINTENANCE & WORK ORDERS
+CREATE TABLE IF NOT EXISTS maintenance_tasks (
+    id BIGSERIAL PRIMARY KEY,
+    equipment_id BIGINT NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+    technician_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    task_description TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'SCHEDULED', -- SCHEDULED, IN_PROGRESS, COMPLETED
+    scheduled_date TIMESTAMP NOT NULL,
+    completed_date TIMESTAMP,
+    service_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. BILLING & CHARGEBACKS
+CREATE TABLE IF NOT EXISTS billing_invoices (
+    id BIGSERIAL PRIMARY KEY,
+    debtor_institution_id BIGINT REFERENCES institutions(id) ON DELETE CASCADE,
+    creditor_institution_id BIGINT REFERENCES institutions(id) ON DELETE CASCADE,
+    booking_id BIGINT REFERENCES bookings(id) ON DELETE SET NULL,
+    amount NUMERIC(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'PENDING', -- PENDING, PAID, DISPUTED
+    invoice_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- PERFORMANCE INDEXES
+CREATE INDEX IF NOT EXISTS idx_booking_dates ON bookings (equipment_id, start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment (status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
