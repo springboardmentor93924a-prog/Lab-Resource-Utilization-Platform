@@ -4,3 +4,8 @@ target/
 *.iml
 .mvn/
 backend/uploads/
+
+# Environment variables
+.env
+.env.*
+!.env.example
