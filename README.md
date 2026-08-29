@@ -70,15 +70,15 @@ Full-stack platform for research institutions to manage shared lab equipment —
 
 ## How to Run
 ### Backend
-cd backend
+cd backend |
 ./mvnw spring-boot:run
 
 Requires PostgreSQL running locally with a database named `lab_resource_db`. Update credentials in `backend/src/main/resources/application.properties`.
 
 ### Frontend
-cd frontend
-npm install
-npm run dev
+cd frontend |
+npm install |
+npm run dev |
 
 Runs on `http://localhost:5173`. Backend expected on `http://localhost:8080`.
 
