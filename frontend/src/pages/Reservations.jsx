@@ -122,7 +122,7 @@ function Reservations() {
     fetchMyFeedback();
 
     const prefillId = searchParams.get("equipmentId");
-    if (prefillId) {
+    if (prefillId && isStudent) {
       setFormData((prev) => ({ ...prev, equipmentId: prefillId }));
       setSelectedCalEquipment(prefillId);
       setShowForm(true);
@@ -490,15 +490,21 @@ function Reservations() {
             </button>
           </div>
 
-          <button
-            className="btn-primary"
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-          >
-            + New Reservation
-          </button>
+          {/* Booking creation is STUDENT-only on the backend (see
+              BookingController.createBooking) — hide the button for
+              every other role instead of letting them hit a 403 on
+              submit. */}
+          {isStudent && (
+            <button
+              className="btn-primary"
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
+            >
+              + New Reservation
+            </button>
+          )}
         </div>
       </div>
 

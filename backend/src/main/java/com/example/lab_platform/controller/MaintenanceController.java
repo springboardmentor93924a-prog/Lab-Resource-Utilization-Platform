@@ -28,9 +28,12 @@ public class MaintenanceController {
         return maintenanceService.getAllMaintenance();
     }
  
-    // Create a new maintenance record (Restricted to technicians and managers)
+    // Create a new maintenance record / work order (Restricted to the
+    // roles that actually assign work — Lab Manager, Department Head,
+    // and admins. Lab Technicians receive assignments, they don't open
+    // their own work orders.)
     @PostMapping
-    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> createMaintenance(
             @RequestBody Maintenance maintenance) {
  
@@ -59,9 +62,12 @@ public class MaintenanceController {
         return ResponseEntity.ok(maintenanceService.getMyTasks());
     }
 
-    // Update / complete a maintenance record (Restricted to technicians and managers)
+    // Update / complete a maintenance record (technicians can update — but
+    // only their own assigned task, and can't reassign it — enforced in
+    // MaintenanceServiceImpl; managers/dept heads/admins can update any
+    // record, including reassigning the technician)
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> updateMaintenance(
             @PathVariable Integer id,
             @RequestBody Maintenance maintenance) {
