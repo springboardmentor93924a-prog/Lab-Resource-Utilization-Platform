@@ -181,6 +181,17 @@ public class ResourceSharingServiceImpl implements ResourceSharingService {
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
 
+        // SYSTEM_ADMIN is the one genuine platform-wide override — every
+        // other role reaching this method (LAB_MANAGER, DEPARTMENT_HEAD,
+        // INSTITUTION_ADMIN) is scoped to their OWN institution, and that
+        // institution must be the request's sender (the equipment owner).
+        // This is exactly what lets a Dept Head/Lab Manager/Institution
+        // Admin approve or reject a request that came FROM another
+        // college: the request's sender is their own institution (the
+        // one that owns the equipment), the receiver is whichever
+        // college asked for access — same-college actors never see a
+        // sender that isn't themselves, so this one check is what
+        // separates the "other college" flow from a same-college mistake.
         if (!isSystemAdmin(role)) {
             if (loggedInUser.getInstitution() == null
                     || req.getSenderInstitution() == null

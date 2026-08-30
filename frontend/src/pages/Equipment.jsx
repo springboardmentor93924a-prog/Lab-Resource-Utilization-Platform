@@ -332,8 +332,10 @@ function Equipment() {
                 </td>
                 <td style={cellStyle}>{item.purchaseDate || "—"}</td>
                 <td style={cellStyle}>
-                  {/* Quick Booking / Waitlist for Students & Users */}
-                  {item.status === "Available" && (
+                  {/* Quick Booking — STUDENT only, matching
+                      BookingController.createBooking (backend-enforced;
+                      this just avoids showing a button that would 403). */}
+                  {item.status === "Available" && role === "STUDENT" && (
                     <button
                       onClick={() => navigate(`/reservations?equipmentId=${item.equipmentId}`)}
                       style={{
