@@ -2,54 +2,65 @@ function Sidebar({ currentPage, setPage, role, onLogout }) {
 
   const roleMenus = {
     RESEARCHER: [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "equipment", label: "Equipment" },
-  { id: "external-booking", label:  "Booking" },
-  { id: "bookings", label: "My Bookings" },
-  { id: "waitlist", label: "Waitlist" },
-  { id: "profile", label: "Profile" }
-],
+      { id: "dashboard", label: "Dashboard" },
+      { id: "equipment", label: "Equipment" },
+      { id: "external-booking", label: "Booking" },
+      { id: "bookings", label: "My Bookings" },
+      { id: "waitlist", label: "Waitlist" },
+      { id: "notifications", label: "Notifications & Alerts" },
+      { id: "profile", label: "Profile" }
+    ],
     LAB_MANAGER: [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "equipment", label: "Equipment" },
-  { id: "bookings", label: "Bookings" },
-  { id: "utilization", label: "Utilization" },
-  { id: "heatmap", label: "Heatmap" },
-  { id: "resource-sharing", label: "Resource Sharing" },
-  { id: "demand-analysis", label: "Demand Analysis" },
-  { id: "waitlist", label: "Waitlist Requests" },
-  { id: "maintenance", label: "Maintenance" },
-  { id: "reports", label: "Reports" }
-],
+      { id: "dashboard", label: "Dashboard" },
+      { id: "equipment", label: "Equipment" },
+      { id: "bookings", label: "Bookings" },
+      { id: "utilization", label: "Utilization" },
+      { id: "analytics", label: "Utilization & Analytics" },
+      { id: "heatmap", label: "Heatmap" },
+      { id: "resource-sharing", label: "Resource Sharing" },
+      { id: "demand-analysis", label: "Demand Analysis" },
+      { id: "waitlist", label: "Waitlist Requests" },
+      { id: "maintenance", label: "Maintenance" },
+      { id: "calibration", label: "Calibration & Certs" },
+      { id: "cost", label: "Cost & Billing" },
+      { id: "reports", label: "Reports" },
+      { id: "notifications", label: "Notifications & Alerts" }
+    ],
     LAB_TECHNICIAN: [
       { id: "dashboard", label: "Dashboard" },
       { id: "equipment", label: "Equipment" },
       { id: "maintenance", label: "Maintenance" },
-      { id: "bookings", label: "Bookings" }
+      { id: "bookings", label: "Bookings" },
+      { id: "notifications", label: "Notifications & Alerts" }
     ],
 
     DEPARTMENT_HEAD: [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "departments", label: "Departments" },
-  { id: "equipment", label: "Equipment" },
-  { id: "bookings", label: "Bookings" },
-  { id: "utilization", label: "Utilization" },
-  { id: "heatmap", label: "Heatmap" },
-  { id: "resource-sharing", label: "Resource Sharing" },
-  { id: "demand-analysis", label: "Demand Analysis" },
-  { id: "reports", label: "Reports" }
-],
+      { id: "dashboard", label: "Dashboard" },
+      { id: "departments", label: "Departments" },
+      { id: "equipment", label: "Equipment" },
+      { id: "bookings", label: "Bookings" },
+      { id: "utilization", label: "Utilization " },
+      { id: "analytics", label: "Utilization & Analytics" },
+      { id: "heatmap", label: "Heatmap" },
+      { id: "resource-sharing", label: "Resource Sharing" },
+      { id: "demand-analysis", label: "Demand Analysis" },
+      { id: "cost", label: "Cost & Billing" },
+      { id: "reports", label: "Reports" },
+      { id: "notifications", label: "Notifications & Alerts" }
+    ],
 
     INSTITUTION_ADMIN: [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "institutions", label: "Institutions" },
-  { id: "departments", label: "Departments" },
-  { id: "equipment", label: "Equipment" },
-  { id: "utilization", label: "Utilization" },
-  { id: "resource-sharing", label: "Resource Sharing" },
-  { id: "users", label: "Users" },
-  { id: "reports", label: "Reports" }
-],
+      { id: "dashboard", label: "Dashboard" },
+      { id: "institutions", label: "Institutions" },
+      { id: "departments", label: "Departments" },
+      { id: "equipment", label: "Equipment" },
+      { id: "utilization", label: "Utilization" },
+      { id: "resource-sharing", label: "Resource Sharing" },
+      { id: "users", label: "Users" },
+      { id: "cost", label: "Cost & Billing" },
+      { id: "reports", label: "Reports" },
+      { id: "notifications", label: "Notifications & Alerts" }
+    ],
 
     SYSTEM_ADMIN: [
       { id: "dashboard", label: "Dashboard" },
@@ -59,7 +70,8 @@ function Sidebar({ currentPage, setPage, role, onLogout }) {
       { id: "categories", label: "Categories" },
       { id: "bookings", label: "Bookings" },
       { id: "users", label: "Users" },
-      { id: "reports", label: "Reports" }
+      { id: "reports", label: "Reports" },
+      { id: "notifications", label: "Notifications & Alerts" }
     ]
   };
 

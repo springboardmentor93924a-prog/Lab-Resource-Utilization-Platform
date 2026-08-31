@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function Equipment() {
+function Equipment({ showToast }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
@@ -96,6 +96,10 @@ function Equipment() {
 
     setEquipment([...equipment, newEquipment]);
 
+    if (showToast) {
+      showToast(`Equipment "${form.name}" added successfully!`, "success");
+    }
+
     setForm({
       name: "",
       category: "",
@@ -105,6 +109,18 @@ function Equipment() {
     });
 
     setShowAddForm(false);
+  };
+
+  const handleView = (item) => {
+    if (showToast) {
+      showToast(`Viewing details for ${item.name} (${item.id})`, "info");
+    }
+  };
+
+  const handleEdit = (item) => {
+    if (showToast) {
+      showToast(`Edit mode opened for ${item.name}`, "info");
+    }
   };
 
   const getStatusStyle = (itemStatus) => {
@@ -486,11 +502,11 @@ function Equipment() {
                       }}
                     >
 
-                      <button style={viewButton}>
+                      <button style={viewButton} onClick={() => handleView(item)}>
                         View
                       </button>
 
-                      <button style={editButton}>
+                      <button style={editButton} onClick={() => handleEdit(item)}>
                         Edit
                       </button>
 

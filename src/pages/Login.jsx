@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./Login.css";
 
 function Login({ onLogin, onRegister }) {
     const [email, setEmail] = useState("");
@@ -43,56 +44,117 @@ function Login({ onLogin, onRegister }) {
     };
 
     return (
-        <div>
-            <h1>Lab Resource Platform</h1>
+    <div className="login-page">
 
-            <h2>Login</h2>
+        <div className="login-card">
 
-            <form onSubmit={handleLogin}>
+            <div className="login-brand">
 
-                <div>
-                    <label>Email</label>
-                    <br />
+                <div className="login-brand-icon">
+                    LR
+                </div>
+
+                <h1>
+                    Lab Resource Platform
+                </h1>
+
+                <p>
+                    Laboratory Resource Utilization Platform
+                </p>
+
+            </div>
+
+
+            <h2 className="login-title">
+                Welcome Back
+            </h2>
+
+            <p className="login-subtitle">
+                Sign in to access your laboratory workspace
+            </p>
+
+
+            <form
+                className="login-form"
+                onSubmit={handleLogin}
+            >
+
+                <div className="login-field">
+
+                    <label>
+                        Email Address
+                    </label>
+
                     <input
+                        className="login-input"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) =>
+                            setEmail(e.target.value)
+                        }
                         placeholder="Enter your email"
                         required
                     />
+
                 </div>
 
-                <br />
 
-                <div>
-                    <label>Password</label>
-                    <br />
+                <div className="login-field">
+
+                    <label>
+                        Password
+                    </label>
+
                     <input
+                        className="login-input"
                         type="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) =>
+                            setPassword(e.target.value)
+                        }
                         placeholder="Enter your password"
                         required
                     />
+
                 </div>
 
-                <br />
 
-                <button type="submit">
+                <button
+                    className="login-submit"
+                    type="submit"
+                >
                     Login
                 </button>
 
             </form>
 
-            {message && <p>{message}</p>}
-            <p>
-           New user?{" "}
-           <button type="button" onClick={onRegister}>
-            Register
-           </button>
-          </p>
+
+            {message && (
+                <p className="login-message">
+                    {message}
+                </p>
+            )}
+
+
+            <div className="login-register">
+
+                <span>
+                    New user?
+                </span>
+
+                <button
+                    type="button"
+                    onClick={onRegister}
+                >
+                    Create an account
+                </button>
+
+            </div>
+
         </div>
-    );
+
+    </div>
+);
 }
 
 export default Login;

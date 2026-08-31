@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function Bookings() {
+function Bookings({ showToast }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
@@ -91,6 +91,24 @@ function Bookings() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleUpdateStatus = (bookingId, newStatus) => {
+    setBookings((prevBookings) =>
+      prevBookings.map((item) =>
+        item.id === bookingId ? { ...item, status: newStatus } : item
+      )
+    );
+
+    if (showToast) {
+      if (newStatus === "Approved") {
+        showToast(`Booking ${bookingId} has been approved!`, "success");
+      } else if (newStatus === "Rejected") {
+        showToast(`Booking ${bookingId} has been rejected.`, "warning");
+      } else if (newStatus === "Completed") {
+        showToast(`Booking ${bookingId} marked as completed.`, "info");
+      }
+    }
+  };
+
   const addBooking = (e) => {
     e.preventDefault();
 
@@ -105,6 +123,10 @@ function Bookings() {
     };
 
     setBookings([...bookings, newBooking]);
+
+    if (showToast) {
+      showToast(`New booking created for ${form.equipment}!`, "success");
+    }
 
     setForm({
       equipment: "",
@@ -133,6 +155,13 @@ function Bookings() {
       };
     }
 
+    if (itemStatus === "Rejected") {
+      return {
+        background: "#fde8e8",
+        color: "#e11d48",
+      };
+    }
+
     return {
       background: "#eaf2ff",
       color: "#2563eb",
@@ -148,9 +177,7 @@ function Bookings() {
         boxSizing: "border-box",
       }}
     >
-
       {/* HEADER */}
-
       <div
         style={{
           display: "flex",
@@ -199,9 +226,7 @@ function Bookings() {
         </button>
       </div>
 
-
       {/* STATISTICS */}
-
       <div
         style={{
           display: "grid",
@@ -210,7 +235,6 @@ function Bookings() {
           marginBottom: "24px",
         }}
       >
-
         <StatCard
           icon="▣"
           title="Total Bookings"
@@ -242,12 +266,9 @@ function Bookings() {
           background="#edf0f5"
           color="#64748b"
         />
-
       </div>
 
-
       {/* MAIN CARD */}
-
       <div
         style={{
           background: "white",
@@ -257,9 +278,7 @@ function Bookings() {
           overflow: "hidden",
         }}
       >
-
         {/* FILTER BAR */}
-
         <div
           style={{
             padding: "17px 20px",
@@ -269,7 +288,6 @@ function Bookings() {
             alignItems: "center",
           }}
         >
-
           <div
             style={{
               flex: 1,
@@ -281,7 +299,6 @@ function Bookings() {
               padding: "0 12px",
             }}
           >
-
             <span
               style={{
                 color: "#8b96a8",
@@ -303,9 +320,7 @@ function Bookings() {
                 fontSize: "13px",
               }}
             />
-
           </div>
-
 
           <select
             value={status}
@@ -326,15 +341,12 @@ function Bookings() {
             <option value="Pending">Pending</option>
             <option value="Approved">Approved</option>
             <option value="Completed">Completed</option>
+            <option value="Rejected">Rejected</option>
           </select>
-
         </div>
 
-
         {/* TABLE */}
-
         <div style={{ overflowX: "auto" }}>
-
           <table
             style={{
               width: "100%",
@@ -342,11 +354,8 @@ function Bookings() {
               minWidth: "1050px",
             }}
           >
-
             <thead>
-
               <tr style={{ background: "#f8fafc" }}>
-
                 <TableHeader>ID</TableHeader>
                 <TableHeader>Equipment</TableHeader>
                 <TableHeader>Requested By</TableHeader>
@@ -355,25 +364,18 @@ function Bookings() {
                 <TableHeader>Time</TableHeader>
                 <TableHeader>Status</TableHeader>
                 <TableHeader>Actions</TableHeader>
-
               </tr>
-
             </thead>
 
-
             <tbody>
-
               {filteredBookings.map((item) => (
-
                 <tr
                   key={item.id}
                   style={{
                     borderBottom: "1px solid #edf0f4",
                   }}
                 >
-
                   {/* ID */}
-
                   <td style={tdStyle}>
                     <span
                       style={{
@@ -386,11 +388,8 @@ function Bookings() {
                     </span>
                   </td>
 
-
                   {/* EQUIPMENT */}
-
                   <td style={tdStyle}>
-
                     <div
                       style={{
                         display: "flex",
@@ -398,7 +397,6 @@ function Bookings() {
                         gap: "10px",
                       }}
                     >
-
                       <div
                         style={{
                           width: "34px",
@@ -424,44 +422,23 @@ function Bookings() {
                       >
                         {item.equipment}
                       </span>
-
                     </div>
-
                   </td>
-
 
                   {/* REQUESTED BY */}
-
-                  <td style={tdStyle}>
-                    {item.requestedBy}
-                  </td>
-
+                  <td style={tdStyle}>{item.requestedBy}</td>
 
                   {/* DEPARTMENT */}
-
-                  <td style={tdStyle}>
-                    {item.department}
-                  </td>
-
+                  <td style={tdStyle}>{item.department}</td>
 
                   {/* DATE */}
-
-                  <td style={tdStyle}>
-                    {item.date}
-                  </td>
-
+                  <td style={tdStyle}>{item.date}</td>
 
                   {/* TIME */}
-
-                  <td style={tdStyle}>
-                    {item.time}
-                  </td>
-
+                  <td style={tdStyle}>{item.time}</td>
 
                   {/* STATUS */}
-
                   <td style={tdStyle}>
-
                     <span
                       style={{
                         ...getStatusStyle(item.status),
@@ -474,7 +451,6 @@ function Bookings() {
                         fontWeight: 600,
                       }}
                     >
-
                       <span
                         style={{
                           width: "6px",
@@ -483,50 +459,54 @@ function Bookings() {
                           background: "currentColor",
                         }}
                       />
-
                       {item.status}
-
                     </span>
-
                   </td>
 
-
                   {/* ACTIONS */}
-
                   <td style={tdStyle}>
-
                     <div
                       style={{
                         display: "flex",
                         gap: "7px",
                       }}
                     >
+                      {item.status === "Pending" && (
+                        <>
+                          <button
+                            onClick={() => handleUpdateStatus(item.id, "Approved")}
+                            style={approveButton}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(item.id, "Rejected")}
+                            style={rejectButton}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
 
-                      <button style={viewButton}>
-                        View
-                      </button>
+                      {item.status === "Approved" && (
+                        <button
+                          onClick={() => handleUpdateStatus(item.id, "Completed")}
+                          style={completeButton}
+                        >
+                          Mark Completed
+                        </button>
+                      )}
 
-                      <button style={editButton}>
-                        Edit
-                      </button>
-
+                      <button style={viewButton}>View</button>
                     </div>
-
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         </div>
 
-
         {/* FOOTER */}
-
         <div
           style={{
             padding: "13px 20px",
@@ -536,17 +516,12 @@ function Bookings() {
             borderTop: "1px solid #edf0f4",
           }}
         >
-          Showing {filteredBookings.length} of{" "}
-          {bookings.length} bookings
+          Showing {filteredBookings.length} of {bookings.length} bookings
         </div>
-
       </div>
 
-
       {/* NEW BOOKING MODAL */}
-
       {showAddForm && (
-
         <div
           style={{
             position: "fixed",
@@ -558,7 +533,6 @@ function Bookings() {
             zIndex: 9999,
           }}
         >
-
           <div
             style={{
               width: "620px",
@@ -570,9 +544,7 @@ function Bookings() {
               boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
             }}
           >
-
             {/* MODAL HEADER */}
-
             <div
               style={{
                 display: "flex",
@@ -580,9 +552,7 @@ function Bookings() {
                 marginBottom: "24px",
               }}
             >
-
               <div>
-
                 <h2
                   style={{
                     margin: 0,
@@ -602,7 +572,6 @@ function Bookings() {
                 >
                   Create a new equipment booking request
                 </p>
-
               </div>
 
               <button
@@ -620,14 +589,10 @@ function Bookings() {
               >
                 ×
               </button>
-
             </div>
 
-
             {/* FORM */}
-
             <form onSubmit={addBooking}>
-
               <div
                 style={{
                   display: "grid",
@@ -635,7 +600,6 @@ function Bookings() {
                   gap: "17px",
                 }}
               >
-
                 <FormInput
                   label="Equipment"
                   placeholder="e.g. Oscilloscope"
@@ -647,7 +611,6 @@ function Bookings() {
                     })
                   }
                 />
-
 
                 <FormInput
                   label="Requested By"
@@ -661,7 +624,6 @@ function Bookings() {
                   }
                 />
 
-
                 <FormInput
                   label="Department"
                   placeholder="e.g. ECE"
@@ -674,12 +636,8 @@ function Bookings() {
                   }
                 />
 
-
                 <div>
-
-                  <label style={labelStyle}>
-                    Date
-                  </label>
+                  <label style={labelStyle}>Date</label>
 
                   <input
                     type="date"
@@ -693,9 +651,7 @@ function Bookings() {
                     }
                     style={inputStyle}
                   />
-
                 </div>
-
 
                 <FormInput
                   label="Time"
@@ -709,12 +665,8 @@ function Bookings() {
                   }
                 />
 
-
                 <div>
-
-                  <label style={labelStyle}>
-                    Status
-                  </label>
+                  <label style={labelStyle}>Status</label>
 
                   <select
                     value={form.status}
@@ -726,28 +678,14 @@ function Bookings() {
                     }
                     style={inputStyle}
                   >
-
-                    <option value="Pending">
-                      Pending
-                    </option>
-
-                    <option value="Approved">
-                      Approved
-                    </option>
-
-                    <option value="Completed">
-                      Completed
-                    </option>
-
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Completed">Completed</option>
                   </select>
-
                 </div>
-
               </div>
 
-
               {/* BUTTONS */}
-
               <div
                 style={{
                   display: "flex",
@@ -756,7 +694,6 @@ function Bookings() {
                   marginTop: "25px",
                 }}
               >
-
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
@@ -786,33 +723,20 @@ function Bookings() {
                 >
                   Create Booking
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
     </div>
   );
 }
-
 
 /* =========================
    SMALL COMPONENTS
 ========================= */
 
-function StatCard({
-  icon,
-  title,
-  value,
-  background,
-  color,
-}) {
+function StatCard({ icon, title, value, background, color }) {
   return (
     <div
       style={{
@@ -826,7 +750,6 @@ function StatCard({
         boxShadow: "0 2px 8px rgba(20, 40, 70, 0.04)",
       }}
     >
-
       <div
         style={{
           width: "42px",
@@ -845,7 +768,6 @@ function StatCard({
       </div>
 
       <div>
-
         <p
           style={{
             margin: "0 0 4px",
@@ -865,13 +787,10 @@ function StatCard({
         >
           {value}
         </h2>
-
       </div>
-
     </div>
   );
 }
-
 
 function TableHeader({ children }) {
   return (
@@ -892,19 +811,10 @@ function TableHeader({ children }) {
   );
 }
 
-
-function FormInput({
-  label,
-  placeholder,
-  value,
-  onChange,
-}) {
+function FormInput({ label, placeholder, value, onChange }) {
   return (
     <div>
-
-      <label style={labelStyle}>
-        {label}
-      </label>
+      <label style={labelStyle}>{label}</label>
 
       <input
         type="text"
@@ -914,11 +824,9 @@ function FormInput({
         onChange={(e) => onChange(e.target.value)}
         style={inputStyle}
       />
-
     </div>
   );
 }
-
 
 /* =========================
    STYLES
@@ -962,13 +870,36 @@ const viewButton = {
   cursor: "pointer",
 };
 
-const editButton = {
-  border: "1px solid #cbd5e1",
-  background: "white",
-  color: "#64748b",
+const approveButton = {
+  border: "none",
+  background: "#16834b",
+  color: "white",
   padding: "5px 10px",
   borderRadius: "5px",
   fontSize: "11px",
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
+const rejectButton = {
+  border: "none",
+  background: "#e11d48",
+  color: "white",
+  padding: "5px 10px",
+  borderRadius: "5px",
+  fontSize: "11px",
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
+const completeButton = {
+  border: "1px solid #2563eb",
+  background: "#eaf2ff",
+  color: "#2563eb",
+  padding: "5px 10px",
+  borderRadius: "5px",
+  fontSize: "11px",
+  fontWeight: 600,
   cursor: "pointer",
 };
 

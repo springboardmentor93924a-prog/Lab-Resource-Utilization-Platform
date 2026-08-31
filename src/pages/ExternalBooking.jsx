@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./ExternalBooking.css";
 
-function ExternalBooking() {
+function ExternalBooking({ showToast }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [selectedEquipment, setSelectedEquipment] = useState(null);
@@ -89,6 +89,12 @@ function ExternalBooking() {
     };
 
     setBookings([...bookings, newBooking]);
+    
+    // Trigger the real-time toast popup upon successful booking submit
+    if (showToast) {
+      showToast(`Booking request for ${selectedEquipment.name} submitted successfully!`, "success");
+    }
+
     setSelectedEquipment(null);
   };
 
