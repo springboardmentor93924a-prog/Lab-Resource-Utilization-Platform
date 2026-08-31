@@ -1,0 +1,173 @@
+.notifications-page {
+  padding: 30px 34px;
+  background-color: #f6f8fc;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.notif-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #2563eb;
+  text-transform: uppercase;
+  display: block;
+}
+
+.notif-header h1 {
+  margin: 4px 0 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #172b4d;
+}
+
+.notif-header p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #718096;
+}
+
+.mark-read-btn {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mark-read-btn:hover {
+  background-color: #dbeafe;
+}
+
+.notif-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e4e8ef;
+}
+
+.notif-tab {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: #64748b;
+}
+
+.notif-tab.active {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.notif-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notif-card {
+  background: #ffffff;
+  border: 1px solid #e4e8ef;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 6px rgba(20, 40, 70, 0.03);
+  transition: all 0.2s ease;
+}
+
+.notif-card.unread {
+  border-left: 4px solid #2563eb;
+  background-color: #f8fafc;
+}
+
+.notif-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.notif-badge.maintenance { background-color: #fee2e2; color: #dc2626; }
+.notif-badge.calibration { background-color: #fef3c7; color: #d97706; }
+.notif-badge.booking { background-color: #dcfce7; color: #16a34a; }
+.notif-badge.waitlist { background-color: #e0e7ff; color: #4338ca; }
+.notif-badge.idle { background-color: #f3e8ff; color: #9333ea; }
+.notif-badge.sharing { background-color: #e0f2fe; color: #0284c7; }
+
+.notif-content {
+  flex: 1;
+}
+
+.notif-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.notif-top strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.notif-content p {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.notif-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.icon-btn.delete {
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.notif-empty {
+  background: white;
+  padding: 40px;
+  text-align: center;
+  color: #94a3b8;
+  border-radius: 10px;
+  border: 1px solid #e4e8ef;
+}

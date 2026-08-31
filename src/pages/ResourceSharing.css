@@ -1,0 +1,582 @@
+/* ================================
+   RESOURCE SHARING PAGE
+================================ */
+
+.sharing-page {
+  min-height: 100%;
+  padding: 32px;
+  background: #f7f9fc;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+
+/* ================================
+   HEADER
+================================ */
+
+.sharing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.sharing-header h1 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.sharing-header p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #7b8798;
+}
+
+.sharing-primary-button {
+  border: none;
+  padding: 11px 18px;
+  border-radius: 8px;
+
+  background: #2563eb;
+  color: white;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sharing-primary-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+
+/* ================================
+   SUMMARY CARDS
+================================ */
+
+.sharing-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.sharing-summary-card {
+  min-height: 105px;
+  padding: 20px;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #e7ebf1;
+  border-radius: 12px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+
+.sharing-summary-icon {
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+.sharing-summary-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.sharing-summary-icon.orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.sharing-summary-icon.green {
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.sharing-summary-icon.red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.sharing-summary-card span {
+  display: block;
+  margin-bottom: 7px;
+
+  color: #7b8798;
+  font-size: 12px;
+}
+
+.sharing-summary-card strong {
+  display: block;
+
+  color: #172033;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+
+/* ================================
+   TABS
+================================ */
+
+.sharing-tabs {
+  display: flex;
+  gap: 5px;
+
+  margin-bottom: 0;
+  padding: 0 22px;
+
+  background: white;
+
+  border: 1px solid #e7ebf1;
+  border-bottom: none;
+
+  border-radius: 12px 12px 0 0;
+}
+
+.sharing-tabs button {
+  position: relative;
+
+  padding: 16px 20px;
+
+  background: transparent;
+  border: none;
+
+  color: #7b8798;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.sharing-tabs button.active {
+  color: #2563eb;
+}
+
+.sharing-tabs button.active::after {
+  content: "";
+
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+
+  height: 2px;
+
+  background: #2563eb;
+  border-radius: 2px;
+}
+
+
+/* ================================
+   MAIN CARD
+================================ */
+
+.sharing-card {
+  background: #ffffff;
+
+  border: 1px solid #e7ebf1;
+  border-radius: 0 0 12px 12px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+
+  overflow: hidden;
+}
+
+.sharing-card-header {
+  padding: 24px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+.sharing-card-header h2 {
+  margin: 0;
+
+  color: #172033;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sharing-card-header p {
+  margin: 7px 0 0;
+
+  color: #8a94a6;
+  font-size: 12px;
+}
+
+
+/* ================================
+   TABLE
+================================ */
+
+.sharing-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sharing-table-header,
+.sharing-table-row {
+  display: grid;
+
+  grid-template-columns:
+    2.2fr
+    1.6fr
+    1.2fr
+    0.9fr
+    0.8fr
+    1fr
+    1.4fr;
+
+  column-gap: 18px;
+
+  align-items: center;
+
+  min-width: 1100px;
+}
+
+.sharing-table-header {
+  padding: 14px 24px;
+
+  background: #f9fafb;
+
+  border-bottom: 1px solid #edf0f4;
+
+  color: #8a94a6;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.sharing-table-row {
+  padding: 17px 24px;
+
+  border-bottom: 1px solid #f0f2f5;
+
+  color: #475569;
+
+  font-size: 12px;
+
+  transition: background 0.15s;
+}
+
+.sharing-table-row:last-child {
+  border-bottom: none;
+}
+
+.sharing-table-row:hover {
+  background: #fafcff;
+}
+
+
+/* ================================
+   EQUIPMENT CELL
+================================ */
+
+.sharing-equipment {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sharing-equipment-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sharing-equipment strong {
+  display: block;
+
+  max-width: 210px;
+
+  color: #24344d;
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sharing-equipment small {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #98a2b3;
+  font-size: 10px;
+}
+
+
+/* ================================
+   STATUS BADGES
+================================ */
+
+.sharing-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  width: fit-content;
+
+  padding: 6px 10px;
+
+  border-radius: 20px;
+
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sharing-status > span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+}
+
+.sharing-status.pending {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.sharing-status.pending > span {
+  background: #f97316;
+}
+
+.sharing-status.approved {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.sharing-status.approved > span {
+  background: #22c55e;
+}
+
+.sharing-status.rejected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.sharing-status.rejected > span {
+  background: #ef4444;
+}
+
+
+/* ================================
+   ACTION BUTTONS
+================================ */
+
+.request-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.request-actions button {
+  min-width: 58px;
+
+  padding: 7px 10px;
+
+  border-radius: 6px;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.15s;
+}
+
+.approve-button {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.approve-button:hover {
+  background: #dcfce7;
+}
+
+.reject-button {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.reject-button:hover {
+  background: #fee2e2;
+}
+
+.action-completed {
+  color: #98a2b3;
+  font-size: 10px;
+}
+
+
+/* ================================
+   SHARED EQUIPMENT
+================================ */
+
+.shared-equipment-list {
+  padding: 5px 24px 10px;
+}
+
+.shared-equipment-item {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  padding: 19px 0;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+.shared-equipment-item:last-child {
+  border-bottom: none;
+}
+
+.shared-equipment-icon {
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shared-equipment-info {
+  flex: 1;
+}
+
+.shared-equipment-info strong {
+  display: block;
+
+  color: #24344d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shared-equipment-info p {
+  margin: 5px 0 0;
+
+  color: #8993a4;
+  font-size: 11px;
+}
+
+.shared-equipment-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.availability {
+  padding: 6px 11px;
+
+  border-radius: 20px;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.availability.available {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.availability.booked {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.active-sharing {
+  color: #16a34a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 1100px) {
+  .sharing-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+
+  .sharing-page {
+    padding: 20px;
+  }
+
+  .sharing-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sharing-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .sharing-tabs {
+    padding: 0 10px;
+  }
+
+  .sharing-card-header {
+    padding: 20px;
+  }
+}

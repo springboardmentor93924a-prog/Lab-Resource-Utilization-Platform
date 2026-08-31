@@ -1,0 +1,395 @@
+.researcher-equipment-page {
+  min-height: 100%;
+  padding: 30px 34px;
+  background: #f7f9fc;
+  color: #172033;
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.researcher-equipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.researcher-equipment-header h1 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.researcher-equipment-header p {
+  margin: 7px 0 0;
+  color: #7a879a;
+  font-size: 13px;
+}
+
+.institution-label {
+  padding: 9px 15px;
+  border-radius: 18px;
+  background: #edf4ff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+/* =========================
+   SUMMARY CARDS
+========================= */
+
+.researcher-equipment-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.equipment-summary-card {
+  min-height: 95px;
+  padding: 17px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  border-radius: 11px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+
+.summary-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.equipment-summary-card.total .summary-icon {
+  background: #edf4ff;
+  color: #2563eb;
+}
+
+.equipment-summary-card.available .summary-icon {
+  background: #eaf8f0;
+  color: #159669;
+}
+
+.equipment-summary-card.in-use .summary-icon {
+  background: #fff4df;
+  color: #d97706;
+}
+
+.equipment-summary-card.booked .summary-icon {
+  background: #f2edff;
+  color: #7c3aed;
+}
+
+.equipment-summary-card.maintenance .summary-icon {
+  background: #fff0ef;
+  color: #dc2626;
+}
+
+.equipment-summary-card span {
+  display: block;
+  color: #7b8798;
+  font-size: 10px;
+}
+
+.equipment-summary-card strong {
+  display: block;
+  margin-top: 5px;
+  color: #172033;
+  font-size: 23px;
+}
+
+
+/* =========================
+   MAIN CONTAINER
+========================= */
+
+.researcher-equipment-container {
+  background: #ffffff;
+  border: 1px solid #e2e7ee;
+  border-radius: 12px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+
+  overflow: hidden;
+}
+
+
+/* =========================
+   LIST HEADER
+========================= */
+
+.equipment-list-header {
+  padding: 20px 22px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+.equipment-list-header h2 {
+  margin: 0;
+  font-size: 17px;
+  color: #1e293b;
+}
+
+.equipment-list-header p {
+  margin: 5px 0 0;
+  color: #8a96a8;
+  font-size: 10px;
+}
+
+.equipment-list-header > span {
+  padding: 7px 11px;
+  border-radius: 15px;
+
+  background: #f3f6fa;
+  color: #64748b;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+
+/* =========================
+   TABLE
+========================= */
+
+.equipment-table {
+  width: 100%;
+}
+
+.equipment-table-header,
+.equipment-table-row {
+  display: grid;
+  grid-template-columns:
+    2.2fr
+    1.2fr
+    1.2fr
+    1.2fr
+    1.4fr;
+
+  align-items: center;
+}
+
+
+/* TABLE HEADER */
+
+.equipment-table-header {
+  min-height: 43px;
+  padding: 0 22px;
+
+  background: #fafbfc;
+
+  border-bottom: 1px solid #edf1f5;
+
+  color: #8995a7;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+
+/* TABLE ROW */
+
+.equipment-table-row {
+  min-height: 76px;
+  padding: 0 22px;
+
+  border-bottom: 1px solid #f0f2f5;
+
+  transition: background 0.15s ease;
+}
+
+.equipment-table-row:hover {
+  background: #fafcff;
+}
+
+.equipment-table-row:last-child {
+  border-bottom: none;
+}
+
+
+/* =========================
+   EQUIPMENT NAME
+========================= */
+
+.equipment-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.equipment-avatar {
+  width: 39px;
+  height: 39px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #edf4ff;
+  color: #2563eb;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.equipment-name-cell strong {
+  display: block;
+  color: #273449;
+  font-size: 11px;
+}
+
+.equipment-name-cell small {
+  display: block;
+  margin-top: 4px;
+
+  color: #9aa6b7;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+
+/* =========================
+   OTHER COLUMNS
+========================= */
+
+.equipment-category,
+.equipment-department,
+.equipment-location {
+  color: #64748b;
+  font-size: 10px;
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+.researcher-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 10px;
+
+  border-radius: 15px;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.researcher-status-badge.available {
+  background: #eaf8f0;
+  color: #15803d;
+}
+
+.researcher-status-badge.in-use {
+  background: #fff4df;
+  color: #c26b00;
+}
+
+.researcher-status-badge.booked {
+  background: #f2edff;
+  color: #7c3aed;
+}
+
+.researcher-status-badge.maintenance {
+  background: #fff0ef;
+  color: #dc2626;
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+.equipment-list-footer {
+  padding: 13px 20px;
+
+  border-top: 1px solid #edf1f5;
+
+  text-align: center;
+
+  color: #8b97a8;
+  font-size: 9px;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1100px) {
+
+  .researcher-equipment-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+}
+
+@media (max-width: 850px) {
+
+  .equipment-table {
+    overflow-x: auto;
+  }
+
+  .equipment-table-header,
+  .equipment-table-row {
+    min-width: 800px;
+  }
+
+}
+
+@media (max-width: 650px) {
+
+  .researcher-equipment-page {
+    padding: 20px;
+  }
+
+  .researcher-equipment-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .researcher-equipment-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+}
