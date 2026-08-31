@@ -1,0 +1,387 @@
+/* ================================
+   EQUIPMENT DETAILS PAGE
+================================ */
+
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+.back-button {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.back-button:hover {
+  text-decoration: underline;
+}
+
+/* Main card */
+
+.equipment-details-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 35px;
+
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ================================
+   IMAGE
+================================ */
+
+.equipment-details-image {
+  width: 360px;
+  height: 360px;
+
+  border-radius: 14px;
+  overflow: hidden;
+
+  background: #f5f7fa;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.equipment-details-image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  padding: 20px;
+
+  box-sizing: border-box;
+}
+
+.no-image {
+  color: #777;
+  font-size: 15px;
+}
+
+/* ================================
+   CONTENT
+================================ */
+
+.equipment-details-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 20px;
+
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.details-header h1 {
+  margin: 0 0 8px;
+
+  font-size: 30px;
+  line-height: 1.2;
+
+  color: #1f2937;
+}
+
+.asset-tag {
+  margin: 0;
+
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* ================================
+   STATUS
+================================ */
+
+.equipment-status {
+  padding: 7px 14px;
+  border-radius: 20px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.status-available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-in-use {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-booked {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-maintenance {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ================================
+   INFORMATION
+================================ */
+
+.details-section {
+  margin-top: 24px;
+}
+
+.details-section h2 {
+  margin: 0 0 15px;
+
+  font-size: 18px;
+  color: #1f2937;
+}
+
+.details-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+.details-grid > div {
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 10px;
+
+  padding: 13px 15px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.details-grid strong {
+  font-size: 12px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.4px;
+
+  color: #6b7280;
+}
+
+.details-grid span {
+  font-size: 14px;
+
+  font-weight: 500;
+
+  color: #1f2937;
+}
+
+/* ================================
+   NOTES
+================================ */
+
+.details-section p {
+  margin: 0;
+
+  padding: 14px;
+
+  background: #f8fafc;
+
+  border-radius: 10px;
+
+  border: 1px solid #e5e7eb;
+
+  color: #4b5563;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+/* ================================
+   BUTTONS
+================================ */
+
+.details-actions {
+  display: flex;
+
+  gap: 12px;
+
+  margin-top: 28px;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 11px 20px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.primary-button {
+  border: none;
+
+  background: #2563eb;
+
+  color: white;
+}
+
+.primary-button:hover {
+  background: #1d4ed8;
+}
+
+.primary-button:disabled {
+  background: #9ca3af;
+
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  border: 1px solid #d1d5db;
+
+  background: white;
+
+  color: #374151;
+}
+
+.secondary-button:hover {
+  background: #f3f4f6;
+}
+
+/* ================================
+   LOADING
+================================ */
+
+.loading {
+  text-align: center;
+
+  padding: 60px;
+
+  color: #6b7280;
+
+  font-size: 16px;
+}
+
+/* ================================
+   ERROR
+================================ */
+
+.error-message {
+  padding: 12px 15px;
+
+  margin-bottom: 15px;
+
+  border-radius: 8px;
+
+  background: #fee2e2;
+
+  color: #991b1b;
+
+  font-size: 14px;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 900px) {
+
+  .equipment-details-card {
+    grid-template-columns: 280px 1fr;
+
+    gap: 25px;
+
+    padding: 22px;
+  }
+
+  .equipment-details-image {
+    width: 280px;
+    height: 280px;
+  }
+
+  .details-header h1 {
+    font-size: 25px;
+  }
+}
+
+
+@media (max-width: 700px) {
+
+  .page-container {
+    padding: 20px;
+  }
+
+  .equipment-details-card {
+    grid-template-columns: 1fr;
+
+    gap: 25px;
+  }
+
+  .equipment-details-image {
+    width: 100%;
+    max-width: 350px;
+
+    height: 300px;
+
+    margin: 0 auto;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-header {
+    flex-direction: column;
+  }
+
+  .details-actions {
+    flex-direction: column;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
