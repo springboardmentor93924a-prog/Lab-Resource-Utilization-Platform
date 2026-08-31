@@ -1,5 +1,6 @@
 package com.infosys.labresource.Equipment.dtos;
 
+import com.infosys.labresource.Equipment.entity.CertificationStatus;
 import com.infosys.labresource.Equipment.entity.EquipmentStatus;
 import lombok.Data;
 
@@ -34,4 +35,17 @@ public class EquipmentResponseDTO {
     private BigDecimal purchaseCost;
 
     private LocalDate warrantyExpiry;
+    private Long calibrationId;
+
+    private LocalDate lastCalibrationDate;
+
+    private LocalDate nextCalibrationDate;
+
+    private String certificationNumber;
+
+    private LocalDate certificationIssueDate;
+
+    private LocalDate certificationExpiryDate;
+
+    private CertificationStatus certificationStatus;
 }

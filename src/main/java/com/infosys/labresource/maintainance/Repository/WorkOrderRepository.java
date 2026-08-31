@@ -13,9 +13,10 @@ import java.util.Optional;
 public interface WorkOrderRepository extends JpaRepository<WorkOrder,Long> {
     List<WorkOrder> findByAssignedTechnician(UserEntity technician);
 
-    List<WorkOrder> findByAssignedTechnicianId(Long technicianId);
+    List<WorkOrder> findByAssignedTechnicianUserId(Long technicianId);
 
     List<WorkOrder> findByStatus(orderStatus status);
 
     Optional<WorkOrder> findByMaintenanceScheduleScheduleId(Long scheduleId);
+
 }

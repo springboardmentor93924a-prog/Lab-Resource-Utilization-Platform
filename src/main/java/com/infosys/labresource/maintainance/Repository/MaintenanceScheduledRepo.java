@@ -16,4 +16,5 @@ public interface MaintenanceScheduledRepo extends JpaRepository<MaintenanceSched
     boolean existsByEquipmentAndScheduledStartLessThanAndScheduledEndGreaterThan(Equipment equipment,
                                                                                  LocalDateTime endTime, LocalDateTime startTime
     );
+    List<MaintenanceSchedule> findByScheduledStartBetween(LocalDateTime start, LocalDateTime end);
 }

@@ -25,4 +25,5 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
     List<UserEntity> findByInstitutionAndIsActiveFalse(Institution institution);
 
     List<UserEntity> findByDepartmentAndIsActiveFalse(Department department);
+    List<UserEntity> findByDepartmentAndRole(Department department, Role role);
 }

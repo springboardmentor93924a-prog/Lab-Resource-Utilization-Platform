@@ -21,12 +21,14 @@ public class MaintenanceRequestServiceImpl implements MaintenanceRequestService{
     private final UserRepository userRepo;
 
     @Override
-    public MaintenanceRequest createRequest(Long equipmentId, Long userId, String reason,
-                                            String priority, Integer duration) {
+    public MaintenanceRequest createRequest(Long equipmentId, String requesterEmail,
+                                            String reason, String priority, Integer duration) {
 
-        Equipment equipment = equipmentRepo.findById(equipmentId).orElseThrow(() -> new RuntimeException("Equipment not found"));
+        Equipment equipment = equipmentRepo.findById(equipmentId)
+                .orElseThrow(() -> new RuntimeException("Equipment not found"));
 
-        UserEntity user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        UserEntity user = userRepo.findByEmail(requesterEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (duration == null || duration <= 0) {
             throw new RuntimeException("Maintenance duration must be greater than zero");

@@ -10,6 +10,8 @@ import com.infosys.labresource.booking.dtos.BookingResponseDTO;
 import com.infosys.labresource.booking.entity.Booking;
 import com.infosys.labresource.booking.entity.BookingStatus;
 import com.infosys.labresource.booking.entity.BookingWaitlist;
+import com.infosys.labresource.notification.entity.NotificationType;
+import com.infosys.labresource.notification.service.NotificationService;
 import com.infosys.labresource.user.Repository.UserRepository;
 import com.infosys.labresource.user.entites.Role;
 import com.infosys.labresource.user.entites.UserEntity;
@@ -29,7 +31,7 @@ public class BookingServiceImpl implements BookingService {
     private final EquipmentRepository equipRepo;
     private final UserRepository userRepo;
     private final BookingWaitlistRepository waitlistRepo;
-
+private final NotificationService notifService;
     @Override
     @Transactional
     public BookingResponseDTO createBooking(BookingRequestDTO reqDto, String requesterEmail) {
@@ -251,7 +253,8 @@ public class BookingServiceImpl implements BookingService {
                     waitlist.setActive(false);
                     waitlistRepo.save(waitlist);
                 });
-
+        String msg = "Your booking for " + equipment.getEquipName() + " has been approved.";
+        notifService.send(requester, msg, NotificationType.BOOKING);
         return convertToDTO(updatedBooking);
     }
 
@@ -271,6 +274,9 @@ public class BookingServiceImpl implements BookingService {
                 });
 
         Booking updatedBooking = bookingRepo.save(booking);
+
+        String msg = "Your booking for " + booking.getEquipment().getEquipName() + " has been rejected.";
+        notifService.send(booking.getRequestedBy(), msg, NotificationType.BOOKING);
 
         return convertToDTO(updatedBooking);
     }

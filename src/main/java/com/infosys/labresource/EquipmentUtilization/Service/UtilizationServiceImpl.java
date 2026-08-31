@@ -9,10 +9,12 @@ import com.infosys.labresource.EquipmentUtilization.Entity.Utilization;
 import com.infosys.labresource.EquipmentUtilization.Entity.UtilizationStatus;
 import com.infosys.labresource.EquipmentUtilization.Repository.EquipmentUtilizationRepository;
 import com.infosys.labresource.booking.Repository.BookingRepository;
-import com.infosys.labresource.booking.entity.Booking;
-import com.infosys.labresource.booking.entity.BookingStatus;
-import com.infosys.labresource.booking.entity.BookingWaitlist;
+import com.infosys.labresource.booking.entity.*;
 import com.infosys.labresource.booking.Repository.BookingWaitlistRepository;
+import com.infosys.labresource.cost.service.CostService;
+import com.infosys.labresource.notification.Repository.NotificationRepository;
+import com.infosys.labresource.notification.entity.NotificationType;
+import com.infosys.labresource.notification.service.NotificationService;
 import org.springframework.transaction.annotation.Transactional;
 import com.infosys.labresource.user.entites.UserEntity;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,8 @@ public class UtilizationServiceImpl implements UtilizationService{
     private final BookingRepository bookingRepo;
     private final EquipmentRepository equipRepo;
     private final BookingWaitlistRepository waitlistRepo;
-
+private final NotificationService notifService;
+private final CostService costService;
     @Override
     public UtilizationResponseDTO startUtilization(Long bookingId) {
         Booking booking = bookingRepo.findById(bookingId)
@@ -109,6 +112,9 @@ public class UtilizationServiceImpl implements UtilizationService{
         bookingRepo.save(booking);
 
         Utilization updatedUtil = utilRepo.save(util);
+
+        // usage just got completed, this is what actually creates the billable cost row
+        costService.generateCost(updatedUtil);
 
         // equipment just got freed up, check if someone is waiting for it
         notifyNextInWaitlist(equip);
@@ -239,7 +245,8 @@ public class UtilizationServiceImpl implements UtilizationService{
         BookingWaitlist nextInLine = waiting.get(0);
         UserEntity nextUser = nextInLine.getBooking().getRequestedBy();
 
-        // TODO: hook this up to the notification module once it is built (Milestone 3)
-        System.out.println("Equipment " + equip.getEquipName() + " is now available. Next in waitlist: " + nextUser.getEmail());
+        String msg = "Equipment " + equip.getEquipName() + " is now available, you are next in the waitlist.";
+
+        notifService.send(nextUser, msg, NotificationType.WAITLIST);
     }
 }

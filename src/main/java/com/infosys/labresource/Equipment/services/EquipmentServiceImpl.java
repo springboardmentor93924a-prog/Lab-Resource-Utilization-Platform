@@ -4,6 +4,7 @@ import com.infosys.labresource.Equipment.Repository.EquipCategoryRepository;
 import com.infosys.labresource.Equipment.Repository.EquipmentRepository;
 import com.infosys.labresource.Equipment.dtos.EquipmentRequestDTO;
 import com.infosys.labresource.Equipment.dtos.EquipmentResponseDTO;
+import com.infosys.labresource.Equipment.entity.CalibrationRecord;
 import com.infosys.labresource.Equipment.entity.Equipment;
 import com.infosys.labresource.Equipment.entity.EquipmentCategory;
 import com.infosys.labresource.Equipment.entity.EquipmentStatus;
@@ -144,7 +145,18 @@ public class EquipmentServiceImpl implements EquipmentService{
         responseDTO.setPurchaseDate(equipment.getPurchaseDate());
         responseDTO.setPurchaseCost(equipment.getPurchaseCost());
         responseDTO.setWarrantyExpiry(equipment.getWarrantyExpiry());
+        if (equipment.getCalibrationRecord() != null) {
 
+            CalibrationRecord calibration = equipment.getCalibrationRecord();
+
+            responseDTO.setCalibrationId(calibration.getCalibrationId());
+            responseDTO.setLastCalibrationDate(calibration.getLastCalibrationDate());
+            responseDTO.setNextCalibrationDate(calibration.getNextCalibrationDate());
+            responseDTO.setCertificationNumber(calibration.getCertificationNumber());
+            responseDTO.setCertificationIssueDate(calibration.getCertificationIssueDate());
+            responseDTO.setCertificationExpiryDate(calibration.getCertificationExpiryDate());
+            responseDTO.setCertificationStatus(calibration.getCertificationStatus());
+        }
         return responseDTO;
     }
 }

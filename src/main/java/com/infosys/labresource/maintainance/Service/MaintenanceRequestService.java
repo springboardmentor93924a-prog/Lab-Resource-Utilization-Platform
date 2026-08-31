@@ -6,7 +6,8 @@ import java.util.List;
 
 public interface MaintenanceRequestService {
 
-    MaintenanceRequest createRequest(Long equipmentId, Long userId, String reason, String priority, Integer duration);
+    MaintenanceRequest createRequest(Long equipmentId, String requesterEmail,
+                                     String reason, String priority, Integer duration);
 
     MaintenanceRequest approveRequest(Long requestId);
 

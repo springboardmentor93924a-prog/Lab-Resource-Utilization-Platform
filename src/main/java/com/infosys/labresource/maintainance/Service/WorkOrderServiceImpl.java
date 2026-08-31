@@ -9,6 +9,7 @@ import com.infosys.labresource.maintainance.Entities.orderStatus;
 import com.infosys.labresource.maintainance.Repository.MaintenanceScheduledRepo;
 import com.infosys.labresource.maintainance.Repository.WorkOrderRepository;
 import com.infosys.labresource.user.Repository.UserRepository;
+import com.infosys.labresource.user.entites.Role;
 import com.infosys.labresource.user.entites.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class WorkOrderServiceImpl implements WorkOrderService{
         MaintenanceSchedule schedule = scheduleRepo.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Maintenance schedule not found"));
 
-        if (workOrderRepo.findById(scheduleId).isPresent()) {
+        if (workOrderRepo.findByMaintenanceScheduleScheduleId(scheduleId).isPresent()) {
             throw new RuntimeException("Work order already exists for this schedule");
         }
 
@@ -50,10 +51,12 @@ public class WorkOrderServiceImpl implements WorkOrderService{
 
         UserEntity technician = userRepo.findById(technicianId)
                 .orElseThrow(() -> new RuntimeException("Technician not found"));
-
-        order.setAssignedTechnician(technician);
-        order.setStatus(orderStatus.ASSIGNED);
-
+        if (technician.getRole() != Role.LAB_TECHNICIAN) {
+            throw new RuntimeException("Selected user is not a Lab Technician");
+        }else {
+            order.setAssignedTechnician(technician);
+            order.setStatus(orderStatus.ASSIGNED);
+        }
         return workOrderRepo.save(order);
     }
     @Override
@@ -108,6 +111,6 @@ public class WorkOrderServiceImpl implements WorkOrderService{
     @Override
     public List<WorkOrder> getTechnicianWorkOrders(Long technicianId) {
 
-        return workOrderRepo.findByAssignedTechnicianId(technicianId);
+        return workOrderRepo.findByAssignedTechnicianUserId(technicianId);
     }
 }

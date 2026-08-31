@@ -7,6 +7,8 @@ import com.infosys.labresource.ResourceSharing.Entity.SharingRequestStatus;
 import com.infosys.labresource.ResourceSharing.Repository.ResourceSharingRepo;
 import com.infosys.labresource.ResourceSharing.dtos.SharingRequestDTO;
 import com.infosys.labresource.ResourceSharing.dtos.SharingResponseDTO;
+import com.infosys.labresource.notification.entity.NotificationType;
+import com.infosys.labresource.notification.service.NotificationService;
 import com.infosys.labresource.user.Repository.UserRepository;
 import com.infosys.labresource.user.entites.Role;
 import com.infosys.labresource.user.entites.UserEntity;
@@ -23,7 +25,7 @@ public class SharingServiceImpl implements SharingService{
     private final ResourceSharingRepo sharingRepo;
     private final EquipmentRepository equipRepo;
     private final UserRepository userRepo;
-
+private final NotificationService notifService;
     @Override
     public SharingResponseDTO createRequest(SharingRequestDTO reqDto, String requesterEmail) {
 
@@ -120,7 +122,8 @@ public class SharingServiceImpl implements SharingService{
         req.setActionedAt(LocalDateTime.now());
 
         ResourceSharingRequest updatedReq = sharingRepo.save(req);
-
+        String msg = "Your resource sharing request for " + req.getEquipment().getEquipName() + " has been approved.";
+        notifService.send(req.getRequestedBy(), msg, NotificationType.SHARING);
         return convertToDTO(updatedReq);
     }
 
@@ -138,7 +141,8 @@ public class SharingServiceImpl implements SharingService{
         req.setActionedAt(LocalDateTime.now());
 
         ResourceSharingRequest updatedReq = sharingRepo.save(req);
-
+        String msg = "Your resource sharing request for " + req.getEquipment().getEquipName() + " has been rejected.";
+        notifService.send(req.getRequestedBy(), msg, NotificationType.SHARING);
         return convertToDTO(updatedReq);
     }
 

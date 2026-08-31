@@ -24,8 +24,9 @@ public class Equipment{
     private String EquipName;
     @Column(unique = true)
     private String assetTag;
+
     @ManyToOne(optional = false)
-    @JoinColumn(name = "category_id")
+        @JoinColumn(name = "category_id")
     private EquipmentCategory category;
 
     @ManyToOne(optional = false)
@@ -49,4 +50,6 @@ public class Equipment{
 
     @Column(name = "warranty_expiry")
     private LocalDate warrantyExpiry;
+    @OneToOne(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private CalibrationRecord calibrationRecord;
 }
