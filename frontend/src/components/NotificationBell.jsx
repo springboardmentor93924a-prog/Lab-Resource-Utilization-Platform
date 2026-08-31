@@ -26,6 +26,8 @@ const STATIC_ACTIONS = {
   WAITLIST_FULFILLED: { label: "View Booking", path: () => "/reservations" },
   EQUIPMENT_IN_CALIBRATION: { label: "Join Waitlist", path: (n) => `/waitlist?equipmentId=${n.referenceId}` },
   EQUIPMENT_ISSUE_REPORTED: { label: "View Waitlist", path: () => "/waitlist" },
+  WAITLIST_MISSED_WINDOW: { label: "Decide Now", path: () => "/waitlist" },
+  WAITLIST_AUTO_CANCELLED: { label: "View Waitlist", path: () => "/waitlist" },
   CALIBRATION_DUE_SOON: { label: "Go to Calibration", path: () => "/calibration" },
   CALIBRATION_OVERDUE: { label: "Go to Calibration", path: () => "/calibration" },
   CERTIFICATION_EXPIRING: { label: "Go to Certification", path: () => "/certification" },

@@ -106,6 +106,38 @@ public BookingServiceImpl(
 
         for (Waitlist entry : activeEntries) {
 
+            // NEW: if this entry's requested window has already passed,
+            // tryAutoAllocate below will refuse it forever (its own
+            // start-in-the-past check never stops being true) — so
+            // instead of silently cycling it through the generic
+            // "couldn't allocate right now" path indefinitely, notify
+            // the person and let them choose: book a fresh slot, or
+            // exit the waitlist. See WaitlistServiceImpl.decideOnMissedWindow
+            // for the two-button response, and
+            // EquipmentStatusScheduler.expireUndecidedWaitlistEntries()
+            // for the timeout if they never decide.
+            if (entry.getRequestedStartTime() != null
+                    && entry.getRequestedStartTime().isBefore(LocalDateTime.now())) {
+
+                if (!"AWAITING_DECISION".equals(entry.getWaitlistStatus())) {
+                    entry.setWaitlistStatus("AWAITING_DECISION");
+                    waitlistRepository.save(entry);
+
+                    notificationService.create(
+                            entry.getUser(),
+                            "WAITLIST_MISSED_WINDOW",
+                            "Couldn't allocate your waitlist slot",
+                            "We checked and couldn't allocate " + equipment.getEquipmentName()
+                                    + " — your requested time already passed. Book another slot, or "
+                                    + "exit the waitlist, before "
+                                    + entry.getRequestedEndTime() + ".",
+                            equipment.getEquipmentId()
+                    );
+                }
+
+                continue;
+            }
+
             boolean allocated = tryAutoAllocate(entry, equipment);
 
             if (allocated) {
@@ -912,7 +944,13 @@ public void deleteBooking(Integer id) {
 
         /*
          * If the approved booking is already in progress,
-         * the equipment should immediately be In Use.
+         * the equipment should immediately be In Use — and so
+         * should the booking's own status (previously only the
+         * equipment flipped here; the booking sat at "Confirmed"
+         * until the next 60s sweep caught it via
+         * EquipmentStatusScheduler.activateInUseBookings(), which
+         * still exists as a safety net for slots that start after
+         * approval rather than during it).
          * Otherwise it is Booked for a future reservation.
          */
         LocalDateTime now =
@@ -922,6 +960,7 @@ public void deleteBooking(Integer id) {
                 && now.isBefore(end)) {
 
             equipment.setStatus("In Use");
+            booking.setBookingStatus("In Use");
 
         } else if (now.isBefore(start)) {
 
@@ -1046,10 +1085,16 @@ public void deleteBooking(Integer id) {
 
         LocalDateTime now = LocalDateTime.now();
 
-        List<Booking> confirmed =
-                bookingRepository.findByBookingStatus("Confirmed");
+        // Now catches both statuses — a booking whose end time has
+        // passed could be sitting at either "Confirmed" (never entered
+        // its window, e.g. a very short slot the sweep didn't catch
+        // in between) or "In Use" (the normal case, now that
+        // EquipmentStatusScheduler.activateInUseBookings() actually
+        // flips Confirmed → In Use once the window opens).
+        List<Booking> candidates =
+                bookingRepository.findByBookingStatusIn(List.of("Confirmed", "In Use"));
 
-        for (Booking booking : confirmed) {
+        for (Booking booking : candidates) {
 
             if (booking.getEndTime() == null
                     || booking.getEndTime().isAfter(now)) {
