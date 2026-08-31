@@ -36,17 +36,15 @@ function notificationConfig(type) {
         color: "#dc2626",
         background: "#fef2f2",
       };
-      
-      case "BOOKING_REMINDER":
-    return {
+
+    case "BOOKING_REMINDER":
+      return {
         icon: "bi-alarm-fill",
         label: "Booking Reminder",
         gradient: "linear-gradient(135deg, #f59e0b, #d97706)",
         color: "#d97706",
         background: "#fffbeb",
-    };
-    
-
+      };
 
     case "WAITLIST_SLOT_OPEN":
       return {
@@ -160,41 +158,52 @@ export default function Notifications() {
 
   const [clearingRead, setClearingRead] = useState(false);
 
+  // NEW: loading state for Mark All as Read
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
 
-// =========================================================
-// LOAD NOTIFICATIONS
-// =========================================================
+  // =========================================================
+  // LOAD NOTIFICATIONS
+  // =========================================================
 
-async function loadNotifications() {
-  try {
-    const data = await getMyNotifications();
+  async function loadNotifications() {
 
-    setNotifications(data);
+    try {
 
-  } catch (err) {
-    console.error(
-      "Failed to load notifications:",
-      err
-    );
+      const data = await getMyNotifications();
 
-  } finally {
-    setLoading(false);
+      setNotifications(data);
+
+    } catch (err) {
+
+      console.error(
+        "Failed to load notifications:",
+        err
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
   }
-}
 
 
-// =========================================================
-// LOAD WHEN PAGE OPENS
-// =========================================================
+  // =========================================================
+  // LOAD WHEN PAGE OPENS
+  // =========================================================
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    loadNotifications();
-  }, 0);
+  useEffect(() => {
 
-  return () => clearTimeout(timer);
-}, []);
+    const timer = setTimeout(() => {
+      loadNotifications();
+    }, 0);
+
+    return () => clearTimeout(timer);
+
+  }, []);
+
+
   // =========================================================
   // MARK AS READ
   // =========================================================
@@ -228,6 +237,71 @@ useEffect(() => {
 
 
   // =========================================================
+  // MARK ALL UNREAD NOTIFICATIONS AS READ
+  // =========================================================
+
+  async function handleMarkAllRead() {
+
+    // Nothing to do if there are no unread notifications
+    if (unreadNotifications === 0) {
+      return;
+    }
+
+    try {
+
+      setMarkingAllRead(true);
+
+
+      // Get IDs of all unread notifications
+      const unreadIds = notifications
+        .filter(
+          (notification) =>
+            !notification.isRead
+        )
+        .map(
+          (notification) =>
+            notification.id
+        );
+
+
+      // Mark all unread notifications as read
+      await Promise.all(
+        unreadIds.map(
+          (id) =>
+            markAsRead(id)
+        )
+      );
+
+
+      // Update the UI after all requests succeed
+      setNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          isRead: true,
+        }))
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Failed to mark all notifications as read:",
+        err
+      );
+
+      alert(
+        err.response?.data?.message ||
+          "Failed to mark all notifications as read."
+      );
+
+    } finally {
+
+      setMarkingAllRead(false);
+
+    }
+  }
+
+
+  // =========================================================
   // DELETE SINGLE NOTIFICATION
   // =========================================================
 
@@ -237,7 +311,9 @@ useEffect(() => {
       "Delete this notification?"
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
 
@@ -286,7 +362,9 @@ useEffect(() => {
       `Delete all ${readNotifications} read notifications?`
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
 
@@ -371,10 +449,12 @@ useEffect(() => {
         return true;
       }
 
+
       const config =
         notificationConfig(
           notification.type
         );
+
 
       return (
         notification.message
@@ -389,6 +469,7 @@ useEffect(() => {
           ?.toLowerCase()
           .includes(query)
       );
+
     });
 
   }, [
@@ -404,7 +485,8 @@ useEffect(() => {
 
   function formatDate(date) {
 
-    const value = new Date(date);
+    const value =
+      new Date(date);
 
     return value.toLocaleDateString(
       undefined,
@@ -423,7 +505,8 @@ useEffect(() => {
 
   function formatTime(date) {
 
-    const value = new Date(date);
+    const value =
+      new Date(date);
 
     return value.toLocaleTimeString(
       undefined,
@@ -443,12 +526,15 @@ useEffect(() => {
 
     <div className="notifications-wrapper">
 
+
       {/* =====================================================
           SIDEBAR
       ===================================================== */}
 
       <aside className="sidebar">
+
         <Sidebar />
+
       </aside>
 
 
@@ -472,7 +558,9 @@ useEffect(() => {
               <i className="bi bi-bell-fill"></i>
 
               {unreadNotifications > 0 && (
+
                 <span className="header-notification-dot"></span>
+
               )}
 
             </div>
@@ -556,6 +644,8 @@ useEffect(() => {
           <div className="notification-summary-grid">
 
 
+            {/* TOTAL */}
+
             <div className="notification-summary-card total-card">
 
               <div className="summary-decoration"></div>
@@ -585,6 +675,8 @@ useEffect(() => {
             </div>
 
 
+            {/* UNREAD */}
+
             <div className="notification-summary-card unread-card">
 
               <div className="summary-decoration"></div>
@@ -613,6 +705,8 @@ useEffect(() => {
 
             </div>
 
+
+            {/* READ */}
 
             <div className="notification-summary-card read-card">
 
@@ -800,6 +894,8 @@ useEffect(() => {
 
                   <div className="notification-filters">
 
+                    {/* ALL */}
+
                     <button
                       className={
                         filter === "ALL"
@@ -818,6 +914,8 @@ useEffect(() => {
                     </button>
 
 
+                    {/* UNREAD */}
+
                     <button
                       className={
                         filter === "UNREAD"
@@ -834,13 +932,19 @@ useEffect(() => {
                       Unread
 
                       {unreadNotifications > 0 && (
+
                         <span className="filter-count">
+
                           {unreadNotifications}
+
                         </span>
+
                       )}
 
                     </button>
 
+
+                    {/* READ */}
 
                     <button
                       className={
@@ -862,7 +966,37 @@ useEffect(() => {
                   </div>
 
 
-                  {/* CLEAR READ */}
+                  {/* =================================================
+                      MARK ALL AS READ
+                  ================================================= */}
+
+                  <button
+                    className="mark-all-read-btn"
+                    onClick={handleMarkAllRead}
+                    disabled={
+                      unreadNotifications === 0 ||
+                      markingAllRead
+                    }
+                  >
+
+                    <i
+                      className={
+                        markingAllRead
+                          ? "bi bi-arrow-repeat spinning"
+                          : "bi bi-check2-all"
+                      }
+                    ></i>
+
+                    {markingAllRead
+                      ? "Marking..."
+                      : "Mark all as read"}
+
+                  </button>
+
+
+                  {/* =================================================
+                      CLEAR READ
+                  ================================================= */}
 
                   <button
                     className="clear-read-btn"
@@ -918,7 +1052,9 @@ useEffect(() => {
                         setFilter("ALL");
                       }}
                     >
+
                       Reset filters
+
                     </button>
 
                   </div>
@@ -971,6 +1107,7 @@ useEffect(() => {
                             style={{
                               background:
                                 config.gradient,
+
                               boxShadow:
                                 `0 8px 20px ${config.color}35`,
                             }}
@@ -990,7 +1127,11 @@ useEffect(() => {
                             onClick={() => {
 
                               if (!n.isRead) {
-                                handleMarkRead(n.id);
+
+                                handleMarkRead(
+                                  n.id
+                                );
+
                               }
 
                             }}
@@ -1003,11 +1144,14 @@ useEffect(() => {
                                 style={{
                                   color:
                                     config.color,
+
                                   background:
                                     config.background,
                                 }}
                               >
+
                                 {config.label}
+
                               </span>
 
 
@@ -1033,7 +1177,9 @@ useEffect(() => {
                                   : "notification-message"
                               }
                             >
+
                               {n.message}
+
                             </p>
 
 
@@ -1065,10 +1211,14 @@ useEffect(() => {
                           </div>
 
 
-                          {/* RIGHT ACTIONS */}
+                          {/* =================================================
+                              RIGHT ACTIONS
+                          ================================================= */}
 
                           <div className="notification-right">
 
+
+                            {/* INDIVIDUAL MARK READ */}
 
                             {!n.isRead && (
 
@@ -1092,6 +1242,8 @@ useEffect(() => {
 
                             )}
 
+
+                            {/* DELETE */}
 
                             <button
                               className="delete-notification-btn"
@@ -1137,5 +1289,6 @@ useEffect(() => {
       </main>
 
     </div>
+
   );
 }

@@ -1,5 +1,5 @@
 package com.labplatform.auth.service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.labplatform.auth.dto.AuthResponse;
 import com.labplatform.auth.dto.GoogleRegisterRequest;
 import com.labplatform.auth.dto.LoginRequest;
@@ -273,7 +273,8 @@ public class AuthService {
     // FORGOT PASSWORD
     // =========================================================
 
-    public void forgotPassword(String email) {
+   @Transactional
+public void forgotPassword(String email) {
 
         User user = userRepository
                 .findByEmail(email)

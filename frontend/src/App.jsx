@@ -4,6 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import ResetPassword from "./pages/ResetPassword";
 
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -78,6 +79,10 @@ export default function App() {
               path="/forgot-password"
               element={<ForgotPassword />}
             />
+            <Route
+  path="/reset-password"
+  element={<ResetPassword />}
+/>
 
             <Route
               path="/google-register"

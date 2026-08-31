@@ -1153,7 +1153,7 @@ export default function Billing() {
             subtitle="Charges generated when your institution uses equipment from another institution"
           />
 
-          {renderTable(weOwe, false)}
+          {renderTable(weOwe, true)}
         </section>
 
         {/* =================================================
@@ -1183,7 +1183,7 @@ export default function Billing() {
             subtitle="Charges generated when other institutions use equipment owned by your institution"
           />
 
-          {renderTable(owedToUs, true)}
+         {renderTable(owedToUs, false)}
         </section>
 
         {/* =================================================
