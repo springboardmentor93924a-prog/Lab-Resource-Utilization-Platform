@@ -156,12 +156,54 @@ useEffect(() => {
     }
   };
 
+  // Handles the two-button response to the "couldn't allocate your
+  // slot" notification (entry.waitlistStatus === "AWAITING_DECISION").
+  // REBOOK closes this entry out and reopens the join-waitlist form,
+  // prefilled for the same equipment, so the user can pick a fresh
+  // time window. EXIT just closes the entry (CANCELLED) and refreshes.
+  const handleDecision = async (entry, decision) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/waitlist/${entry.waitlistId}/decide`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ decision }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to record your decision");
+      }
+
+      if (decision === "REBOOK") {
+        setFormData((prev) => ({
+          ...prev,
+          equipmentId: String(entry.equipment?.equipmentId || ""),
+          requestedStartTime: "",
+          requestedEndTime: "",
+        }));
+        setShowForm(true);
+      }
+
+      fetchMyWaitlist();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   const statusClass = (status) => {
     switch (status) {
       case "WAITING":
         return "waitlist-status pending";
       case "NOTIFIED":
         return "waitlist-status notified";
+      case "AWAITING_DECISION":
+        return "waitlist-status awaiting-decision";
       case "FULFILLED":
         return "waitlist-status confirmed";
       case "CANCELLED":
@@ -289,6 +331,27 @@ useEffect(() => {
                         >
                           Cancel
                         </button>
+                      )}
+                      {entry.waitlistStatus === "AWAITING_DECISION" && (
+                        <div className="decision-actions">
+                          <p className="decision-note">
+                            We couldn't allocate this slot — your requested
+                            time already passed. Decide before{" "}
+                            {entry.requestedEndTime?.replace("T", " ")}.
+                          </p>
+                          <button
+                            className="rebook-btn"
+                            onClick={() => handleDecision(entry, "REBOOK")}
+                          >
+                            Book Another Slot
+                          </button>
+                          <button
+                            className="exit-waitlist-btn"
+                            onClick={() => handleDecision(entry, "EXIT")}
+                          >
+                            Exit
+                          </button>
+                        </div>
                       )}
                     </td>
                   )}

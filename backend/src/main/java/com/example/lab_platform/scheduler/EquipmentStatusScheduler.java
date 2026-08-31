@@ -25,6 +25,7 @@ private final CertificationRepository certificationRepository; // NEW
 private final NotificationService notificationService;
 private final UserRepository userRepository;
 private final CostManagementService costManagementService;
+private final WaitlistRepository waitlistRepository;
 
 public EquipmentStatusScheduler(
         BookingRepository bookingRepository,
@@ -35,7 +36,8 @@ public EquipmentStatusScheduler(
         CertificationRepository certificationRepository, // NEW
         NotificationService notificationService,
         CostManagementService costManagementService,
-        UserRepository userRepository) {
+        UserRepository userRepository,
+        WaitlistRepository waitlistRepository) {
 
     this.bookingRepository = bookingRepository;
     this.equipmentRepository = equipmentRepository;
@@ -46,6 +48,7 @@ public EquipmentStatusScheduler(
     this.notificationService = notificationService;
     this.userRepository = userRepository;
     this.costManagementService = costManagementService;
+    this.waitlistRepository = waitlistRepository;
         }
 
     /*
@@ -60,6 +63,8 @@ public EquipmentStatusScheduler(
         LocalDateTime now = LocalDateTime.now();
 
         activateDueMaintenance();
+        activateInUseBookings();
+        expireUndecidedWaitlistEntries();
         bookingService.autoCompleteOverdueBookings();
 
         // Task 3: as soon as a booking is auto-completed above, turn
@@ -95,6 +100,69 @@ public EquipmentStatusScheduler(
         }
     }
 
+    // NEW: the Booking's OWN bookingStatus was never actually being set
+    // to "In Use" anywhere — only Equipment.status was, which left the
+    // booking sitting at "Confirmed" for its entire active window and
+    // meant nothing could ever distinguish "confirmed, not started yet"
+    // from "happening right now" on the booking record itself (the docs
+    // call for "In Use" as a real booking state, and features like the
+    // mid-use "Report Issue" action on a booking depend on this exact
+    // transition actually happening). Runs every 60s alongside the
+    // equipment-status sweep; findByBookingStatusIn(["Confirmed"]) below
+    // deliberately doesn't touch a booking that's already "In Use".
+    private void activateInUseBookings() {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Booking> confirmed =
+                bookingRepository.findByBookingStatusIn(List.of("Confirmed"));
+
+        for (Booking booking : confirmed) {
+            if (booking.getStartTime() == null || booking.getEndTime() == null) continue;
+
+            if (!now.isBefore(booking.getStartTime()) && now.isBefore(booking.getEndTime())) {
+                booking.setBookingStatus("In Use");
+                bookingRepository.save(booking);
+            }
+        }
+    }
+
+    // NEW: a waitlist entry moves to AWAITING_DECISION when its
+    // requested window has already passed without being allocated (see
+    // BookingServiceImpl.processWaitlistForEquipment) — the person is
+    // notified and given two options (REBOOK / EXIT, see
+    // WaitlistServiceImpl.decideOnMissedWindow). If they never decide,
+    // this sweep auto-closes it as CANCELLED once their original
+    // requestedEndTime — the deadline the notice itself quoted — has
+    // passed, so nothing sits open indefinitely just because no one
+    // clicked anything. Same terminal status as an explicit decision;
+    // there's no separate "rejected" state for this flow.
+    private void expireUndecidedWaitlistEntries() {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Waitlist> awaitingDecision =
+                waitlistRepository.findByWaitlistStatus("AWAITING_DECISION");
+
+        for (Waitlist entry : awaitingDecision) {
+            if (entry.getRequestedEndTime() == null
+                    || entry.getRequestedEndTime().isAfter(now)) {
+                continue;
+            }
+
+            entry.setWaitlistStatus("CANCELLED");
+            waitlistRepository.save(entry);
+
+            notificationService.create(
+                    entry.getUser(),
+                    "WAITLIST_AUTO_CANCELLED",
+                    "Waitlist entry closed",
+                    "You didn't respond in time, so your waitlist entry for "
+                            + (entry.getEquipment() != null ? entry.getEquipment().getEquipmentName() : "the equipment")
+                            + " has been closed. You can join the waitlist again or book a new slot anytime.",
+                    entry.getWaitlistId()
+            );
+        }
+    }
+
     private String calculateStatus(Equipment equipment, LocalDateTime now) {
         String existingStatus = equipment.getStatus();
 
@@ -125,7 +193,9 @@ public EquipmentStatusScheduler(
             if (booking.getStartTime() == null || booking.getEndTime() == null) continue;
 
             String bookingStatus = booking.getBookingStatus();
-            if (bookingStatus == null || !bookingStatus.equalsIgnoreCase("Confirmed")) continue;
+            if (bookingStatus == null
+                    || (!bookingStatus.equalsIgnoreCase("Confirmed")
+                        && !bookingStatus.equalsIgnoreCase("In Use"))) continue;
 
             LocalDateTime start = booking.getStartTime();
             LocalDateTime end = booking.getEndTime();

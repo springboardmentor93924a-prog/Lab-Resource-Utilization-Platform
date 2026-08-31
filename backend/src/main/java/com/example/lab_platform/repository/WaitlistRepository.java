@@ -20,6 +20,12 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Integer> {
     // All entries for a specific equipment (any status) — useful for admins/managers
     List<Waitlist> findByEquipment_EquipmentId(Integer equipmentId);
 
+    // Used by EquipmentStatusScheduler.expireUndecidedWaitlistEntries() to
+    // sweep every entry currently sitting at AWAITING_DECISION regardless
+    // of equipment, so a missed rebook/exit decision auto-closes once its
+    // requestedEndTime deadline passes.
+    List<Waitlist> findByWaitlistStatus(String waitlistStatus);
+
     boolean existsByUser_UserIdAndEquipment_EquipmentIdAndRequestedStartTimeAndRequestedEndTimeAndWaitlistStatusIn(
         Integer userId,
         Integer equipmentId,
