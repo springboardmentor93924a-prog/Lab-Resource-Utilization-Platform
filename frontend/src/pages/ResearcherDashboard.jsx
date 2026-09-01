@@ -51,9 +51,6 @@ export default function ResearcherDashboard() {
   const [myBookings, setMyBookings] =
     useState([]);
 
-  const [loading, setLoading] =
-    useState(true);
-
   const [unreadCount, setUnreadCount] =
     useState(0);
   // =========================================================
@@ -138,10 +135,6 @@ export default function ResearcherDashboard() {
 
         setEquipmentList([]);
 
-      } finally {
-
-        setLoading(false);
-
       }
 
     }
@@ -150,19 +143,6 @@ export default function ResearcherDashboard() {
     fetchData();
 
   }, []);
-
-
-  // =========================================================
-  // BOOK NOW
-  // =========================================================
-
-  function handleBookNow(equipmentId) {
-
-    navigate(
-      `/bookings?equipmentId=${equipmentId}`
-    );
-
-  }
 
 
   // =========================================================
@@ -292,8 +272,7 @@ export default function ResearcherDashboard() {
     );
 
 
-  const recommended =
-    equipmentList.slice(0, 3);
+  
 
 
   // =========================================================
@@ -1820,80 +1799,7 @@ export default function ResearcherDashboard() {
 
 </div>
 
-        {/* ===================================================
-            RECOMMENDED EQUIPMENT
-        =================================================== */}
-
-        <h5
-          className="section-title"
-          style={{
-            marginBottom: "15px",
-          }}
-        >
-          Recommended equipment
-        </h5>
-
-
-        <div className="equipment">
-
-          {loading && (
-            <p>
-              Loading equipment...
-            </p>
-          )}
-
-
-          {!loading &&
-            recommended.map(
-              (eq) => (
-
-                <div
-                  className="equipment-card"
-                  key={eq.id}
-                >
-
-                  <img
-                    src={eq.imageUrl}
-                    alt={eq.equipmentName}
-                    style={{
-                      width: "100%",
-                      height: "140px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                      marginBottom: "10px",
-                    }}
-                  />
-
-
-                  <h6>
-                    {eq.equipmentName}
-                  </h6>
-
-
-                  <span className="badge bg-success rounded-pill">
-                    {eq.status ===
-                    "AVAILABLE"
-                      ? "Available"
-                      : eq.status}
-                  </span>
-
-
-                  <button
-                    className="btn btn-outline-dark mt-3"
-                    onClick={() =>
-                      handleBookNow(eq.id)
-                    }
-                  >
-                    Book now
-                  </button>
-
-                </div>
-
-              )
-            )}
-
-        </div>
-
+      
 
       </main>
 

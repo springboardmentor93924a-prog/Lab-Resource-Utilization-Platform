@@ -60,15 +60,9 @@ Full-stack platform for research institutions to manage shared lab equipment —
 ├── frontend/ # React application
 └── backend/ # Spring Boot application
 
-## My Contribution (Kundan Yadav — team7-Kundan)
-- Built Login and Register pages (React + Tailwind), matching Week 1 wireframes
-- Implemented JWT-based authentication backend (Spring Boot + Spring Security)
-- Password hashing with BCrypt
-- Connected backend to PostgreSQL via Hibernate/JPA
-- Tested full registration and login flow end-to-end
 
 
-## How to Run
+## HOW TO RUN THE PROJECT
 ### Backend
 cd backend |
 .\mvnw spring-boot:run |
