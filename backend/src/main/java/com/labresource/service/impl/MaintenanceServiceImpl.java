@@ -11,6 +11,14 @@ import com.labresource.service.MaintenanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
+
+
+import com.labresource.dto.EquipmentStatusEventDto;
+import com.labresource.service.EquipmentStatusStreamService;
+
+
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +30,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
     private final MaintenanceRecordRepository maintenanceRepository;
     private final EquipmentRepository equipmentRepository;
+    private final EquipmentStatusStreamService equipmentStatusStreamService;
 
     @Override
     public MaintenanceResponse createMaintenanceRecord(
@@ -86,6 +95,30 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
         MaintenanceRecord saved =
                 maintenanceRepository.save(maintenance);
+
+
+
+
+
+
+
+
+        if ("IN_PROGRESS".equalsIgnoreCase(saved.getStatus())
+                || "UNDER_MAINTENANCE".equalsIgnoreCase(saved.getStatus())) {
+
+            equipmentStatusStreamService.publish(
+                    new EquipmentStatusEventDto(
+                            equipment.getId(),
+                            equipment.getName(),
+                            "UNDER_MAINTENANCE",
+                            "Equipment entered maintenance",
+                            LocalDateTime.now()
+                    )
+            );
+        }
+
+
+
 
         return mapToResponse(saved);
     }
@@ -285,6 +318,40 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
         MaintenanceRecord updated =
                 maintenanceRepository.save(maintenance);
+
+
+
+
+
+
+
+
+
+        if ("COMPLETED".equalsIgnoreCase(updated.getStatus())) {
+
+            equipmentStatusStreamService.publish(
+                    new EquipmentStatusEventDto(
+                            equipment.getId(),
+                            equipment.getName(),
+                            "AVAILABLE",
+                            "Equipment maintenance completed",
+                            LocalDateTime.now()
+                    )
+            );
+
+        } else if ("IN_PROGRESS".equalsIgnoreCase(updated.getStatus())
+                || "UNDER_MAINTENANCE".equalsIgnoreCase(updated.getStatus())) {
+
+            equipmentStatusStreamService.publish(
+                    new EquipmentStatusEventDto(
+                            equipment.getId(),
+                            equipment.getName(),
+                            "UNDER_MAINTENANCE",
+                            "Equipment is under maintenance",
+                            LocalDateTime.now()
+                    )
+            );
+        }
 
         return mapToResponse(updated);
     }

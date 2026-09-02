@@ -477,6 +477,15 @@ import com.labresource.service.WaitlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
+
+
+
+import com.labresource.dto.EquipmentStatusEventDto;
+import com.labresource.enums.NotificationType;
+import com.labresource.service.NotificationService;
+import com.labresource.service.EquipmentStatusStreamService;
+
 import java.util.List;
 
 @Service
@@ -487,6 +496,11 @@ public class BookingServiceImpl implements BookingService {
     private final EquipmentRepository equipmentRepository;
     private final UserRepository userRepository;
     private final WaitlistService waitlistService;
+
+
+
+    private final NotificationService notificationService;
+    private final EquipmentStatusStreamService equipmentStatusStreamService;
 
     @Override
     public BookingResponse createBooking(
@@ -683,6 +697,37 @@ public class BookingServiceImpl implements BookingService {
         Booking updatedBooking =
                 bookingRepository.save(booking);
 
+
+
+
+
+
+
+
+
+
+        notificationService.createNotification(
+                updatedBooking.getUser().getId(),
+                NotificationType.BOOKING_APPROVED,
+                "Booking Approved",
+                "Your booking has been approved.",
+                "BOOKING",
+                updatedBooking.getId()
+        );
+
+        equipmentStatusStreamService.publish(
+                new EquipmentStatusEventDto(
+                        updatedBooking.getEquipment().getId(),
+                        updatedBooking.getEquipment().getName(),
+                        "BOOKED",
+                        "Equipment booking approved",
+                        java.time.LocalDateTime.now()
+                )
+        );
+
+
+
+
         return mapToResponse(updatedBooking);
     }
 
@@ -729,6 +774,26 @@ public class BookingServiceImpl implements BookingService {
         Booking updatedBooking =
                 bookingRepository.save(booking);
 
+
+
+
+
+
+
+
+
+
+        notificationService.createNotification(
+                updatedBooking.getUser().getId(),
+                NotificationType.BOOKING_REJECTED,
+                "Booking Rejected",
+                "Your booking has been rejected.",
+                "BOOKING",
+                updatedBooking.getId()
+        );
+
+
+
         tryAllocateNextWaitlistUser(
                 booking.getEquipment()
         );
@@ -768,6 +833,38 @@ public class BookingServiceImpl implements BookingService {
 
         Booking updatedBooking =
                 bookingRepository.save(booking);
+
+
+
+
+
+
+
+
+
+
+        notificationService.createNotification(
+                updatedBooking.getUser().getId(),
+                NotificationType.BOOKING_CANCELLED,
+                "Booking Cancelled",
+                "Your booking has been cancelled.",
+                "BOOKING",
+                updatedBooking.getId()
+        );
+
+        equipmentStatusStreamService.publish(
+                new EquipmentStatusEventDto(
+                        updatedBooking.getEquipment().getId(),
+                        updatedBooking.getEquipment().getName(),
+                        "AVAILABLE",
+                        "Equipment became available after cancellation",
+                        java.time.LocalDateTime.now()
+                )
+        );
+
+
+
+
 
         tryAllocateNextWaitlistUser(
                 booking.getEquipment()
