@@ -18,6 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
+
+
+
+
+
+
+
+
+
+import com.labresource.enums.NotificationType;
+import com.labresource.service.NotificationService;
+
+
 @Service
 @Transactional
 public class WaitlistServiceImpl implements WaitlistService {
@@ -27,16 +41,21 @@ public class WaitlistServiceImpl implements WaitlistService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
 
+
+    private final NotificationService notificationService;
+
     public WaitlistServiceImpl(
             WaitlistRepository waitlistRepository,
             EquipmentRepository equipmentRepository,
             UserRepository userRepository,
-            BookingRepository bookingRepository
+            BookingRepository bookingRepository,
+            NotificationService notificationService
     ) {
         this.waitlistRepository = waitlistRepository;
         this.equipmentRepository = equipmentRepository;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -169,6 +188,26 @@ public class WaitlistServiceImpl implements WaitlistService {
         WaitlistEntry savedEntry =
                 waitlistRepository.save(nextEntry);
 
+
+
+
+
+
+
+        notificationService.createNotification(
+                savedEntry.getUser().getId(),
+                NotificationType.WAITLIST_ALLOCATED,
+                "Equipment Available",
+                "Equipment is now available for you. "
+                        + "Complete your booking within 30 minutes.",
+                "WAITLIST",
+                savedEntry.getId()
+        );
+
+
+
+
+
         updateQueuePositions(equipmentId);
 
         return mapToResponse(savedEntry);
@@ -279,6 +318,25 @@ public class WaitlistServiceImpl implements WaitlistService {
 
         WaitlistEntry savedEntry =
                 waitlistRepository.save(waitlistEntry);
+
+
+
+
+
+
+
+        notificationService.createNotification(
+                savedEntry.getUser().getId(),
+                NotificationType.WAITLIST_EXPIRED,
+                "Waitlist Allocation Expired",
+                "Your temporary equipment allocation has expired.",
+                "WAITLIST",
+                savedEntry.getId()
+        );
+
+
+
+
 
         updateQueuePositions(
                 waitlistEntry.getEquipment().getId()

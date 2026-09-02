@@ -14,6 +14,22 @@ import com.labresource.service.UtilizationLogService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+
+
+
+
+
+
+
+
+import com.labresource.dto.EquipmentStatusEventDto;
+import com.labresource.service.EquipmentStatusStreamService;
+
+
+
+
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,17 +42,21 @@ public class UtilizationLogServiceImpl implements UtilizationLogService {
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final EquipmentStatusStreamService equipmentStatusStreamService;
 
     public UtilizationLogServiceImpl(
             UtilizationLogRepository utilizationLogRepository,
             EquipmentRepository equipmentRepository,
             BookingRepository bookingRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            EquipmentStatusStreamService equipmentStatusStreamService
+
     ) {
         this.utilizationLogRepository = utilizationLogRepository;
         this.equipmentRepository = equipmentRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
+        this.equipmentStatusStreamService = equipmentStatusStreamService;
     }
 
     @Override
@@ -143,6 +163,24 @@ public class UtilizationLogServiceImpl implements UtilizationLogService {
 
         UtilizationLog savedLog =
                 utilizationLogRepository.save(utilizationLog);
+
+
+
+
+        if ("IN_USE".equalsIgnoreCase(savedLog.getStatus())) {
+
+            equipmentStatusStreamService.publish(
+                    new EquipmentStatusEventDto(
+                            savedLog.getEquipment().getId(),
+                            savedLog.getEquipment().getName(),
+                            "IN_USE",
+                            "Equipment usage started",
+                            LocalDateTime.now()
+                    )
+            );
+        }
+
+
 
         return mapToResponse(savedLog);
     }
@@ -349,6 +387,22 @@ public class UtilizationLogServiceImpl implements UtilizationLogService {
 
         UtilizationLog updatedLog =
                 utilizationLogRepository.save(utilizationLog);
+
+
+
+
+
+        equipmentStatusStreamService.publish(
+                new EquipmentStatusEventDto(
+                        updatedLog.getEquipment().getId(),
+                        updatedLog.getEquipment().getName(),
+                        "AVAILABLE",
+                        "Equipment usage completed",
+                        LocalDateTime.now()
+                )
+        );
+
+
 
         return mapToResponse(updatedLog);
     }
