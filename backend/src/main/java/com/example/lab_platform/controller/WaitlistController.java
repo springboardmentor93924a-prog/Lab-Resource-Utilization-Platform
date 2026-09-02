@@ -122,4 +122,28 @@ public class WaitlistController {
 
         return ResponseEntity.noContent().build();
     }
+
+    // =========================================================
+    // DECIDE ON A MISSED WINDOW (the two-button response to the
+    // "couldn't allocate your slot" notification)
+    // Body: { "decision": "REBOOK" } or { "decision": "EXIT" }
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @PostMapping("/{id}/decide")
+    public ResponseEntity<Waitlist> decideOnMissedWindow(
+            @PathVariable Integer id,
+            @RequestBody java.util.Map<String, String> body) {
+
+        return ResponseEntity.ok(
+                waitlistService.decideOnMissedWindow(id, body.get("decision"))
+        );
+    }
 }

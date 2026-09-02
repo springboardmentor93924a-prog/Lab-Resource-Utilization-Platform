@@ -1,4 +1,4 @@
- package com.example.lab_platform.entity;
+  package com.example.lab_platform.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -46,6 +46,14 @@ private Boolean requiresApproval = true;
 
     @Column(name = "purchase_date")
     private LocalDate purchaseDate;
+
+    // Task 5 - Procurement & Cost Analysis report: what the equipment
+    // originally cost to acquire. Nullable so existing rows (bought
+    // before this column existed) don't get a fabricated value —
+    // the report simply excludes them from cost totals until an
+    // admin fills this in.
+    @Column(name = "purchase_cost")
+    private Double purchaseCost;
 
     // 🔥 NEW FIELD (Idle Detection ke liye)
     @Column(name = "last_used_date")
@@ -123,6 +131,14 @@ private Institution institution;
 
     public void setPurchaseDate(LocalDate purchaseDate) {
         this.purchaseDate = purchaseDate;
+    }
+
+    public Double getPurchaseCost() {
+        return purchaseCost;
+    }
+
+    public void setPurchaseCost(Double purchaseCost) {
+        this.purchaseCost = purchaseCost;
     }
 
     // 🔥 GETTER SETTER (NEW)

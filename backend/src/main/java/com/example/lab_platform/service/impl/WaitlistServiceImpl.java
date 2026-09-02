@@ -276,4 +276,42 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
     entry.setWaitlistStatus("CANCELLED");
     waitlistRepository.save(entry);
 }
+
+@Override
+public Waitlist decideOnMissedWindow(Integer waitlistId, String decision) {
+    Waitlist entry = waitlistRepository.findById(waitlistId)
+            .orElseThrow(() -> new RuntimeException("Waitlist entry not found"));
+
+    User loggedInUser = getLoggedInUser();
+
+    boolean isOwnEntry = entry.getUser().getUserId().equals(loggedInUser.getUserId());
+    if (!isOwnEntry) {
+        throw new RuntimeException("You can only decide on your own waitlist entry");
+    }
+
+    if (!"AWAITING_DECISION".equals(entry.getWaitlistStatus())) {
+        throw new RuntimeException("This entry is no longer awaiting a decision");
+    }
+
+    if (decision == null) {
+        throw new RuntimeException("decision is required (REBOOK or EXIT)");
+    }
+
+    String normalized = decision.toUpperCase();
+    if (!normalized.equals("REBOOK") && !normalized.equals("EXIT")) {
+        throw new RuntimeException("decision must be REBOOK or EXIT");
+    }
+
+    // Both outcomes close the entry the same way — CANCELLED. Whether
+    // the user picks REBOOK (they'll rejoin the waitlist / book a
+    // fresh slot for this equipment — the frontend handles sending
+    // them there) or EXIT (they're done with this equipment), this
+    // entry itself is finished either way. No separate "rejected"
+    // status: Cancelled is the one terminal status for every way a
+    // waitlist entry can end without being fulfilled, matching the
+    // timeout sweep in EquipmentStatusScheduler too.
+    entry.setWaitlistStatus("CANCELLED");
+
+    return waitlistRepository.save(entry);
+}
 }

@@ -186,9 +186,16 @@ public class EquipmentServiceImpl
             String bookingStatus =
                     booking.getBookingStatus();
 
+            // Same fix as EquipmentStatusScheduler.calculateStatus():
+            // a booking can now legitimately sit at "In Use" (see
+            // EquipmentStatusScheduler.activateInUseBookings()), not
+            // just "Confirmed" — this duplicate status-calc path needs
+            // to recognize both or it'll disagree with the scheduler
+            // and momentarily report equipment as Available/Booked
+            // while a booking on it is actively "In Use".
             if (bookingStatus == null
-                    || !bookingStatus.equalsIgnoreCase(
-                            "Confirmed")) {
+                    || (!bookingStatus.equalsIgnoreCase("Confirmed")
+                        && !bookingStatus.equalsIgnoreCase("In Use"))) {
 
                 continue;
             }

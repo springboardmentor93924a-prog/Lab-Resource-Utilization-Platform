@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "./Maintenance.css";
 
-
 const API_BASE_URL = "http://localhost:8080/api";
 
 // Structured reason chips instead of free text — matches the button-first
@@ -35,7 +34,8 @@ function Maintenance() {
         maintenanceType: "",
         description: "",
         maintenanceStatus: "Scheduled",
-        nextMaintenanceDate: ""
+        nextMaintenanceDate: "",
+        assignedTechnicianId: ""
     });
 
     const token = sessionStorage.getItem("token");
@@ -43,6 +43,18 @@ function Maintenance() {
 
     const isTech = role === "LAB_TECHNICIAN";
     const canDecide = ["LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
+    // Same roles that create/assign maintenance work orders — see
+    // MaintenanceController.createMaintenance's @PreAuthorize.
+    const canManageWorkOrders = canDecide;
+
+    // Technicians for the "Assign Technician" dropdown (managers/dept
+    // heads/admins only — technicians don't need to see this list).
+    const [technicians, setTechnicians] = useState([]);
+
+    // "All / Scheduled / Active / In Progress / Completed / Cancelled" —
+    // doubles as the maintenance history view (filter down to Completed
+    // or Cancelled to see what's closed out).
+    const [statusFilter, setStatusFilter] = useState("All");
 
     // ------------------------------------------------------------------
     // Equipment Issue Reports (formerly the standalone /feedback page for
@@ -72,9 +84,16 @@ function Maintenance() {
             setLoading(true);
             setError("");
 
+            // Lab Technicians only ever see their own assigned work
+            // orders (My Tasks); every other allowed role sees the full
+            // list and can create/assign/edit any record.
+            const maintenanceUrl = isTech
+                ? `${API_BASE_URL}/maintenance/my-tasks`
+                : `${API_BASE_URL}/maintenance`;
+
             const [maintenanceResponse, equipmentResponse] =
                 await Promise.all([
-                    fetch(`${API_BASE_URL}/maintenance`, {
+                    fetch(maintenanceUrl, {
                         headers: getHeaders()
                     }),
                     fetch(`${API_BASE_URL}/equipment`, {
@@ -108,6 +127,19 @@ function Maintenance() {
         }
     };
 
+    const fetchTechnicians = async () => {
+        if (!canManageWorkOrders) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/technician/list`, {
+                headers: getHeaders(),
+            });
+            if (!res.ok) throw new Error(`Failed to load technicians: ${res.status}`);
+            setTechnicians(await res.json());
+        } catch (err) {
+            console.error("Technician list error:", err);
+        }
+    };
+
     const fetchFeedback = async () => {
         try {
             setFeedbackLoading(true);
@@ -129,6 +161,7 @@ function Maintenance() {
     useEffect(() => {
         fetchData();
         fetchFeedback();
+        fetchTechnicians();
 
         // Deep link from Equipment.jsx's "⚠️ Report" button, e.g.
         // /maintenance?equipmentId=3 — opens the report modal pre-filled.
@@ -154,7 +187,8 @@ function Maintenance() {
             maintenanceType: "",
             description: "",
             maintenanceStatus: "Scheduled",
-            nextMaintenanceDate: ""
+            nextMaintenanceDate: "",
+            assignedTechnicianId: ""
         });
         setEditingId(null);
     };
@@ -166,7 +200,8 @@ function Maintenance() {
             maintenanceType: record.maintenanceType || "",
             description: record.description || "",
             maintenanceStatus: record.maintenanceStatus || "Scheduled",
-            nextMaintenanceDate: record.nextMaintenanceDate || ""
+            nextMaintenanceDate: record.nextMaintenanceDate || "",
+            assignedTechnicianId: record.assignedTechnician?.userId || ""
         });
         setEditingId(record.maintenanceId);
         setShowForm(true);
@@ -190,7 +225,15 @@ function Maintenance() {
                 description: formData.description,
                 maintenanceStatus: formData.maintenanceStatus,
                 nextMaintenanceDate:
-                    formData.nextMaintenanceDate || null
+                    formData.nextMaintenanceDate || null,
+                // Only managers/dept heads/admins ever see or set this
+                // field (assignedTechnicianId stays "" for a technician
+                // editing their own task, so this is simply omitted —
+                // the backend also rejects a technician trying to set it
+                // to anyone but themselves, see MaintenanceServiceImpl).
+                assignedTechnician: formData.assignedTechnicianId
+                    ? { userId: Number(formData.assignedTechnicianId) }
+                    : null
             };
 
             const isEditing = editingId !== null;
@@ -268,6 +311,28 @@ function Maintenance() {
         }
 
         return "Unknown Equipment";
+    };
+
+    const getTechnicianName = (record) => {
+        if (!record.assignedTechnician) return null;
+        return record.assignedTechnician.fullName
+            || record.assignedTechnician.name
+            || record.assignedTechnician.email
+            || `Technician #${record.assignedTechnician.userId}`;
+    };
+
+    // Lightweight equipment-downtime indicator — days the record has been
+    // open (not yet Completed/Cancelled), counted from maintenanceDate.
+    // There's no separate "closed at" timestamp in this schema, so a
+    // closed record just doesn't show a downtime figure.
+    const getDowntimeDays = (record) => {
+        const status = record.maintenanceStatus?.toLowerCase() || "";
+        if (status === "completed" || status === "cancelled") return null;
+        if (!record.maintenanceDate) return null;
+
+        const started = new Date(record.maintenanceDate).getTime();
+        const days = Math.max(0, Math.floor((Date.now() - started) / 86400000));
+        return days;
     };
 
     const getStatusClass = (status) => {
@@ -383,23 +448,27 @@ function Maintenance() {
 
             <div className="maintenance-header">
                 <div>
-                    <h1>Maintenance</h1>
+                    <h1>{isTech ? "My Maintenance Tasks" : "Maintenance"}</h1>
                     <p>
-                        Manage equipment maintenance and service schedules
+                        {isTech
+                            ? "Work orders assigned to you — update status and log your work."
+                            : "Manage equipment maintenance and service schedules"}
                     </p>
                 </div>
 
-                <button
-                    className="add-maintenance-btn"
-                    onClick={() => {
-                        if (showForm) {
-                            resetForm();
-                        }
-                        setShowForm(!showForm);
-                    }}
-                >
-                    {showForm ? "Close" : "+ Schedule Maintenance"}
-                </button>
+                {canManageWorkOrders && (
+                    <button
+                        className="add-maintenance-btn"
+                        onClick={() => {
+                            if (showForm) {
+                                resetForm();
+                            }
+                            setShowForm(!showForm);
+                        }}
+                    >
+                        {showForm ? "Close" : "+ Schedule Maintenance"}
+                    </button>
+                )}
             </div>
 
             {error && (
@@ -408,7 +477,7 @@ function Maintenance() {
                 </div>
             )}
 
-            {showForm && (
+            {showForm && canManageWorkOrders && (
                 <div className="maintenance-form-card">
                     <h2>{editingId ? "Edit Maintenance" : "Schedule Maintenance"}</h2>
 
@@ -496,6 +565,23 @@ function Maintenance() {
                                 </select>
                             </div>
 
+                            <div className="form-group">
+                                <label>Assign Technician</label>
+
+                                <select
+                                    name="assignedTechnicianId"
+                                    value={formData.assignedTechnicianId}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Unassigned</option>
+                                    {technicians.map((tech) => (
+                                        <option key={tech.userId} value={tech.userId}>
+                                            {tech.fullName || tech.name || tech.email}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="form-group full-width">
                                 <label>Description</label>
 
@@ -542,6 +628,78 @@ function Maintenance() {
                         </div>
 
                     </form>
+                </div>
+            )}
+
+            {showForm && isTech && (
+                <div className="maintenance-form-card">
+                    <h2>Update Task</h2>
+
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-grid">
+
+                            <div className="form-group">
+                                <label>Equipment</label>
+                                <input type="text" value={getEquipmentName({ equipment: equipment.find(e => String(e.equipmentId) === String(formData.equipmentId)) }) || "—"} disabled />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Status</label>
+                                <select
+                                    name="maintenanceStatus"
+                                    value={formData.maintenanceStatus}
+                                    onChange={handleChange}
+                                >
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="Active">Active</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group full-width">
+                                <label>Work log / notes</label>
+                                <textarea
+                                    name="description"
+                                    placeholder="What did you find / do?"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    rows="3"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-actions">
+                            <button
+                                type="button"
+                                className="cancel-btn"
+                                onClick={() => {
+                                    resetForm();
+                                    setShowForm(false);
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button type="submit" className="save-btn">
+                                Update Task
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {!isTech && (
+                <div className="maintenance-status-tabs" style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
+                    {["All", "Scheduled", "Active", "In Progress", "Completed", "Cancelled"].map((tab) => (
+                        <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setStatusFilter(tab)}
+                            className={statusFilter === tab ? "status-btn active" : "status-btn"}
+                        >
+                            {tab}
+                        </button>
+                    ))}
                 </div>
             )}
 
@@ -592,27 +750,46 @@ function Maintenance() {
                 </div>
             </div>
 
-            {maintenanceRecords.length === 0 ? (
-                <div className="empty-maintenance">
-                    <div className="empty-icon">🔧</div>
-                    <h2>No Maintenance Records</h2>
-                    <p>
-                        No equipment is currently scheduled for maintenance.
-                    </p>
+            {(() => {
+                const filteredRecords = (!isTech && statusFilter !== "All")
+                    ? maintenanceRecords.filter(
+                          (r) => (r.maintenanceStatus || "").toLowerCase() === statusFilter.toLowerCase()
+                      )
+                    : maintenanceRecords;
 
-                    <button
-                        className="add-maintenance-btn"
-                        onClick={() => setShowForm(true)}
-                    >
-                        + Schedule Maintenance
-                    </button>
-                </div>
-            ) : (
+                if (filteredRecords.length === 0) {
+                    return (
+                        <div className="empty-maintenance">
+                            <div className="empty-icon">🔧</div>
+                            <h2>No Maintenance Records</h2>
+                            <p>
+                                {isTech
+                                    ? "You have no maintenance tasks assigned right now."
+                                    : statusFilter === "All"
+                                        ? "No equipment is currently scheduled for maintenance."
+                                        : `No records with status "${statusFilter}".`}
+                            </p>
+
+                            {canManageWorkOrders && statusFilter === "All" && (
+                                <button
+                                    className="add-maintenance-btn"
+                                    onClick={() => setShowForm(true)}
+                                >
+                                    + Schedule Maintenance
+                                </button>
+                            )}
+                        </div>
+                    );
+                }
+
+                return (
                 <div className="maintenance-grid">
 
-                    {maintenanceRecords.map((record) => {
+                    {filteredRecords.map((record) => {
                         const status = record.maintenanceStatus?.toLowerCase() || "";
                         const isClosed = status === "completed" || status === "cancelled";
+                        const technicianName = getTechnicianName(record);
+                        const downtimeDays = getDowntimeDays(record);
 
                         return (
                             <div
@@ -662,6 +839,22 @@ function Maintenance() {
                                         </strong>
                                     </div>
 
+                                    <div>
+                                        <span>Assigned to</span>
+                                        <strong>
+                                            {technicianName || "Unassigned"}
+                                        </strong>
+                                    </div>
+
+                                    {downtimeDays !== null && (
+                                        <div>
+                                            <span>Equipment downtime</span>
+                                            <strong>
+                                                {downtimeDays === 0 ? "Opened today" : `${downtimeDays} day${downtimeDays === 1 ? "" : "s"} so far`}
+                                            </strong>
+                                        </div>
+                                    )}
+
                                 </div>
 
                                 {record.description && (
@@ -695,7 +888,8 @@ function Maintenance() {
                     })}
 
                 </div>
-            )}
+                );
+            })()}
 
             {/* ================================================================
                 Equipment Issue Reports — folded in from the old standalone

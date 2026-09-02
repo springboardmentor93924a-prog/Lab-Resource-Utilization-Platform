@@ -39,4 +39,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     // EquipmentFeedbackServiceImpl so only the relevant department's
     // technicians/managers/dept head are notified.
     java.util.List<User> findByDepartment_DepartmentId(Integer departmentId);
+
+    // Lab Technicians within one institution, for the "Assign Technician"
+    // dropdown on the Maintenance page (Lab Manager / Dept Head / admins
+    // pick who a work order goes to) — see TechnicianController.
+    java.util.List<User> findByRole_RoleNameAndInstitution_InstitutionId(
+            String roleName, Integer institutionId);
 }

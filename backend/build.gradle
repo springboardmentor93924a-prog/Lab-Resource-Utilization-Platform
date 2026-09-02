@@ -1,3 +1,4 @@
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.1.0'
@@ -35,6 +36,15 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// Task 5 - Utilization & Cost Reports: PDF and Excel export.
+	// OpenPDF (LGPL/MPL, actively maintained iText 4 fork) gives a
+	// simple high-level table API; Apache POI is the standard for
+	// .xlsx generation. Both are widely used, stable libraries -
+	// no new architecture, just two report-rendering dependencies.
+	implementation 'com.github.librepdf:openpdf:1.3.42'
+	implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'

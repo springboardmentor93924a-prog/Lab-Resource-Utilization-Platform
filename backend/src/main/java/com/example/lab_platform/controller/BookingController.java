@@ -65,15 +65,11 @@ public class BookingController {
 
     // =========================================================
     // CREATE BOOKING
+    // (STUDENT only — no other role books equipment for themselves;
+    //  managers/dept heads/admins approve or manage bookings instead,
+    //  they don't create their own.)
     // =========================================================
-    @PreAuthorize("""
-        hasAnyRole(
-            'STUDENT',
-            'LAB_MANAGER',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-    """)
+    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
     public ResponseEntity<Booking> createBooking(
             @RequestBody Booking booking) {
@@ -130,14 +126,13 @@ public class BookingController {
 
     // =========================================================
     // APPROVE BOOKING
+    // (LAB_MANAGER / DEPARTMENT_HEAD only — the two roles that own
+    //  booking approval per the roles doc; no one else decides this.)
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
-            'LAB_TECHNICIAN',
             'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
+            'DEPARTMENT_HEAD'
         )
     """)
     @PutMapping("/{id}/approve")
@@ -151,14 +146,13 @@ public class BookingController {
 
     // =========================================================
     // REJECT BOOKING
+    // (LAB_MANAGER / DEPARTMENT_HEAD only — same rule as approve,
+    //  it's the other half of the same decision.)
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
-            'LAB_TECHNICIAN',
             'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
+            'DEPARTMENT_HEAD'
         )
     """)
     @PutMapping("/{id}/reject")
