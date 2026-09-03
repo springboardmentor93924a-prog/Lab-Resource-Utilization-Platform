@@ -46,8 +46,14 @@ public class User {
 
     @ManyToOne(fetch = FetchType.EAGER)
 @JoinColumn(
+        // Nullable: SYSTEM_ADMIN accounts are platform-wide and are not
+        // tied to any single institution (see UserService.registerUserInternal).
+        // This was previously "nullable = false", which matched the DB's
+        // NOT NULL constraint and blocked SYSTEM_ADMIN registration with
+        // a constraint-violation error even after the service-layer logic
+        // was updated to allow it.
         name = "institution_id",
-        nullable = false
+        nullable = true
 )
 private Institution institution;
 
