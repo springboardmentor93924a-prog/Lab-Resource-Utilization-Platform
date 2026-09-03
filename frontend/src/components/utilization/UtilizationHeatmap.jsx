@@ -5,6 +5,8 @@ export default function UtilizationHeatmap() {
     const [equipmentList, setEquipmentList] = useState([]);
     const [selectedEq, setSelectedEq] = useState("ALL");
     const [heatmapData, setHeatmapData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         api.get("/equipment").then(res => {
@@ -12,15 +14,91 @@ export default function UtilizationHeatmap() {
         }).catch(err => console.error(err));
     }, []);
 
+    // The backend only exposes a per-equipment heatmap endpoint
+    // (GET /utilization-analytics/heatmap/{equipmentId}) — there is no
+    // "all equipment" endpoint. So for the "ALL" view we fetch every
+    // equipment's heatmap ourselves and merge them here on the frontend.
     useEffect(() => {
         if (!selectedEq) return;
-        const url = selectedEq === "ALL"
-            ? "/utilization-analytics/heatmap"
-            : `/utilization-analytics/heatmap/${selectedEq}`;
-        api.get(url).then(res => {
-            setHeatmapData(res.data || []);
-        }).catch(err => console.error(err));
-    }, [selectedEq]);
+
+        let cancelled = false;
+        setLoading(true);
+        setError(null);
+
+        const loadSingle = (equipmentId) =>
+            api.get(`/utilization-analytics/heatmap/${equipmentId}`)
+                .then(res => res.data || [])
+                .catch(err => {
+                    console.error(`Failed to load heatmap for ${equipmentId}`, err);
+                    return [];
+                });
+
+        const mergeAll = (datasets) => {
+            // key -> { usageCount, totalUsageMinutes, percentages: [] }
+            const merged = new Map();
+
+            datasets.forEach(dataset => {
+                dataset.forEach(cell => {
+                    const key = `${cell.day}-${cell.hour}`;
+                    const existing = merged.get(key) || {
+                        day: cell.day,
+                        hour: cell.hour,
+                        usageCount: 0,
+                        totalUsageMinutes: 0,
+                        percentages: []
+                    };
+                    existing.usageCount += cell.usageCount || 0;
+                    existing.totalUsageMinutes += cell.totalUsageMinutes || 0;
+                    existing.percentages.push(cell.utilizationPercentage || 0);
+                    merged.set(key, existing);
+                });
+            });
+
+            return Array.from(merged.values()).map(v => ({
+                day: v.day,
+                hour: v.hour,
+                usageCount: v.usageCount,
+                totalUsageMinutes: v.totalUsageMinutes,
+                // Every equipment shares the same available-minutes basis for a
+                // given day/hour slot, so a simple average of each equipment's
+                // percentage is equivalent to the true combined utilization.
+                utilizationPercentage:
+                    v.percentages.reduce((a, b) => a + b, 0) / v.percentages.length
+            }));
+        };
+
+        const run = async () => {
+            try {
+                if (selectedEq === "ALL") {
+                    if (equipmentList.length === 0) {
+                        if (!cancelled) {
+                            setHeatmapData([]);
+                            setLoading(false);
+                        }
+                        return;
+                    }
+                    const datasets = await Promise.all(
+                        equipmentList.map(eq => loadSingle(eq.id))
+                    );
+                    if (!cancelled) setHeatmapData(mergeAll(datasets));
+                } else {
+                    const data = await loadSingle(selectedEq);
+                    if (!cancelled) setHeatmapData(data);
+                }
+            } catch (err) {
+                console.error(err);
+                if (!cancelled) setError("Unable to load heatmap data.");
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+
+        run();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedEq, equipmentList]);
 
     const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
     const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -56,12 +134,25 @@ export default function UtilizationHeatmap() {
                     </select>
                 </div>
 
-                {heatmapData.length === 0 ? (
+                {loading ? (
+                    <div className="text-center py-5 text-muted">
+                        Loading heatmap data...
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-5 text-danger">
+                        {error}
+                    </div>
+                ) : heatmapData.length === 0 ? (
                     <div className="text-center py-5 text-muted">
                         No heatmap data available for this equipment yet.
                     </div>
                 ) : (
                     <div className="table-responsive">
+                        {heatmapData.every(d => (d.usageCount || 0) === 0) && (
+                            <div className="alert alert-info py-2 small mb-3">
+                                No usage has been logged yet for {selectedEq === "ALL" ? "any equipment" : "this equipment"} in the last 30 days, so all slots currently show 0%. The heatmap will fill in automatically as bookings are used and utilization logs are recorded.
+                            </div>
+                        )}
                         <table className="table table-bordered text-center" style={{ tableLayout: 'fixed' }}>
                             <thead>
                                 <tr>

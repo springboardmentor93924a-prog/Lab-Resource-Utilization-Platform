@@ -149,7 +149,7 @@ public class EquipmentController {
     private final EquipmentService equipmentService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER')")
     public ResponseEntity<EquipmentResponse> createEquipment(
             @RequestBody EquipmentRequest request
     ) {
@@ -159,7 +159,7 @@ public class EquipmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER', 'STUDENT')")
     public ResponseEntity<List<EquipmentResponse>> getAllEquipment() {
 
         return ResponseEntity.ok(
@@ -168,7 +168,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/{equipmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER', 'STUDENT')")
     public ResponseEntity<EquipmentResponse> getEquipmentById(
             @PathVariable String equipmentId
     ) {
@@ -178,7 +178,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/institution/{institutionId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER')")
     public ResponseEntity<List<EquipmentResponse>>
     getEquipmentByInstitution(
             @PathVariable String institutionId
@@ -191,7 +191,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/department/{departmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER')")
     public ResponseEntity<List<EquipmentResponse>>
     getEquipmentByDepartment(
             @PathVariable String departmentId
@@ -204,7 +204,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/category/{categoryId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER', 'STUDENT')")
     public ResponseEntity<List<EquipmentResponse>>
     getEquipmentByCategory(
             @PathVariable String categoryId
@@ -217,7 +217,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/available")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER', 'STUDENT')")
     public ResponseEntity<List<EquipmentResponse>>
     getAvailableEquipment() {
 
@@ -227,7 +227,7 @@ public class EquipmentController {
     }
 
     @PutMapping("/{equipmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER')")
     public ResponseEntity<EquipmentResponse> updateEquipment(
             @PathVariable String equipmentId,
             @RequestBody EquipmentRequest request
@@ -241,7 +241,7 @@ public class EquipmentController {
     }
 
     @DeleteMapping("/{equipmentId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN')")
     public ResponseEntity<String> deleteEquipment(
             @PathVariable String equipmentId
     ) {
@@ -254,7 +254,7 @@ public class EquipmentController {
     }
 
     @PutMapping("/{equipmentId}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER')")
     public ResponseEntity<EquipmentAvailabilityResponse>
     updateEquipmentStatus(
             @PathVariable String equipmentId,
@@ -269,7 +269,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/{equipmentId}/availability")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER', 'STUDENT')")
     public ResponseEntity<EquipmentAvailabilityResponse>
     checkAvailability(
             @PathVariable String equipmentId
@@ -282,7 +282,7 @@ public class EquipmentController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ADMIN', 'FACULTY')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSTITUTION_ADMIN', 'LAB_MANAGER', 'TECHNICIAN', 'FACULTY', 'RESEARCHER')")
     public ResponseEntity<List<EquipmentAvailabilityResponse>>
     getEquipmentByStatus(
             @PathVariable String status

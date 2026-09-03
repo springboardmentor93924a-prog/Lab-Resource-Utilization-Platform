@@ -485,6 +485,8 @@ import com.labresource.dto.EquipmentStatusEventDto;
 import com.labresource.enums.NotificationType;
 import com.labresource.service.NotificationService;
 import com.labresource.service.EquipmentStatusStreamService;
+import com.labresource.entity.UtilizationLog;
+import com.labresource.repository.UtilizationLogRepository;
 
 import java.util.List;
 
@@ -501,6 +503,7 @@ public class BookingServiceImpl implements BookingService {
 
     private final NotificationService notificationService;
     private final EquipmentStatusStreamService equipmentStatusStreamService;
+    private final UtilizationLogRepository utilizationLogRepository;
 
     @Override
     public BookingResponse createBooking(
@@ -697,7 +700,14 @@ public class BookingServiceImpl implements BookingService {
         Booking updatedBooking =
                 bookingRepository.save(booking);
 
-
+        /*
+         * Wire the approved booking into the utilization pipeline:
+         * every approved booking becomes a utilization log so that
+         * utilization rate, idle-time, demand analysis and the
+         * heatmap are all driven by real booking/usage data instead
+         * of requiring a separate manual step.
+         */
+        createUtilizationLogForBooking(updatedBooking);
 
 
 
@@ -729,6 +739,51 @@ public class BookingServiceImpl implements BookingService {
 
 
         return mapToResponse(updatedBooking);
+    }
+
+    /*
+     * Creates the UtilizationLog entry that represents the actual
+     * usage of the equipment for an approved booking. This is what
+     * feeds UtilizationAnalyticsService (utilization rate, idle
+     * time, demand analysis and the day/hour heatmap).
+     */
+    private void createUtilizationLogForBooking(Booking booking) {
+
+        if (booking.getStartTime() == null
+                || booking.getEndTime() == null) {
+            return;
+        }
+
+        boolean alreadyLogged = utilizationLogRepository
+                .findByBooking(booking)
+                .stream()
+                .findAny()
+                .isPresent();
+
+        if (alreadyLogged) {
+            return;
+        }
+
+        UtilizationLog utilizationLog = new UtilizationLog();
+
+        utilizationLog.setEquipment(booking.getEquipment());
+        utilizationLog.setUser(booking.getUser());
+        utilizationLog.setBooking(booking);
+        utilizationLog.setStartTime(booking.getStartTime());
+        utilizationLog.setEndTime(booking.getEndTime());
+        utilizationLog.setUtilizationSource("BOOKING");
+        utilizationLog.setStatus("COMPLETED");
+
+        int durationMinutes = (int) java.time.Duration.between(
+                booking.getStartTime(),
+                booking.getEndTime()
+        ).toMinutes();
+
+        utilizationLog.setUsageDurationMinutes(
+                Math.max(durationMinutes, 0)
+        );
+
+        utilizationLogRepository.save(utilizationLog);
     }
 
     @Override
