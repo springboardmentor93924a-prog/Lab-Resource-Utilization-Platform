@@ -971,12 +971,11 @@ public void deleteBooking(Integer id) {
             equipment.setStatus("Available");
         }
 
-        if (booking.getEndTime() != null) {
-
-            equipment.setLastUsedDate(
-                    booking.getEndTime().toLocalDate()
-            );
-        }
+        // NOTE: lastUsedDate is intentionally NOT set here anymore.
+        // Approval means the slot is reserved, not that the equipment
+        // has actually been used yet. lastUsedDate now only updates
+        // when usage is actually completed — see completeBooking()
+        // and autoCompleteOverdueBookings() below.
 
         equipmentRepository.save(equipment);
 
@@ -1061,6 +1060,10 @@ public void deleteBooking(Integer id) {
 
             equipment.setStatus("Available");
 
+            // lastUsedDate now updates here, at actual usage
+            // completion, instead of at approval time.
+            equipment.setLastUsedDate(java.time.LocalDate.now());
+
             equipmentRepository.save(equipment);
 
             notifyNextWaitlistedUser(
@@ -1107,6 +1110,12 @@ public void deleteBooking(Integer id) {
 
             if (equipment != null) {
                 equipment.setStatus("Available");
+
+                // Same lastUsedDate update as the manual
+                // completeBooking() path above, for bookings that
+                // get auto-completed by the scheduler instead.
+                equipment.setLastUsedDate(java.time.LocalDate.now());
+
                 equipmentRepository.save(equipment);
                 notifyNextWaitlistedUser(equipment);
             }

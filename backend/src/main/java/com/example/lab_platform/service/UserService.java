@@ -84,29 +84,54 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
                         new RuntimeException("Invalid role selected!")
                 );
 
-       // Find department — optional for INSTITUTION_ADMIN, who oversees the whole institution
-Department department = null;
-boolean isInstitutionAdmin = "INSTITUTION_ADMIN".equalsIgnoreCase(role.getRoleName());
+       // Institution/Department requirements are role-dependent, matching
+       // how these roles actually behave everywhere else in the app
+       // (see e.g. BookingServiceImpl.assertSameInstitutionAsEquipment,
+       // which already treats SYSTEM_ADMIN as platform-wide):
+       //   - SYSTEM_ADMIN:       platform-wide — belongs to NO institution
+       //                         and NO department.
+       //   - INSTITUTION_ADMIN:  oversees one whole institution — needs an
+       //                         institution, but no single department
+       //                         within it.
+       //   - every other role:   scoped to one department inside one
+       //                         institution — needs both.
+        boolean isSystemAdmin = "SYSTEM_ADMIN".equalsIgnoreCase(role.getRoleName());
+        boolean isInstitutionAdmin = "INSTITUTION_ADMIN".equalsIgnoreCase(role.getRoleName());
 
-if (!isInstitutionAdmin) {
-    department = departmentRepository
-            .findById(registerRequest.getDepartmentId())
-            .orElseThrow(() -> new RuntimeException("Invalid department selected!"));
-}
+        Institution institution = null;
+        Department department = null;
 
-Institution institution = institutionRepository
-        .findById(registerRequest.getInstitutionId())
-        .orElseThrow(() -> new RuntimeException("Invalid institution selected!"));
+        if (!isSystemAdmin) {
 
-if (department != null) {
-    boolean departmentBelongsToInstitution =
-        institutionDepartmentRepository.existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
-            institution.getInstitutionId(), department.getDepartmentId());
+            if (registerRequest.getInstitutionId() == null) {
+                throw new RuntimeException("Institution is required for this role!");
+            }
 
-    if (!departmentBelongsToInstitution) {
-        throw new RuntimeException("Selected department does not belong to the selected institution!");
-    }
-}
+            institution = institutionRepository
+                    .findById(registerRequest.getInstitutionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid institution selected!"));
+
+            if (!isInstitutionAdmin) {
+
+                if (registerRequest.getDepartmentId() == null) {
+                    throw new RuntimeException("Department is required for this role!");
+                }
+
+                department = departmentRepository
+                        .findById(registerRequest.getDepartmentId())
+                        .orElseThrow(() -> new RuntimeException("Invalid department selected!"));
+
+                boolean departmentBelongsToInstitution =
+                    institutionDepartmentRepository.existsByInstitutionInstitutionIdAndDepartmentDepartmentId(
+                        institution.getInstitutionId(), department.getDepartmentId());
+
+                if (!departmentBelongsToInstitution) {
+                    throw new RuntimeException("Selected department does not belong to the selected institution!");
+                }
+            }
+        }
+        // SYSTEM_ADMIN: institution and department both stay null —
+        // intentionally, not a bug. Enforced above, not left implicit.
 
         // Create user
         User user = new User();
