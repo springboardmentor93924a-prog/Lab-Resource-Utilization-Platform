@@ -619,6 +619,9 @@ const modalOverlay = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  padding: "20px",
+  boxSizing: "border-box",
+  overflowY: "auto",
 };
 
 const modalBox = {
@@ -626,6 +629,9 @@ const modalBox = {
   padding: "20px",
   borderRadius: "8px",
   width: "400px",
+  maxWidth: "100%",
+  maxHeight: "90vh",
+  overflowY: "auto",
   boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
 };
 
