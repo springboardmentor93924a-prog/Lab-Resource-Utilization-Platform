@@ -21,11 +21,12 @@ public class AnalyticsController {
     // Single combined payload for the Analytics Dashboard page:
     // utilization (Task 1/2) + cost (Task 3) + booking trends,
     // all pre-aggregated so the frontend just renders it.
+    // Per PDF Section 11, Analytics only appears in the Institution
+    // Administrator nav list — Lab Manager and Department Head lose it
+    // here (System Admin left untouched).
     @GetMapping("/dashboard")
     @PreAuthorize("""
         hasAnyRole(
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
             'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )

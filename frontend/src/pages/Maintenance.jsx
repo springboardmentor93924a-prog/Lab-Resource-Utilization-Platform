@@ -42,7 +42,9 @@ function Maintenance() {
     const role = sessionStorage.getItem("role");
 
     const isTech = role === "LAB_TECHNICIAN";
-    const canDecide = ["LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
+    // Department Head/Institution Admin no longer reach this page at all
+    // (see AppRoutes.jsx) — trimmed to match who's actually here now.
+    const canDecide = ["LAB_MANAGER", "SYSTEM_ADMIN"].includes(role);
     // Same roles that create/assign maintenance work orders — see
     // MaintenanceController.createMaintenance's @PreAuthorize.
     const canManageWorkOrders = canDecide;

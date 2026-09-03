@@ -25,11 +25,12 @@ public class TechnicianController {
     }
 
     // Lab Technicians in the caller's own institution — feeds the
-    // "Assign Technician" dropdown on the Maintenance page. Only the
-    // roles that actually assign work orders can see this list; a
-    // technician doesn't need to browse their peers.
+    // "Assign Technician" dropdown on the Maintenance page. Trimmed to
+    // match Maintenance page access (Lab Technician/System Admin
+    // untouched, Department Head and Institution Admin no longer have
+    // a Maintenance page to assign work orders from).
     @GetMapping("/list")
-    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'SYSTEM_ADMIN')")
     public List<User> listTechnicians() {
 
         Authentication authentication =
