@@ -48,11 +48,11 @@ function Reservations() {
   const myUserId = sessionStorage.getItem("userId");
 
   const isStudent = role === "STUDENT";
+  // Lab Technician and Institution Admin no longer reach this page at
+  // all (see AppRoutes.jsx) — trimmed to who's actually here now.
   const canManageBookings = [
-    "LAB_TECHNICIAN",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
-    "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN",
   ].includes(role);
 

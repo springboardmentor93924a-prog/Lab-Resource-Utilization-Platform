@@ -198,3 +198,81 @@
   color: #94a3b8;
   font-size: 14px;
 }
+
+/* ---- Tabs (Budgets / Chargebacks / Invoices) ---- */
+.cost-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cost-tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.cost-tab:hover {
+  color: #0ea5e9;
+}
+
+.cost-tab.active {
+  color: #0ea5e9;
+  border-bottom-color: #0ea5e9;
+}
+
+/* ---- Budget / Invoice generation forms ---- */
+.cost-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.cost-form-input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  min-width: 160px;
+}
+
+.cost-form-input.wide {
+  min-width: 240px;
+  flex: 1;
+}
+
+.cost-section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cost-actions-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cost-rate-save.danger {
+  background: #ef4444;
+}
+
+.cost-rate-save.danger:hover {
+  background: #dc2626;
+}
+
+.cost-status-badge.requested { background: #fef3c7; color: #92400e; }
+.cost-status-badge.approved { background: #dbeafe; color: #1e40af; }
+.cost-status-badge.disputed { background: #fee2e2; color: #991b1b; }
+.cost-status-badge.settled { background: #d1fae5; color: #065f46; }
+.cost-status-badge.draft { background: #e2e8f0; color: #334155; }
+.cost-status-badge.issued { background: #dbeafe; color: #1e40af; }

@@ -18,9 +18,9 @@ function Equipment() {
     location: "",
     status: "Available",
     purchaseDate: "",
+    purchaseCost: "",
+    ratePerHour: "",
     requiresApproval: true,
-    institutionId: "",
-    departmentId: "",
   });
 
   const token = sessionStorage.getItem("token");
@@ -30,27 +30,17 @@ function Equipment() {
   // NEW: search state + filtered list
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Institutions/departments for the Add/Edit form
-  const [institutions, setInstitutions] = useState([]);
-  const [formDepartments, setFormDepartments] = useState([]);
-
   const filteredEquipment = equipment.filter((item) =>
     item.equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canManageEquipment = [
-    "LAB_TECHNICIAN",
-    "LAB_MANAGER",
-    "INSTITUTION_ADMIN",
-    "SYSTEM_ADMIN",
-  ].includes(role);
+  // Equipment create/update/delete is LAB_MANAGER-only — technicians,
+  // institution admins, and system admins are read-only here, same
+  // restriction now enforced backend-side in EquipmentController.
+  const canManageEquipment = role === "LAB_MANAGER";
 
-  const canDeleteEquipment = [
-    "LAB_MANAGER",
-    "INSTITUTION_ADMIN",
-    "SYSTEM_ADMIN",
-  ].includes(role);
+  const canDeleteEquipment = role === "LAB_MANAGER";
 
   // Fetch all equipment
   const fetchEquipment = () => {
@@ -73,32 +63,8 @@ function Equipment() {
       });
   };
 
-  const fetchInstitutions = () => {
-    fetch("http://localhost:8080/api/institutions", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setInstitutions(Array.isArray(data) ? data : []))
-      .catch((err) => console.error("Institutions error:", err));
-  };
-
-  // Departments depend on which institution is selected in the form
-  const fetchDepartmentsForInstitution = (institutionId) => {
-    if (!institutionId) {
-      setFormDepartments([]);
-      return;
-    }
-    fetch(`http://localhost:8080/api/institutions/${institutionId}/departments`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setFormDepartments(Array.isArray(data) ? data : []))
-      .catch((err) => console.error("Departments error:", err));
-  };
-
   useEffect(() => {
     fetchEquipment();
-    fetchInstitutions();
 
     // Poll so status/institution changes made by other users show up
     // without a manual page refresh.
@@ -112,13 +78,6 @@ function Equipment() {
     const nextValue = type === "checkbox" ? checked : value;
 
     setFormData((prev) => ({ ...prev, [name]: nextValue }));
-
-    if (name === "institutionId") {
-      // Changing the institution invalidates the previously selected
-      // department, since departments belong to a specific institution.
-      setFormData((prev) => ({ ...prev, institutionId: value, departmentId: "" }));
-      fetchDepartmentsForInstitution(value);
-    }
   };
 
   // Open Modal for Create
@@ -132,15 +91,10 @@ function Equipment() {
       location: "",
       status: "Available",
       purchaseDate: "",
+      purchaseCost: "",
+      ratePerHour: "",
       requiresApproval: true,
-      institutionId: myInstitutionId || "",
-      departmentId: "",
     });
-    if (myInstitutionId) {
-      fetchDepartmentsForInstitution(myInstitutionId);
-    } else {
-      setFormDepartments([]);
-    }
     setShowModal(true);
   };
 
@@ -148,7 +102,6 @@ function Equipment() {
   const handleEdit = (item) => {
     setIsEditing(true);
     setCurrentId(item.equipmentId);
-    const institutionId = item.institution?.institutionId || "";
     setFormData({
       equipmentName: item.equipmentName || "",
       category: item.category || "",
@@ -156,13 +109,10 @@ function Equipment() {
       location: item.location || "",
       status: item.status || "Available",
       purchaseDate: item.purchaseDate || "",
+      purchaseCost: item.purchaseCost ?? "",
+      ratePerHour: item.ratePerHour ?? "",
       requiresApproval: item.requiresApproval !== false,
-      institutionId,
-      departmentId: item.department?.departmentId || "",
     });
-    if (institutionId) {
-      fetchDepartmentsForInstitution(institutionId);
-    }
     setShowModal(true);
   };
 
@@ -174,6 +124,10 @@ function Equipment() {
       : "http://localhost:8080/api/equipment";
     const method = isEditing ? "PUT" : "POST";
 
+    // Institution and department are deliberately NOT sent here — the
+    // backend always derives them from the logged-in Lab Manager's own
+    // account (see EquipmentController.createEquipment) and update
+    // never lets them change. There's no selection for it anymore.
     const payload = {
       equipmentName: formData.equipmentName,
       category: formData.category,
@@ -181,13 +135,9 @@ function Equipment() {
       location: formData.location,
       status: formData.status,
       purchaseDate: formData.purchaseDate,
+      purchaseCost: formData.purchaseCost === "" ? null : Number(formData.purchaseCost),
+      ratePerHour: formData.ratePerHour === "" ? 0 : Number(formData.ratePerHour),
       requiresApproval: formData.requiresApproval,
-      institution: formData.institutionId
-        ? { institutionId: Number(formData.institutionId) }
-        : null,
-      department: formData.departmentId
-        ? { departmentId: Number(formData.departmentId) }
-        : null,
     };
 
     fetch(url, {
@@ -499,44 +449,36 @@ function Equipment() {
                 />
               </div>
               <div style={formGroup}>
-                <label>Institution:</label>
-                <select
-                  name="institutionId"
-                  value={formData.institutionId}
+                <label>Purchase Cost:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  name="purchaseCost"
+                  value={formData.purchaseCost}
                   onChange={handleChange}
-                  required
+                  placeholder="e.g. 25000.00"
                   style={inputStyle}
-                >
-                  <option value="">-- Select Institution --</option>
-                  {institutions.map((inst) => (
-                    <option key={inst.institutionId} value={inst.institutionId}>
-                      {inst.institutionName}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div style={formGroup}>
-                <label>Department:</label>
-                <select
-                  name="departmentId"
-                  value={formData.departmentId}
+                <label>Rate per Hour:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  name="ratePerHour"
+                  value={formData.ratePerHour}
                   onChange={handleChange}
-                  required
-                  disabled={!formData.institutionId}
+                  placeholder="e.g. 5.00"
                   style={inputStyle}
-                >
-                  <option value="">
-                    {formData.institutionId
-                      ? "-- Select Department --"
-                      : "Select an institution first"}
-                  </option>
-                  {formDepartments.map((dept) => (
-                    <option key={dept.departmentId} value={dept.departmentId}>
-                      {dept.departmentName}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
+              {/* Institution/Department fields removed intentionally —
+                  equipment is always created under the logged-in Lab
+                  Manager's own institution and department, decided by
+                  the backend. There's no longer a way to pick a
+                  different one from this form. */}
               <div style={{ ...formGroup, flexDirection: "row", alignItems: "center", gap: "8px" }}>
                 <input
                   type="checkbox"
@@ -622,6 +564,8 @@ const modalOverlay = {
   padding: "20px",
   boxSizing: "border-box",
   overflowY: "auto",
+  zIndex: 1000, // above Navbar's z-index: 100 — otherwise the navbar
+                // renders on top and visually clips the modal's top
 };
 
 const modalBox = {
