@@ -145,12 +145,24 @@ public BookingServiceImpl(
                 entry.setWaitlistStatus("FULFILLED");
                 waitlistRepository.save(entry);
 
+                // tryAutoAllocate() now respects equipment.requiresApproval,
+                // so the resulting booking may be Pending Approval rather
+                // than Confirmed — reflect that accurately instead of
+                // always claiming it's confirmed.
+                boolean requiresApproval = equipment.getRequiresApproval() == null
+                        || equipment.getRequiresApproval();
+
                 notificationService.create(
                         entry.getUser(),
                         "WAITLIST_FULFILLED",
-                        "Your waitlisted slot is booked",
-                        "Your requested slot for " + equipment.getEquipmentName()
-                                + " is now confirmed.",
+                        requiresApproval
+                                ? "Your waitlisted slot is awaiting approval"
+                                : "Your waitlisted slot is booked",
+                        requiresApproval
+                                ? "Your requested slot for " + equipment.getEquipmentName()
+                                        + " has been submitted and is now awaiting manager approval."
+                                : "Your requested slot for " + equipment.getEquipmentName()
+                                        + " is now confirmed.",
                         equipment.getEquipmentId()
                 );
 
@@ -242,12 +254,35 @@ public BookingServiceImpl(
         autoBooking.setStartTime(start);
         autoBooking.setEndTime(end);
         autoBooking.setPurpose("Auto-allocated from waitlist");
-        autoBooking.setBookingStatus("Confirmed");
 
-        bookingRepository.save(autoBooking);
+        /*
+         * Waitlist fulfillment must respect the SAME approval rule as
+         * a normal createBooking() request — being auto-allocated from
+         * the waitlist is not a bypass for equipment that requires a
+         * manager's sign-off before use. Previously this always went
+         * straight to "Confirmed" regardless of requiresApproval,
+         * which let a waitlisted student get scheduled onto
+         * approval-required equipment with nobody ever reviewing it.
+         */
+        boolean requiresApproval = equipment.getRequiresApproval() == null
+                || equipment.getRequiresApproval();
 
-        equipment.setStatus("Booked");
-        equipmentRepository.save(equipment);
+        if (requiresApproval) {
+
+            autoBooking.setBookingStatus("Pending Approval");
+            bookingRepository.save(autoBooking);
+            // Equipment status is intentionally left as-is here, same
+            // as createBooking()'s Pending Approval branch — it only
+            // changes once a manager actually approves the booking.
+
+        } else {
+
+            autoBooking.setBookingStatus("Confirmed");
+            bookingRepository.save(autoBooking);
+
+            equipment.setStatus("Booked");
+            equipmentRepository.save(equipment);
+        }
 
         return true;
     }

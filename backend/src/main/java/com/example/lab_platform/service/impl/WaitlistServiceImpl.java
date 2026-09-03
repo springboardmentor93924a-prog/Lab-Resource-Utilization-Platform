@@ -139,11 +139,32 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
         autoBooking.setStartTime(waitlist.getRequestedStartTime());
         autoBooking.setEndTime(waitlist.getRequestedEndTime());
         autoBooking.setPurpose("Auto-assigned idle substitute (schedule optimization)");
-        autoBooking.setBookingStatus("Confirmed");
-        bookingRepository.save(autoBooking);
 
-        substitute.setStatus("Booked");
-        equipmentRepository.save(substitute);
+        /*
+         * Same approval rule as everywhere else a booking gets created —
+         * an idle-substitute auto-assignment is not a bypass for
+         * equipment that requires manager sign-off before use.
+         * Previously this always went straight to "Confirmed"
+         * regardless of requiresApproval.
+         */
+        boolean requiresApproval = substitute.getRequiresApproval() == null
+                || substitute.getRequiresApproval();
+
+        if (requiresApproval) {
+
+            autoBooking.setBookingStatus("Pending Approval");
+            bookingRepository.save(autoBooking);
+            // substitute.status intentionally left as-is until a
+            // manager actually approves it — same as createBooking().
+
+        } else {
+
+            autoBooking.setBookingStatus("Confirmed");
+            bookingRepository.save(autoBooking);
+
+            substitute.setStatus("Booked");
+            equipmentRepository.save(substitute);
+        }
 
         waitlist.setWaitlistStatus("FULFILLED");
         return waitlistRepository.save(waitlist);
