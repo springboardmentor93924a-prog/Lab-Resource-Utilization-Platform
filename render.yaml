@@ -24,8 +24,13 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+
+      # Automatically use the live frontend URL
       - key: FRONTEND_URL
-        sync: false
+        fromService:
+          type: web
+          name: lab-resource-utilization-frontend
+          envVarKey: RENDER_EXTERNAL_URL
 
   # React/Vite frontend
   - type: web
@@ -34,9 +39,15 @@ services:
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+
     envVars:
+      # Automatically use the live backend URL
       - key: VITE_API_URL
-        sync: false
+        fromService:
+          type: web
+          name: lab-resource-utilization-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
     routes:
       - type: rewrite
         source: /*
