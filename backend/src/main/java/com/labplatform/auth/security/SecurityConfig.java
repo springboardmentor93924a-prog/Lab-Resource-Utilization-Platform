@@ -176,7 +176,10 @@ private String frontendUrl;
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173","http://localhost:5174","http://localhost:5175","http://localhost:5176","http://localhost:5178","http://localhost:5179", "http://localhost:3000"));
+        config.setAllowedOrigins(List.of(
+        "http://localhost:5173",
+        frontendUrl
+));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
