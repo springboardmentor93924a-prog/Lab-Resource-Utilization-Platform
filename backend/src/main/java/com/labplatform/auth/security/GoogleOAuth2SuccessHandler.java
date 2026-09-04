@@ -1,5 +1,5 @@
 package com.labplatform.auth.security;
-
+import org.springframework.beans.factory.annotation.Value;
 import com.labplatform.auth.model.Role;
 import com.labplatform.auth.model.User;
 import com.labplatform.auth.repository.RoleRepository;
@@ -31,6 +31,9 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+private String frontendUrl;
 
     public GoogleOAuth2SuccessHandler(
             UserRepository userRepository,
@@ -92,8 +95,8 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             );
 
             response.sendRedirect(
-                    "http://localhost:5173/google-register"
-            );
+        frontendUrl + "/google-register"
+);
 
             return;
         }
@@ -115,7 +118,7 @@ public class GoogleOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         // Redirect back to React with JWT
         String redirectUrl = UriComponentsBuilder
-                .fromUriString("http://localhost:5173/oauth2/callback")
+        .fromUriString(frontendUrl + "/oauth2/callback")
                 .queryParam("token", token)
                 .build()
                 .encode()

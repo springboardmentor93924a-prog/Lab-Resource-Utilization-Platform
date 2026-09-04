@@ -1,5 +1,5 @@
 package com.labplatform.auth.security;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,11 +21,13 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+private String frontendUrl;
 
     public SecurityConfig(
-            JwtAuthFilter jwtAuthFilter,
-            GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler
-    ) {
+        JwtAuthFilter jwtAuthFilter,
+        GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler
+) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.googleOAuth2SuccessHandler = googleOAuth2SuccessHandler;
     }
@@ -163,8 +165,8 @@ public class SecurityConfig {
                             System.err.println("========================================");
 
                             response.sendRedirect(
-                                    "http://localhost:5173/login?error=google"
-                            );
+        frontendUrl + "/login?error=google"
+);
                         })
                 );
 
