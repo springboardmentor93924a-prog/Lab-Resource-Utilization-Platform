@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 export default function BookingForm({ onSuccess }) {
   const [equipmentId, setEquipmentId] = useState('');
+  const [equipment, setEquipment] = useState([]);
   const [bookingDate, setBookingDate] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/api/equipment', {
+      headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
+    }).then((response) => setEquipment(Array.isArray(response.data) ? response.data : []));
+  }, []);
 
   const handleBooking = async (e) => {
     e.preventDefault();
@@ -33,8 +40,15 @@ export default function BookingForm({ onSuccess }) {
       <h3>Create Equipment Booking</h3>
       <form onSubmit={handleBooking}>
         <div style={{ marginBottom: '10px' }}>
-          <label>Equipment ID:</label><br />
-          <input type="number" value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+          <label>Equipment:</label><br />
+          <select value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+            <option value="">Select equipment</option>
+            {equipment.map((item) => (
+              <option key={item.equipmentId} value={item.equipmentId} disabled={item.status !== 'Available'}>
+                {item.equipmentName} ({item.status}){item.institution?.institutionName ? ` — ${item.institution.institutionName}` : ''}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{ marginBottom: '10px' }}>
           <label>Booking Date:</label><br />

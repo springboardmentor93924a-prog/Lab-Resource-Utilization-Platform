@@ -56,7 +56,11 @@ public EquipmentFeedbackServiceImpl(
 
     @Override
     public List<EquipmentFeedback> getAllFeedback() {
-        return feedbackRepository.findAllByOrderByCreatedDateDesc();
+        User user = getLoggedInUser();
+        String role = getRole(user);
+        return feedbackRepository.findAllByOrderByCreatedDateDesc().stream()
+            .filter(feedback -> canManageEquipment(user, role, feedback.getEquipment()))
+            .toList();
     }
 
     @Override
@@ -67,6 +71,10 @@ public EquipmentFeedbackServiceImpl(
 
     @Override
     public List<EquipmentFeedback> getFeedbackByEquipment(Integer equipmentId) {
+        User user = getLoggedInUser();
+        Equipment equipment = equipmentRepository.findById(equipmentId)
+            .orElseThrow(() -> new RuntimeException("Equipment not found"));
+        assertCanManageEquipment(user, getRole(user), equipment);
         return feedbackRepository.findByEquipment_EquipmentId(equipmentId);
     }
 
@@ -216,6 +224,8 @@ return saved;
     public EquipmentFeedback updateStatus(Integer id, String status) {
         EquipmentFeedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Feedback not found"));
+        User user = getLoggedInUser();
+        assertCanManageEquipment(user, getRole(user), feedback.getEquipment());
 
         String normalized = status == null ? "" : status.trim().toUpperCase();
         if (!normalized.equals("REVIEWED") && !normalized.equals("RESOLVED")) {
@@ -315,6 +325,16 @@ return saved;
                 .orElseThrow(() -> new RuntimeException("Feedback not found"));
 
         User user = getLoggedInUser();
+        assertCanManageEquipment(user, getRole(user), feedback.getEquipment());
+        if (!"LAB_TECHNICIAN".equalsIgnoreCase(getRole(user))) {
+            throw new RuntimeException("Only the assigned lab technician can mark an issue as fixed");
+        }
+        if (feedback.getEquipment() == null || feedback.getEquipment().getDepartment() == null
+                || user.getDepartment() == null
+                || !feedback.getEquipment().getDepartment().getDepartmentId()
+                        .equals(user.getDepartment().getDepartmentId())) {
+            throw new RuntimeException("You can only fix issues for your department");
+        }
         feedback.setHandledBy(user);
         feedback.setStatus("PENDING_APPROVAL");
         EquipmentFeedback saved = feedbackRepository.save(feedback);
@@ -343,6 +363,8 @@ return saved;
     public EquipmentFeedback decideOnFix(Integer id, String decision) {
         EquipmentFeedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Feedback not found"));
+        User user = getLoggedInUser();
+        assertCanManageEquipment(user, getRole(user), feedback.getEquipment());
 
         String normalized = decision == null ? "" : decision.trim().toUpperCase();
         if (!normalized.equals("RESOLVED") && !normalized.equals("REJECTED")) {
@@ -377,5 +399,31 @@ return saved;
         }
 
         return saved;
+    }
+
+    private String getRole(User user) {
+        return user.getRole() == null ? "" : user.getRole().getRoleName();
+    }
+
+    private boolean canManageEquipment(User user, String role, Equipment equipment) {
+        if (equipment == null || user.getInstitution() == null || equipment.getInstitution() == null) {
+            return false;
+        }
+        if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) return true;
+        if (!user.getInstitution().getInstitutionId()
+                .equals(equipment.getInstitution().getInstitutionId())) return false;
+        if ("INSTITUTION_ADMIN".equalsIgnoreCase(role)) return true;
+        return ("LAB_MANAGER".equalsIgnoreCase(role)
+                || "LAB_TECHNICIAN".equalsIgnoreCase(role))
+                && user.getDepartment() != null
+                && equipment.getDepartment() != null
+                && user.getDepartment().getDepartmentId()
+                        .equals(equipment.getDepartment().getDepartmentId());
+    }
+
+    private void assertCanManageEquipment(User user, String role, Equipment equipment) {
+        if (!canManageEquipment(user, role, equipment)) {
+            throw new RuntimeException("You can only manage issue reports for your permitted institution/department");
+        }
     }
 }

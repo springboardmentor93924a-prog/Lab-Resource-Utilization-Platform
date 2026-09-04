@@ -126,7 +126,8 @@ public class BookingController {
     @PreAuthorize("""
         hasAnyRole(
             'LAB_MANAGER',
-            'DEPARTMENT_HEAD'
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN'
         )
     """)
     @PutMapping("/{id}/approve")
@@ -146,7 +147,8 @@ public class BookingController {
     @PreAuthorize("""
         hasAnyRole(
             'LAB_MANAGER',
-            'DEPARTMENT_HEAD'
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN'
         )
     """)
     @PutMapping("/{id}/reject")

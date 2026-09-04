@@ -12,6 +12,7 @@ import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.ResourceSharingRepository;
+import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.service.NotificationService;
 
 import org.springframework.security.core.Authentication;
@@ -32,6 +33,7 @@ public class BookingServiceImpl implements BookingService {
     private final ResourceSharingRepository resourceSharingRepository;
     private final EquipmentFeedbackRepository equipmentFeedbackRepository;
     private final NotificationService notificationService;
+        private final UserRepository userRepository;
 
 public BookingServiceImpl(
         BookingRepository bookingRepository,
@@ -40,7 +42,8 @@ public BookingServiceImpl(
         MaintenanceRepository maintenanceRepository,
         ResourceSharingRepository resourceSharingRepository,
         EquipmentFeedbackRepository equipmentFeedbackRepository,
-        NotificationService notificationService) {
+        NotificationService notificationService,
+        UserRepository userRepository) {
 
     this.bookingRepository = bookingRepository;
     this.equipmentRepository = equipmentRepository;
@@ -49,6 +52,7 @@ public BookingServiceImpl(
     this.resourceSharingRepository = resourceSharingRepository;
     this.equipmentFeedbackRepository = equipmentFeedbackRepository;
     this.notificationService = notificationService;
+        this.userRepository = userRepository;
 }
     
     /*
@@ -323,6 +327,38 @@ public BookingServiceImpl(
         }
     }
 
+    private void notifyInstitutionAdmins(Equipment equipment, Booking booking) {
+        if (equipment.getInstitution() == null) return;
+
+        userRepository.findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(user -> user.getRole() != null
+                        && "INSTITUTION_ADMIN".equalsIgnoreCase(user.getRole().getRoleName()))
+                .forEach(admin -> notificationService.create(
+                        admin,
+                        "CROSS_INSTITUTION_BOOKING_REQUEST",
+                        "Cross-institution booking approval required",
+                        booking.getUser().getFullName() + " requested " + equipment.getEquipmentName()
+                                + ". Review and approve or reject it.",
+                        booking.getBookingId()));
+    }
+
+    private void notifyInstitutionManagers(Equipment equipment, Booking booking) {
+        if (equipment.getInstitution() == null) return;
+
+        userRepository.findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(user -> user.getRole() != null
+                        && "LAB_MANAGER".equalsIgnoreCase(user.getRole().getRoleName()))
+                .forEach(manager -> notificationService.create(
+                        manager,
+                        "BOOKING_MANAGER_APPROVAL_REQUIRED",
+                        "Booking approval required",
+                        "A booking for " + equipment.getEquipmentName()
+                                + " passed institution review and needs your approval.",
+                        booking.getBookingId()));
+    }
+
     private boolean isManagerOrAbove(String role) {
 
         return role.equalsIgnoreCase("LAB_MANAGER")
@@ -422,27 +458,10 @@ if (hasUrgentUnresolvedIssue) {
          * resource-sharing request between the two institutions for
          * this exact equipment must exist first.
          */
-        if (fullEquipment.getInstitution() != null
+        boolean crossInstitution = fullEquipment.getInstitution() != null
                 && loggedInUser.getInstitution() != null
                 && !fullEquipment.getInstitution().getInstitutionId()
-                        .equals(loggedInUser.getInstitution().getInstitutionId())) {
-
-            boolean shared =
-                    resourceSharingRepository
-                            .existsBySenderInstitution_InstitutionIdAndReceiverInstitution_InstitutionIdAndEquipment_EquipmentIdAndStatus(
-                                    fullEquipment.getInstitution().getInstitutionId(),
-                                    loggedInUser.getInstitution().getInstitutionId(),
-                                    fullEquipment.getEquipmentId(),
-                                    "APPROVED"
-                            );
-
-            if (!shared) {
-                throw new RuntimeException(
-                        "This equipment belongs to another institution and is not shared with yours. "
-                                + "Request access via Resource Sharing first."
-                );
-            }
-        }
+                        .equals(loggedInUser.getInstitution().getInstitutionId());
 
         if (booking.getStartTime() == null || booking.getEndTime() == null) {
             throw new RuntimeException("Start time and end time are required");
@@ -505,14 +524,16 @@ if (hasUrgentUnresolvedIssue) {
         || booking.getEquipment().getRequiresApproval();
 
 // new:
-        if (requiresApproval) {
-        booking.setBookingStatus("Pending Approval");
+                if (crossInstitution) {
+                booking.setBookingStatus("Pending Institution Approval");
         } else {
-        booking.setBookingStatus("Confirmed");
+                booking.setBookingStatus(requiresApproval ? "Pending Approval" : "Confirmed");
 
-        Equipment eq = booking.getEquipment();
-        eq.setStatus("Booked");
-        equipmentRepository.save(eq);
+                if (!requiresApproval) {
+                        Equipment eq = booking.getEquipment();
+                        eq.setStatus("Booked");
+                        equipmentRepository.save(eq);
+                }
         }
 
         Booking saved = bookingRepository.save(booking);
@@ -528,6 +549,10 @@ if (hasUrgentUnresolvedIssue) {
                 + " is " + saved.getBookingStatus().toLowerCase() + ".",
         saved.getBookingId()
         );
+
+                if (crossInstitution) {
+                        notifyInstitutionAdmins(fullEquipment, saved);
+                }
 
         return saved;
     }
@@ -875,7 +900,8 @@ public void deleteBooking(Integer id) {
             );
         }
 
-        if (!isPendingApproval(booking.getBookingStatus())) {
+        if (!isPendingApproval(booking.getBookingStatus())
+                && !isPendingInstitutionApproval(booking.getBookingStatus())) {
     throw new RuntimeException("Only Pending Approval bookings can be approved");
 }
 
@@ -892,6 +918,29 @@ public void deleteBooking(Integer id) {
         }
 
         assertSameInstitutionAsEquipment(loggedInUser, role, equipment);
+
+                if (isPendingInstitutionApproval(booking.getBookingStatus())) {
+                        if (!"INSTITUTION_ADMIN".equalsIgnoreCase(role)
+                                        && !"SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+                                throw new RuntimeException("Only the equipment owner's institution admin can approve this request first");
+                        }
+
+                        booking.setBookingStatus("Pending Approval");
+                        Booking saved = bookingRepository.save(booking);
+                        notifyInstitutionManagers(equipment, saved);
+                        notificationService.create(
+                                        booking.getUser(),
+                                        "CROSS_INSTITUTION_BOOKING_REVIEWED",
+                                        "Booking passed institution review",
+                                        "Your request for " + equipment.getEquipmentName()
+                                                        + " is now waiting for the owning lab manager's approval.",
+                                        booking.getBookingId());
+                        return saved;
+                }
+
+                if ("INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+                        throw new RuntimeException("Institution admins only approve the initial cross-institution review");
+                }
 
         Integer equipmentId =
                 equipment.getEquipmentId();
@@ -1038,13 +1087,20 @@ public void deleteBooking(Integer id) {
             );
         }
 
-        if (!isPendingApproval(booking.getBookingStatus())) {
+        if (!isPendingApproval(booking.getBookingStatus())
+                && !isPendingInstitutionApproval(booking.getBookingStatus())) {
     throw new RuntimeException("Only Pending Approval bookings can be rejected");
 }
 
         if (booking.getEquipment() != null) {
             assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
         }
+
+                if (isPendingInstitutionApproval(booking.getBookingStatus())
+                                && !"INSTITUTION_ADMIN".equalsIgnoreCase(role)
+                                && !"SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+                        throw new RuntimeException("Only the equipment owner's institution admin can reject this request first");
+                }
 
         booking.setBookingStatus("Rejected");
 
@@ -1165,6 +1221,9 @@ public void deleteBooking(Integer id) {
     if (s.equals("pending") || s.equals("pending approval") || s.equals("pending_approval")) {
         return "pending approval";
     }
+        if (s.equals("pending institution approval") || s.equals("pending_institution_approval")) {
+                return "pending institution approval";
+        }
     if (s.equals("confirmed")) return "confirmed";
     if (s.equals("in use") || s.equals("in_use")) return "in use";
     if (s.equals("rejected")) return "rejected";
@@ -1175,7 +1234,12 @@ public void deleteBooking(Integer id) {
 }
 
 private boolean isPendingApproval(String status) {
-    return "pending approval".equals(normalizeBookingStatus(status));
+        return "pending approval".equals(normalizeBookingStatus(status))
+                        || isPendingInstitutionApproval(status);
+}
+
+private boolean isPendingInstitutionApproval(String status) {
+        return "pending institution approval".equals(normalizeBookingStatus(status));
 }
 
 }

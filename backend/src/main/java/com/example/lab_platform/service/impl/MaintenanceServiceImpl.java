@@ -5,6 +5,7 @@ import com.example.lab_platform.entity.Equipment;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.EquipmentRepository;
+import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.service.MaintenanceService;
 import com.example.lab_platform.service.BookingService;
 
@@ -21,34 +22,49 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     private final MaintenanceRepository maintenanceRepository;
     private final EquipmentRepository equipmentRepository;
     private final BookingService bookingService;
+    private final UserRepository userRepository;
  
  
     public MaintenanceServiceImpl(
             MaintenanceRepository maintenanceRepository,
             EquipmentRepository equipmentRepository,
-            BookingService bookingService) {
+            BookingService bookingService,
+            UserRepository userRepository) {
  
         this.maintenanceRepository = maintenanceRepository;
         this.equipmentRepository = equipmentRepository;
         this.bookingService = bookingService;
+        this.userRepository = userRepository;
     }
  
  
  
     @Override
     public List<Maintenance> getAllMaintenance() {
- 
-        return maintenanceRepository.findAll();
+        User user = getLoggedInUser();
+        String role = getRole(user);
+        List<Maintenance> records = maintenanceRepository.findAll();
+
+        if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) return records;
+        return records.stream()
+            .filter(record -> canManageEquipment(user, role, record.getEquipment()))
+            .toList();
     }
  
  
  
     @Override
     public Maintenance getMaintenanceById(Integer id) {
- 
-        return maintenanceRepository.findById(id)
-                .orElseThrow(() ->
-                new RuntimeException("Maintenance not found"));
+        Maintenance record = maintenanceRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Maintenance not found"));
+        User user = getLoggedInUser();
+        assertCanManageEquipment(user, getRole(user), record.getEquipment());
+        if ("LAB_TECHNICIAN".equalsIgnoreCase(getRole(user))
+                && (record.getAssignedTechnician() == null
+                || !user.getUserId().equals(record.getAssignedTechnician().getUserId()))) {
+            throw new RuntimeException("You can only view maintenance tasks assigned to you");
+        }
+        return record;
     }
  
  
@@ -56,10 +72,38 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     @Override
     public Maintenance createMaintenance(
             Maintenance maintenance) {
- 
- 
-        Equipment equipment =
-                maintenance.getEquipment();
+        User user = getLoggedInUser();
+        String role = getRole(user);
+        if (maintenance.getEquipment() == null
+                || maintenance.getEquipment().getEquipmentId() == null) {
+            throw new RuntimeException("Equipment is required");
+        }
+
+        Equipment equipment = equipmentRepository.findById(
+                        maintenance.getEquipment().getEquipmentId())
+                .orElseThrow(() -> new RuntimeException("Equipment not found"));
+        assertCanManageEquipment(user, role, equipment);
+
+        if (maintenance.getAssignedTechnician() != null) {
+            if (maintenance.getAssignedTechnician().getUserId() == null) {
+                throw new RuntimeException("Assigned technician is required");
+            }
+            User assigned = userRepository.findById(
+                            maintenance.getAssignedTechnician().getUserId())
+                    .orElseThrow(() -> new RuntimeException("Assigned technician not found"));
+            if (!"LAB_TECHNICIAN".equalsIgnoreCase(getRole(assigned))
+                    || !canManageEquipment(user, role, equipment)
+                    || assigned.getInstitution() == null
+                    || !assigned.getInstitution().getInstitutionId()
+                            .equals(equipment.getInstitution().getInstitutionId())
+                    || assigned.getDepartment() == null
+                    || equipment.getDepartment() == null
+                    || !assigned.getDepartment().getDepartmentId()
+                            .equals(equipment.getDepartment().getDepartmentId())) {
+                throw new RuntimeException("Technician must belong to the equipment's institution and department");
+            }
+            maintenance.setAssignedTechnician(assigned);
+        }
  
  
         if(equipment != null) {
@@ -70,6 +114,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
  
  
+        maintenance.setEquipment(equipment);
         maintenance.setMaintenanceStatus("Active");
  
  
@@ -105,6 +150,8 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 ? loggedInUser.getRole().getRoleName()
                 : null;
         boolean isTechnician = "LAB_TECHNICIAN".equalsIgnoreCase(role);
+
+        assertCanManageEquipment(loggedInUser, role, existing.getEquipment());
 
         if (isTechnician) {
             boolean assignedToCaller = existing.getAssignedTechnician() != null
@@ -147,7 +194,11 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         // assignedTechnician (a technician either omits it or is blocked
         // above unless it's their own id, which is a no-op anyway).
         if (!isTechnician && updatedMaintenance.getAssignedTechnician() != null) {
-            existing.setAssignedTechnician(updatedMaintenance.getAssignedTechnician());
+            User assigned = userRepository.findById(
+                            updatedMaintenance.getAssignedTechnician().getUserId())
+                    .orElseThrow(() -> new RuntimeException("Assigned technician not found"));
+            validateAssignedTechnician(assigned, existing.getEquipment());
+            existing.setAssignedTechnician(assigned);
         }
 
         Maintenance saved = maintenanceRepository.save(existing);
@@ -217,6 +268,54 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
         return maintenanceRepository
                 .findByAssignedTechnician_UserId(loggedInUser.getUserId());
+    }
+
+    private User getLoggedInUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (User) authentication.getPrincipal();
+    }
+
+    private String getRole(User user) {
+        return user.getRole() == null ? "" : user.getRole().getRoleName();
+    }
+
+    private boolean canManageEquipment(User user, String role, Equipment equipment) {
+        if (equipment == null || user.getInstitution() == null || equipment.getInstitution() == null) {
+            return false;
+        }
+        if ("INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+            return user.getInstitution().getInstitutionId()
+                    .equals(equipment.getInstitution().getInstitutionId());
+        }
+        if ("LAB_MANAGER".equalsIgnoreCase(role) || "LAB_TECHNICIAN".equalsIgnoreCase(role)) {
+            return user.getDepartment() != null && equipment.getDepartment() != null
+                    && user.getInstitution().getInstitutionId()
+                            .equals(equipment.getInstitution().getInstitutionId())
+                    && user.getDepartment().getDepartmentId()
+                            .equals(equipment.getDepartment().getDepartmentId());
+        }
+        return "SYSTEM_ADMIN".equalsIgnoreCase(role);
+    }
+
+    private void assertCanManageEquipment(User user, String role, Equipment equipment) {
+        if (!canManageEquipment(user, role, equipment)) {
+            throw new RuntimeException("You can only manage maintenance for your permitted institution/department");
+        }
+    }
+
+    private void validateAssignedTechnician(User assigned, Equipment equipment) {
+        if (!"LAB_TECHNICIAN".equalsIgnoreCase(getRole(assigned))
+                || assigned.getInstitution() == null
+                || equipment == null
+                || equipment.getInstitution() == null
+                || !assigned.getInstitution().getInstitutionId()
+                        .equals(equipment.getInstitution().getInstitutionId())
+                || assigned.getDepartment() == null
+                || equipment.getDepartment() == null
+                || !assigned.getDepartment().getDepartmentId()
+                        .equals(equipment.getDepartment().getDepartmentId())) {
+            throw new RuntimeException("Technician must belong to the equipment's institution and department");
+        }
     }
 
 }
