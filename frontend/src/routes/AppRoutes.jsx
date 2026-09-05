@@ -82,6 +82,7 @@ function AppRoutes() {
               "STUDENT",
               "LAB_MANAGER",
               "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
           >
@@ -138,6 +139,7 @@ function AppRoutes() {
             allowedRoles={[
               "LAB_TECHNICIAN",
               "LAB_MANAGER",
+              "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
           >

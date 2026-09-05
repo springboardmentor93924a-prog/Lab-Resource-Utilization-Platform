@@ -35,6 +35,7 @@ function Sidebar() {
     "STUDENT",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 
@@ -43,6 +44,7 @@ function Sidebar() {
   const canAccessMaintenance = [
     "LAB_TECHNICIAN",
     "LAB_MANAGER",
+    "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 

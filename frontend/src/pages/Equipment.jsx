@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import useEquipmentRealtime from "../hooks/useEquipmentRealtime";
 
 function Equipment() {
   const navigate = useNavigate();
@@ -66,11 +67,20 @@ function Equipment() {
   useEffect(() => {
     fetchEquipment();
 
-    // Poll so status/institution changes made by other users show up
-    // without a manual page refresh.
-    const interval = setInterval(fetchEquipment, 15000);
+    // Fallback safety net only — the real update path is now the
+    // WebSocket push below (useEquipmentRealtime). If the socket ever
+    // drops and hasn't reconnected yet, this still catches up within
+    // a minute instead of leaving the page stale indefinitely.
+    const interval = setInterval(fetchEquipment, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // Instant push: the backend pings "/topic/equipment-updates" the
+  // moment any booking or equipment change affects status (create,
+  // approve, reject, complete, or the 60s scheduler sweep) — this
+  // re-fetches immediately instead of waiting for the next poll tick,
+  // which is what was making the page look stale/idle.
+  useEquipmentRealtime(fetchEquipment);
 
   // Handle Input Changes
   const handleChange = (e) => {

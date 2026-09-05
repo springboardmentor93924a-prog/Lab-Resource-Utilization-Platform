@@ -12,7 +12,9 @@ import com.example.lab_platform.repository.WaitlistRepository;
 import com.example.lab_platform.entity.Maintenance;
 import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.ResourceSharingRepository;
+import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.service.NotificationService;
+import com.example.lab_platform.service.RealtimeUpdateService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +34,8 @@ public class BookingServiceImpl implements BookingService {
     private final ResourceSharingRepository resourceSharingRepository;
     private final EquipmentFeedbackRepository equipmentFeedbackRepository;
     private final NotificationService notificationService;
+        private final UserRepository userRepository;
+        private final RealtimeUpdateService realtimeUpdateService;
 
 public BookingServiceImpl(
         BookingRepository bookingRepository,
@@ -40,7 +44,9 @@ public BookingServiceImpl(
         MaintenanceRepository maintenanceRepository,
         ResourceSharingRepository resourceSharingRepository,
         EquipmentFeedbackRepository equipmentFeedbackRepository,
-        NotificationService notificationService) {
+        NotificationService notificationService,
+        UserRepository userRepository,
+        RealtimeUpdateService realtimeUpdateService) {
 
     this.bookingRepository = bookingRepository;
     this.equipmentRepository = equipmentRepository;
@@ -49,18 +55,24 @@ public BookingServiceImpl(
     this.resourceSharingRepository = resourceSharingRepository;
     this.equipmentFeedbackRepository = equipmentFeedbackRepository;
     this.notificationService = notificationService;
+        this.userRepository = userRepository;
+        this.realtimeUpdateService = realtimeUpdateService;
 }
     
     /*
      * Thin wrapper kept so the existing call sites (rejectBooking,
      * completeBooking, autoCompleteOverdueBookings) don't need to
      * change — delegates to the full cascade below instead of only
-     * ever looking at a single entry.
+     * ever looking at a single entry. Also doubles as the real-time
+     * push point: every one of those call sites just changed the
+     * equipment's status to Available, so this is a natural single
+     * place to ping connected clients from.
      */
     private void notifyNextWaitlistedUser(Equipment equipment) {
         if (equipment == null) {
             return;
         }
+        realtimeUpdateService.pingEquipmentUpdated();
         processWaitlistForEquipment(equipment.getEquipmentId());
     }
 
@@ -306,6 +318,16 @@ public BookingServiceImpl(
      * can approve/reject/complete a booking against it. SYSTEM_ADMIN
      * is exempt (platform-wide). This is what stops a Manager at
      * College C from acting on a booking for College A's equipment.
+     *
+     * Beyond institution, LAB_MANAGER/LAB_TECHNICIAN/DEPARTMENT_HEAD
+     * are further scoped to their OWN department — a manager in the
+     * Physics department should not be able to approve/reject/
+     * complete bookings for Chemistry's equipment just because it's
+     * the same college. INSTITUTION_ADMIN is exempt from the
+     * department check (they have no single department — their role
+     * IS institution-wide review, handled separately via the
+     * "Pending Institution Approval" branch in approveBooking/
+     * rejectBooking).
      */
     private void assertSameInstitutionAsEquipment(User loggedInUser, String role, Equipment equipment) {
         if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
@@ -321,6 +343,51 @@ public BookingServiceImpl(
                     "You can only manage bookings for your own institution's equipment"
             );
         }
+
+        if (!"INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+
+            if (loggedInUser.getDepartment() == null
+                    || equipment.getDepartment() == null
+                    || !loggedInUser.getDepartment().getDepartmentId()
+                            .equals(equipment.getDepartment().getDepartmentId())) {
+
+                throw new RuntimeException(
+                        "You can only manage bookings for your own department's equipment"
+                );
+            }
+        }
+    }
+
+    private void notifyInstitutionAdmins(Equipment equipment, Booking booking) {
+        if (equipment.getInstitution() == null) return;
+
+        userRepository.findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(user -> user.getRole() != null
+                        && "INSTITUTION_ADMIN".equalsIgnoreCase(user.getRole().getRoleName()))
+                .forEach(admin -> notificationService.create(
+                        admin,
+                        "CROSS_INSTITUTION_BOOKING_REQUEST",
+                        "Cross-institution booking approval required",
+                        booking.getUser().getFullName() + " requested " + equipment.getEquipmentName()
+                                + ". Review and approve or reject it.",
+                        booking.getBookingId()));
+    }
+
+    private void notifyInstitutionManagers(Equipment equipment, Booking booking) {
+        if (equipment.getInstitution() == null) return;
+
+        userRepository.findByInstitution_InstitutionId(equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(user -> user.getRole() != null
+                        && "LAB_MANAGER".equalsIgnoreCase(user.getRole().getRoleName()))
+                .forEach(manager -> notificationService.create(
+                        manager,
+                        "BOOKING_MANAGER_APPROVAL_REQUIRED",
+                        "Booking approval required",
+                        "A booking for " + equipment.getEquipmentName()
+                                + " passed institution review and needs your approval.",
+                        booking.getBookingId()));
     }
 
     private boolean isManagerOrAbove(String role) {
@@ -422,27 +489,10 @@ if (hasUrgentUnresolvedIssue) {
          * resource-sharing request between the two institutions for
          * this exact equipment must exist first.
          */
-        if (fullEquipment.getInstitution() != null
+        boolean crossInstitution = fullEquipment.getInstitution() != null
                 && loggedInUser.getInstitution() != null
                 && !fullEquipment.getInstitution().getInstitutionId()
-                        .equals(loggedInUser.getInstitution().getInstitutionId())) {
-
-            boolean shared =
-                    resourceSharingRepository
-                            .existsBySenderInstitution_InstitutionIdAndReceiverInstitution_InstitutionIdAndEquipment_EquipmentIdAndStatus(
-                                    fullEquipment.getInstitution().getInstitutionId(),
-                                    loggedInUser.getInstitution().getInstitutionId(),
-                                    fullEquipment.getEquipmentId(),
-                                    "APPROVED"
-                            );
-
-            if (!shared) {
-                throw new RuntimeException(
-                        "This equipment belongs to another institution and is not shared with yours. "
-                                + "Request access via Resource Sharing first."
-                );
-            }
-        }
+                        .equals(loggedInUser.getInstitution().getInstitutionId());
 
         if (booking.getStartTime() == null || booking.getEndTime() == null) {
             throw new RuntimeException("Start time and end time are required");
@@ -505,14 +555,16 @@ if (hasUrgentUnresolvedIssue) {
         || booking.getEquipment().getRequiresApproval();
 
 // new:
-        if (requiresApproval) {
-        booking.setBookingStatus("Pending Approval");
+                if (crossInstitution) {
+                booking.setBookingStatus("Pending Institution Approval");
         } else {
-        booking.setBookingStatus("Confirmed");
+                booking.setBookingStatus(requiresApproval ? "Pending Approval" : "Confirmed");
 
-        Equipment eq = booking.getEquipment();
-        eq.setStatus("Booked");
-        equipmentRepository.save(eq);
+                if (!requiresApproval) {
+                        Equipment eq = booking.getEquipment();
+                        eq.setStatus("Booked");
+                        equipmentRepository.save(eq);
+                }
         }
 
         Booking saved = bookingRepository.save(booking);
@@ -528,6 +580,10 @@ if (hasUrgentUnresolvedIssue) {
                 + " is " + saved.getBookingStatus().toLowerCase() + ".",
         saved.getBookingId()
         );
+
+                if (crossInstitution) {
+                        notifyInstitutionAdmins(fullEquipment, saved);
+                }
 
         return saved;
     }
@@ -875,7 +931,8 @@ public void deleteBooking(Integer id) {
             );
         }
 
-        if (!isPendingApproval(booking.getBookingStatus())) {
+        if (!isPendingApproval(booking.getBookingStatus())
+                && !isPendingInstitutionApproval(booking.getBookingStatus())) {
     throw new RuntimeException("Only Pending Approval bookings can be approved");
 }
 
@@ -891,7 +948,45 @@ public void deleteBooking(Integer id) {
             );
         }
 
+        /*
+         * A Pending Approval / Pending Institution Approval request
+         * whose slot has already ended can no longer be approved —
+         * previously this fell through, got set to "Confirmed", and
+         * then got silently flipped to "Completed" by the very next
+         * autoCompleteOverdueBookings() sweep (within 60s), which
+         * looked to staff like clicking Approve auto-completed the
+         * booking. Reject it explicitly instead, with a clear reason.
+         */
+        if (booking.getEndTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException(
+                    "This booking's requested time slot has already passed and can no longer be approved. Please reject it instead."
+            );
+        }
+
         assertSameInstitutionAsEquipment(loggedInUser, role, equipment);
+
+                if (isPendingInstitutionApproval(booking.getBookingStatus())) {
+                        if (!"INSTITUTION_ADMIN".equalsIgnoreCase(role)
+                                        && !"SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+                                throw new RuntimeException("Only the equipment owner's institution admin can approve this request first");
+                        }
+
+                        booking.setBookingStatus("Pending Approval");
+                        Booking saved = bookingRepository.save(booking);
+                        notifyInstitutionManagers(equipment, saved);
+                        notificationService.create(
+                                        booking.getUser(),
+                                        "CROSS_INSTITUTION_BOOKING_REVIEWED",
+                                        "Booking passed institution review",
+                                        "Your request for " + equipment.getEquipmentName()
+                                                        + " is now waiting for the owning lab manager's approval.",
+                                        booking.getBookingId());
+                        return saved;
+                }
+
+                if ("INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+                        throw new RuntimeException("Institution admins only approve the initial cross-institution review");
+                }
 
         Integer equipmentId =
                 equipment.getEquipmentId();
@@ -1014,7 +1109,23 @@ public void deleteBooking(Integer id) {
 
         equipmentRepository.save(equipment);
 
-        return bookingRepository.save(booking);
+        realtimeUpdateService.pingEquipmentUpdated();
+
+        Booking savedApproval = bookingRepository.save(booking);
+
+        // Previously nothing notified the requester when their booking
+        // was actually approved — only booking creation and the two
+        // cross-institution intermediate hops fired a notification.
+        notificationService.create(
+                savedApproval.getUser(),
+                "BOOKING_APPROVED",
+                "Booking approved",
+                "Your booking for " + equipment.getEquipmentName()
+                        + " has been approved and is now " + savedApproval.getBookingStatus() + ".",
+                savedApproval.getBookingId()
+        );
+
+        return savedApproval;
     }
 
     @Override
@@ -1038,7 +1149,8 @@ public void deleteBooking(Integer id) {
             );
         }
 
-        if (!isPendingApproval(booking.getBookingStatus())) {
+        if (!isPendingApproval(booking.getBookingStatus())
+                && !isPendingInstitutionApproval(booking.getBookingStatus())) {
     throw new RuntimeException("Only Pending Approval bookings can be rejected");
 }
 
@@ -1046,10 +1158,26 @@ public void deleteBooking(Integer id) {
             assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
         }
 
+                if (isPendingInstitutionApproval(booking.getBookingStatus())
+                                && !"INSTITUTION_ADMIN".equalsIgnoreCase(role)
+                                && !"SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+                        throw new RuntimeException("Only the equipment owner's institution admin can reject this request first");
+                }
+
         booking.setBookingStatus("Rejected");
 
         Booking savedBooking =
                 bookingRepository.save(booking);
+
+        notificationService.create(
+                savedBooking.getUser(),
+                "BOOKING_REJECTED",
+                "Booking rejected",
+                "Your booking for " + (booking.getEquipment() != null
+                        ? booking.getEquipment().getEquipmentName() : "the requested equipment")
+                        + " was rejected.",
+                savedBooking.getBookingId()
+        );
 
         if (booking.getEquipment() != null) {
 
@@ -1106,7 +1234,18 @@ public void deleteBooking(Integer id) {
             );
         }
 
-        return bookingRepository.save(booking);
+        Booking savedCompletion = bookingRepository.save(booking);
+
+        notificationService.create(
+                savedCompletion.getUser(),
+                "BOOKING_COMPLETED",
+                "Booking completed",
+                "Your booking for " + (equipment != null ? equipment.getEquipmentName() : "the equipment")
+                        + " has been marked complete.",
+                savedCompletion.getBookingId()
+        );
+
+        return savedCompletion;
     }
 
     /*
@@ -1155,7 +1294,57 @@ public void deleteBooking(Integer id) {
                 notifyNextWaitlistedUser(equipment);
             }
 
-            bookingRepository.save(booking);
+            Booking savedAutoCompletion = bookingRepository.save(booking);
+
+            notificationService.create(
+                    savedAutoCompletion.getUser(),
+                    "BOOKING_COMPLETED",
+                    "Booking completed",
+                    "Your booking for " + (equipment != null ? equipment.getEquipmentName() : "the equipment")
+                            + " has ended and was automatically marked complete.",
+                    savedAutoCompletion.getBookingId()
+            );
+        }
+
+        expireStalePendingBookings(now);
+    }
+
+    /*
+     * A Pending Approval / Pending Institution Approval request whose
+     * slot has already fully passed will now be blocked from manual
+     * approval (see the guard added in approveBooking()), but nothing
+     * was closing it out automatically — it would just sit there
+     * forever, still shown to staff as something to act on. This
+     * closes it the same way a staff rejection would, and tells the
+     * requester why.
+     */
+    private void expireStalePendingBookings(LocalDateTime now) {
+
+        List<Booking> stalePending = bookingRepository.findByBookingStatusIn(
+                List.of("Pending Approval", "Pending Institution Approval"));
+
+        for (Booking booking : stalePending) {
+
+            if (booking.getEndTime() == null || booking.getEndTime().isAfter(now)) {
+                continue;
+            }
+
+            booking.setBookingStatus("Rejected");
+            Booking savedExpiry = bookingRepository.save(booking);
+
+            notificationService.create(
+                    savedExpiry.getUser(),
+                    "BOOKING_REJECTED",
+                    "Booking request expired",
+                    "Your booking request for " + (booking.getEquipment() != null
+                            ? booking.getEquipment().getEquipmentName() : "the requested equipment")
+                            + " expired before it was approved, because the requested time slot passed.",
+                    savedExpiry.getBookingId()
+            );
+
+            if (booking.getEquipment() != null) {
+                notifyNextWaitlistedUser(booking.getEquipment());
+            }
         }
     }
 
@@ -1165,6 +1354,9 @@ public void deleteBooking(Integer id) {
     if (s.equals("pending") || s.equals("pending approval") || s.equals("pending_approval")) {
         return "pending approval";
     }
+        if (s.equals("pending institution approval") || s.equals("pending_institution_approval")) {
+                return "pending institution approval";
+        }
     if (s.equals("confirmed")) return "confirmed";
     if (s.equals("in use") || s.equals("in_use")) return "in use";
     if (s.equals("rejected")) return "rejected";
@@ -1175,7 +1367,12 @@ public void deleteBooking(Integer id) {
 }
 
 private boolean isPendingApproval(String status) {
-    return "pending approval".equals(normalizeBookingStatus(status));
+        return "pending approval".equals(normalizeBookingStatus(status))
+                        || isPendingInstitutionApproval(status);
+}
+
+private boolean isPendingInstitutionApproval(String status) {
+        return "pending institution approval".equals(normalizeBookingStatus(status));
 }
 
 }

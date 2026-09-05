@@ -4,6 +4,7 @@ import com.example.lab_platform.entity.Equipment;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.EquipmentService;
+import com.example.lab_platform.service.RealtimeUpdateService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,13 +21,16 @@ public class EquipmentController {
 
     private final EquipmentRepository equipmentRepository;
     private final EquipmentService equipmentService;
+    private final RealtimeUpdateService realtimeUpdateService;
 
     public EquipmentController(
             EquipmentRepository equipmentRepository,
-            EquipmentService equipmentService) {
+            EquipmentService equipmentService,
+            RealtimeUpdateService realtimeUpdateService) {
 
         this.equipmentRepository = equipmentRepository;
         this.equipmentService = equipmentService;
+        this.realtimeUpdateService = realtimeUpdateService;
     }
 
     private User getLoggedInUser() {
@@ -133,6 +137,8 @@ public class EquipmentController {
         Equipment savedEquipment =
                 equipmentRepository.save(equipment);
 
+        realtimeUpdateService.pingEquipmentUpdated();
+
         return ResponseEntity.ok(
                 savedEquipment
         );
@@ -152,6 +158,8 @@ public class EquipmentController {
         return equipmentRepository
                 .findById(id)
                 .map(eq -> {
+
+                    assertOwnsEquipment(eq);
 
                     eq.setEquipmentName(
                             updatedEquipment.getEquipmentName()
@@ -214,6 +222,8 @@ public class EquipmentController {
                     Equipment saved =
                             equipmentRepository.save(eq);
 
+                    realtimeUpdateService.pingEquipmentUpdated();
+
                     return ResponseEntity.ok(saved);
 
                 })
@@ -228,17 +238,46 @@ public class EquipmentController {
     // =========================================================
 
     @PreAuthorize("hasRole('LAB_MANAGER')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEquipment(
-            @PathVariable Integer id) {
+@DeleteMapping("/{id}")
+public ResponseEntity<Void> deleteEquipment(
+        @PathVariable Integer id) {
 
-        if (equipmentRepository.existsById(id)) {
+    return equipmentRepository.findById(id)
+            .map(eq -> {
+                assertOwnsEquipment(eq);
+                equipmentRepository.deleteById(id);
+                realtimeUpdateService.pingEquipmentUpdated();
+                return ResponseEntity.noContent().<Void>build();   // witness on build(), not noContent()
+            })
+            .orElse(ResponseEntity.notFound().build());
+}
 
-            equipmentRepository.deleteById(id);
+    // =========================================================
+    // OWNERSHIP CHECK — a Lab Manager may only edit/delete
+    // equipment that belongs to their OWN institution AND
+    // department. Previously update/delete were gated only by
+    // "hasRole('LAB_MANAGER')", which let any manager on the
+    // platform modify or delete any equipment by id, regardless
+    // of who it actually belonged to. This mirrors the ownership
+    // check already used correctly in MaintenanceServiceImpl.
+    // =========================================================
+    private void assertOwnsEquipment(Equipment equipment) {
 
-            return ResponseEntity.noContent().build();
+        User loggedInUser = getLoggedInUser();
+
+        boolean owns = loggedInUser.getInstitution() != null
+                && loggedInUser.getDepartment() != null
+                && equipment.getInstitution() != null
+                && equipment.getDepartment() != null
+                && loggedInUser.getInstitution().getInstitutionId()
+                        .equals(equipment.getInstitution().getInstitutionId())
+                && loggedInUser.getDepartment().getDepartmentId()
+                        .equals(equipment.getDepartment().getDepartmentId());
+
+        if (!owns) {
+            throw new RuntimeException(
+                    "You can only manage equipment that belongs to your own institution and department"
+            );
         }
-
-        return ResponseEntity.notFound().build();
     }
 }

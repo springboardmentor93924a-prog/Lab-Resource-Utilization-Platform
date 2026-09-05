@@ -5,6 +5,7 @@ import com.example.lab_platform.repository.*;
 import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.service.NotificationService;
 import com.example.lab_platform.service.CostManagementService;
+import com.example.lab_platform.service.RealtimeUpdateService;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ private final NotificationService notificationService;
 private final UserRepository userRepository;
 private final CostManagementService costManagementService;
 private final WaitlistRepository waitlistRepository;
+private final RealtimeUpdateService realtimeUpdateService;
 
 public EquipmentStatusScheduler(
         BookingRepository bookingRepository,
@@ -37,7 +39,8 @@ public EquipmentStatusScheduler(
         NotificationService notificationService,
         CostManagementService costManagementService,
         UserRepository userRepository,
-        WaitlistRepository waitlistRepository) {
+        WaitlistRepository waitlistRepository,
+        RealtimeUpdateService realtimeUpdateService) {
 
     this.bookingRepository = bookingRepository;
     this.equipmentRepository = equipmentRepository;
@@ -49,6 +52,7 @@ public EquipmentStatusScheduler(
     this.userRepository = userRepository;
     this.costManagementService = costManagementService;
     this.waitlistRepository = waitlistRepository;
+    this.realtimeUpdateService = realtimeUpdateService;
         }
 
     /*
@@ -75,13 +79,23 @@ public EquipmentStatusScheduler(
         List<Equipment> equipmentList =
                 equipmentRepository.findAll();
 
+        boolean anyChanged = false;
+
         for (Equipment equipment : equipmentList) {
             String newStatus = calculateStatus(equipment, now);
 
             if (!newStatus.equalsIgnoreCase(equipment.getStatus())) {
                 equipment.setStatus(newStatus);
                 equipmentRepository.save(equipment);
+                anyChanged = true;
             }
+        }
+
+        // Real-time push: tell connected clients equipment status
+        // changed so they refetch instead of waiting on their own
+        // poll interval (or never refreshing at all).
+        if (anyChanged) {
+            realtimeUpdateService.pingEquipmentUpdated();
         }
     }
 

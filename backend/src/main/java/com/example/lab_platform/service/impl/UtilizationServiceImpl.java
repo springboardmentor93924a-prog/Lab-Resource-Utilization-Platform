@@ -142,9 +142,15 @@ public class UtilizationServiceImpl implements UtilizationService {
 
                 /*
                  * Only actual/valid bookings contribute to utilization.
+                 * "In Use" was missing here — equipment actively being
+                 * used right now was being counted as NOT utilized
+                 * until its booking later flipped to "Completed",
+                 * which is exactly backwards and made currently-busy
+                 * equipment look idle on the heatmap/demand analysis.
                  */
                 if (!(status.equals("completed")
                         || status.equals("confirmed")
+                        || status.equals("in use")
                         || status.equals("approved"))) {
                     continue;
                 }

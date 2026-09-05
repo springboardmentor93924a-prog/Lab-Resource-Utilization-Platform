@@ -53,6 +53,7 @@ function Reservations() {
   const canManageBookings = [
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
+    "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN",
   ].includes(role);
 
@@ -406,7 +407,10 @@ function Reservations() {
       if (activeTab === "ALL") return true;
       if (activeTab === "UPCOMING") return b.bookingStatus === "Confirmed";
       if (activeTab === "IN_USE") return b.bookingStatus === "In Use";
-      if (activeTab === "PENDING") return b.bookingStatus === "Pending Approval";
+      if (activeTab === "PENDING") {
+        return b.bookingStatus === "Pending Approval"
+          || b.bookingStatus === "Pending Institution Approval";
+      }
       if (activeTab === "COMPLETED") return b.bookingStatus === "Completed";
       return true;
     });
@@ -420,6 +424,8 @@ function Reservations() {
         return <span className="res-status-badge res-status-inuse">🟦 In Use</span>;
       case "Pending Approval":
         return <span className="res-status-badge res-status-pending">⏳ Pending Approval</span>;
+      case "Pending Institution Approval":
+        return <span className="res-status-badge res-status-pending">🏛️ Owner Approval</span>;
       case "Rejected":
         return <span className="res-status-badge res-status-rejected">❌ Rejected</span>;
       case "Cancelled":
@@ -464,7 +470,10 @@ function Reservations() {
             className={`tab-btn ${activeTab === "PENDING" ? "active" : ""}`}
             onClick={() => setActiveTab("PENDING")}
           >
-            Pending Approval ({bookings.filter((b) => b.bookingStatus === "Pending Approval").length})
+            Pending Approval ({bookings.filter((b) =>
+              b.bookingStatus === "Pending Approval"
+              || b.bookingStatus === "Pending Institution Approval"
+            ).length})
           </button>
           <button
             className={`tab-btn ${activeTab === "COMPLETED" ? "active" : ""}`}
@@ -653,7 +662,9 @@ function Reservations() {
                       <td>
                         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
                           {/* Student Edit & Delete on Pending Approval */}
-                          {booking.bookingStatus === "Pending Approval" && (isOwner || canManageBookings) && (
+                          {(booking.bookingStatus === "Pending Approval"
+                            || booking.bookingStatus === "Pending Institution Approval")
+                            && (isOwner || canManageBookings) && (
                             <>
                               <button
                                 onClick={() => handleEdit(booking)}
@@ -671,7 +682,9 @@ function Reservations() {
                           )}
 
                           {/* Manager / Tech Approval */}
-                          {booking.bookingStatus === "Pending Approval" && canManageBookings && (
+                          {(booking.bookingStatus === "Pending Approval"
+                            || booking.bookingStatus === "Pending Institution Approval")
+                            && canManageBookings && (
                             <>
                               <button
                                 onClick={() => handleApprove(booking.bookingId)}
