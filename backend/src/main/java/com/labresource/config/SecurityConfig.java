@@ -334,8 +334,11 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
+//        configuration.setAllowedOrigins(
+//                List.of("http://localhost:5173","https://lab-resource-utilization-platform-obc7.onrender.com")
+//        );
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173","https://lab-resource-utilization-platform-obc7.onrender.com")
+                List.of("https://lab-resource-utilization-platform-obc7.onrender.com")
         );
 
         configuration.setAllowedMethods(
