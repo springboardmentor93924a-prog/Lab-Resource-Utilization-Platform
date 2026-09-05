@@ -69,6 +69,28 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
 
     private User registerUserInternal(RegisterRequest registerRequest) {
 
+        // If this is an authenticated INSTITUTION_ADMIN registering a
+        // user via POST /api/users/register (as opposed to the public,
+        // unauthenticated POST /api/auth/register self-signup path),
+        // the institutionId in the request body is NEVER trusted —
+        // it's always forced to the admin's own institution. Previously
+        // an Institution Admin could send any institutionId and create
+        // users under a completely different college than their own.
+        // SYSTEM_ADMIN is exempt (platform-wide, can onboard any
+        // institution), and unauthenticated self-registration is
+        // untouched (there is no caller to scope to).
+        User caller = getLoggedInUser();
+        if (caller != null
+                && caller.getRole() != null
+                && "INSTITUTION_ADMIN".equalsIgnoreCase(caller.getRole().getRoleName())) {
+
+            if (caller.getInstitution() == null) {
+                throw new RuntimeException("Your account has no institution on file");
+            }
+
+            registerRequest.setInstitutionId(caller.getInstitution().getInstitutionId());
+        }
+
         // Check duplicate email
         String normalizedEmail = registerRequest.getEmail() == null
                 ? null

@@ -14,6 +14,7 @@ import com.example.lab_platform.repository.MaintenanceRepository;
 import com.example.lab_platform.repository.ResourceSharingRepository;
 import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.service.NotificationService;
+import com.example.lab_platform.service.RealtimeUpdateService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,6 +35,7 @@ public class BookingServiceImpl implements BookingService {
     private final EquipmentFeedbackRepository equipmentFeedbackRepository;
     private final NotificationService notificationService;
         private final UserRepository userRepository;
+        private final RealtimeUpdateService realtimeUpdateService;
 
 public BookingServiceImpl(
         BookingRepository bookingRepository,
@@ -43,7 +45,8 @@ public BookingServiceImpl(
         ResourceSharingRepository resourceSharingRepository,
         EquipmentFeedbackRepository equipmentFeedbackRepository,
         NotificationService notificationService,
-        UserRepository userRepository) {
+        UserRepository userRepository,
+        RealtimeUpdateService realtimeUpdateService) {
 
     this.bookingRepository = bookingRepository;
     this.equipmentRepository = equipmentRepository;
@@ -53,18 +56,23 @@ public BookingServiceImpl(
     this.equipmentFeedbackRepository = equipmentFeedbackRepository;
     this.notificationService = notificationService;
         this.userRepository = userRepository;
+        this.realtimeUpdateService = realtimeUpdateService;
 }
     
     /*
      * Thin wrapper kept so the existing call sites (rejectBooking,
      * completeBooking, autoCompleteOverdueBookings) don't need to
      * change — delegates to the full cascade below instead of only
-     * ever looking at a single entry.
+     * ever looking at a single entry. Also doubles as the real-time
+     * push point: every one of those call sites just changed the
+     * equipment's status to Available, so this is a natural single
+     * place to ping connected clients from.
      */
     private void notifyNextWaitlistedUser(Equipment equipment) {
         if (equipment == null) {
             return;
         }
+        realtimeUpdateService.pingEquipmentUpdated();
         processWaitlistForEquipment(equipment.getEquipmentId());
     }
 
@@ -310,6 +318,16 @@ public BookingServiceImpl(
      * can approve/reject/complete a booking against it. SYSTEM_ADMIN
      * is exempt (platform-wide). This is what stops a Manager at
      * College C from acting on a booking for College A's equipment.
+     *
+     * Beyond institution, LAB_MANAGER/LAB_TECHNICIAN/DEPARTMENT_HEAD
+     * are further scoped to their OWN department — a manager in the
+     * Physics department should not be able to approve/reject/
+     * complete bookings for Chemistry's equipment just because it's
+     * the same college. INSTITUTION_ADMIN is exempt from the
+     * department check (they have no single department — their role
+     * IS institution-wide review, handled separately via the
+     * "Pending Institution Approval" branch in approveBooking/
+     * rejectBooking).
      */
     private void assertSameInstitutionAsEquipment(User loggedInUser, String role, Equipment equipment) {
         if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
@@ -324,6 +342,19 @@ public BookingServiceImpl(
             throw new RuntimeException(
                     "You can only manage bookings for your own institution's equipment"
             );
+        }
+
+        if (!"INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+
+            if (loggedInUser.getDepartment() == null
+                    || equipment.getDepartment() == null
+                    || !loggedInUser.getDepartment().getDepartmentId()
+                            .equals(equipment.getDepartment().getDepartmentId())) {
+
+                throw new RuntimeException(
+                        "You can only manage bookings for your own department's equipment"
+                );
+            }
         }
     }
 
@@ -917,6 +948,21 @@ public void deleteBooking(Integer id) {
             );
         }
 
+        /*
+         * A Pending Approval / Pending Institution Approval request
+         * whose slot has already ended can no longer be approved —
+         * previously this fell through, got set to "Confirmed", and
+         * then got silently flipped to "Completed" by the very next
+         * autoCompleteOverdueBookings() sweep (within 60s), which
+         * looked to staff like clicking Approve auto-completed the
+         * booking. Reject it explicitly instead, with a clear reason.
+         */
+        if (booking.getEndTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException(
+                    "This booking's requested time slot has already passed and can no longer be approved. Please reject it instead."
+            );
+        }
+
         assertSameInstitutionAsEquipment(loggedInUser, role, equipment);
 
                 if (isPendingInstitutionApproval(booking.getBookingStatus())) {
@@ -1063,7 +1109,23 @@ public void deleteBooking(Integer id) {
 
         equipmentRepository.save(equipment);
 
-        return bookingRepository.save(booking);
+        realtimeUpdateService.pingEquipmentUpdated();
+
+        Booking savedApproval = bookingRepository.save(booking);
+
+        // Previously nothing notified the requester when their booking
+        // was actually approved — only booking creation and the two
+        // cross-institution intermediate hops fired a notification.
+        notificationService.create(
+                savedApproval.getUser(),
+                "BOOKING_APPROVED",
+                "Booking approved",
+                "Your booking for " + equipment.getEquipmentName()
+                        + " has been approved and is now " + savedApproval.getBookingStatus() + ".",
+                savedApproval.getBookingId()
+        );
+
+        return savedApproval;
     }
 
     @Override
@@ -1106,6 +1168,16 @@ public void deleteBooking(Integer id) {
 
         Booking savedBooking =
                 bookingRepository.save(booking);
+
+        notificationService.create(
+                savedBooking.getUser(),
+                "BOOKING_REJECTED",
+                "Booking rejected",
+                "Your booking for " + (booking.getEquipment() != null
+                        ? booking.getEquipment().getEquipmentName() : "the requested equipment")
+                        + " was rejected.",
+                savedBooking.getBookingId()
+        );
 
         if (booking.getEquipment() != null) {
 
@@ -1162,7 +1234,18 @@ public void deleteBooking(Integer id) {
             );
         }
 
-        return bookingRepository.save(booking);
+        Booking savedCompletion = bookingRepository.save(booking);
+
+        notificationService.create(
+                savedCompletion.getUser(),
+                "BOOKING_COMPLETED",
+                "Booking completed",
+                "Your booking for " + (equipment != null ? equipment.getEquipmentName() : "the equipment")
+                        + " has been marked complete.",
+                savedCompletion.getBookingId()
+        );
+
+        return savedCompletion;
     }
 
     /*
@@ -1211,7 +1294,57 @@ public void deleteBooking(Integer id) {
                 notifyNextWaitlistedUser(equipment);
             }
 
-            bookingRepository.save(booking);
+            Booking savedAutoCompletion = bookingRepository.save(booking);
+
+            notificationService.create(
+                    savedAutoCompletion.getUser(),
+                    "BOOKING_COMPLETED",
+                    "Booking completed",
+                    "Your booking for " + (equipment != null ? equipment.getEquipmentName() : "the equipment")
+                            + " has ended and was automatically marked complete.",
+                    savedAutoCompletion.getBookingId()
+            );
+        }
+
+        expireStalePendingBookings(now);
+    }
+
+    /*
+     * A Pending Approval / Pending Institution Approval request whose
+     * slot has already fully passed will now be blocked from manual
+     * approval (see the guard added in approveBooking()), but nothing
+     * was closing it out automatically — it would just sit there
+     * forever, still shown to staff as something to act on. This
+     * closes it the same way a staff rejection would, and tells the
+     * requester why.
+     */
+    private void expireStalePendingBookings(LocalDateTime now) {
+
+        List<Booking> stalePending = bookingRepository.findByBookingStatusIn(
+                List.of("Pending Approval", "Pending Institution Approval"));
+
+        for (Booking booking : stalePending) {
+
+            if (booking.getEndTime() == null || booking.getEndTime().isAfter(now)) {
+                continue;
+            }
+
+            booking.setBookingStatus("Rejected");
+            Booking savedExpiry = bookingRepository.save(booking);
+
+            notificationService.create(
+                    savedExpiry.getUser(),
+                    "BOOKING_REJECTED",
+                    "Booking request expired",
+                    "Your booking request for " + (booking.getEquipment() != null
+                            ? booking.getEquipment().getEquipmentName() : "the requested equipment")
+                            + " expired before it was approved, because the requested time slot passed.",
+                    savedExpiry.getBookingId()
+            );
+
+            if (booking.getEquipment() != null) {
+                notifyNextWaitlistedUser(booking.getEquipment());
+            }
         }
     }
 

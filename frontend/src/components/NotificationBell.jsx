@@ -23,6 +23,12 @@ function timeAgo(dateString) {
 const STATIC_ACTIONS = {
   BOOKING_CONFIRMATION: { label: "View Booking", path: () => "/reservations" },
   BOOKING_REMINDER: { label: "View Booking", path: () => "/reservations" },
+  BOOKING_APPROVED: { label: "View Booking", path: () => "/reservations" },
+  BOOKING_REJECTED: { label: "View Booking", path: () => "/reservations" },
+  BOOKING_COMPLETED: { label: "View Booking", path: () => "/reservations" },
+  CROSS_INSTITUTION_BOOKING_REQUEST: { label: "Review Request", path: () => "/reservations" },
+  CROSS_INSTITUTION_BOOKING_REVIEWED: { label: "View Booking", path: () => "/reservations" },
+  BOOKING_MANAGER_APPROVAL_REQUIRED: { label: "Review Request", path: () => "/reservations" },
   WAITLIST_FULFILLED: { label: "View Booking", path: () => "/reservations" },
   EQUIPMENT_IN_CALIBRATION: { label: "Join Waitlist", path: (n) => `/waitlist?equipmentId=${n.referenceId}` },
   EQUIPMENT_ISSUE_REPORTED: { label: "View Waitlist", path: () => "/waitlist" },
