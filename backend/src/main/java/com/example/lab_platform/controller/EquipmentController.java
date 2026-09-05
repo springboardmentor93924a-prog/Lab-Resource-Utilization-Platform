@@ -1,11 +1,15 @@
 package com.example.lab_platform.controller;
 
 import com.example.lab_platform.entity.Equipment;
+import com.example.lab_platform.entity.User;
 import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.service.EquipmentService;
+import com.example.lab_platform.service.RealtimeUpdateService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,13 +21,22 @@ public class EquipmentController {
 
     private final EquipmentRepository equipmentRepository;
     private final EquipmentService equipmentService;
+    private final RealtimeUpdateService realtimeUpdateService;
 
     public EquipmentController(
             EquipmentRepository equipmentRepository,
-            EquipmentService equipmentService) {
+            EquipmentService equipmentService,
+            RealtimeUpdateService realtimeUpdateService) {
 
         this.equipmentRepository = equipmentRepository;
         this.equipmentService = equipmentService;
+        this.realtimeUpdateService = realtimeUpdateService;
+    }
+
+    private User getLoggedInUser() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+        return (User) authentication.getPrincipal();
     }
 
     // =========================================================
@@ -81,17 +94,14 @@ public class EquipmentController {
 
     // =========================================================
     // CREATE EQUIPMENT
-    // Technician / Manager / Institution Admin / System Admin
+    // LAB_MANAGER only. Equipment is the lab manager's operational
+    // responsibility — technicians, institution admins, and system
+    // admins are oversight/support roles, not equipment owners, same
+    // split already used for booking approve/reject elsewhere in
+    // this controller family (see BookingController).
     // =========================================================
 
-    @PreAuthorize("""
-        hasAnyRole(
-            'LAB_TECHNICIAN',
-            'LAB_MANAGER',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-        """)
+    @PreAuthorize("hasRole('LAB_MANAGER')")
     @PostMapping
     public ResponseEntity<Equipment> createEquipment(
             @RequestBody Equipment equipment) {
@@ -102,8 +112,32 @@ public class EquipmentController {
             equipment.setStatus("Available");
         }
 
+        /*
+         * Institution and department are NEVER trusted from the request
+         * body — always the logged-in manager's own registered
+         * institution/department, no exceptions. Previously the client
+         * could send (or the Add Equipment form could submit) any
+         * institution/department id at all, letting a Lab Manager
+         * silently create equipment under a completely different
+         * college than their own. There is intentionally no dropdown
+         * for this on the frontend anymore — it's not a choice.
+         */
+        User loggedInUser = getLoggedInUser();
+
+        if (loggedInUser.getInstitution() == null
+                || loggedInUser.getDepartment() == null) {
+            throw new RuntimeException(
+                    "Your account is not linked to an institution and department — contact an admin before adding equipment."
+            );
+        }
+
+        equipment.setInstitution(loggedInUser.getInstitution());
+        equipment.setDepartment(loggedInUser.getDepartment());
+
         Equipment savedEquipment =
                 equipmentRepository.save(equipment);
+
+        realtimeUpdateService.pingEquipmentUpdated();
 
         return ResponseEntity.ok(
                 savedEquipment
@@ -112,17 +146,10 @@ public class EquipmentController {
 
     // =========================================================
     // UPDATE EQUIPMENT
-    // Technician / Manager / Institution Admin / System Admin
+    // LAB_MANAGER only — see CREATE EQUIPMENT above for why.
     // =========================================================
 
-    @PreAuthorize("""
-        hasAnyRole(
-            'LAB_TECHNICIAN',
-            'LAB_MANAGER',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-        """)
+    @PreAuthorize("hasRole('LAB_MANAGER')")
     @PutMapping("/{id}")
     public ResponseEntity<Equipment> updateEquipment(
             @PathVariable Integer id,
@@ -131,6 +158,8 @@ public class EquipmentController {
         return equipmentRepository
                 .findById(id)
                 .map(eq -> {
+
+                    assertOwnsEquipment(eq);
 
                     eq.setEquipmentName(
                             updatedEquipment.getEquipmentName()
@@ -179,22 +208,21 @@ public class EquipmentController {
                         );
                     }
 
-                    if (updatedEquipment.getDepartment() != null
-                            && updatedEquipment.getDepartment().getDepartmentId() != null) {
-                        eq.setDepartment(
-                                updatedEquipment.getDepartment()
-                        );
-                    }
-
-                    if (updatedEquipment.getInstitution() != null
-                            && updatedEquipment.getInstitution().getInstitutionId() != null) {
-                        eq.setInstitution(
-                                updatedEquipment.getInstitution()
-                        );
-                    }
+                    /*
+                     * Institution and department are intentionally NOT
+                     * editable here, in either direction — equipment
+                     * stays permanently tied to whatever institution/
+                     * department it was created under (the manager's
+                     * own, set in createEquipment()). Previously this
+                     * let a manager reassign existing equipment to a
+                     * completely different college's department via
+                     * the Edit form, same underlying issue as create.
+                     */
 
                     Equipment saved =
                             equipmentRepository.save(eq);
+
+                    realtimeUpdateService.pingEquipmentUpdated();
 
                     return ResponseEntity.ok(saved);
 
@@ -206,27 +234,50 @@ public class EquipmentController {
 
     // =========================================================
     // DELETE EQUIPMENT
-    // Manager / Institution Admin / System Admin
+    // LAB_MANAGER only — see CREATE EQUIPMENT above for why.
     // =========================================================
 
-    @PreAuthorize("""
-        hasAnyRole(
-            'LAB_MANAGER',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-        """)
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEquipment(
-            @PathVariable Integer id) {
+    @PreAuthorize("hasRole('LAB_MANAGER')")
+@DeleteMapping("/{id}")
+public ResponseEntity<Void> deleteEquipment(
+        @PathVariable Integer id) {
 
-        if (equipmentRepository.existsById(id)) {
+    return equipmentRepository.findById(id)
+            .map(eq -> {
+                assertOwnsEquipment(eq);
+                equipmentRepository.deleteById(id);
+                realtimeUpdateService.pingEquipmentUpdated();
+                return ResponseEntity.noContent().<Void>build();   // witness on build(), not noContent()
+            })
+            .orElse(ResponseEntity.notFound().build());
+}
 
-            equipmentRepository.deleteById(id);
+    // =========================================================
+    // OWNERSHIP CHECK — a Lab Manager may only edit/delete
+    // equipment that belongs to their OWN institution AND
+    // department. Previously update/delete were gated only by
+    // "hasRole('LAB_MANAGER')", which let any manager on the
+    // platform modify or delete any equipment by id, regardless
+    // of who it actually belonged to. This mirrors the ownership
+    // check already used correctly in MaintenanceServiceImpl.
+    // =========================================================
+    private void assertOwnsEquipment(Equipment equipment) {
 
-            return ResponseEntity.noContent().build();
+        User loggedInUser = getLoggedInUser();
+
+        boolean owns = loggedInUser.getInstitution() != null
+                && loggedInUser.getDepartment() != null
+                && equipment.getInstitution() != null
+                && equipment.getDepartment() != null
+                && loggedInUser.getInstitution().getInstitutionId()
+                        .equals(equipment.getInstitution().getInstitutionId())
+                && loggedInUser.getDepartment().getDepartmentId()
+                        .equals(equipment.getDepartment().getDepartmentId());
+
+        if (!owns) {
+            throw new RuntimeException(
+                    "You can only manage equipment that belongs to your own institution and department"
+            );
         }
-
-        return ResponseEntity.notFound().build();
     }
 }

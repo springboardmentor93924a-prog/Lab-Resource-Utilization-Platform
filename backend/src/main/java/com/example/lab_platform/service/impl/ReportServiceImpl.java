@@ -19,8 +19,13 @@ import java.util.stream.Collectors;
 @Service
 public class ReportServiceImpl implements ReportService {
 
+    // "In Use" was missing here — the state that means equipment is
+    // ACTIVELY being used right now was being excluded from utilization
+    // reporting, which is exactly backwards. Equipment mid-booking would
+    // report as less utilized than it actually is until the booking
+    // later flipped to "Completed".
     private static final List<String> VALID_BOOKING_STATUSES =
-            List.of("completed", "confirmed", "approved");
+            List.of("completed", "confirmed", "in use", "approved");
 
     private final EquipmentRepository equipmentRepository;
     private final BookingRepository bookingRepository;

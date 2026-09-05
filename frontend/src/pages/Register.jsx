@@ -23,6 +23,18 @@ function Register() {
 const selectedRole = roles.find(
   (role) => String(role.roleId) === String(formData.roleId)
 );
+
+// Real-world scoping, matching UserService.registerUserInternal on the
+// backend: SYSTEM_ADMIN is platform-wide (no institution, no department),
+// INSTITUTION_ADMIN oversees one whole institution (institution, no
+// department), everyone else is scoped to one department inside one
+// institution (both required). Until a role is picked, default to
+// requiring both, since that's true for the majority of roles.
+const roleName = selectedRole?.roleName;
+const isSystemAdmin = roleName === "SYSTEM_ADMIN";
+const isInstitutionAdmin = roleName === "INSTITUTION_ADMIN";
+const needsInstitution = !isSystemAdmin;
+const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
   // Fetch roles and institutions once on mount
   useEffect(() => {
 
@@ -106,6 +118,19 @@ const selectedRole = roles.find(
         institutionId: value,
         departmentId: "",
       });
+    } else if (name === "roleId") {
+      const nextRole = roles.find((role) => String(role.roleId) === String(value));
+      const nextIsSystemAdmin = nextRole?.roleName === "SYSTEM_ADMIN";
+
+      // SYSTEM_ADMIN is platform-wide — drop any institution/department
+      // picked while a different role was selected, so stale IDs never
+      // get submitted for a role that shouldn't have them.
+      setFormData({
+        ...formData,
+        roleId: value,
+        institutionId: nextIsSystemAdmin ? "" : formData.institutionId,
+        departmentId: nextIsSystemAdmin ? "" : formData.departmentId,
+      });
     } else {
       setFormData({
         ...formData,
@@ -133,8 +158,12 @@ const selectedRole = roles.find(
             password: formData.password,
             phone: formData.phone,
             roleId: Number(formData.roleId),
-            institutionId: Number(formData.institutionId),
-            departmentId: Number(formData.departmentId),
+            institutionId: needsInstitution && formData.institutionId
+              ? Number(formData.institutionId)
+              : null,
+            departmentId: needsDepartment && formData.departmentId
+              ? Number(formData.departmentId)
+              : null,
           }),
         }
       );
@@ -256,28 +285,40 @@ const selectedRole = roles.find(
             </select>
           </div>
 
-          {/* Institution (Dynamic Mapping) */}
-          <div className="form-group">
-            <label>Institution</label>
-            <select
-              name="institutionId"
-              value={formData.institutionId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">
-                Select Institution
-              </option>
-              {institutions.map((inst) => (
-                <option key={inst.institutionId} value={inst.institutionId}>
-                  {inst.institutionName}
+          {/* Institution (Dynamic Mapping) — hidden for SYSTEM_ADMIN, who
+              is platform-wide and isn't tied to a single institution */}
+          {needsInstitution && (
+            <div className="form-group">
+              <label>Institution</label>
+              <select
+                name="institutionId"
+                value={formData.institutionId}
+                onChange={handleChange}
+                required
+              >
+                <option value="">
+                  Select Institution
                 </option>
-              ))}
-            </select>
-          </div>
+                {institutions.map((inst) => (
+                  <option key={inst.institutionId} value={inst.institutionId}>
+                    {inst.institutionName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Department (Dynamic Mapping, filtered by Institution) */}
-          {selectedRole?.roleName !== "INSTITUTION_ADMIN" && (
+          {isSystemAdmin && (
+            <p style={{ color: "#555", fontSize: "0.9em", margin: "4px 0 12px" }}>
+              System Admin accounts are platform-wide and aren't tied to a
+              specific institution or department.
+            </p>
+          )}
+
+          {/* Department (Dynamic Mapping, filtered by Institution) —
+              hidden for INSTITUTION_ADMIN (oversees the whole institution,
+              not one department) and SYSTEM_ADMIN (platform-wide) */}
+          {needsDepartment && (
   <div className="form-group">
     <label>Department</label>
 

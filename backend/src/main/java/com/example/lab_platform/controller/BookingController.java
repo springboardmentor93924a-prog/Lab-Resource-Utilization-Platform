@@ -26,10 +26,8 @@ public class BookingController {
     @PreAuthorize("""
         hasAnyRole(
             'STUDENT',
-            'LAB_TECHNICIAN',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -47,10 +45,8 @@ public class BookingController {
     @PreAuthorize("""
         hasAnyRole(
             'STUDENT',
-            'LAB_TECHNICIAN',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -87,7 +83,6 @@ public class BookingController {
             'STUDENT',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -111,7 +106,6 @@ public class BookingController {
             'STUDENT',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -132,7 +126,8 @@ public class BookingController {
     @PreAuthorize("""
         hasAnyRole(
             'LAB_MANAGER',
-            'DEPARTMENT_HEAD'
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN'
         )
     """)
     @PutMapping("/{id}/approve")
@@ -152,7 +147,8 @@ public class BookingController {
     @PreAuthorize("""
         hasAnyRole(
             'LAB_MANAGER',
-            'DEPARTMENT_HEAD'
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN'
         )
     """)
     @PutMapping("/{id}/reject")
@@ -169,10 +165,8 @@ public class BookingController {
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
-            'LAB_TECHNICIAN',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)

@@ -72,14 +72,14 @@ function AppRoutes() {
         }
       />
 
-      {/* Bookings */}
+      {/* Bookings. Per PDF Section 11, only Lab Manager and Department
+          Head have this — Lab Technician and Institution Admin don't. */}
       <Route
         path="/reservations"
         element={
           <ProtectedRoute
             allowedRoles={[
               "STUDENT",
-              "LAB_TECHNICIAN",
               "LAB_MANAGER",
               "DEPARTMENT_HEAD",
               "INSTITUTION_ADMIN",
@@ -93,17 +93,14 @@ function AppRoutes() {
         }
       />
 
-      {/* Waitlist - Task 6 */}
+      {/* Waitlist - Task 6. Per PDF Section 11, only Researcher/Student
+          gets this. */}
       <Route
         path="/waitlist"
         element={
           <ProtectedRoute
             allowedRoles={[
               "STUDENT",
-              "LAB_TECHNICIAN",
-              "LAB_MANAGER",
-              "DEPARTMENT_HEAD",
-              "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
           >
@@ -133,7 +130,8 @@ function AppRoutes() {
         }
       />
 
-      {/* Maintenance */}
+      {/* Maintenance. Per PDF Section 11, only Lab Technician and Lab
+          Manager have this — Department Head and Institution Admin don't. */}
       <Route
         path="/maintenance"
         element={
@@ -141,7 +139,6 @@ function AppRoutes() {
             allowedRoles={[
               "LAB_TECHNICIAN",
               "LAB_MANAGER",
-              "DEPARTMENT_HEAD",
               "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
@@ -156,15 +153,13 @@ function AppRoutes() {
       {/* =====================================================
           CALIBRATION - TASK 2 (NEW)
           ===================================================== */}
+      {/* Calibration. Per PDF Section 11, only Lab Technician has this. */}
       <Route
         path="/calibration"
         element={
           <ProtectedRoute
             allowedRoles={[
               "LAB_TECHNICIAN",
-              "LAB_MANAGER",
-              "DEPARTMENT_HEAD",
-              "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
           >
@@ -185,7 +180,7 @@ function AppRoutes() {
 <Route
   path="/certification"
   element={
-    <ProtectedRoute allowedRoles={["LAB_TECHNICIAN","LAB_MANAGER","DEPARTMENT_HEAD","INSTITUTION_ADMIN","SYSTEM_ADMIN"]}>
+    <ProtectedRoute allowedRoles={["LAB_TECHNICIAN","LAB_MANAGER","SYSTEM_ADMIN"]}>
       <MainLayout><Certification /></MainLayout>
     </ProtectedRoute>
   }
@@ -214,6 +209,7 @@ function AppRoutes() {
       {/* =====================================================
           HEATMAP - TASK 2
           ===================================================== */}
+      {/* Per PDF Section 11, Heatmap has no Institution Admin entry. */}
       <Route
         path="/heatmap"
         element={
@@ -221,7 +217,6 @@ function AppRoutes() {
             allowedRoles={[
               "LAB_MANAGER",
               "DEPARTMENT_HEAD",
-              "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
           >
@@ -235,11 +230,11 @@ function AppRoutes() {
         <Route
   path="/demand-analysis"
   element={
+    // Per PDF Section 11, Demand Analysis has no Institution Admin entry.
     <ProtectedRoute
       allowedRoles={[
         "LAB_MANAGER",
         "DEPARTMENT_HEAD",
-        "INSTITUTION_ADMIN",
         "SYSTEM_ADMIN"
       ]}
     >
@@ -272,13 +267,13 @@ function AppRoutes() {
       {/* =====================================================
           COST MANAGEMENT - TASK 3
           ===================================================== */}
+      {/* Cost Management ("Cost Analysis" in the PDF) — Section 11 lists
+          this only under Institution Administrator. */}
       <Route
         path="/cost-management"
         element={
           <ProtectedRoute
             allowedRoles={[
-              "LAB_MANAGER",
-              "DEPARTMENT_HEAD",
               "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
@@ -293,13 +288,13 @@ function AppRoutes() {
       {/* =====================================================
           ANALYTICS DASHBOARD - TASK 4
           ===================================================== */}
+      {/* Analytics — Section 11 lists this only under Institution
+          Administrator. */}
       <Route
         path="/analytics"
         element={
           <ProtectedRoute
             allowedRoles={[
-              "LAB_MANAGER",
-              "DEPARTMENT_HEAD",
               "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}

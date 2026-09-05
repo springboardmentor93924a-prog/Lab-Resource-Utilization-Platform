@@ -42,14 +42,13 @@ public class WaitlistController {
     }
 
     // =========================================================
-    // GET ALL WAITLIST ENTRIES (managers/admins only)
+    // GET ALL WAITLIST ENTRIES — per PDF Section 11, the Waitlist nav
+    // item belongs to Researcher/Student only. Lab Technician's extra
+    // access is trimmed here too now (System Admin kept as the sole
+    // staff fallback).
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
-            'LAB_TECHNICIAN',
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -62,14 +61,10 @@ public class WaitlistController {
     }
 
     // =========================================================
-    // GET WAITLIST FOR A SPECIFIC EQUIPMENT
+    // GET WAITLIST FOR A SPECIFIC EQUIPMENT — same trim as above.
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
-            'LAB_TECHNICIAN',
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)

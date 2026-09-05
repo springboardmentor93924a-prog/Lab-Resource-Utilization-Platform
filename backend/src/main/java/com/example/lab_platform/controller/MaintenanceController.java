@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/maintenance")
 @CrossOrigin(origins = "http://localhost:5173")
-@PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+@PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
 public class MaintenanceController {
  
     private final MaintenanceService maintenanceService;
@@ -23,7 +23,7 @@ public class MaintenanceController {
  
     // Get all maintenance records (Restricted to technical and administrative roles)
     @GetMapping
-    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public List<Maintenance> getAllMaintenanceRecords() {
         return maintenanceService.getAllMaintenance();
     }
@@ -33,7 +33,7 @@ public class MaintenanceController {
     // and admins. Lab Technicians receive assignments, they don't open
     // their own work orders.)
     @PostMapping
-    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> createMaintenance(
             @RequestBody Maintenance maintenance) {
  
@@ -45,7 +45,7 @@ public class MaintenanceController {
  
     // Get maintenance record by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> getMaintenanceById(
             @PathVariable Integer id) {
  
@@ -57,7 +57,7 @@ public class MaintenanceController {
     // Work orders assigned to the currently logged-in technician
     // (the Lab Technician dashboard's "My Tasks" view).
     @GetMapping("/my-tasks")
-    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<List<Maintenance>> getMyTasks() {
         return ResponseEntity.ok(maintenanceService.getMyTasks());
     }
@@ -67,7 +67,7 @@ public class MaintenanceController {
     // MaintenanceServiceImpl; managers/dept heads/admins can update any
     // record, including reassigning the technician)
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'SYSTEM_ADMIN')")
     public ResponseEntity<Maintenance> updateMaintenance(
             @PathVariable Integer id,
             @RequestBody Maintenance maintenance) {

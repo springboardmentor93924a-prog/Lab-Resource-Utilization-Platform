@@ -356,3 +356,145 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ---------------------------------------------------------------
+   "Report an Issue" feedback modal (showFeedbackForm in
+   Maintenance.jsx). These classes previously had NO CSS anywhere
+   in the project — the modal rendered as unstyled, uncentered,
+   full-width raw HTML. Matches the same overlay/scroll pattern
+   already used for the Calibration/Certification/Reservations
+   modals (fixed overlay, max-height 90vh + internal scroll so it
+   never overflows above the viewport).
+------------------------------------------------------------------ */
+.feedback-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.feedback-modal {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 25px;
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.feedback-modal h3 {
+    margin: 0 0 16px;
+    color: #1f2937;
+}
+
+.feedback-modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.feedback-modal label {
+    margin-top: 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.feedback-modal select,
+.feedback-modal textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.feedback-modal select:focus,
+.feedback-modal textarea:focus {
+    border-color: #2563eb;
+}
+
+.feedback-modal textarea {
+    resize: vertical;
+}
+
+.reason-btn-group,
+.status-btn-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reason-btn,
+.status-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.15s ease;
+}
+
+.reason-btn:hover,
+.status-btn:hover {
+    background: #e2e8f0;
+}
+
+.reason-btn.active,
+.status-btn.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+
+.status-btn.active.urgent {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.feedback-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.primary-btn,
+.secondary-btn {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.primary-btn {
+    background: #2563eb;
+    color: #fff;
+}
+
+.primary-btn:hover {
+    background: #1d4ed8;
+}
+
+.secondary-btn {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.secondary-btn:hover {
+    background: #d1d5db;
+}

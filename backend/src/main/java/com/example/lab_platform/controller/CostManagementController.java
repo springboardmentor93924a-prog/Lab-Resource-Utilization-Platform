@@ -17,10 +17,11 @@ import java.util.Map;
 @RequestMapping("/api/costs")
 public class CostManagementController {
 
+    // Per PDF Section 11, "Cost Analysis" only appears in the
+    // Institution Administrator nav list — Lab Manager and Department
+    // Head lose it here (System Admin left untouched).
     private static final String MANAGER_ROLES = """
         hasAnyRole(
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
             'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )

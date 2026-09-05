@@ -23,48 +23,60 @@ function Sidebar() {
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  // PDF Section 11 gives Waitlist to Researcher/Student only.
   const canAccessWaitlist = [
     "STUDENT",
-    "LAB_TECHNICIAN",
-    "LAB_MANAGER",
-    "DEPARTMENT_HEAD",
-    "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  // PDF gives Bookings to Lab Manager and Department Head, but not
+  // Lab Technician or Institution Admin (neither nav list has it).
   const canAccessBookings = [
     "STUDENT",
-    "LAB_TECHNICIAN",
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 
+  // PDF gives Maintenance to Lab Technician and Lab Manager only —
+  // Department Head and Institution Admin's nav lists don't include it.
   const canAccessMaintenance = [
     "LAB_TECHNICIAN",
     "LAB_MANAGER",
-    "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 
-  // NEW — Calibration: same visibility as Equipment/Waitlist/Bookings.
-  // Students can view (read-only per CalibrationController's
-  // @PreAuthorize on GET /equipment/{id}); the "Log Calibration"
-  // button inside the page itself is hidden for them via canLog.
+  // PDF gives Calibration to Lab Technician only. Lab Manager,
+  // Department Head, and Institution Admin lose it here (System Admin
+  // left untouched — out of scope for this trim).
 const canAccessCalibration = [
   "LAB_TECHNICIAN",
-  "LAB_MANAGER",
-  "DEPARTMENT_HEAD",
-  "INSTITUTION_ADMIN",
   "SYSTEM_ADMIN"
 ].includes(role);
 
+  // Utilization itself stays for all four (it's in every one of their
+  // PDF nav lists) — Heatmap and Demand Analysis are split out below
+  // since Institution Admin's list doesn't include those two.
   const canAccessUtilization = [
     "LAB_MANAGER",
     "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  // PDF lists Heatmap and Demand Analysis for Lab Manager and
+  // Department Head only — Institution Admin's nav has neither.
+  const canAccessHeatmap = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "SYSTEM_ADMIN"
+  ].includes(role);
+
+  const canAccessDemandAnalysis = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
     "SYSTEM_ADMIN"
   ].includes(role);
 
@@ -93,23 +105,23 @@ const canAccessCalibration = [
   // queue from inside the Maintenance page (Maintenance.jsx) instead, so
   // there's no separate link to show them here either.
 
+// Restricted to Lab Technician + Lab Manager (System Admin untouched
+// per earlier instruction). Department Head, Institution Admin, and
+// Student no longer get Certification.
 const canAccessCertification = [
   "LAB_TECHNICIAN",
   "LAB_MANAGER",
-  "DEPARTMENT_HEAD",
-  "INSTITUTION_ADMIN",
   "SYSTEM_ADMIN"
 ].includes(role);
+  // PDF's "Cost Analysis" and "Analytics" nav entries only appear
+  // under Institution Administrator — Lab Manager and Department Head
+  // lose both here (System Admin left untouched).
   const canAccessCostManagement = [
-    "LAB_MANAGER",
-    "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 
   const canAccessAnalytics = [
-    "LAB_MANAGER",
-    "DEPARTMENT_HEAD",
     "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
@@ -196,7 +208,7 @@ const canAccessCertification = [
         )}
 
         {/* Heatmap */}
-        {canAccessUtilization && (
+        {canAccessHeatmap && (
           <Link
             to="/heatmap"
             className={`sidebar-link ${
@@ -209,7 +221,7 @@ const canAccessCertification = [
         )}
 
         {/* Demand Analysis */}
-        {canAccessUtilization && (
+        {canAccessDemandAnalysis && (
           <Link
             to="/demand-analysis"
             className={`sidebar-link ${
