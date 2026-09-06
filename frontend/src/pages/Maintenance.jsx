@@ -42,13 +42,13 @@ const tdStyle = {
 
 function statusColor(status) {
   switch (status) {
-    case "OPEN":
+    case "Scheduled":
       return "#ef4444";
 
-    case "IN_PROGRESS":
+    case "In Progress":
       return "#f59e0b";
 
-    case "COMPLETED":
+    case "Completed":
       return "#22c55e";
 
     default:
@@ -324,10 +324,10 @@ export default function Maintenance() {
 
                 {equipmentList.map((eq) => (
                   <option
-                    key={eq.id}
-                    value={eq.id}
+                    key={eq.equipmentId}
+                    value={eq.equipmentId}
                   >
-                    {eq.equipmentName}
+                    {eq.name}
                   </option>
                 ))}
               </select>
@@ -573,8 +573,7 @@ export default function Maintenance() {
                       <td style={tdStyle}>
                         {/* OPEN → ASSIGN */}
 
-                        {wo.status ===
-                          "OPEN" && (
+                        {wo.status === "Scheduled" && (
                           <div
                             style={{
                               display:
@@ -636,8 +635,7 @@ export default function Maintenance() {
 
                         {/* IN_PROGRESS → COMPLETE */}
 
-                        {wo.status ===
-                          "IN_PROGRESS" && (
+                        {wo.status === "In Progress" && (
                           <button
                             className="btn btn-outline-dark btn-sm"
                             onClick={() =>

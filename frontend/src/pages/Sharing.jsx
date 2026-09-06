@@ -185,9 +185,9 @@ export default function Sharing() {
                     <>
                       <textarea
                         placeholder="Reason for access request"
-                        value={reasonDrafts[eq.id] || ""}
+                        value={reasonDrafts[eq.equipmentId] || ""}
                         onChange={(e) =>
-                          setReasonDrafts((prev) => ({ ...prev, [eq.id]: e.target.value }))
+                          setReasonDrafts((prev) => ({ ...prev, [eq.equipmentId]: e.target.value }))
                         }
                         style={{ width: "100%", marginTop: "8px", padding: "8px", borderRadius: "6px", border: "1px solid #ddd" }}
                         rows={2}
