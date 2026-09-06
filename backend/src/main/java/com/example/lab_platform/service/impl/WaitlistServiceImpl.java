@@ -50,6 +50,39 @@ private boolean isManagerOrAbove(String role) {
             || role.equalsIgnoreCase("INSTITUTION_ADMIN")
             || role.equalsIgnoreCase("SYSTEM_ADMIN");
 }
+
+// Mirrors BookingServiceImpl.assertSameInstitutionAsEquipment — a
+// manager-tier caller may only act on a waitlist entry for equipment
+// in their own institution (Institution Admin) or their own
+// institution AND department (Lab Manager/Department Head).
+// System Admin is unrestricted.
+private void assertSameInstitutionAsEquipment(User loggedInUser, String role, Equipment equipment) {
+    if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+        return;
+    }
+
+    if (loggedInUser.getInstitution() == null
+            || equipment.getInstitution() == null
+            || !loggedInUser.getInstitution().getInstitutionId()
+                    .equals(equipment.getInstitution().getInstitutionId())) {
+
+        throw new RuntimeException(
+                "You can only manage waitlist entries for your own institution's equipment");
+    }
+
+    if (!"INSTITUTION_ADMIN".equalsIgnoreCase(role)) {
+
+        if (loggedInUser.getDepartment() == null
+                || equipment.getDepartment() == null
+                || !loggedInUser.getDepartment().getDepartmentId()
+                        .equals(equipment.getDepartment().getDepartmentId())) {
+
+            throw new RuntimeException(
+                    "You can only manage waitlist entries for your own department's equipment");
+        }
+    }
+}
+
     private User getLoggedInUser() {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -292,6 +325,10 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
 
     if (!isOwnEntry && !isManagerOrAbove(role)) {
         throw new RuntimeException("You can only cancel your own waitlist entry");
+    }
+
+    if (!isOwnEntry && entry.getEquipment() != null) {
+        assertSameInstitutionAsEquipment(loggedInUser, role, entry.getEquipment());
     }
 
     entry.setWaitlistStatus("CANCELLED");

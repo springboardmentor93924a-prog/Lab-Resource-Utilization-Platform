@@ -22,16 +22,15 @@ public class WaitlistController {
 
     // =========================================================
     // JOIN WAITLIST
+    // (STUDENT only — mirrors createBooking()'s rule: managers/dept
+    // heads/admins manage or cancel a waitlist entry, they don't join
+    // one for themselves as if they were a researcher requesting
+    // equipment. Was previously open to every manager-tier role too,
+    // which contradicted that same rule already enforced on booking
+    // creation and the doc's Researcher/Student-only "Waitlist Status"
+    // function — narrowed to match.)
     // =========================================================
-    @PreAuthorize("""
-        hasAnyRole(
-            'STUDENT',
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-    """)
+    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
     public ResponseEntity<Waitlist> joinWaitlist(
             @RequestBody Waitlist waitlist) {
@@ -79,16 +78,12 @@ public class WaitlistController {
 
     // =========================================================
     // GET MY OWN WAITLIST ENTRIES
+    // (STUDENT only — narrowed along with joinWaitlist()/
+    // cancelWaitlistEntry()/decideOnMissedWindow() below, since a
+    // manager-tier role no longer joins a waitlist for themselves in
+    // the first place.)
     // =========================================================
-    @PreAuthorize("""
-        hasAnyRole(
-            'STUDENT',
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-    """)
+    @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/my")
     public ResponseEntity<List<Waitlist>> getMyWaitlistEntries() {
 
@@ -99,6 +94,14 @@ public class WaitlistController {
 
     // =========================================================
     // CANCEL WAITLIST ENTRY
+    // STUDENT cancels their own; LAB_MANAGER/DEPARTMENT_HEAD/
+    // INSTITUTION_ADMIN/SYSTEM_ADMIN can cancel a student's entry
+    // within their own institution/department — same "supporting"
+    // oversight pattern already used for bookings (students create,
+    // managers approve/reject/complete/cancel within scope, but never
+    // create their own). Scope enforced in
+    // WaitlistServiceImpl.cancelWaitlistEntry via
+    // assertSameInstitutionAsEquipment.
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
@@ -122,16 +125,11 @@ public class WaitlistController {
     // DECIDE ON A MISSED WINDOW (the two-button response to the
     // "couldn't allocate your slot" notification)
     // Body: { "decision": "REBOOK" } or { "decision": "EXIT" }
+    // (STUDENT only — WaitlistServiceImpl.decideOnMissedWindow already
+    // enforced ownership-only with no manager override, so this just
+    // locks the same rule down at the API layer too.)
     // =========================================================
-    @PreAuthorize("""
-        hasAnyRole(
-            'STUDENT',
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN',
-            'SYSTEM_ADMIN'
-        )
-    """)
+    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/{id}/decide")
     public ResponseEntity<Waitlist> decideOnMissedWindow(
             @PathVariable Integer id,
