@@ -1,0 +1,453 @@
+/* =========================================================
+   SHARING PAGE
+========================================================= */
+
+.sharing-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background: #020b1c;
+}
+
+.sharing-content {
+    flex: 1;
+    min-width: 0;
+    padding: 30px;
+
+    background: #020b1c;
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+.sharing-title {
+    margin: 0 0 8px 0;
+
+    color: #ffffff;
+
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.institution-text {
+    margin-bottom: 25px;
+
+    color: #cbd5e1;
+
+    font-size: 15px;
+}
+
+.institution-text strong {
+    color: #ffffff;
+}
+
+
+/* SECTION HEADINGS */
+
+.sharing-content h5 {
+    margin-bottom: 15px;
+
+    color: #ffffff;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ADMIN PENDING REQUESTS
+========================================================= */
+
+.pending-section {
+    margin-bottom: 35px;
+}
+
+.pending-list {
+    background: #071a32;
+
+    border: 1px solid #23476d;
+
+    border-radius: 12px;
+
+    padding: 10px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.pending-item {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 15px;
+
+    border-bottom: 1px solid #1e3a56;
+
+    color: #ffffff;
+}
+
+.pending-item:last-child {
+    border-bottom: none;
+}
+
+.pending-info {
+    color: #ffffff;
+}
+
+.pending-info strong {
+    color: #ffffff;
+}
+
+.pending-reason {
+    margin-top: 5px;
+
+    color: #cbd5e1;
+
+    font-size: 13px;
+}
+
+.pending-actions {
+    display: flex;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   EQUIPMENT SECTION
+========================================================= */
+
+.equipment-section {
+    margin-bottom: 35px;
+}
+
+.equipment-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(260px, 1fr));
+
+    gap: 20px;
+}
+
+
+/* =========================================================
+   EQUIPMENT CARD
+========================================================= */
+
+.sharing-equipment-card {
+    background: #f8fafc;
+
+    border: 1px solid #315b84;
+
+    border-radius: 12px;
+
+    padding: 15px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.25);
+
+    transition: all 0.25s ease;
+}
+
+.sharing-equipment-card:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.30);
+
+    border-color: #38bdf8;
+}
+
+
+/* =========================================================
+   EQUIPMENT IMAGE
+========================================================= */
+
+.sharing-equipment-card img {
+    width: 100%;
+    height: 130px;
+
+    object-fit: cover;
+
+    border-radius: 8px;
+
+    display: block;
+}
+
+
+/* =========================================================
+   EQUIPMENT TEXT
+========================================================= */
+
+.equipment-name {
+    margin-top: 10px;
+    margin-bottom: 5px;
+
+    color: #0f172a;
+
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.institution-name {
+    margin-bottom: 10px;
+
+    color: #475569;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   REQUEST TEXTAREA
+========================================================= */
+
+.reason-input {
+    width: 100%;
+
+    margin-top: 8px;
+
+    padding: 9px;
+
+    border: 1px solid #94a3b8;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 13px;
+
+    resize: none;
+
+    outline: none;
+}
+
+.reason-input::placeholder {
+    color: #64748b;
+}
+
+.reason-input:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.request-access-btn {
+    width: 100%;
+
+    margin-top: 8px;
+
+    height: 40px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1769c2;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+.request-access-btn:hover {
+    background: #1e88e5;
+
+    border-color: #7dd3fc;
+}
+
+
+/* ADMIN BUTTONS */
+
+.approve-btn {
+    padding: 8px 15px;
+
+    border: none;
+
+    border-radius: 6px;
+
+    background: #16a34a;
+
+    color: #ffffff;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.approve-btn:hover {
+    background: #15803d;
+}
+
+.reject-btn {
+    padding: 8px 15px;
+
+    border: 1px solid #64748b;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.reject-btn:hover {
+    background: #e2e8f0;
+}
+
+
+/* =========================================================
+   STATUS BADGES
+========================================================= */
+
+.access-status {
+    display: inline-block;
+
+    margin-top: 8px;
+
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    color: #ffffff;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.access-granted {
+    background: #16a34a;
+}
+
+.request-pending {
+    background: #f59e0b;
+}
+
+.request-rejected {
+    background: #64748b;
+}
+
+
+/* =========================================================
+   MY REQUESTS
+========================================================= */
+
+.my-requests-section {
+    margin-bottom: 35px;
+}
+
+.my-requests-list {
+    background: #f8fafc;
+
+    border-radius: 12px;
+
+    padding: 10px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.my-request-item {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 15px;
+
+    border-bottom: 1px solid #d1d5db;
+}
+
+.my-request-item:last-child {
+    border-bottom: none;
+}
+
+.my-request-equipment {
+    color: #111827;
+
+    font-weight: 700;
+}
+
+.my-request-institution {
+    margin-top: 4px;
+
+    color: #475569;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   EMPTY STATES
+========================================================= */
+
+.empty-sharing {
+    padding: 15px;
+
+    color: #334155;
+
+    font-size: 14px;
+}
+
+.loading-sharing {
+    color: #e2e8f0;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .sharing-content {
+        padding: 20px 15px;
+    }
+
+    .pending-item,
+    .my-request-item {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .pending-actions {
+        width: 100%;
+    }
+
+    .equipment-grid {
+        grid-template-columns: 1fr;
+    }
+}
