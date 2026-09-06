@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import MyTasks from "./pages/MyTasks";
 import Maintenance from "./pages/Maintenance";
 import CostBilling from "./pages/CostBilling";
+import Notifications from "./pages/Notifications";
 
 
 
@@ -177,7 +178,7 @@ export default function App() {
          
           <Route path="/cost-billing" element={<ProtectedRoute><CostBilling /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><ComingSoon title="Analytics" /></ProtectedRoute>} />
-          <Route path="/notifications" element={<ProtectedRoute><ComingSoon title="Notifications" /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
