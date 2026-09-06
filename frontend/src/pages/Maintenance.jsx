@@ -49,6 +49,12 @@ function Maintenance() {
     // MaintenanceController.createMaintenance's @PreAuthorize.
     const canManageWorkOrders = canDecide;
 
+    // Rejecting a completed work order is a PUT — INSTITUTION_ADMIN isn't
+    // in MaintenanceController's PUT @PreAuthorize at all, so unlike
+    // canDecide above this is Lab Manager (+ System Admin) only. This is
+    // also enforced server-side in MaintenanceServiceImpl.
+    const canReject = ["LAB_MANAGER", "SYSTEM_ADMIN"].includes(role);
+
     // Technicians for the "Assign Technician" dropdown (managers/dept
     // heads/admins only — technicians don't need to see this list).
     const [technicians, setTechnicians] = useState([]);
@@ -298,8 +304,47 @@ function Maintenance() {
             await fetchData();
 
         } catch (err) {
-            console.error("Complete maintenance error:", err);
-            alert(`Failed to mark complete: ${err.message}`);
+            console.error("Mark complete error:", err);
+            alert(`Failed: ${err.message}`);
+        }
+    };
+
+    const handleReject = async (record) => {
+        const reason = window.prompt(
+            `Send "${getEquipmentName(record)}" back to ${getTechnicianName(record) || "the technician"} for rework.\n\nWhat needs to be fixed?`
+        );
+
+        if (reason === null) return;
+
+        if (!reason.trim()) {
+            alert("A reason is required to reject a completed task.");
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/maintenance/${record.maintenanceId}`,
+                {
+                    method: "PUT",
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        ...record,
+                        maintenanceStatus: "Rejected",
+                        rejectionReason: reason.trim()
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || "Failed to reject maintenance task");
+            }
+
+            await fetchData();
+
+        } catch (err) {
+            console.error("Reject maintenance error:", err);
+            alert(`Failed to reject: ${err.message}`);
         }
     };
 
@@ -352,6 +397,10 @@ function Maintenance() {
 
         if (value.includes("cancel")) {
             return "status-cancelled";
+        }
+
+        if (value.includes("reject")) {
+            return "status-rejected";
         }
 
         return "status-scheduled";
@@ -561,6 +610,9 @@ function Maintenance() {
                                     <option value="Completed">
                                         Completed
                                     </option>
+                                    <option value="Rejected">
+                                        Rejected
+                                    </option>
                                     <option value="Cancelled">
                                         Cancelled
                                     </option>
@@ -656,6 +708,11 @@ function Maintenance() {
                                     <option value="Active">Active</option>
                                     <option value="In Progress">In Progress</option>
                                     <option value="Completed">Completed</option>
+                                    {formData.maintenanceStatus === "Rejected" && (
+                                        <option value="Rejected" disabled>
+                                            Rejected — pick a status to resubmit
+                                        </option>
+                                    )}
                                 </select>
                             </div>
 
@@ -692,7 +749,7 @@ function Maintenance() {
 
             {!isTech && (
                 <div className="maintenance-status-tabs" style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
-                    {["All", "Scheduled", "Active", "In Progress", "Completed", "Cancelled"].map((tab) => (
+                    {["All", "Scheduled", "Active", "In Progress", "Completed", "Rejected", "Cancelled"].map((tab) => (
                         <button
                             key={tab}
                             type="button"
@@ -865,6 +922,13 @@ function Maintenance() {
                                     </div>
                                 )}
 
+                                {status === "rejected" && record.rejectionReason && (
+                                    <div className="maintenance-rejection-banner">
+                                        <strong>Sent back for rework:</strong>
+                                        {record.rejectionReason}
+                                    </div>
+                                )}
+
                                 <div className="maintenance-card-actions">
                                     <button
                                         type="button"
@@ -881,6 +945,16 @@ function Maintenance() {
                                             onClick={() => handleMarkComplete(record)}
                                         >
                                             Mark Complete
+                                        </button>
+                                    )}
+
+                                    {canReject && status === "completed" && (
+                                        <button
+                                            type="button"
+                                            className="edit-maintenance-btn"
+                                            onClick={() => handleReject(record)}
+                                        >
+                                            Reject
                                         </button>
                                     )}
                                 </div>
