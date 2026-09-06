@@ -1,8 +1,16 @@
 package com.example.demo.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "equipment")
@@ -67,6 +75,9 @@ public class Equipment {
     @Column(name = "shared_available")
     private Boolean sharedAvailable = false;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     public Integer getEquipmentId() { return equipmentId; }
     public void setEquipmentId(Integer equipmentId) { this.equipmentId = equipmentId; }
     public String getAssetTag() { return assetTag; }
@@ -103,4 +114,6 @@ public class Equipment {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public Boolean getSharedAvailable() { return sharedAvailable; }
     public void setSharedAvailable(Boolean sharedAvailable) { this.sharedAvailable = sharedAvailable; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

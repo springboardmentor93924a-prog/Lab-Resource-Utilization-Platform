@@ -55,7 +55,7 @@ public class AuthController {
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
-        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+        String roleName = user.getRole() != null ? user.getRole().getRoleName().toUpperCase().replace(" ", "_").replace("/", "_") : null;
         String token = jwtUtil.generateToken(user.getEmail(), user.getUserId(), roleName);
         return ResponseEntity.ok(Map.of("token", token));
     }
@@ -70,7 +70,7 @@ public class AuthController {
         response.put("id", user.getUserId());
         response.put("fullName", user.getFirstName() + " " + user.getLastName());
         response.put("email", user.getEmail());
-        response.put("role", user.getRole() != null ? user.getRole().getRoleName() : null);
+        response.put("role", user.getRole() != null ? user.getRole().getRoleName().toUpperCase().replace(" ", "_").replace("/", "_") : null);
         if (user.getDepartment() != null && user.getDepartment().getInstitution() != null) {
             response.put("institutionName", user.getDepartment().getInstitution().getInstitutionName());
             response.put("institutionId", user.getDepartment().getInstitution().getInstitutionId());

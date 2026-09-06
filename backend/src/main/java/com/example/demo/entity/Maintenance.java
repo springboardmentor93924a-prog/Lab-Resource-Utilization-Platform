@@ -41,6 +41,9 @@ public class Maintenance {
     @Column(name = "notes")
     private String notes;
 
+    @Column(name = "priority", nullable = false)
+    private String priority;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -58,6 +61,8 @@ public class Maintenance {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public String getNotes() { return notes; }
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
     public void setNotes(String notes) { this.notes = notes; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

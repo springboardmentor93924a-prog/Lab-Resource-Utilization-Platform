@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.entity.Equipment;
 import com.example.demo.repository.DepartmentRepository;
@@ -123,6 +125,38 @@ public class EquipmentController {
         return ResponseEntity.ok(equipmentRepository.save(updated));
     }
 
+    @PostMapping("/{id}/photo")
+    @PreAuthorize("hasRole('LAB_MANAGER') or hasRole('INSTITUTION_ADMINISTRATOR') or hasRole('SYSTEM_ADMINISTRATOR')")
+    public ResponseEntity<?> uploadPhoto(@PathVariable Integer id, @RequestParam("file") MultipartFile file) {
+        if (!equipmentRepository.existsById(id)) {
+            return ResponseEntity.status(404).body(Map.of("error", "Equipment not found"));
+        }
+        try {
+            String uploadDir = "uploads/equipment";
+            java.io.File dir = new java.io.File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            String originalName = file.getOriginalFilename();
+            String extension = originalName != null && originalName.contains(".")
+                    ? originalName.substring(originalName.lastIndexOf("."))
+                    : "";
+            String filename = "equipment-" + id + "-" + System.currentTimeMillis() + extension;
+            java.nio.file.Path filePath = java.nio.file.Paths.get(uploadDir, filename);
+            java.nio.file.Files.write(filePath, file.getBytes());
+
+            Equipment eq = equipmentRepository.findById(id).get();
+            String imageUrl = "/uploads/equipment/" + filename;
+            eq.setImageUrl(imageUrl);
+            eq.setUpdatedAt(LocalDateTime.now());
+            equipmentRepository.save(eq);
+
+            return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+        } catch (java.io.IOException e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to save photo"));
+        }
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('LAB_MANAGER') or hasRole('INSTITUTION_ADMINISTRATOR') or hasRole('SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<?> delete(@PathVariable Integer id) {
@@ -133,5 +167,3 @@ public class EquipmentController {
         return ResponseEntity.ok(Map.of("message", "Equipment deleted"));
     }
 }
-
-
