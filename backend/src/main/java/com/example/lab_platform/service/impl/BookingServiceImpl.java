@@ -889,6 +889,15 @@ public void deleteBooking(Integer id) {
         if (!isPendingApproval(existingBooking.getBookingStatus())) {
             throw new RuntimeException("Only Pending Approval bookings can be cancelled");
         }
+    } else if (existingBooking.getEquipment() != null) {
+        // SECURITY FIX: approveBooking/rejectBooking/completeBooking all
+        // scope a manager-tier caller to their own institution (and, for
+        // Lab Manager/Department Head, their own department) via this
+        // same check — deleteBooking was the one action that skipped it
+        // entirely, letting any Lab Manager/Department Head/Institution
+        // Admin cancel any booking anywhere in the system, not just ones
+        // for equipment they're actually responsible for.
+        assertSameInstitutionAsEquipment(loggedInUser, role, existingBooking.getEquipment());
     }
 
     String previousStatus = existingBooking.getBookingStatus();
