@@ -78,6 +78,9 @@ public class Equipment {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "hourly_rate", nullable = false)
+    private java.math.BigDecimal hourlyRate = java.math.BigDecimal.ZERO;
+
     public Integer getEquipmentId() { return equipmentId; }
     public void setEquipmentId(Integer equipmentId) { this.equipmentId = equipmentId; }
     public String getAssetTag() { return assetTag; }
@@ -116,4 +119,6 @@ public class Equipment {
     public void setSharedAvailable(Boolean sharedAvailable) { this.sharedAvailable = sharedAvailable; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public java.math.BigDecimal getHourlyRate() { return hourlyRate; }
+    public void setHourlyRate(java.math.BigDecimal hourlyRate) { this.hourlyRate = hourlyRate; }
 }

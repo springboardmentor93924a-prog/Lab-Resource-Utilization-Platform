@@ -157,8 +157,12 @@ public class BookingController {
         if (!bookingRepository.existsById(id)) {
             return ResponseEntity.status(404).body(Map.of("error", "Booking not found"));
         }
-        Booking b = bookingRepository.findById(id).get();        b.setStatus("Completed");
+        Booking b = bookingRepository.findById(id).get();
+        b.setStatus("Completed");
         b.setUpdatedAt(LocalDateTime.now());
+        long completedHours = Duration.between(b.getBookingStart(), b.getBookingEnd()).toMinutes() / 60;
+        java.math.BigDecimal rate = b.getEquipment().getHourlyRate() != null ? b.getEquipment().getHourlyRate() : java.math.BigDecimal.ZERO;
+        b.setCost(rate.multiply(java.math.BigDecimal.valueOf(Math.max(completedHours, 1))));
         bookingRepository.save(b);
 
         Equipment eq = b.getEquipment();

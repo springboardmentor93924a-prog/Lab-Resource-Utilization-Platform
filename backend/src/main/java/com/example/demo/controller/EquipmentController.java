@@ -52,6 +52,22 @@ public class EquipmentController {
         return ResponseEntity.ok(equipmentRepository.save(eq));
     }
 
+    @GetMapping("/calibration-alerts")
+    public List<Map<String, Object>> calibrationAlerts() {
+        java.time.LocalDate cutoff = java.time.LocalDate.now().plusDays(30);
+        return equipmentRepository.findAll().stream()
+                .filter(e -> e.getCalibrationDueDate() != null && !e.getCalibrationDueDate().isAfter(cutoff))
+                .map(e -> {
+                    Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("equipmentId", e.getEquipmentId());
+                    row.put("name", e.getName());
+                    row.put("calibrationDueDate", e.getCalibrationDueDate().toString());
+                    row.put("overdue", e.getCalibrationDueDate().isBefore(java.time.LocalDate.now()));
+                    return row;
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @GetMapping("/idle-report")
     public List<Map<String, Object>> idleReport() {
         return equipmentRepository.findAll().stream()

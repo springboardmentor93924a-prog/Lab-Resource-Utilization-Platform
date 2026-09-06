@@ -40,6 +40,9 @@ public class Booking {
     @Column(name = "purpose")
     private String purpose;
 
+    @Column(name = "cost")
+    private java.math.BigDecimal cost;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -61,6 +64,8 @@ public class Booking {
     public void setStatus(String status) { this.status = status; }
     public String getPurpose() { return purpose; }
     public void setPurpose(String purpose) { this.purpose = purpose; }
+    public java.math.BigDecimal getCost() { return cost; }
+    public void setCost(java.math.BigDecimal cost) { this.cost = cost; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
