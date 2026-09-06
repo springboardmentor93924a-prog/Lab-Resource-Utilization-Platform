@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Sidebar from "../components/Sidebar";
 import "./Profile.css";
 
 export default function Profile() {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+
+    function handleLogout() {
+        logout();
+        navigate("/login");
+    }
+
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -169,7 +179,23 @@ export default function Profile() {
                                 </span>
                             </div>
 
-                        </div>
+                        <button
+                            onClick={handleLogout}
+                            style={{
+                                marginTop: "20px",
+                                width: "100%",
+                                padding: "10px",
+                                background: "#dc2626",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Logout
+                        </button>
+                    </div>
 
                     </div>
 
