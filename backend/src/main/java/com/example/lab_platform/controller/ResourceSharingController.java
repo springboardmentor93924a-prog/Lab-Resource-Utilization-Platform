@@ -34,17 +34,15 @@ public class ResourceSharingController {
         return ResponseEntity.ok(resourceSharingService.createRequest(request));
     }
 
-    // Approve/Reject a cross-institution sharing request — richer than
-    // same-college booking approval on purpose, since this is inherently
-    // an "other college" decision (sender institution always differs
-    // from receiver — enforced in createRequest):
-    //   - LAB_MANAGER / DEPARTMENT_HEAD: primary role per the roles doc,
+    // Approve/Reject a cross-institution sharing request.
+    //   - LAB_MANAGER / DEPARTMENT_HEAD: the only human decision-makers,
     //     scoped to their own institution being the equipment owner
-    //   - INSTITUTION_ADMIN: the doc's own "Supporting Role" for this
-    //     task specifically — same institution-ownership scoping
+    //     (enforced in ResourceSharingServiceImpl.updateStatus)
+    //   - INSTITUTION_ADMIN: no longer allowed to approve/reject here —
+    //     removed per product decision; Institution Admin keeps
+    //     read-only visibility via getAllRequests only
     //   - SYSTEM_ADMIN: platform-wide override, not institution-scoped
-    // See ResourceSharingServiceImpl.updateStatus for how each is scoped.
-    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_MANAGER', 'DEPARTMENT_HEAD', 'SYSTEM_ADMIN')")
     @PutMapping("/requests/{id}/status")
     public ResponseEntity<ResourceSharingRequest> updateStatus(@PathVariable Long id, @RequestParam String status) {
         return ResponseEntity.ok(resourceSharingService.updateStatus(id, status));

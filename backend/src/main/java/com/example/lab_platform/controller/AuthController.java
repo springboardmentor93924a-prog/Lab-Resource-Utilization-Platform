@@ -6,6 +6,7 @@ import com.example.lab_platform.dto.RegisterRequest;
 import com.example.lab_platform.dto.ResetPasswordRequest;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.security.JwtService;
+import com.example.lab_platform.service.EmailService;
 import com.example.lab_platform.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +21,16 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtService jwtService;
+    private final EmailService emailService;
 
     public AuthController(
             UserService userService,
-            JwtService jwtService) {
+            JwtService jwtService,
+            EmailService emailService) {
 
         this.userService = userService;
         this.jwtService = jwtService;
+        this.emailService = emailService;
     }
 
 
@@ -110,10 +114,10 @@ public class AuthController {
     // FORGOT PASSWORD
     // Security note: the reset token is never returned in the API
     // response (that would let anyone who knows/guesses an email take
-    // over the account without inbox access). It is logged server-side
-    // for dev/testing until a real Email Service (Milestone 3) exists.
-    // The response is identical whether or not the email exists, so
-    // this endpoint can't be used to enumerate registered accounts.
+    // over the account without inbox access) - it's only ever sent to
+    // the account's own inbox via EmailService. The response is
+    // identical whether or not the email exists, so this endpoint can't
+    // be used to enumerate registered accounts.
     // =========================
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
@@ -124,9 +128,10 @@ public class AuthController {
         try {
             String token = userService.createPasswordResetToken(request.getEmail());
 
-            // Dev-only: no JavaMailSender/SMTP is wired up yet (Milestone 3
-            // scope), so the token is logged server-side instead of ever
-            // leaving the backend in an HTTP response.
+            emailService.sendPasswordResetEmail(request.getEmail(), token);
+
+            // Still logged server-side too, so the flow is testable even
+            // before SMTP creds (MAIL_USERNAME/MAIL_PASSWORD) are set up.
             org.slf4j.LoggerFactory.getLogger(AuthController.class)
                     .info("Password reset token generated for {}: {}", request.getEmail(), token);
 

@@ -187,7 +187,38 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
  
         if (updatedMaintenance.getMaintenanceStatus() != null) {
-            existing.setMaintenanceStatus(updatedMaintenance.getMaintenanceStatus());
+
+            String requestedStatus = updatedMaintenance.getMaintenanceStatus();
+            boolean requestingRejected = requestedStatus.equalsIgnoreCase("Rejected");
+            boolean wasRejected = "Rejected".equalsIgnoreCase(existing.getMaintenanceStatus());
+
+            if (requestingRejected) {
+                // Only a Lab Manager (or System Admin) reviewing finished
+                // work can reject it — a technician can never set this
+                // status on their own task.
+                if (isTechnician) {
+                    throw new RuntimeException(
+                            "Only a Lab Manager can reject a completed task");
+                }
+                if (!"Completed".equalsIgnoreCase(existing.getMaintenanceStatus())) {
+                    throw new RuntimeException(
+                            "Only a completed task can be rejected");
+                }
+                String reason = updatedMaintenance.getRejectionReason();
+                if (reason == null || reason.trim().isEmpty()) {
+                    throw new RuntimeException(
+                            "A reason is required to reject a completed task");
+                }
+                existing.setRejectionReason(reason.trim());
+
+            } else if (wasRejected) {
+                // The technician (or a manager) is moving the task on from
+                // "Rejected" — that's the redo being resubmitted, so the
+                // old reason no longer applies once it's acted on.
+                existing.setRejectionReason(null);
+            }
+
+            existing.setMaintenanceStatus(requestedStatus);
         }
 
         // Only a manager/dept head/admin can reach this with a non-null
