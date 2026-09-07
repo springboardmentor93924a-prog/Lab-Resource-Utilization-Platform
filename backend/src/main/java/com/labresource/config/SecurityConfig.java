@@ -135,7 +135,7 @@ public class SecurityConfig {
                 new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173","https://lab-resource-utilization-platform-obc7.onrender.com")
+                List.of("http://localhost:5173","https://lab-resource-utilization-platform-obc7.onrender.com","https://frontend-tau-ochre-80.vercel.app")
         );
         //  configuration.setAllowedOrigins(
         //         List.of("https://lab-resource-utilization-platform-obc7.onrender.com")
