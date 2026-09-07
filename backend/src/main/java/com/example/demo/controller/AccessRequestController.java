@@ -21,6 +21,8 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.AccessRequestRepository;
 import com.example.demo.repository.EquipmentRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.entity.Notification;
+import com.example.demo.repository.NotificationRepository;
 
 @RestController
 @RequestMapping("/api/access-requests")
@@ -29,6 +31,16 @@ public class AccessRequestController {
     @Autowired private AccessRequestRepository accessRequestRepository;
     @Autowired private EquipmentRepository equipmentRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private NotificationRepository notificationRepository;
+
+    private void notify(User user, String message) {
+        Notification n = new Notification();
+        n.setUser(user);
+        n.setMessage(message);
+        n.setIsRead(false);
+        n.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(n);
+    }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> body, java.security.Principal principal) {
@@ -81,6 +93,7 @@ public class AccessRequestController {
         AccessRequest ar = accessRequestRepository.findById(id).orElse(null);
         if (ar == null) return ResponseEntity.status(404).body(Map.of("error", "Request not found"));
         ar.setStatus("APPROVED");
+        notify(ar.getRequestingUser(), "Your access request for " + ar.getEquipment().getName() + " has been approved.");
         ar.setUpdatedAt(LocalDateTime.now());
         accessRequestRepository.save(ar);
         return ResponseEntity.ok(toResponse(ar));
@@ -92,6 +105,7 @@ public class AccessRequestController {
         AccessRequest ar = accessRequestRepository.findById(id).orElse(null);
         if (ar == null) return ResponseEntity.status(404).body(Map.of("error", "Request not found"));
         ar.setStatus("REJECTED");
+        notify(ar.getRequestingUser(), "Your access request for " + ar.getEquipment().getName() + " has been rejected.");
         ar.setUpdatedAt(LocalDateTime.now());
         accessRequestRepository.save(ar);
         return ResponseEntity.ok(toResponse(ar));

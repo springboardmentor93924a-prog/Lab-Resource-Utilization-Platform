@@ -24,6 +24,8 @@ import com.example.demo.entity.Utilization;
 import com.example.demo.repository.BookingRepository;
 import com.example.demo.repository.EquipmentRepository;
 import com.example.demo.repository.UtilizationRepository;
+import com.example.demo.entity.Notification;
+import com.example.demo.repository.NotificationRepository;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -33,6 +35,16 @@ public class BookingController {
     @Autowired private EquipmentRepository equipmentRepository;
     @Autowired private UtilizationRepository utilizationRepository;
     @Autowired private com.example.demo.repository.UserRepository userRepository;
+    @Autowired private NotificationRepository notificationRepository;
+
+    private void notify(com.example.demo.entity.User user, String message) {
+        Notification n = new Notification();
+        n.setUser(user);
+        n.setMessage(message);
+        n.setIsRead(false);
+        n.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(n);
+    }
 
    @GetMapping
     public List<Booking> getAll() {
@@ -118,6 +130,7 @@ public class BookingController {
         }
         Booking b = bookingRepository.findById(id).get();
         b.setStatus("Confirmed");
+        notify(b.getUser(), "Your booking for " + b.getEquipment().getName() + " has been approved.");
         b.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(b);
 
@@ -147,6 +160,7 @@ public class BookingController {
         }
         Booking b = bookingRepository.findById(id).get();
         b.setStatus("Cancelled");
+        notify(b.getUser(), "Your booking for " + b.getEquipment().getName() + " has been rejected.");
         b.setUpdatedAt(LocalDateTime.now());
         return ResponseEntity.ok(bookingRepository.save(b));
     }
