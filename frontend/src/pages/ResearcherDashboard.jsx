@@ -5,18 +5,27 @@ import "./ResearcherDashboard.css";
 import { getAllEquipment } from "../services/equipmentService";
 import { getBookingsByUser } from "../services/bookingService";
 import { getCurrentUserId } from "../utils/auth";
+import { getUnreadCount } from "../services/notificationService";
 
 export default function ResearcherDashboard() {
   const navigate = useNavigate();
   const [equipmentList, setEquipmentList] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const equipment = await getAllEquipment();
         setEquipmentList(equipment);
+
+          try {
+            const unread = await getUnreadCount();
+            setUnreadCount(unread.count);
+          } catch {
+            setUnreadCount(0);
+          }
 
         const userId = getCurrentUserId();
         if (userId) {
@@ -112,7 +121,7 @@ export default function ResearcherDashboard() {
     style={{ cursor: "pointer" }}
   >
     <big><b>Notifications</b></big>
-    <h2>5 new</h2>
+    <h2>{unreadCount} new</h2>
   </div>
 
 </div>
