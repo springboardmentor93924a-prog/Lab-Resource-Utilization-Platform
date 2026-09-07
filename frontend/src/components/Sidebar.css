@@ -6,14 +6,9 @@
   text-decoration: none;
   width: 100%;
 }
-
-.sidebar {
-  width: 220px;
-  min-height: 100vh;
-  background: #0F1B2D !important;
-  border-right: 1px solid #16243A;
+.desktop-sidebar-content {
+  width: 100%;
 }
-
 .logo {
   padding: 22px;
   border-bottom: 1px solid #16243A;
@@ -21,13 +16,11 @@
   font-weight: 700;
   color: #fff;
 }
-
 .sidebar ul {
   list-style: none;
   padding: 15px 0;
   margin: 0;
 }
-
 .sidebar li {
   padding: 14px 25px;
   cursor: pointer;
@@ -35,23 +28,101 @@
   background: transparent !important;
   transition: 0.3s;
 }
-
 .sidebar li:hover {
   background: #16243A !important;
   color: #ffffff !important;
 }
-
 .sidebar li:hover .sidebar-link {
   color: #ffffff !important;
 }
-
 .sidebar li.active {
   background: #16243A !important;
   border-left: 4px solid #2DD4BF;
   font-weight: 600;
   color: #2DD4BF !important;
 }
-
 .sidebar li.active .sidebar-link {
   color: #2DD4BF !important;
+}
+
+.mobile-hamburger-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-hamburger-btn {
+    display: flex;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 2000;
+    background: #0F1B2D;
+    border: 1px solid #16243A;
+    color: #fff;
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1999;
+  }
+
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 240px;
+    background: #0F1B2D;
+    border-right: 1px solid #16243A;
+    z-index: 2000;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+  }
+
+  .mobile-drawer .logo {
+    padding-left: 56px;
+  }
+
+  .mobile-drawer ul {
+    list-style: none;
+    padding: 15px 0;
+    margin: 0;
+  }
+  .mobile-drawer li {
+    padding: 14px 25px;
+    cursor: pointer;
+    color: #ffffff;
+    background: transparent;
+    transition: 0.3s;
+  }
+  .mobile-drawer li:hover {
+    background: #16243A;
+  }
+  .mobile-drawer li.active {
+    background: #16243A;
+    border-left: 4px solid #2DD4BF;
+    font-weight: 600;
+    color: #2DD4BF;
+  }
+  .mobile-drawer li.active .sidebar-link {
+    color: #2DD4BF;
+  }
+}
+
+@media (max-width: 768px) {
+  body h1:first-of-type,
+  body h2:first-of-type,
+  body h3:first-of-type,
+  body h4:first-of-type {
+    margin-left: 48px !important;
+  }
 }
