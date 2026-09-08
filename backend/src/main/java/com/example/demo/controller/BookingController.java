@@ -47,8 +47,10 @@ public class BookingController {
     }
 
    @GetMapping
-    public List<Booking> getAll() {
-        return bookingRepository.findAll();
+    public List<Map<String, Object>> getAll() {
+        return bookingRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @GetMapping("/user/{userId}")
@@ -75,6 +77,7 @@ public class BookingController {
         Map<String, Object> m = new java.util.HashMap<>();
         m.put("id", b.getBookingId());
         m.put("equipmentName", b.getEquipment() != null ? b.getEquipment().getName() : null);
+        m.put("userFullName", b.getUser() != null ? (b.getUser().getFirstName() + " " + b.getUser().getLastName()) : null);
         m.put("bookingDate", b.getBookingStart() != null ? b.getBookingStart().toLocalDate().toString() : null);
         m.put("startTime", b.getBookingStart() != null ? b.getBookingStart().toLocalTime().toString() : null);
         m.put("endTime", b.getBookingEnd() != null ? b.getBookingEnd().toLocalTime().toString() : null);
