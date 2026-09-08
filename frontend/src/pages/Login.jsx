@@ -26,9 +26,22 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8">
-        <h1 className="text-lg font-semibold text-center text-gray-900">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "linear-gradient(135deg, #0F1B2D 0%, #1e3a5f 50%, #0F1B2D 100%)" }}
+    >
+      <div className="w-full max-w-sm bg-white rounded-2xl p-8" style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div
+          className="mx-auto mb-4 flex items-center justify-center rounded-2xl"
+          style={{ width: "56px", height: "56px", background: "linear-gradient(135deg, #1557a8, #0F1B2D)" }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+
+        <h1 className="text-xl font-bold text-center text-gray-900">
           Lab Resource Platform
         </h1>
         <p className="text-sm text-gray-500 text-center mt-1 mb-6">
@@ -36,33 +49,38 @@ export default function Login() {
         </p>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
             {error}
           </p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Email</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm text-slate-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full h-11 px-3 border border-gray-300 rounded-lg text-sm text-slate-900 placeholder-gray-400 transition focus:outline-none focus:ring-2 focus:ring-offset-0"
+              style={{ "--tw-ring-color": "#1557a8" }}
+              onFocus={(e) => { e.target.style.borderColor = "#1557a8"; e.target.style.boxShadow = "0 0 0 3px rgba(21,87,168,0.15)"; }}
+              onBlur={(e) => { e.target.style.borderColor = ""; e.target.style.boxShadow = ""; }}
               placeholder="name@institution.edu"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Password</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 px-3 pr-10 border border-gray-300 rounded-md text-sm text-slate-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded-lg text-sm text-slate-900 placeholder-gray-400 transition focus:outline-none"
+                onFocus={(e) => { e.target.style.borderColor = "#1557a8"; e.target.style.boxShadow = "0 0 0 3px rgba(21,87,168,0.15)"; }}
+                onBlur={(e) => { e.target.style.borderColor = ""; e.target.style.boxShadow = ""; }}
                 placeholder="Enter your password"
               />
               <button
@@ -87,7 +105,7 @@ export default function Login() {
           </div>
 
           <div className="text-right">
-            <a href="#" className="text-xs text-gray-500 hover:text-gray-800">
+            <a href="#" className="text-xs font-medium" style={{ color: "#1557a8" }}>
               Forgot password?
             </a>
           </div>
@@ -95,7 +113,8 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-10 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-60"
+            className="w-full h-11 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, #1557a8, #0F1B2D)" }}
           >
             {submitting ? "Signing in..." : "Sign in"}
           </button>
@@ -103,7 +122,7 @@ export default function Login() {
 
         <p className="text-xs text-gray-500 text-center mt-6">
           Don't have an account?{" "}
-          <Link to="/register" className="text-gray-900 font-medium">
+          <Link to="/register" className="font-semibold" style={{ color: "#1557a8" }}>
             Register
           </Link>
         </p>
