@@ -6,6 +6,7 @@ export default function AvailabilityCalendar({ equipmentId, onSlotSelect, select
     const [loadedEquipmentId, setLoadedEquipmentId] = useState(null);
     const loading = Boolean(equipmentId) && loadedEquipmentId !== equipmentId;
 
+    
     useEffect(() => {
         if (!equipmentId) return;
 
