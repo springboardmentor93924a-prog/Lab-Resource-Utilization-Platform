@@ -83,35 +83,6 @@ export default function Login() {
                     <button className="btn btn-primary w-100 mt-4" disabled={loading}>
                         {loading ? "Signing in…" : "Sign in →"}
                     </button>
-                    
-                    <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--border-color, #e5e7eb)" }}>
-                        <label style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", display: "block", marginBottom: "8px", fontWeight: "600" }}>
-                            ⚡ Quick Demo Login (Select Role)
-                        </label>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "6px" }}>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px" }} onClick={() => setForm({ email: "admin@dypiu.ac.in", password: "password123" })}>
-                                👑 System Admin
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px" }} onClick={() => setForm({ email: "instadmin@dypiu.ac.in", password: "password123" })}>
-                                🏛️ Inst. Admin
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px" }} onClick={() => setForm({ email: "labmanager@dypiu.ac.in", password: "password123" })}>
-                                📊 Lab Manager
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px" }} onClick={() => setForm({ email: "faculty@dypiu.ac.in", password: "password123" })}>
-                                🏫 Dept Head
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px" }} onClick={() => setForm({ email: "technician@dypiu.ac.in", password: "password123" })}>
-                                🔧 Technician
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px" }} onClick={() => setForm({ email: "researcher@dypiu.ac.in", password: "password123" })}>
-                                🔬 Researcher
-                            </button>
-                            <button type="button" className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "6px 8px", gridColumn: "span 2" }} onClick={() => setForm({ email: "student@dypiu.ac.in", password: "password123" })}>
-                                🎓 Student
-                            </button>
-                        </div>
-                    </div>
 
                     <p className="auth-switch">
                         New to ResourceHub? <Link to="/register">Create an account</Link>
