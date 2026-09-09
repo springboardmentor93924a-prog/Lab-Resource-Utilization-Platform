@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import { getMe } from "../services/authService";
 import "./Profile.css";
 
 export default function Profile() {
@@ -17,19 +18,7 @@ export default function Profile() {
                     return;
                 }
 
-                const response = await fetch("http://localhost:8080/api/auth/me", {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch profile");
-                }
-
-                const data = await response.json();
+                const data = await getMe();
                 setUser(data);
             } catch (err) {
                 console.error(err);

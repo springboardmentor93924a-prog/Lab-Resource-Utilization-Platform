@@ -55,5 +55,10 @@ export async function resetPassword(token, newPassword) {
 
   return data;
 }
+// ---------------- PROFILE ----------------
+export async function getMe() {
+  const { data } = await api.get("/me");
+  return data;
+}
 
 export default api;
