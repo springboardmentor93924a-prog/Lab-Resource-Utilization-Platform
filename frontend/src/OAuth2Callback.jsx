@@ -1,12 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 export default function OAuth2Callback() {
   const navigate = useNavigate();
   const { setGoogleSession } = useAuth();
+  const didRun = useRef(false);
 
   useEffect(() => {
+    if (didRun.current) return;
+    didRun.current = true;
+
     async function handleCallback() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -33,7 +37,6 @@ export default function OAuth2Callback() {
 
     handleCallback();
   }, [navigate, setGoogleSession]);
-
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">

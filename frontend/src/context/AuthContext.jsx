@@ -1,6 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-refresh/only-export-components */
 
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+
 import {
   loginUser,
   registerUser,
@@ -32,7 +39,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Save normal login/register session
-  function persistSession(response) {
+  const persistSession = useCallback((response) => {
     const userData = {
       email: response.email,
       fullName: response.fullName,
@@ -43,36 +50,45 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(userData));
 
     setUser(userData);
-  }
+  }, []);
 
   // Save Google registration response
-  function persistGoogleResponse(response) {
-    persistSession(response);
-  }
+  const persistGoogleResponse = useCallback(
+    (response) => {
+      persistSession(response);
+    },
+    [persistSession]
+  );
 
   // Normal email/password login
-  async function login(email, password) {
-    const response = await loginUser({
-      email,
-      password,
-    });
+  const login = useCallback(
+    async (email, password) => {
+      const response = await loginUser({
+        email,
+        password,
+      });
 
-    persistSession(response);
+      persistSession(response);
 
-    return response;
-  }
+      return response;
+    },
+    [persistSession]
+  );
 
   // Normal registration
-  async function register(formData) {
-    const response = await registerUser(formData);
+  const register = useCallback(
+    async (formData) => {
+      const response = await registerUser(formData);
 
-    persistSession(response);
+      persistSession(response);
 
-    return response;
-  }
+      return response;
+    },
+    [persistSession]
+  );
 
   // Existing Google user login
-  async function setGoogleSession(token) {
+  const setGoogleSession = useCallback(async (token) => {
     localStorage.setItem("token", token);
 
     const response = await getCurrentUser();
@@ -88,15 +104,15 @@ export function AuthProvider({ children }) {
     setUser(userData);
 
     return response;
-  }
+  }, []);
 
   // Logout
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setUser(null);
-  }
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -119,9 +135,7 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
 
   if (!ctx) {
-    throw new Error(
-      "useAuth must be used within an AuthProvider"
-    );
+    throw new Error("useAuth must be used within an AuthProvider");
   }
 
   return ctx;
