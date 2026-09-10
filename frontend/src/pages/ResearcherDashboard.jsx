@@ -49,11 +49,13 @@ export default function ResearcherDashboard() {
     navigate(`/bookings?equipmentId=${equipmentId}`);
   }
 
-  const availableCount = equipmentList.filter((e) => e.status === "AVAILABLE").length;
+  const availableCount = equipmentList.filter((e) => e.status?.toUpperCase() === "AVAILABLE").length;
   const upcomingBookings = myBookings.filter(
     (b) => b.bookingStatus === "PENDING" || b.bookingStatus === "CONFIRMED"
   );
-  const recommended = equipmentList.slice(0, 3);
+  const recommended = equipmentList
+    .filter((e) => e.status?.toUpperCase() === "AVAILABLE" && e.imageUrl)
+    .slice(0, 3);
 
   return (
     <div className="container-main">
@@ -142,17 +144,17 @@ export default function ResearcherDashboard() {
         <div className="equipment">
           {loading && <p>Loading equipment...</p>}
           {!loading && recommended.map((eq) => (
-  <div className="equipment-card" key={eq.id}>
+  <div className="equipment-card" key={eq.equipmentId}>
     <img
       src={eq.imageUrl}
-      alt={eq.equipmentName}
+      alt={eq.name}
       style={{ width: "100%", height: "140px", objectFit: "cover", borderRadius: "8px", marginBottom: "10px" }}
     />
-    <h6>{eq.equipmentName}</h6>
+    <h6>{eq.name}</h6>
     <span className="badge bg-success rounded-pill">
-      {eq.status === "AVAILABLE" ? "Available" : eq.status}
+      {eq.status?.toUpperCase() === "AVAILABLE" ? "Available" : eq.status}
     </span>
-    <button className="btn btn-outline-dark mt-3" onClick={() => handleBookNow(eq.id)}>
+    <button className="btn btn-outline-dark mt-3" onClick={() => handleBookNow(eq.equipmentId)}>
       Book now
     </button>
   </div>
