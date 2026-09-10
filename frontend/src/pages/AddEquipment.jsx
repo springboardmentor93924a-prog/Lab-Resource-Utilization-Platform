@@ -24,13 +24,17 @@ const initialForm = {
 function mapStatusToBackend(uiStatus) {
   switch (uiStatus) {
     case "Available":
-      return "AVAILABLE";
+      return "Available";
     case "Booked":
-      return "IN_USE";
+      return "Booked";
     case "Under maintenance":
-      return "MAINTENANCE";
+      return "Under Maintenance";
+    case "Out of service":
+      return "Out of Service";
+    case "Retired":
+      return "Retired";
     default:
-      return "MAINTENANCE";
+      return "Under Maintenance";
   }
 }
 
