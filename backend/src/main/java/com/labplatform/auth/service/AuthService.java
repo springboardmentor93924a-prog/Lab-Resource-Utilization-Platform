@@ -1,5 +1,5 @@
 package com.labplatform.auth.service;
-import org.springframework.transaction.annotation.Transactional;
+
 import com.labplatform.auth.dto.AuthResponse;
 import com.labplatform.auth.dto.GoogleRegisterRequest;
 import com.labplatform.auth.dto.LoginRequest;
@@ -13,8 +13,11 @@ import com.labplatform.auth.repository.RoleRepository;
 import com.labplatform.auth.repository.UserRepository;
 import com.labplatform.auth.security.JwtUtil;
 
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -22,8 +25,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -36,7 +42,19 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final JavaMailSender mailSender;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+
+    // =========================================================
+    // GOOGLE APPS SCRIPT / FRONTEND CONFIGURATION
+    // =========================================================
+
+    @Value("${google.script.url}")
+    private String googleScriptUrl;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
 
     // =========================================================
@@ -49,8 +67,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil,
             AuthenticationManager authenticationManager,
-            PasswordResetTokenRepository passwordResetTokenRepository,
-            JavaMailSender mailSender) {
+            PasswordResetTokenRepository passwordResetTokenRepository) {
 
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -58,7 +75,6 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
-        this.mailSender = mailSender;
     }
 
 
@@ -273,8 +289,8 @@ public class AuthService {
     // FORGOT PASSWORD
     // =========================================================
 
-   @Transactional
-public void forgotPassword(String email) {
+    @Transactional
+    public void forgotPassword(String email) {
 
         User user = userRepository
                 .findByEmail(email)
@@ -324,26 +340,18 @@ public void forgotPassword(String email) {
 
 
         /*
-         * Link that will be opened by the frontend.
+         * Create production/local frontend reset link.
          */
         String resetLink =
-                "http://localhost:5173/reset-password?token="
+                frontendUrl
+                        + "/reset-password?token="
                         + token;
 
 
         /*
-         * Create email.
+         * Create email text.
          */
-        SimpleMailMessage message =
-                new SimpleMailMessage();
-
-        message.setTo(user.getEmail());
-
-        message.setSubject(
-                "Lab Platform - Password Reset"
-        );
-
-        message.setText(
+        String emailText =
                 "Hello "
                         + user.getFullName()
                         + ",\n\n"
@@ -364,14 +372,74 @@ public void forgotPassword(String email) {
                         + "reset, you can safely ignore "
                         + "this email.\n\n"
 
-                        + "Lab Resource Utilization Platform"
+                        + "Lab Resource Utilization Platform";
+
+
+        /*
+         * =====================================================
+         * SEND EMAIL THROUGH GOOGLE APPS SCRIPT
+         * =====================================================
+         *
+         * This uses HTTPS instead of Gmail SMTP.
+         *
+         * Render Free allows HTTPS requests, while direct
+         * SMTP connections are blocked.
+         */
+
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.setContentType(
+                MediaType.APPLICATION_JSON
+        );
+
+        headers.set(
+                "Accept",
+                MediaType.APPLICATION_JSON_VALUE
         );
 
 
         /*
-         * Send email using Gmail SMTP.
+         * Data expected by the Google Apps Script.
          */
-        mailSender.send(message);
+        Map<String, Object> emailData =
+                new HashMap<>();
+
+        emailData.put(
+                "to",
+                user.getEmail()
+        );
+
+        emailData.put(
+                "name",
+                user.getFullName()
+        );
+
+        emailData.put(
+                "subject",
+                "Lab Platform - Password Reset"
+        );
+
+        emailData.put(
+                "text",
+                emailText
+        );
+
+
+        HttpEntity<Map<String, Object>> request =
+                new HttpEntity<>(
+                        emailData,
+                        headers
+                );
+
+
+        /*
+         * Call the deployed Google Apps Script.
+         */
+        restTemplate.postForEntity(
+                googleScriptUrl,
+                request,
+                String.class
+        );
     }
 
 
