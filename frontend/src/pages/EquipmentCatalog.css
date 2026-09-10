@@ -1,0 +1,758 @@
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #020b1c;
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   MAIN LAYOUT
+========================================================= */
+
+.wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background: #020b1c;
+}
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+    min-height: 100vh;
+
+    background: #020b1c;
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+    width: 220px;
+    min-width: 220px;
+    min-height: 100vh;
+
+    background: #0f1b2d;
+
+    border-right: 1px solid #1e3150;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   TOP NAVBAR
+========================================================= */
+
+.navbar {
+    height: 80px;
+    width: 100%;
+
+    background: #03132d;
+
+    border-bottom: 1px solid #1e4770;
+
+    padding: 18px 28px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
+
+.navbar h2,
+.navbar h3,
+.navbar h4 {
+    color: #ffffff;
+
+    font-weight: 700;
+
+    font-size: 21px;
+
+    text-shadow:
+        0 0 8px rgba(56, 189, 248, 0.25);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+
+/* =========================================================
+   TOP SEARCH
+========================================================= */
+
+.search-top {
+    width: 205px;
+    height: 42px;
+
+    border: 1px solid #24527d;
+
+    border-radius: 8px;
+
+    padding: 0 15px;
+
+    outline: none;
+
+    background: #071a36;
+
+    color: #ffffff;
+
+    transition: 0.25s;
+}
+
+.search-top::placeholder {
+    color: #94a3b8;
+}
+
+.search-top:focus {
+    border-color: #38bdf8;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.15),
+        0 0 15px rgba(56, 189, 248, 0.15);
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+.profile-circle {
+    width: 38px;
+    height: 38px;
+
+    border-radius: 50%;
+
+    background: #dbe7f7;
+
+    border: 2px solid #8bbcff;
+
+    color: #4c2a85;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    padding: 0;
+
+    transition: all 0.25s ease;
+
+    box-shadow:
+        0 0 10px rgba(59, 130, 246, 0.25);
+}
+
+.profile-circle:hover {
+    background: #2563eb;
+
+    border-color: #38bdf8;
+
+    color: #ffffff;
+
+    transform: scale(1.08);
+}
+
+
+/* =========================================================
+   FILTER AREA
+========================================================= */
+
+.filters {
+    padding: 26px 28px 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    align-items: stretch;
+}
+
+
+/* =========================================================
+   SEARCH EQUIPMENT
+========================================================= */
+
+.search-box {
+    width: 100%;
+    height: 44px;
+
+    border: 1px solid #294b70;
+
+    border-radius: 7px;
+
+    padding: 0 13px;
+
+    background: #071a36;
+
+    color: #ffffff;
+
+    outline: none;
+
+    transition: 0.25s;
+}
+
+.search-box::placeholder {
+    color: #94a3b8;
+}
+
+.search-box:focus {
+    border-color: #38bdf8;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.12),
+        0 0 15px rgba(56, 189, 248, 0.12);
+}
+
+
+/* =========================================================
+   SELECT BOXES
+========================================================= */
+
+.form-select {
+    width: 100%;
+    height: 40px;
+
+    border: 1px solid #294b70;
+
+    border-radius: 7px;
+
+    padding: 0 12px;
+
+    background: #071a36;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    outline: none;
+
+    transition: 0.25s;
+}
+
+.form-select option {
+    background: #071a36;
+    color: #ffffff;
+}
+
+.form-select:focus {
+    border-color: #38bdf8;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+/* =========================================================
+   VIEW CALENDAR
+========================================================= */
+
+.view-calendar-btn {
+    width: 100%;
+    height: 42px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1e88e5 !important;
+
+    color: #ffffff !important;
+
+    font-weight: 700;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+
+    box-shadow:
+        0 0 12px rgba(56, 189, 248, 0.25);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-calendar-btn:hover {
+    background: #2196f3 !important;
+
+    border-color: #7dd3fc;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   ADD EQUIPMENT
+========================================================= */
+
+.add-btn {
+    align-self: flex-end;
+
+    width: 170px;
+    height: 42px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1557a8;
+
+    color: #ffffff;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+.add-btn:hover {
+    background: #1d4ed8;
+
+    border-color: #38bdf8;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   LOADING / ERROR
+========================================================= */
+
+.loading-message {
+    color: #ffffff;
+
+    padding: 0 28px;
+
+    font-size: 15px;
+}
+
+.error-message {
+    color: #f87171;
+
+    padding: 0 28px;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   EQUIPMENT GRID
+   EXACTLY 4 CARDS PER ROW
+========================================================= */
+
+.equipment-grid {
+    width: 100%;
+
+    padding: 20px 28px 40px;
+
+    display: grid !important;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr)) !important;
+
+    gap: 28px !important;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   EQUIPMENT CARD
+   SAME WHITE STYLE AS SHARING PAGE
+========================================================= */
+
+.equipment-card {
+    width: 100% !important;
+
+    min-width: 0;
+
+    background: #ffffff !important;
+
+    border: 1px solid #dbe5f3 !important;
+
+    border-radius: 12px !important;
+
+    padding: 14px !important;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.18);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+
+    color: #0f172a !important;
+}
+
+.equipment-card:hover {
+    transform: translateY(-4px);
+
+    border-color: #38bdf8 !important;
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.22);
+}
+
+
+/* =========================================================
+   IMAGE AREA
+   WHITE LIKE SHARING PAGE
+========================================================= */
+
+.image-placeholder {
+    width: 100%;
+
+    height: 150px;
+
+    background: #ffffff !important;
+
+    border-radius: 8px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    margin-bottom: 12px;
+
+    border: 1px solid #dbe5f3;
+}
+
+.image-placeholder img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    border-radius: 8px;
+
+    display: block;
+}
+
+
+/* =========================================================
+   EQUIPMENT NAME
+========================================================= */
+
+.equipment-card h6 {
+    margin: 8px 0 6px;
+
+    color: #14529a !important;
+
+    font-size: 17px;
+
+    line-height: 1.35;
+
+    font-weight: 700 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+}
+
+
+/* =========================================================
+   CATEGORY + DEPARTMENT
+========================================================= */
+
+.equipment-card p {
+    margin: 0 0 12px;
+
+    color: #475569 !important;
+
+    font-size: 14px;
+
+    line-height: 1.4;
+
+    font-weight: 500;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
+    width: 100%;
+
+    height: 34px;
+
+    border-radius: 7px;
+
+    margin-bottom: 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    overflow: hidden;
+}
+
+.status span {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+
+/* Available */
+
+.status.available {
+    background: #16a34a !important;
+
+    border: 1px solid #15803d;
+}
+
+
+/* Busy */
+
+.status.busy,
+.status.in_use {
+    background: #2563eb !important;
+
+    border: 1px solid #1d4ed8;
+}
+
+
+/* Maintenance */
+
+.status.maintenance {
+    background: #f59e0b !important;
+
+    border: 1px solid #d97706;
+}
+
+
+/* Retired */
+
+.status.retired {
+    background: #64748b !important;
+
+    border: 1px solid #475569;
+}
+
+
+/* Out of service */
+
+.status.out_of_service {
+    background: #dc2626 !important;
+
+    border: 1px solid #b91c1c;
+}
+
+
+/* =========================================================
+   VIEW BUTTON
+   SAME STYLE AS SHARING REQUEST ACCESS BUTTON
+========================================================= */
+
+.view-equipment-btn {
+    width: 100%;
+
+    height: 41px;
+
+    border: 1px solid #38bdf8;
+
+    border-radius: 7px;
+
+    background: #1557a8 !important;
+
+    color: #ffffff !important;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.view-equipment-btn:hover {
+    background: #1d4ed8 !important;
+
+    border-color: #38bdf8;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 0 15px rgba(37, 99, 235, 0.3);
+}
+
+.view-equipment-btn:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   FORCE CARD TEXT VISIBILITY
+========================================================= */
+
+.equipment-card h6,
+.equipment-card p,
+.equipment-card span {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+
+/* =========================================================
+   LARGE SCREEN
+   ALWAYS 4 CARDS
+========================================================= */
+
+@media (min-width: 1200px) {
+
+    .equipment-grid {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+
+/* =========================================================
+   MEDIUM SCREEN
+========================================================= */
+
+@media (max-width: 1199px) {
+
+    .equipment-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .equipment-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+        display: none;
+    }
+
+    .equipment-grid {
+        grid-template-columns: 1fr !important;
+
+        padding: 15px;
+    }
+
+    .navbar {
+        flex-direction: column;
+
+        height: auto;
+
+        gap: 15px;
+
+        align-items: flex-start;
+    }
+
+    .nav-right {
+        width: 100%;
+    }
+
+    .search-top {
+        width: 100%;
+    }
+
+    .profile-circle {
+        flex-shrink: 0;
+    }
+
+    .add-btn {
+        align-self: stretch;
+
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .equipment-grid {
+        padding: 12px;
+    }
+
+    .equipment-card {
+        padding: 12px !important;
+    }
+
+    .image-placeholder {
+        height: 170px;
+    }
+}
