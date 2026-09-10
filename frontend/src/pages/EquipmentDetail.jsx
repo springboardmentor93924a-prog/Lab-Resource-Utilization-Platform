@@ -100,8 +100,8 @@ export default function EquipmentDetail() {
 
   const specs = [
     { label: "Asset tag", value: equipment.assetTag },
-    { label: "Category", value: equipment.category },
-    { label: "Department", value: equipment.department },
+    { label: "Category", value: equipment.category?.categoryName },
+    { label: "Department", value: equipment.department?.departmentName },
     { label: "Manufacturer", value: equipment.manufacturer },
     { label: "Model", value: equipment.model },
     { label: "Calibration due", value: equipment.calibrationDueDate },

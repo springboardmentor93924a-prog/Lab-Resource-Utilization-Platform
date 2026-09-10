@@ -51,10 +51,12 @@ export default function EditEquipment() {
       try {
         const data = await getEquipmentById(id);
         setForm({
-          equipmentName: data.equipmentName || "",
-          category: data.category || "",
+          equipmentName: data.name || "",
+          category: data.category?.categoryName || "",
+            categoryId: data.category?.categoryId || null,
           assetId: data.assetTag || "",
-          department: data.department || "",
+          department: data.department?.departmentName || "",
+            departmentId: data.department?.departmentId || null,
           institution: "",
           manufacturer: data.manufacturer || "",
           modelNumber: data.model || "",
@@ -107,8 +109,8 @@ export default function EditEquipment() {
     const payload = {
       equipmentName: form.equipmentName,
       assetTag: form.assetId,
-      category: form.category,
-      department: form.department,
+      category: { categoryId: form.categoryId },
+        department: { departmentId: form.departmentId },
       manufacturer: form.manufacturer,
       model: form.modelNumber,
       imageUrl: form.imageUrl,
