@@ -1,0 +1,12 @@
+﻿UPDATE equipment SET image_url = 'https://tse4.mm.bing.net/th/id/OIP.tsifhQDZS0MVUV6LxVVrCQHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-CSE-SRV-02';
+UPDATE equipment SET image_url = 'https://tse1.mm.bing.net/th/id/OIP.vHLe91XJLQflou4Rzo-LhgHaE1?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-CSE-VR-02';
+UPDATE equipment SET image_url = 'https://tse3.mm.bing.net/th/id/OIP.V_G9m6_kjoYR_8damP1nwwHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-IT-NET-02';
+UPDATE equipment SET image_url = 'https://tse1.mm.bing.net/th/id/OIP.XI0PMTrQ0Q3mqpTJGA_JxgHaEC?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-IT-ROB-02';
+UPDATE equipment SET image_url = 'https://www.scan2cad.com/blog/wp-content/uploads/2023/05/cnc-lathe-machine.png' WHERE asset_tag = 'EQ-MECH-CNC-02';
+UPDATE equipment SET image_url = 'https://th.bing.com/th/id/OIP.LlzgcwOAyG6zV7r7v3DyigHaHB?r=0&o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-MECH-3DP-02';
+UPDATE equipment SET image_url = 'https://ephipot.com/uploads/allimg/191224/1_1349385801.jpg' WHERE asset_tag = 'EQ-EEE-PSS-02';
+UPDATE equipment SET image_url = 'https://www.cedesa.com.mx/imagenes/productos/24/lightbox/Megger_MIT515.jpg' WHERE asset_tag = 'EQ-EEE-HVT-02';
+UPDATE equipment SET image_url = 'https://th.bing.com/th/id/OIP.LUM4N73_GasRw_hSEIXdrAAAAA?r=0&o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-ECE-OSC-02';
+UPDATE equipment SET image_url = 'https://th.bing.com/th/id/OIP.vrcenXQif7jTSZg8t_OmwwHaEO?r=0&o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-ECE-SPA-02';
+UPDATE equipment SET image_url = 'https://i.machinio.com/medium/1bae2dddf394f12a8bb559932be15292/original_compressed-1601361174079/ddf6/utm-universal-rebar-tensile-bending-strength-testing-machine.jpg' WHERE asset_tag = 'EQ-CIVIL-UTM-02';
+UPDATE equipment SET image_url = 'https://tse3.mm.bing.net/th/id/OIP.NZRBBUkyaDSYgt4vh5LWTwHaE2?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-CIVIL-CCT-02';

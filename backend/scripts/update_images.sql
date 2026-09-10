@@ -1,0 +1,12 @@
+﻿UPDATE equipment SET image_url = 'https://tse1.mm.bing.net/th/id/OIP.oSG7GatUTaup9iw3DV3WtgHaIz?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-CSE-GPU-01';
+UPDATE equipment SET image_url = 'https://www.unsw.edu.au/content/unsw-sites/au/en/research/cse-virtual-reality-lab/_jcr_content/root/responsivegrid-layout-fixed-width/responsivegrid-full-top/column_layout_106900/par_2_1_50/column_layout/par_1/image.coreimg.png/1721775339470/2024-07-vr-lab-image-2.png' WHERE asset_tag = 'EQ-CSE-VR-01';
+UPDATE equipment SET image_url = 'https://images.interestingengineering.com/2023/03/07/image/jpeg/1kvMf2cRKngBtID98YSWDIRaxkjhYJuvp3UlPO8z.jpg' WHERE asset_tag = 'EQ-IT-NET-01';
+UPDATE equipment SET image_url = 'https://media.digikey.com/photos/Osepp-Electronics/MFG_ROB-01.jpg' WHERE asset_tag = 'EQ-IT-ROB-01';
+UPDATE equipment SET image_url = 'https://tse2.mm.bing.net/th/id/OIP._10ninw7TiYEA2Q6sepxBwHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-MECH-CNC-01';
+UPDATE equipment SET image_url = 'https://i.ytimg.com/vi/I9JycY8QtuY/maxresdefault.jpg' WHERE asset_tag = 'EQ-MECH-3DP-01';
+UPDATE equipment SET image_url = 'https://tse2.mm.bing.net/th/id/OIP.KA2t8ZKz9-Ow96HT-WtOjAHaC3?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-EEE-PSS-01';
+UPDATE equipment SET image_url = 'https://5.imimg.com/data5/SELLER/Default/2023/11/360717125/AP/MG/OK/2939677/high-voltage-breakdown-tester-1000x1000.jpeg' WHERE asset_tag = 'EQ-EEE-HVT-01';
+UPDATE equipment SET image_url = 'https://www.ukm.my/jkees/wp-content/uploads/2023/11/4-MSO7104B-MIXED-SIGNAL-OSCILLOSCOPE-INFINIIVISION-416-CH-1-GHZ-4GSAS-scaled.jpg' WHERE asset_tag = 'EQ-ECE-OSC-01';
+UPDATE equipment SET image_url = 'https://tse4.mm.bing.net/th/id/OIP.pJHt78MDPADRuceuvsEaoQHaDv?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-ECE-SPA-01';
+UPDATE equipment SET image_url = 'https://tse2.mm.bing.net/th/id/OIP.kBwVTw5sjDQnC5lV2EZ_kQHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3' WHERE asset_tag = 'EQ-CIVIL-UTM-01';
+UPDATE equipment SET image_url = 'https://universal-motion.com/wp-content/uploads/2026/05/automatic-compression-testing-machine-ctm-pune-india.jpg' WHERE asset_tag = 'EQ-CIVIL-CCT-01';
