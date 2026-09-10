@@ -2726,11 +2726,10 @@ body {
     -webkit-text-fill-color: #ffffff !important;
     opacity: 1 !important;
 }
-
 /* Equipment names */
 .sharing-content .equipment-name {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
     opacity: 1 !important;
 }
 
