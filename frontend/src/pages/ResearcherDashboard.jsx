@@ -107,6 +107,7 @@ export default function ResearcherDashboard() {
   </div>
 
   {/* WAITLIST */}
+  {/* TODO: hardcoded to 0 - needs real waitlist count endpoint, not yet wired up */}
   <div
     className="card stat orange"
     onClick={() => navigate("/my-waitlist")}
