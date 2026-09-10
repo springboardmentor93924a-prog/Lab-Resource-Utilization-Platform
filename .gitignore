@@ -3,4 +3,4 @@ target/
 .idea/
 *.iml
 .mvn/
-backend/uploads/
+backend/uploads/.env
