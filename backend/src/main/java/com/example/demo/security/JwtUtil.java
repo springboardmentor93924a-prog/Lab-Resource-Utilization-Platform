@@ -13,7 +13,7 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
     private final SecretKey key = Keys.hmacShaKeyFor(
-        "this-is-a-very-long-secret-key-change-it-later-1234".getBytes()
+        System.getenv("JWT_SECRET").getBytes()
     );
     private final long expirationMs = 86400000;
 
