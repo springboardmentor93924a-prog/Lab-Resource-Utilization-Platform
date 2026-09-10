@@ -1,10 +1,12 @@
 import Sidebar from "../components/Sidebar";
 import "./EquipmentCatalog.css";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getAllEquipment } from "../services/equipmentService";
 import { isAdmin } from "../utils/auth";
 import { getCalibrationAlerts } from "../services/equipmentService";
+
+const STATUS_OPTIONS = ["Available", "Booked", "Under Maintenance", "Out of Service", "Retired"];
 
 export default function EquipmentCatalog() {
   const navigate = useNavigate();
@@ -13,6 +15,11 @@ export default function EquipmentCatalog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [overdueIds, setOverdueIds] = useState([]);
+
+  const [searchText, setSearchText] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All categories");
+  const [statusFilter, setStatusFilter] = useState("All status");
+  const [departmentFilter, setDepartmentFilter] = useState("All departments");
 
   const userIsAdmin = isAdmin();
 
@@ -32,6 +39,56 @@ export default function EquipmentCatalog() {
   }
   fetchEquipment();
 }, []);
+
+  const categoryOptions = useMemo(() => {
+    const names = equipmentList
+      .map((item) => item.category?.categoryName)
+      .filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [equipmentList]);
+
+  const departmentOptions = useMemo(() => {
+    const names = equipmentList
+      .map((item) => item.department?.departmentName)
+      .filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [equipmentList]);
+
+  const filteredList = useMemo(() => {
+    return equipmentList.filter((item) => {
+      if (categoryFilter !== "All categories" && item.category?.categoryName !== categoryFilter) {
+        return false;
+      }
+      if (statusFilter === "All status") {
+        if (item.status === "Retired") {
+          return false;
+        }
+      } else if (item.status !== statusFilter) {
+        return false;
+      }
+      if (departmentFilter !== "All departments" && item.department?.departmentName !== departmentFilter) {
+        return false;
+      }
+      if (searchText.trim() !== "") {
+        const q = searchText.trim().toLowerCase();
+        const haystack = [
+          item.name,
+          item.assetTag,
+          item.manufacturer,
+          item.modelNumber,
+          item.category?.categoryName,
+          item.department?.departmentName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [equipmentList, categoryFilter, statusFilter, departmentFilter, searchText]);
 
   function handleView(id) {
     navigate(`/equipment/${id}`);
@@ -78,7 +135,7 @@ export default function EquipmentCatalog() {
               title="My Profile"
               aria-label="My Profile"
             >
-              👤
+              ðŸ‘¤
             </button>
 
           </div>
@@ -96,27 +153,41 @@ export default function EquipmentCatalog() {
             type="text"
             className="form-control search-box"
             placeholder="Search equipment"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
 
-          <select className="form-select">
+          <select
+            className="form-select"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
             <option>All categories</option>
-            <option>Microscope</option>
-            <option>Spectrometer</option>
-            <option>Centrifuge</option>
+            {categoryOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
           </select>
 
-          <select className="form-select">
+          <select
+            className="form-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option>All status</option>
-            <option>Available</option>
-            <option>Busy</option>
-            <option>Maintenance</option>
+            {STATUS_OPTIONS.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
           </select>
 
-          <select className="form-select">
+          <select
+            className="form-select"
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+          >
             <option>All departments</option>
-            <option>Bio</option>
-            <option>Chem</option>
-            <option>Physics</option>
+            {departmentOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
           </select>
 
 
@@ -168,7 +239,7 @@ export default function EquipmentCatalog() {
         {!loading && !error && (
           <div className="equipment-grid">
 
-            {equipmentList.map((item) => (
+            {filteredList.map((item) => (
 
 
 <div
@@ -198,7 +269,7 @@ export default function EquipmentCatalog() {
                 {/* CATEGORY + DEPARTMENT */}
 
                 <p>
-                  {item.category?.categoryName} — {item.department?.departmentName}
+                  {item.category?.categoryName} â€” {item.department?.departmentName}
                 </p>
 
 
