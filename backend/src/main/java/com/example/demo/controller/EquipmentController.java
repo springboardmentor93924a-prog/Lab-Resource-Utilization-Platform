@@ -132,13 +132,34 @@ public class EquipmentController {
             return ResponseEntity.status(404).body(Map.of("error", "Equipment not found"));
         }
         Equipment existing = equipmentRepository.findById(id).get();
-        updated.setEquipmentId(id);
-        updated.setCategory(categoryRepository.findById(updated.getCategory().getCategoryId()).get());
-        updated.setDepartment(departmentRepository.findById(updated.getDepartment().getDepartmentId()).get());
-        updated.setInstitution(institutionRepository.findById(updated.getInstitution().getInstitutionId()).get());
-        updated.setCreatedAt(existing.getCreatedAt());
-        updated.setUpdatedAt(LocalDateTime.now());
-        return ResponseEntity.ok(equipmentRepository.save(updated));
+
+        if (updated.getName() != null) existing.setName(updated.getName());
+        if (updated.getAssetTag() != null) existing.setAssetTag(updated.getAssetTag());
+        if (updated.getManufacturer() != null) existing.setManufacturer(updated.getManufacturer());
+        if (updated.getModelNumber() != null) existing.setModelNumber(updated.getModelNumber());
+        if (updated.getSpecifications() != null) existing.setSpecifications(updated.getSpecifications());
+        if (updated.getLocation() != null) existing.setLocation(updated.getLocation());
+        if (updated.getManualUrl() != null) existing.setManualUrl(updated.getManualUrl());
+        if (updated.getCalibrationCertUrl() != null) existing.setCalibrationCertUrl(updated.getCalibrationCertUrl());
+        if (updated.getCalibrationDueDate() != null) existing.setCalibrationDueDate(updated.getCalibrationDueDate());
+        if (updated.getTags() != null) existing.setTags(updated.getTags());
+        if (updated.getImageUrl() != null) existing.setImageUrl(updated.getImageUrl());
+        if (updated.getStatus() != null) existing.setStatus(updated.getStatus());
+        if (updated.getHourlyRate() != null) existing.setHourlyRate(updated.getHourlyRate());
+        if (updated.getSharedAvailable() != null) existing.setSharedAvailable(updated.getSharedAvailable());
+
+        if (updated.getCategory() != null && updated.getCategory().getCategoryId() != null) {
+            existing.setCategory(categoryRepository.findById(updated.getCategory().getCategoryId()).get());
+        }
+        if (updated.getDepartment() != null && updated.getDepartment().getDepartmentId() != null) {
+            existing.setDepartment(departmentRepository.findById(updated.getDepartment().getDepartmentId()).get());
+        }
+        if (updated.getInstitution() != null && updated.getInstitution().getInstitutionId() != null) {
+            existing.setInstitution(institutionRepository.findById(updated.getInstitution().getInstitutionId()).get());
+        }
+
+        existing.setUpdatedAt(LocalDateTime.now());
+        return ResponseEntity.ok(equipmentRepository.save(existing));
     }
 
     @PostMapping("/{id}/photo")
