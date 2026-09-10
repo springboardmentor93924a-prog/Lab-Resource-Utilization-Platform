@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AddEquipment.css";
@@ -11,24 +11,32 @@ const statusOptions = ["Available", "Booked", "Under maintenance", "Out of servi
 function mapStatusToBackend(uiStatus) {
   switch (uiStatus) {
     case "Available":
-      return "AVAILABLE";
+      return "Available";
     case "Booked":
-      return "IN_USE";
+      return "Booked";
     case "Under maintenance":
-      return "MAINTENANCE";
+      return "Under Maintenance";
+    case "Out of service":
+      return "Out of Service";
+    case "Retired":
+      return "Retired";
     default:
-      return "MAINTENANCE";
+      return "Available";
   }
 }
 
 function mapStatusToUI(backendStatus) {
   switch (backendStatus) {
-    case "AVAILABLE":
+    case "Available":
       return "Available";
-    case "IN_USE":
+    case "Booked":
       return "Booked";
-    case "MAINTENANCE":
+    case "Under Maintenance":
       return "Under maintenance";
+    case "Out of Service":
+      return "Out of service";
+    case "Retired":
+      return "Retired";
     default:
       return "Available";
   }
@@ -57,7 +65,8 @@ export default function EditEquipment() {
           assetId: data.assetTag || "",
           department: data.department?.departmentName || "",
             departmentId: data.department?.departmentId || null,
-          institution: "",
+          institution: data.institution?.institutionName || "",
+            institutionId: data.institution?.institutionId || null,
           manufacturer: data.manufacturer || "",
           modelNumber: data.model || "",
           notes: "",
@@ -107,17 +116,16 @@ export default function EditEquipment() {
     }
 
     const payload = {
-      equipmentName: form.equipmentName,
+      name: form.equipmentName,
       assetTag: form.assetId,
       category: { categoryId: form.categoryId },
-        department: { departmentId: form.departmentId },
+      department: { departmentId: form.departmentId },
+      institution: { institutionId: form.institutionId },
       manufacturer: form.manufacturer,
-      model: form.modelNumber,
+      modelNumber: form.modelNumber,
       imageUrl: form.imageUrl,
       status: mapStatusToBackend(status),
       calibrationDueDate: form.calibrationDate || null,
-      manualDocument: manualFilename,
-      calibrationCertificate: certFilename,
     };
 
     await updateEquipment(id, payload);
@@ -168,7 +176,7 @@ export default function EditEquipment() {
 
         <div className="card">
           <button className="close-btn" onClick={handleClose}>
-            ×
+            Ã—
           </button>
 
           <div className="section">
