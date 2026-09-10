@@ -1,0 +1,7 @@
+INSERT INTO equipment (asset_tag, name, category_id, department_id, institution_id, status, manufacturer, model_number, location, image_url, hourly_rate, shared_available) VALUES
+('EQ-OTHER-02', 'GPU Compute Server', 8, 10, 3, 'Available', 'NVIDIA', 'DGX Station', 'CSE Lab, Other University', 'https://upload.wikimedia.org/wikipedia/commons/8/8b/Nvidia_DGX-1.jpg', 15.00, true),
+('EQ-OTHER-03', 'Network Switch Rack', 8, 10, 3, 'Available', 'Cisco', 'Catalyst 9300', 'CSE Lab, Other University', 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Cisco_Catalyst_switch.jpg', 5.00, true),
+('EQ-OTHER-04', '3D Scanner', 7, 10, 3, 'Available', 'Artec', 'Eva', 'CSE Lab, Other University', 'https://upload.wikimedia.org/wikipedia/commons/6/6a/3D_scanner_in_use.jpg', 8.00, true),
+('EQ-OTHER-05', 'VR Headset Set', 12, 11, 4, 'Available', 'Meta', 'Quest 3', 'CSE Lab, Other University 2', 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Meta_Quest_2.jpg', 6.00, true),
+('EQ-OTHER-06', 'Raspberry Pi Cluster', 8, 11, 4, 'Available', 'Raspberry Pi Foundation', 'Pi 5 Cluster', 'CSE Lab, Other University 2', 'https://upload.wikimedia.org/wikipedia/commons/9/9e/Raspberry_Pi_4_Model_B.jpg', 3.00, true),
+('EQ-OTHER-07', 'Robotic Arm Kit', 12, 11, 4, 'Available', 'UFactory', 'xArm 6', 'CSE Lab, Other University 2', 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Industrial_robot_arm.jpg', 10.00, true);
