@@ -73,3 +73,135 @@
   background: #16243A !important;
   color: #FCA5A5 !important;
 }
+
+
+/* =========================================================
+   MOBILE SIDEBAR
+   ========================================================= */
+
+/* Mobile menu button */
+.mobile-menu-btn {
+  display: none;
+}
+
+/* Close button inside sidebar */
+.mobile-close-btn {
+  display: none;
+}
+
+/* Overlay behind mobile sidebar */
+.sidebar-overlay {
+  display: none;
+}
+
+
+/* =========================================================
+   MOBILE RESPONSIVE SIDEBAR
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  /* Sidebar becomes a slide-out menu */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    min-height: 100vh;
+    z-index: 2000;
+
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+
+    overflow-y: auto;
+  }
+
+  /* Open sidebar */
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* Hamburger button */
+  .mobile-menu-btn {
+    display: flex;
+
+    position: fixed;
+    top: 15px;
+    left: 15px;
+
+    width: 44px;
+    height: 44px;
+
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #0F1B2D;
+    color: #ffffff;
+
+    font-size: 24px;
+
+    cursor: pointer;
+
+    z-index: 2100;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Close button */
+  .mobile-close-btn {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    position: absolute;
+    top: 15px;
+    right: 15px;
+
+    width: 32px;
+    height: 32px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+    color: #ffffff;
+
+    font-size: 26px;
+    line-height: 1;
+
+    cursor: pointer;
+  }
+
+  .mobile-close-btn:hover {
+    background: #16243A;
+  }
+
+  /* Dark overlay */
+  .sidebar-overlay {
+    display: block;
+
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    z-index: 1900;
+  }
+
+  /* Give the logo space for close button */
+  .sidebar .logo {
+    position: relative;
+    padding-right: 55px;
+  }
+
+  /* Main content uses full mobile width */
+  .main {
+    width: 100%;
+    min-width: 0;
+  }
+}

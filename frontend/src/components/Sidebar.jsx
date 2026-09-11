@@ -172,6 +172,29 @@ export default function Sidebar() {
   const role = getCurrentUserRole();
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+    function toggleMobileSidebar() {
+    setMobileOpen((prev) => !prev);
+  }
+
+  function closeMobileSidebar() {
+    setMobileOpen(false);
+  }
+
+  useEffect(() => {
+    const sidebar = document.querySelector(".sidebar");
+
+    if (sidebar) {
+      sidebar.classList.toggle("sidebar-open", mobileOpen);
+    }
+
+    return () => {
+      if (sidebar) {
+        sidebar.classList.remove("sidebar-open");
+      }
+    };
+  }, [mobileOpen]);
 
   // Fetch unread notification count
   useEffect(() => {
@@ -196,19 +219,46 @@ export default function Sidebar() {
   }, []);
 
   function handleLogout() {
-    if (window.confirm("Are you sure you want to log out?")) {
-      logout();
-      navigate("/login");
-    }
+  if (window.confirm("Are you sure you want to log out?")) {
+    closeMobileSidebar();
+    logout();
+    navigate("/login");
   }
-
+}
   const visibleItems = navItems.filter(
     (item) => !item.roles || item.roles.includes(role)
   );
 
   return (
-    <>
-      <div className="logo">LAB PLATFORM</div>
+  <>
+    {/* Mobile menu button */}
+    <button
+      className="mobile-menu-btn"
+      onClick={toggleMobileSidebar}
+      aria-label="Open navigation menu"
+    >
+      <i className="bi bi-list"></i>
+    </button>
+
+    {/* Mobile overlay */}
+    {mobileOpen && (
+      <div
+        className="sidebar-overlay"
+        onClick={closeMobileSidebar}
+      ></div>
+    )}
+
+    <div className="logo">
+      LAB PLATFORM
+
+      <button
+        className="mobile-close-btn"
+        onClick={closeMobileSidebar}
+        aria-label="Close navigation menu"
+      >
+        ×
+      </button>
+    </div>
 
       <ul>
         {visibleItems.map((item) => (
@@ -219,8 +269,9 @@ export default function Sidebar() {
             }
           >
             <Link
-              to={item.path}
-              className="sidebar-link"
+  to={item.path}
+  className="sidebar-link"
+  onClick={closeMobileSidebar}
               style={{
                 display: "flex",
                 alignItems: "center",
