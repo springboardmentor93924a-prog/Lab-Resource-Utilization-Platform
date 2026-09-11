@@ -61,7 +61,7 @@ function Dashboard() {
     const userId = sessionStorage.getItem("userId");
 
     const fetchData = () => {
-      fetch("http://localhost:8080/api/equipment", {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -72,7 +72,7 @@ function Dashboard() {
 
       // ===== FIX: gated behind canViewUsers (was unconditional before) =====
       if (canViewUsers) {
-        fetch("http://localhost:8080/api/users", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -93,7 +93,7 @@ function Dashboard() {
       // this was firing unconditionally before, so STUDENT/LAB_TECHNICIAN
       // got a repeated failed 403 call every 5s.
       if (canViewUtilization) {
-        fetch("http://localhost:8080/api/utilization", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/utilization`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -114,7 +114,7 @@ function Dashboard() {
       }
 
       if (role === "STUDENT") {
-        fetch("http://localhost:8080/api/bookings", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -125,7 +125,7 @@ function Dashboard() {
           )
           .catch(console.error);
 
-        fetch("http://localhost:8080/api/waitlist/my", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/waitlist/my`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -134,7 +134,7 @@ function Dashboard() {
       }
 
       if (role === "LAB_TECHNICIAN") {
-        fetch("http://localhost:8080/api/maintenance", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/maintenance`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())

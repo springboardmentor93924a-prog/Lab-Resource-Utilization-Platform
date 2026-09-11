@@ -66,7 +66,7 @@ function Reservations() {
   };
 
   const fetchEquipmentList = () => {
-    fetch("http://localhost:8080/api/equipment", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -80,7 +80,7 @@ function Reservations() {
   };
 
   const fetchBookings = () => {
-    fetch("http://localhost:8080/api/bookings", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -102,7 +102,7 @@ function Reservations() {
   // prevents duplicate submissions from the UI side (backend also blocks
   // it via existsByBooking_BookingId).
   const fetchMyFeedback = () => {
-    fetch("http://localhost:8080/api/equipment-feedback/my", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment-feedback/my`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : []))
@@ -170,8 +170,8 @@ function Reservations() {
 
     try {
       const url = editingId
-        ? `http://localhost:8080/api/bookings/${editingId}`
-        : "http://localhost:8080/api/bookings";
+        ? `${import.meta.env.VITE_API_BASE_URL}/api/bookings/${editingId}`
+        : `${import.meta.env.VITE_API_BASE_URL}/api/bookings`;
 
       const method = editingId ? "PUT" : "POST";
 
@@ -221,7 +221,7 @@ function Reservations() {
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/resource-sharing/requests",
+        `${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests`,
         {
           method: "POST",
           headers: {
@@ -262,7 +262,7 @@ function Reservations() {
     if (!window.confirm("Are you sure you want to delete this booking?")) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/bookings/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -281,7 +281,7 @@ function Reservations() {
 
   const handleApprove = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/bookings/${id}/approve`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}/approve`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -300,7 +300,7 @@ function Reservations() {
 
   const handleReject = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/bookings/${id}/reject`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}/reject`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -319,7 +319,7 @@ function Reservations() {
 
   const handleComplete = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/bookings/${id}/complete`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}/complete`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -374,7 +374,7 @@ function Reservations() {
     setFeedbackSubmitting(true);
     setFeedbackError("");
     try {
-      const response = await fetch("http://localhost:8080/api/equipment-feedback", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment-feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

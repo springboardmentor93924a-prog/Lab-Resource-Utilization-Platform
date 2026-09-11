@@ -26,8 +26,8 @@ function Waitlist() {
 
   const fetchMyWaitlist = () => {
     const url = isTechnicianView
-      ? "http://localhost:8080/api/waitlist"
-      : "http://localhost:8080/api/waitlist/my";
+      ? `${import.meta.env.VITE_API_BASE_URL}/api/waitlist`
+      : `${import.meta.env.VITE_API_BASE_URL}/api/waitlist/my`;
 
     fetch(url, {
       headers: {
@@ -51,7 +51,7 @@ function Waitlist() {
   };
 
   const fetchEquipmentList = () => {
-    fetch("http://localhost:8080/api/equipment", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -112,7 +112,7 @@ useEffect(() => {
     };
 
     try {
-      const response = await fetch("http://localhost:8080/api/waitlist", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/waitlist`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,7 +136,7 @@ useEffect(() => {
   const handleCancel = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/waitlist/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/waitlist/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -164,7 +164,7 @@ useEffect(() => {
   const handleDecision = async (entry, decision) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/waitlist/${entry.waitlistId}/decide`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/waitlist/${entry.waitlistId}/decide`,
         {
           method: "POST",
           headers: {

@@ -9,7 +9,7 @@ export default function BookingAvailability() {
   const checkAvailability = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.get(`http://localhost:8080/api/bookings/availability?equipmentId=${equipmentId}&date=${date}`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/availability?equipmentId=${equipmentId}&date=${date}`, {
         headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setIsAvailable(res.data.isAvailable);

@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/equipment-feedback")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "${app.frontend-base-url}")
 public class EquipmentFeedbackController {
 
     private final EquipmentFeedbackService feedbackService;

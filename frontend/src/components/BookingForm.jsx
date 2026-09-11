@@ -8,7 +8,7 @@ export default function BookingForm({ onSuccess }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/equipment', {
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
       headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
     }).then((response) => setEquipment(Array.isArray(response.data) ? response.data : []));
   }, []);
@@ -17,7 +17,7 @@ export default function BookingForm({ onSuccess }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('http://localhost:8080/api/bookings', {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/bookings`, {
         equipmentId: parseInt(equipmentId),
         bookingDate,
         status: 'PENDING'

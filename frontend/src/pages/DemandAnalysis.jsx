@@ -19,7 +19,7 @@ function DemandAnalysis() {
   const [utilizationData, setUtilizationData] = useState([]);
 
   useEffect(() => {
-  fetch("http://localhost:8080/api/utilization", {
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/api/utilization`, {
     headers: {
       Authorization: `Bearer ${sessionStorage.getItem("token")}`
     }
@@ -31,7 +31,7 @@ function DemandAnalysis() {
 
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/utilization/summary", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/utilization/summary`, {
       headers: {
         Authorization: `Bearer ${sessionStorage.getItem("token")}`,
       },

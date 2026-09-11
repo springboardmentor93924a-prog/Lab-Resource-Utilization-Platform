@@ -31,10 +31,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         this.jwtService = jwtService;
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-base-url}")
+private String frontendBaseUrl;
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:5173")
+        .setAllowedOrigins(frontendBaseUrl)
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
                     @Override
                     protected Principal determineUser(ServerHttpRequest request,

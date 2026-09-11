@@ -45,7 +45,7 @@ function Equipment() {
 
   // Fetch all equipment
   const fetchEquipment = () => {
-    fetch("http://localhost:8080/api/equipment", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -130,8 +130,8 @@ function Equipment() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const url = isEditing
-      ? `http://localhost:8080/api/equipment/${currentId}`
-      : "http://localhost:8080/api/equipment";
+      ? `${import.meta.env.VITE_API_BASE_URL}/api/equipment/${currentId}`
+      : `${import.meta.env.VITE_API_BASE_URL}/api/equipment`;
     const method = isEditing ? "PUT" : "POST";
 
     // Institution and department are deliberately NOT sent here — the
@@ -173,7 +173,7 @@ function Equipment() {
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this equipment?")) return;
 
-    fetch(`http://localhost:8080/api/equipment/${id}`, {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
