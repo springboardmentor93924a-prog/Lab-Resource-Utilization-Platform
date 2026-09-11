@@ -5,8 +5,21 @@ import "./AddEquipment.css";
 import { getEquipmentById, updateEquipment } from "../services/equipmentService";
 import { uploadFile } from "../services/fileService";
 
-
 const statusOptions = ["Available", "Booked", "Under maintenance", "Out of service", "Retired"];
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://lab-resource-utilization-platform-o09v.onrender.com";
+
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+async function fetchList(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
+  return res.json();
+}
 
 function mapStatusToBackend(uiStatus) {
   switch (uiStatus) {
@@ -54,19 +67,41 @@ export default function EditEquipment() {
   const [existingManual, setExistingManual] = useState(null);
   const [existingCert, setExistingCert] = useState(null);
 
+  const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [optionsError, setOptionsError] = useState(null);
+
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        setLoadingOptions(true);
+        const [cats, deps] = await Promise.all([
+          fetchList("/api/categories"),
+          fetchList("/api/departments"),
+        ]);
+        setCategories(cats);
+        setDepartments(deps);
+      } catch (err) {
+        console.error("Failed to load category/department options", err);
+        setOptionsError("Could not load categories/departments from the server.");
+      } finally {
+        setLoadingOptions(false);
+      }
+    }
+    loadOptions();
+  }, []);
+
   useEffect(() => {
     async function fetchEquipment() {
       try {
         const data = await getEquipmentById(id);
         setForm({
           equipmentName: data.name || "",
-          category: data.category?.categoryName || "",
-            categoryId: data.category?.categoryId || null,
+          categoryId: data.category?.categoryId || "",
           assetId: data.assetTag || "",
-          department: data.department?.departmentName || "",
-            departmentId: data.department?.departmentId || null,
-          institution: data.institution?.institutionName || "",
-            institutionId: data.institution?.institutionId || null,
+          departmentId: data.department?.departmentId || "",
+          institutionId: data.institution?.institutionId || null,
           manufacturer: data.manufacturer || "",
           modelNumber: data.model || "",
           notes: "",
@@ -91,52 +126,58 @@ export default function EditEquipment() {
   }
 
   async function handleSave() {
-  if (form.equipmentName.trim() === "") {
-    alert("Please enter Equipment Name.");
-    return;
-  }
-  if (form.assetId.trim() === "") {
-    alert("Please enter Asset ID / tag.");
-    return;
-  }
-
-  try {
-    setSaving(true);
-
-    let manualFilename = existingManual;
-    let certFilename = existingCert;
-
-    if (manualFile) {
-      const uploaded = await uploadFile(manualFile);
-      manualFilename = uploaded.filename;
+    if (form.equipmentName.trim() === "") {
+      alert("Please enter Equipment Name.");
+      return;
     }
-    if (certFile) {
-      const uploaded = await uploadFile(certFile);
-      certFilename = uploaded.filename;
+    if (form.assetId.trim() === "") {
+      alert("Please enter Asset ID / tag.");
+      return;
+    }
+    if (!form.categoryId || !form.departmentId) {
+      alert("Please select a Category and Department.");
+      return;
     }
 
-    const payload = {
-      name: form.equipmentName,
-      assetTag: form.assetId,
-      category: { categoryId: form.categoryId },
-      department: { departmentId: form.departmentId },
-      institution: { institutionId: form.institutionId },
-      manufacturer: form.manufacturer,
-      modelNumber: form.modelNumber,
-      imageUrl: form.imageUrl,
-      status: mapStatusToBackend(status),
-      calibrationDueDate: form.calibrationDate || null,
-    };
+    try {
+      setSaving(true);
 
-    await updateEquipment(id, payload);
-    alert("Equipment updated successfully!");
-    navigate(`/equipment/${id}`);
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to update equipment.");
-  } finally {
-    setSaving(false);
+      let manualFilename = existingManual;
+      let certFilename = existingCert;
+
+      if (manualFile) {
+        const uploaded = await uploadFile(manualFile);
+        manualFilename = uploaded.filename;
+      }
+      if (certFile) {
+        const uploaded = await uploadFile(certFile);
+        certFilename = uploaded.filename;
+      }
+
+      const payload = {
+        name: form.equipmentName,
+        assetTag: form.assetId,
+        category: { categoryId: Number(form.categoryId) },
+        department: { departmentId: Number(form.departmentId) },
+        institution: { institutionId: form.institutionId },
+        manufacturer: form.manufacturer,
+        modelNumber: form.modelNumber,
+        imageUrl: form.imageUrl,
+        status: mapStatusToBackend(status),
+        calibrationDueDate: form.calibrationDate || null,
+        manualDocument: manualFilename,
+        calibrationCertificate: certFilename,
+      };
+
+      await updateEquipment(id, payload);
+      alert("Equipment updated successfully!");
+      navigate(`/equipment/${id}`);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update equipment.");
+    } finally {
+      setSaving(false);
+    }
   }
-}
 
   function handleClose() {
     if (window.confirm("Discard changes?")) {
@@ -179,6 +220,12 @@ export default function EditEquipment() {
             ×
           </button>
 
+          {optionsError && (
+            <div className="section">
+              <p style={{ color: "#f87171" }}>{optionsError}</p>
+            </div>
+          )}
+
           <div className="section">
             <h3>Basic info</h3>
             <div className="grid-3">
@@ -188,7 +235,16 @@ export default function EditEquipment() {
               </div>
               <div>
                 <label>Category / type</label>
-                <input type="text" value={form.category} onChange={(e) => updateField("category", e.target.value)} />
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => updateField("categoryId", e.target.value)}
+                  disabled={loadingOptions || categories.length === 0}
+                >
+                  {loadingOptions && <option>Loading...</option>}
+                  {categories.map((c) => (
+                    <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label>Asset ID / tag</label>
@@ -196,7 +252,16 @@ export default function EditEquipment() {
               </div>
               <div>
                 <label>Department</label>
-                <input type="text" value={form.department} onChange={(e) => updateField("department", e.target.value)} />
+                <select
+                  value={form.departmentId}
+                  onChange={(e) => updateField("departmentId", e.target.value)}
+                  disabled={loadingOptions || departments.length === 0}
+                >
+                  {loadingOptions && <option>Loading...</option>}
+                  {departments.map((d) => (
+                    <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label>Image URL</label>
@@ -235,20 +300,20 @@ export default function EditEquipment() {
           </div>
 
           <div className="section">
-  <h3>Documents</h3>
-  <div className="documents">
-    <div className="upload-box">
-      <i className="fa-solid fa-cloud-arrow-up"></i>
-      <p>{manualFile ? manualFile.name : existingManual || "Upload manual (PDF)"}</p>
-      <input type="file" onChange={(e) => setManualFile(e.target.files[0] || null)} />
-    </div>
-    <div className="upload-box">
-      <i className="fa-solid fa-cloud-arrow-up"></i>
-      <p>{certFile ? certFile.name : existingCert || "Upload calibration certificate"}</p>
-      <input type="file" onChange={(e) => setCertFile(e.target.files[0] || null)} />
-    </div>
-  </div>
-</div>
+            <h3>Documents</h3>
+            <div className="documents">
+              <div className="upload-box">
+                <i className="fa-solid fa-cloud-arrow-up"></i>
+                <p>{manualFile ? manualFile.name : existingManual || "Upload manual (PDF)"}</p>
+                <input type="file" onChange={(e) => setManualFile(e.target.files[0] || null)} />
+              </div>
+              <div className="upload-box">
+                <i className="fa-solid fa-cloud-arrow-up"></i>
+                <p>{certFile ? certFile.name : existingCert || "Upload calibration certificate"}</p>
+                <input type="file" onChange={(e) => setCertFile(e.target.files[0] || null)} />
+              </div>
+            </div>
+          </div>
 
           <div className="section">
             <label>Calibration due date</label>
@@ -264,7 +329,7 @@ export default function EditEquipment() {
             <button className="cancel" onClick={handleClose}>
               Cancel
             </button>
-            <button className="save" onClick={handleSave} disabled={saving}>
+            <button className="save" onClick={handleSave} disabled={saving || loadingOptions}>
               {saving ? "Saving..." : "Save changes"}
             </button>
           </div>

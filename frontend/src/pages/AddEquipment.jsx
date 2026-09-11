@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AddEquipment.css";
@@ -8,12 +8,25 @@ import { uploadFile } from "../services/fileService";
 
 const statusOptions = ["Available", "Booked", "Under maintenance", "Out of service", "Retired"];
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://lab-resource-utilization-platform-o09v.onrender.com";
+
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+async function fetchList(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
+  return res.json();
+}
+
 const initialForm = {
   equipmentName: "",
-  category: "",
+  categoryId: "",
   assetId: "",
-  department: "",
-  institution: "",
+  departmentId: "",
   manufacturer: "",
   modelNumber: "",
   notes: "",
@@ -54,6 +67,41 @@ export default function AddEquipment() {
   const [certFile, setCertFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [institutionId, setInstitutionId] = useState(null);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [optionsError, setOptionsError] = useState(null);
+
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        setLoadingOptions(true);
+        const [cats, deps, insts] = await Promise.all([
+          fetchList("/api/categories"),
+          fetchList("/api/departments"),
+          fetchList("/api/institutions"),
+        ]);
+
+        setCategories(cats);
+        setDepartments(deps);
+        setInstitutionId(insts.length > 0 ? insts[0].institutionId : 1);
+
+        setForm((prev) => ({
+          ...prev,
+          categoryId: cats.length > 0 ? cats[0].categoryId : "",
+          departmentId: deps.length > 0 ? deps[0].departmentId : "",
+        }));
+      } catch (err) {
+        console.error("Failed to load category/department/institution options", err);
+        setOptionsError("Could not load categories/departments from the server.");
+      } finally {
+        setLoadingOptions(false);
+      }
+    }
+    loadOptions();
+  }, []);
+
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
@@ -65,6 +113,10 @@ export default function AddEquipment() {
     }
     if (form.assetId.trim() === "") {
       alert("Please enter Asset ID / tag.");
+      return;
+    }
+    if (!form.categoryId || !form.departmentId) {
+      alert("Category and Department options are still loading or failed to load. Please wait or refresh.");
       return;
     }
 
@@ -84,12 +136,13 @@ export default function AddEquipment() {
       }
 
       const payload = {
-        equipmentName: form.equipmentName,
+        name: form.equipmentName,
         assetTag: form.assetId,
-        category: form.category,
-        department: form.department,
+        category: { categoryId: Number(form.categoryId) },
+        department: { departmentId: Number(form.departmentId) },
+        institution: { institutionId: Number(institutionId) },
         manufacturer: form.manufacturer,
-        model: form.modelNumber,
+        modelNumber: form.modelNumber,
         imageUrl: form.imageUrl || "https://picsum.photos/seed/newequipment/400/300",
         status: mapStatusToBackend(status),
         calibrationDueDate: form.calibrationDate || null,
@@ -109,7 +162,11 @@ export default function AddEquipment() {
 
   function handleCancel() {
     if (window.confirm("Clear all fields?")) {
-      setForm(initialForm);
+      setForm((prev) => ({
+        ...initialForm,
+        categoryId: categories.length > 0 ? categories[0].categoryId : "",
+        departmentId: departments.length > 0 ? departments[0].departmentId : "",
+      }));
       setStatus("Available");
       setManualFile(null);
       setCertFile(null);
@@ -149,6 +206,12 @@ export default function AddEquipment() {
             ×
           </button>
 
+          {optionsError && (
+            <div className="section">
+              <p style={{ color: "#f87171" }}>{optionsError}</p>
+            </div>
+          )}
+
           <div className="section">
             <h3>Basic info</h3>
             <div className="grid-3">
@@ -158,19 +221,33 @@ export default function AddEquipment() {
               </div>
               <div>
                 <label>Category / type</label>
-                <input type="text" value={form.category} onChange={(e) => updateField("category", e.target.value)} />
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => updateField("categoryId", e.target.value)}
+                  disabled={loadingOptions || categories.length === 0}
+                >
+                  {loadingOptions && <option>Loading...</option>}
+                  {categories.map((c) => (
+                    <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label>Asset ID / tag</label>
-                <input type="text" value={form.assetId} onChange={(e) => updateField("assetId", e.target.value)} />
+                <input type="text" value={form.assetId}onChange={(e) => updateField("assetId", e.target.value)} />
               </div>
               <div>
                 <label>Department</label>
-                <input type="text" value={form.department} onChange={(e) => updateField("department", e.target.value)} />
-              </div>
-              <div>
-                <label>Institution</label>
-                <input type="text" value={form.institution} onChange={(e) => updateField("institution", e.target.value)} />
+                <select
+                  value={form.departmentId}
+                  onChange={(e) => updateField("departmentId", e.target.value)}
+                  disabled={loadingOptions || departments.length === 0}
+                >
+                  {loadingOptions && <option>Loading...</option>}
+                  {departments.map((d) => (
+                    <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label>Image URL</label>
@@ -243,7 +320,7 @@ export default function AddEquipment() {
             <button className="cancel" onClick={handleCancel}>
               Cancel
             </button>
-            <button className="save" onClick={handleSave} disabled={saving}>
+            <button className="save" onClick={handleSave} disabled={saving || loadingOptions}>
               {saving ? "Saving..." : "Save equipment"}
             </button>
           </div>
