@@ -72,6 +72,10 @@ public class AuthController {
                 response.put("institutionName", user.getInstitution().getInstitutionName());
             }
 
+            if (user.getDepartment() != null) {
+    response.put("departmentId", user.getDepartment().getDepartmentId());
+    response.put("departmentName", user.getDepartment().getDepartmentName());
+}
             return ResponseEntity.ok(response);
 
         }catch (RuntimeException e) {

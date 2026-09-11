@@ -39,9 +39,12 @@ function Equipment() {
   // Equipment create/update/delete is LAB_MANAGER-only — technicians,
   // institution admins, and system admins are read-only here, same
   // restriction now enforced backend-side in EquipmentController.
-  const canManageEquipment = role === "LAB_MANAGER";
+  const myDepartmentId = sessionStorage.getItem("departmentId");
 
-  const canDeleteEquipment = role === "LAB_MANAGER";
+const ownsEquipment = (item) =>
+  role === "LAB_MANAGER" &&
+  String(item.institution?.institutionId) === String(myInstitutionId) &&
+  String(item.department?.departmentId) === String(myDepartmentId);
 
   // Fetch all equipment
   const fetchEquipment = () => {
@@ -356,16 +359,16 @@ function Equipment() {
                     </button>
                   )}
 
-                  {canManageEquipment && (
-                    <button onClick={() => handleEdit(item)} style={btnEdit}>
-                      Edit
-                    </button>
-                  )}
-                  {canDeleteEquipment && (
-                    <button onClick={() => handleDelete(item.equipmentId)} style={btnDelete}>
-                      Delete
-                    </button>
-                  )}
+                  {ownsEquipment(item) && (
+  <button onClick={() => handleEdit(item)} style={btnEdit}>
+    Edit
+  </button>
+)}
+{ownsEquipment(item) && (
+  <button onClick={() => handleDelete(item.equipmentId)} style={btnDelete}>
+    Delete
+  </button>
+)}
                 </td>
               </tr>
             ))
