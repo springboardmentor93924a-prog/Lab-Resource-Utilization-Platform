@@ -21,8 +21,5 @@ private String jwtSecret;
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    @Bean
-    public JwtUtil jwtUtil(SecretKey secretKey) {
-        return new JwtUtil(secretKey);
-    }
+
 }

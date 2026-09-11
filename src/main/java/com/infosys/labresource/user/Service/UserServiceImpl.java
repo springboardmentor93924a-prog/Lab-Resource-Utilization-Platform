@@ -29,23 +29,38 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public UserEntity registerUser(RegisterRequestDTO req) {
-        // Check email
+        // 1. Role validation check
+        if (req.getRole() == null) {
+            throw new RuntimeException("Role is required.");
+        }
+        if (req.getRole() == Role.SYSTEM_ADMIN) {
+            throw new RuntimeException("System Administrator cannot self register.");
+        }
+
+        // 2. Check if email already exists
         if (userRepo.existsByEmail(req.getEmail())) {
             throw new RuntimeException("Email already exists.");
         }
 
-        // Validate Institution
+        // 3. Validate Institution (Required for all non-SYSTEM_ADMIN roles)
+        if (req.getInstitutionId() == null) {
+            throw new RuntimeException("Institution ID is required for role: " + req.getRole());
+        }
         Institution institution = institutionRepo.findById(req.getInstitutionId())
-                .orElseThrow(() ->
-                        new RuntimeException("Institution not found."));
+                .orElseThrow(() -> new RuntimeException("Institution not found."));
 
-        // Validate Department
-        Department department = departRepo.findById(req.getDepartmentId())
-                .orElseThrow(() ->
-                        new RuntimeException("Department not found."));
+        // 4. Validate Department (Required for Department-level roles, null for INSTITUTION_ADMIN)
+        Department department = null;
+        if (req.getRole() != Role.INSTITUTION_ADMIN) {
+            if (req.getDepartmentId() == null) {
+                throw new RuntimeException("Department ID is required for role: " + req.getRole());
+            }
+            department = departRepo.findById(req.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("Department not found."));
+        }
 
+        // 5. Populate User entity
         UserEntity user = new UserEntity();
-
         user.setFirstName(req.getFirstName());
         user.setLastName(req.getLastName());
         user.setEmail(req.getEmail());
@@ -55,54 +70,35 @@ public class UserServiceImpl implements UserService{
         user.setInstitution(institution);
         user.setDepartment(department);
 
+        // 6. Handle Role-specific approval logic
         switch (req.getRole()) {
-            // Student / Researcher
             case RESEARCHER -> {
                 user.setIsActive(true);
                 return userRepo.save(user);
             }
-            case LAB_TECHNICIAN,
-                 LAB_MANAGER -> {
-
+            case LAB_TECHNICIAN, LAB_MANAGER -> {
                 user.setIsActive(false);
-
-                // Later
-                // notificationService.notifyDepartmentHead(user);
-
                 return userRepo.save(user);
-            }case DEPARTMENT_HEAD -> {
-
-                boolean institutionAdminExists =
-                        userRepo.existsByInstitutionAndRole(
-                                institution,
-                                Role.INSTITUTION_ADMIN);
+            }
+            case DEPARTMENT_HEAD -> {
+                boolean institutionAdminExists = userRepo.existsByInstitutionAndRole(
+                        institution,
+                        Role.INSTITUTION_ADMIN);
 
                 if (!institutionAdminExists) {
-                    throw new RuntimeException(
-                            "No Institution Administrator found for this institution.");
+                    throw new RuntimeException("No Institution Administrator found for this institution.");
                 }
                 user.setIsActive(false);
-                // notificationService.notifyInstitutionAdmin(user);
                 return userRepo.save(user);
             }
-
-            // Needs System Admin approval
             case INSTITUTION_ADMIN -> {
-
-                boolean systemAdminExists =
-                        userRepo.existsByRole(Role.SYSTEM_ADMIN);
+                boolean systemAdminExists = userRepo.existsByRole(Role.SYSTEM_ADMIN);
 
                 if (!systemAdminExists) {
-                    throw new RuntimeException(
-                            "No System Administrator found.");
+                    throw new RuntimeException("No System Administrator found.");
                 }
-
                 user.setIsActive(false);
                 return userRepo.save(user);
-            }
-            case SYSTEM_ADMIN -> {
-                throw new RuntimeException(
-                        "System Administrator cannot self register.");
             }
             default -> throw new RuntimeException("Invalid role.");
         }

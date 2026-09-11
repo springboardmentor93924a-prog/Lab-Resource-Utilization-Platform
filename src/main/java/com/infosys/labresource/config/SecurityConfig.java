@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/api/waitlist/**"
                         ).permitAll()
 
-                        .requestMatchers("/api/equipment/**","/api/bookings/**","/api/utilization/**","/api/resource-sharing/**","/api/maintenance/**").authenticated()
+                        .requestMatchers("/api/equipment/**","/api/bookings/**",
+                                "/api/utilization/**","/api/resource-sharing/**","/api/maintenance/**","/api/cost/**","/api/notifications/**").authenticated()
 
                         .anyRequest().authenticated())
 

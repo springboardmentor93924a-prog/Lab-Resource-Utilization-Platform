@@ -1,6 +1,6 @@
 package com.infosys.labresource.auth.service;
 
-import com.example.security.jwt.JwtUtil;
+
 import com.infosys.labresource.auth.dto.JwtResponseDTO;
 import com.infosys.labresource.user.DTOs.LoginRequestDTO;
 import com.infosys.labresource.user.Repository.UserRepository;
@@ -12,7 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import com.infosys.labresource.auth.filter.JwtUtil;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
