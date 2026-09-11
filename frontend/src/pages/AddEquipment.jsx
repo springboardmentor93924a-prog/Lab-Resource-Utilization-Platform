@@ -8,33 +8,25 @@ import { uploadFile } from "../services/fileService";
 
 const statusOptions = ["Available", "Booked", "Under maintenance", "Out of service", "Retired"];
 
-// TEMP hardcoded reference data (confirmed via psql) until these are fetched
-// from equipment_categories / departments tables (see open issue: real dropdowns).
-const CATEGORY_OPTIONS = [
-  { id: 1, name: "Imaging" },
-  { id: 2, name: "Spectroscopy" },
-  { id: 3, name: "Chromatography" },
-  { id: 4, name: "Centrifugation" },
-  { id: 5, name: "Sample Prep" },
-  { id: 6, name: "Measurement Tools" },
-];
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://lab-resource-utilization-platform-o09v.onrender.com";
 
-const DEPARTMENT_OPTIONS = [
-  { id: 1, name: "Computer Science" },
-  { id: 2, name: "External Research Department" },
-  { id: 3, name: "Mechanical Engineering" },
-  { id: 4, name: "Electrical Engineering" },
-  { id: 5, name: "Computer Science Engineering" },
-];
+function getToken() {
+  return localStorage.getItem("token");
+}
 
-// Only one institution exists right now.
-const INSTITUTION_ID = 1;
+async function fetchList(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
+  return res.json();
+}
 
 const initialForm = {
   equipmentName: "",
-  categoryId: CATEGORY_OPTIONS[0].id,
+  categoryId: "",
   assetId: "",
-  departmentId: DEPARTMENT_OPTIONS[0].id,
+  departmentId: "",
   manufacturer: "",
   modelNumber: "",
   notes: "",
@@ -75,6 +67,41 @@ export default function AddEquipment() {
   const [certFile, setCertFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [institutionId, setInstitutionId] = useState(null);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [optionsError, setOptionsError] = useState(null);
+
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        setLoadingOptions(true);
+        const [cats, deps, insts] = await Promise.all([
+          fetchList("/api/categories"),
+          fetchList("/api/departments"),
+          fetchList("/api/institutions"),
+        ]);
+
+        setCategories(cats);
+        setDepartments(deps);
+        setInstitutionId(insts.length > 0 ? insts[0].institutionId : 1);
+
+        setForm((prev) => ({
+          ...prev,
+          categoryId: cats.length > 0 ? cats[0].categoryId : "",
+          departmentId: deps.length > 0 ? deps[0].departmentId : "",
+        }));
+      } catch (err) {
+        console.error("Failed to load category/department/institution options", err);
+        setOptionsError("Could not load categories/departments from the server.");
+      } finally {
+        setLoadingOptions(false);
+      }
+    }
+    loadOptions();
+  }, []);
+
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
@@ -86,6 +113,10 @@ export default function AddEquipment() {
     }
     if (form.assetId.trim() === "") {
       alert("Please enter Asset ID / tag.");
+      return;
+    }
+    if (!form.categoryId || !form.departmentId) {
+      alert("Category and Department options are still loading or failed to load. Please wait or refresh.");
       return;
     }
 
@@ -109,7 +140,7 @@ export default function AddEquipment() {
         assetTag: form.assetId,
         category: { categoryId: Number(form.categoryId) },
         department: { departmentId: Number(form.departmentId) },
-        institution: { institutionId: INSTITUTION_ID },
+        institution: { institutionId: Number(institutionId) },
         manufacturer: form.manufacturer,
         modelNumber: form.modelNumber,
         imageUrl: form.imageUrl || "https://picsum.photos/seed/newequipment/400/300",
@@ -131,7 +162,11 @@ export default function AddEquipment() {
 
   function handleCancel() {
     if (window.confirm("Clear all fields?")) {
-      setForm(initialForm);
+      setForm((prev) => ({
+        ...initialForm,
+        categoryId: categories.length > 0 ? categories[0].categoryId : "",
+        departmentId: departments.length > 0 ? departments[0].departmentId : "",
+      }));
       setStatus("Available");
       setManualFile(null);
       setCertFile(null);
@@ -171,6 +206,12 @@ export default function AddEquipment() {
             ×
           </button>
 
+          {optionsError && (
+            <div className="section">
+              <p style={{ color: "#f87171" }}>{optionsError}</p>
+            </div>
+          )}
+
           <div className="section">
             <h3>Basic info</h3>
             <div className="grid-3">
@@ -180,21 +221,31 @@ export default function AddEquipment() {
               </div>
               <div>
                 <label>Category / type</label>
-                <select value={form.categoryId} onChange={(e) => updateField("categoryId", e.target.value)}>
-                  {CATEGORY_OPTIONS.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => updateField("categoryId", e.target.value)}
+                  disabled={loadingOptions || categories.length === 0}
+                >
+                  {loadingOptions && <option>Loading...</option>}
+                  {categories.map((c) => (
+                    <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label>Asset ID / tag</label>
-                <input type="text" value={form.assetId} onChange={(e) => updateField("assetId", e.target.value)} />
+                <input type="text" value={form.assetId}onChange={(e) => updateField("assetId", e.target.value)} />
               </div>
               <div>
                 <label>Department</label>
-                <select value={form.departmentId} onChange={(e) => updateField("departmentId", e.target.value)}>
-                  {DEPARTMENT_OPTIONS.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
+                <select
+                  value={form.departmentId}
+                  onChange={(e) => updateField("departmentId", e.target.value)}
+                  disabled={loadingOptions || departments.length === 0}
+                >
+                  {loadingOptions && <option>Loading...</option>}
+                  {departments.map((d) => (
+                    <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
                   ))}
                 </select>
               </div>
@@ -269,7 +320,7 @@ export default function AddEquipment() {
             <button className="cancel" onClick={handleCancel}>
               Cancel
             </button>
-            <button className="save" onClick={handleSave} disabled={saving}>
+            <button className="save" onClick={handleSave} disabled={saving || loadingOptions}>
               {saving ? "Saving..." : "Save equipment"}
             </button>
           </div>
