@@ -256,6 +256,26 @@
     color: #b91c1c;
 }
 
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.maintenance-rejection-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.maintenance-rejection-banner strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
 .status-default {
     background: #f3f4f6;
     color: #374151;
