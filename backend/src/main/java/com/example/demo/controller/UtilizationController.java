@@ -30,6 +30,7 @@ public class UtilizationController {
             Map<String, Object> row = new java.util.LinkedHashMap<>();
             row.put("equipmentId", eq.getEquipmentId());
             row.put("name", eq.getName());
+            row.put("imageUrl", eq.getImageUrl());
             row.put("totalHoursUsed", totalHours);
             row.put("utilizationRate", Math.round(rate * 100.0) / 100.0);
             row.put("bookingCount", logs.size());
@@ -61,4 +62,5 @@ public class UtilizationController {
         return ResponseEntity.ok(utilizationRepository.save(usage));
     }
 }
+
 
