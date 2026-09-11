@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api/equipment";
+const API_BASE_URL = "https://lab-resource-utilization-platform-o09v.onrender.com/api/equipment";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -39,7 +39,7 @@ export async function deleteEquipment(id) {
   return data;
 }
 export async function getEquipmentUtilization() {
-  const { data } = await axios.get("http://localhost:8080/api/utilization/summary", {
+  const { data } = await axios.get("https://lab-resource-utilization-platform-o09v.onrender.com/api/utilization/summary", {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
   return data;

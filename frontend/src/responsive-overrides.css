@@ -1,0 +1,51 @@
+/* =========================================================
+   RESPONSIVE OVERRIDES — mobile & tablet breakpoints
+   Added for Milestone 4 UI responsiveness requirement.
+   Purely additive: does not change desktop layout.
+========================================================= */
+
+/* Tablet (<=1024px) */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+  }
+}
+
+/* Mobile (<=768px) */
+@media (max-width: 768px) {
+  body, .dashboard-container, main {
+    padding: 12px !important;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .card.stat,
+  .status,
+  .equipment-card {
+    width: 100% !important;
+    margin-bottom: 12px;
+  }
+
+  .dashboard-stats-row,
+  .equipment-grid {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  h2 {
+    font-size: 18px !important;
+  }
+}
+
+/* Small mobile (<=480px) */
+@media (max-width: 480px) {
+  .status span {
+    font-size: 12px !important;
+  }
+
+  .card.stat h2 {
+    font-size: 22px !important;
+  }
+}
