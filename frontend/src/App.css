@@ -181,4 +181,10 @@
     right: 0;
     border-right-color: var(--border);
   }
+
+  @media (max-width: 768px) {
+  .content {
+    padding-top: 60px;
+  }
+}
 }
