@@ -53,6 +53,7 @@ export default function ResearcherDashboard() {
   const upcomingBookings = myBookings.filter(
     (b) => b.bookingStatus === "PENDING" || b.bookingStatus === "CONFIRMED"
   );
+  const waitlistCount = myBookings.filter((b) => b.bookingStatus === "WAITLISTED").length;
   const recommended = equipmentList
     .filter((e) => e.status?.toUpperCase() === "AVAILABLE" && e.imageUrl)
     .slice(0, 3);
@@ -107,14 +108,13 @@ export default function ResearcherDashboard() {
   </div>
 
   {/* WAITLIST */}
-  {/* TODO: hardcoded to 0 - needs real waitlist count endpoint, not yet wired up */}
   <div
     className="card stat orange"
     onClick={() => navigate("/my-waitlist")}
     style={{ cursor: "pointer" }}
   >
     <big><b>Waitlisted</b></big>
-    <h2>0 items</h2>
+    <h2>{waitlistCount} items</h2>
   </div>
 
   {/* NOTIFICATIONS */}
@@ -165,3 +165,5 @@ export default function ResearcherDashboard() {
     </div>
   );
 }
+
+
