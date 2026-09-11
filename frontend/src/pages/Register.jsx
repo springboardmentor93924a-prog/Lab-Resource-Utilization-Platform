@@ -21,8 +21,6 @@ const DEPARTMENTS = [
   { value: 7, label: "CSE (AI & ML)" },
   { value: 8, label: "Civil Engineering" },
   { value: 9, label: "Electronics and Communication Engineering" },
-  { value: 10, label: "Computer Science Engineering" },
-  { value: 11, label: "Computer Science Engineering" },
 ];
 
 export default function Register() {
