@@ -50,6 +50,8 @@ function Login() {
       sessionStorage.setItem("role", data.role);
       sessionStorage.setItem("institutionId", data.institutionId ?? "");
       sessionStorage.setItem("institutionName", data.institutionName ?? "");
+      sessionStorage.setItem("departmentId", data.departmentId ?? "");
+sessionStorage.setItem("departmentName", data.departmentName ?? "");
 
       navigate("/dashboard");
     } catch (error) {
