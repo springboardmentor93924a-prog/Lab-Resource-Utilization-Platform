@@ -29,7 +29,7 @@ export default function useEquipmentRealtime(onUpdate) {
 
     const client = new Client({
       webSocketFactory: () =>
-        new SockJS(`http://localhost:8080/ws?token=${encodeURIComponent(token)}`),
+        new SockJS(`${import.meta.env.VITE_API_BASE_URL}/ws?token=${encodeURIComponent(token)}`),
       reconnectDelay: 5000, // EDGE CASE: connection drops — auto-retry every 5s
       onConnect: () => {
         client.subscribe("/topic/equipment-updates", () => {

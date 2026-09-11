@@ -10,7 +10,7 @@ export default function BookingApproval() {
 
   const fetchPendingBookings = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/api/bookings/pending', {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/pending`, {
         headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setPendingBookings(res.data);
@@ -21,7 +21,7 @@ export default function BookingApproval() {
 
   const updateBookingStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:8080/api/bookings/${id}/status?status=${status}`, {}, {
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}/status?status=${status}`, {}, {
         headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       fetchPendingBookings();

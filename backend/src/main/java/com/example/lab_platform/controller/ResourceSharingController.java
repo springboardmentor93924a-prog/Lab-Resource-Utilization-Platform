@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/resource-sharing")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "${app.frontend-base-url}")
 public class ResourceSharingController {
 
     private final ResourceSharingService resourceSharingService;

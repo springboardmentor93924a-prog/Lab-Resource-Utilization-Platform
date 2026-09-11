@@ -10,7 +10,7 @@ function ResourceShareRequestForm({ equipmentId, onSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/api/resource-sharing/request", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

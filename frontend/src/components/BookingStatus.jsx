@@ -8,7 +8,7 @@ export default function BookingStatus() {
   const checkStatus = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.get(`http://localhost:8080/api/bookings/${bookingId}`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${bookingId}`, {
         headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
       });
       setStatusData(res.data);

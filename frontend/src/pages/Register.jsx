@@ -38,7 +38,7 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
   // Fetch roles and institutions once on mount
   useEffect(() => {
 
-  fetch("http://localhost:8080/api/roles")
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/api/roles`)
     .then((res) => {
       if (!res.ok) {
         throw new Error("Failed to load roles");
@@ -53,7 +53,7 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
       setRoles([]);
     });
 
-  fetch("http://localhost:8080/api/institutions")
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/api/institutions`)
     .then((res) => {
       if (!res.ok) {
         throw new Error("Failed to load institutions");
@@ -79,7 +79,7 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
   }
 
   fetch(
-    `http://localhost:8080/api/institutions/${formData.institutionId}/departments`
+    `${import.meta.env.VITE_API_BASE_URL}/api/institutions/${formData.institutionId}/departments`
   )
     .then((res) => {
 
@@ -146,7 +146,7 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/auth/register",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/register`,
         {
           method: "POST",
           headers: {

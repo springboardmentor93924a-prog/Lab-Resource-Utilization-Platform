@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Calibration.css"; // reusing the same class names/styles
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 function Certification() {
   const [records, setRecords] = useState([]);
