@@ -1,7 +1,11 @@
 -- ------------------------------------------------------------------
--- Correct the department seed to match the exact list/IDs expected
--- by the frontend's Register.jsx DEPARTMENTS array (values 1-10).
+-- V8 seeded the wrong department list/order. Clear it and reseed
+-- with the exact list the frontend's Register.jsx expects, so IDs
+-- 1-10 line up correctly.
 -- ------------------------------------------------------------------
+
+DELETE FROM departments;
+ALTER SEQUENCE departments_department_id_seq RESTART WITH 1;
 
 INSERT INTO departments (institution_id, department_name) VALUES
     (1, 'Computer Science'),
