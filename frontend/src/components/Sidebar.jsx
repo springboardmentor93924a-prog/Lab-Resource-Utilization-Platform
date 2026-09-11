@@ -1,6 +1,7 @@
 import "./Sidebar.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { getCurrentUserRole } from "../utils/auth";
 import { getUnreadCount } from "../services/notificationService";
 import { useAuth } from "../context/AuthContext";
@@ -174,27 +175,13 @@ export default function Sidebar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-    function toggleMobileSidebar() {
+  function toggleMobileSidebar() {
     setMobileOpen((prev) => !prev);
   }
 
   function closeMobileSidebar() {
     setMobileOpen(false);
   }
-
-  useEffect(() => {
-    const sidebar = document.querySelector(".sidebar");
-
-    if (sidebar) {
-      sidebar.classList.toggle("sidebar-open", mobileOpen);
-    }
-
-    return () => {
-      if (sidebar) {
-        sidebar.classList.remove("sidebar-open");
-      }
-    };
-  }, [mobileOpen]);
 
   // Fetch unread notification count
   useEffect(() => {
@@ -213,139 +200,138 @@ export default function Sidebar() {
 
     // Refresh every 30 seconds
     const interval = setInterval(fetchUnread, 5000);
-    
+
     // Cleanup when Sidebar unmounts
     return () => clearInterval(interval);
   }, []);
 
   function handleLogout() {
-  if (window.confirm("Are you sure you want to log out?")) {
-    closeMobileSidebar();
-    logout();
-    navigate("/login");
+    if (window.confirm("Are you sure you want to log out?")) {
+      closeMobileSidebar();
+      logout();
+      navigate("/login");
+    }
   }
-}
+
   const visibleItems = navItems.filter(
     (item) => !item.roles || item.roles.includes(role)
   );
 
   return (
-  <>
-    {/* Mobile menu button */}
-    <button
-      className="mobile-menu-btn"
-      onClick={toggleMobileSidebar}
-      aria-label="Open navigation menu"
-    >
-      <i className="bi bi-list"></i>
-    </button>
-
-    {/* Mobile overlay */}
-    {mobileOpen && (
-      <div
-        className="sidebar-overlay"
-        onClick={closeMobileSidebar}
-      ></div>
-    )}
-
-    <div className="logo">
-      LAB PLATFORM
-
-      <button
-        className="mobile-close-btn"
-        onClick={closeMobileSidebar}
-        aria-label="Close navigation menu"
-      >
-        ×
-      </button>
-    </div>
-
-      <ul>
-        {visibleItems.map((item) => (
-          <li
-            key={item.path}
-            className={
-              location.pathname === item.path ? "active" : ""
-            }
+    <>
+      {/* Mobile controls are rendered outside the sidebar */}
+      {createPortal(
+        <>
+          <button
+            className="mobile-menu-btn"
+            onClick={toggleMobileSidebar}
+            aria-label="Open navigation menu"
           >
-            <Link
-  to={item.path}
-  className="sidebar-link"
-  onClick={closeMobileSidebar}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-              }}
+            <i className="bi bi-list"></i>
+          </button>
+
+          {mobileOpen && (
+            <div
+              className="sidebar-overlay"
+              onClick={closeMobileSidebar}
+            ></div>
+          )}
+        </>,
+        document.body
+      )}
+
+      <div className={`sidebar${mobileOpen ? " sidebar-open" : ""}`}>
+        <div className="logo">
+          LAB PLATFORM
+
+          <button
+            className="mobile-close-btn"
+            onClick={closeMobileSidebar}
+            aria-label="Close navigation menu"
+          >
+            ×
+          </button>
+        </div>
+
+        <ul>
+          {visibleItems.map((item) => (
+            <li
+              key={item.path}
+              className={
+                location.pathname === item.path ? "active" : ""
+              }
             >
-              <span
+              <Link
+                to={item.path}
+                className="sidebar-link"
+                onClick={closeMobileSidebar}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px",
+                  justifyContent: "space-between",
+                  width: "100%",
                 }}
               >
-                <i className={`bi ${item.icon}`}></i>
-                {item.label}
-              </span>
-
-              {item.path === "/notifications" && unreadCount > 0 && (
                 <span
                   style={{
-                    background: "#ef4444",
-                    color: "#fff",
-                    borderRadius: "999px",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    minWidth: "20px",
-                    height: "20px",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    padding: "0 5px",
+                    gap: "10px",
                   }}
                 >
-                  {unreadCount}
+                  <i className={`bi ${item.icon}`}></i>
+                  {item.label}
                 </span>
-              )}
-            </Link>
-          </li>
-        ))}
-      </ul>
 
-      {/* =================================================
-    SETTINGS
-================================================= */}
+                {item.path === "/notifications" && unreadCount > 0 && (
+                  <span
+                    style={{
+                      background: "#ef4444",
+                      color: "#fff",
+                      borderRadius: "999px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      minWidth: "20px",
+                      height: "20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 5px",
+                    }}
+                  >
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
 
-<Settings />
+        {/* =================================================
+            SETTINGS
+        ================================================= */}
 
+        <Settings />
 
-{/* =================================================
-    LOGOUT
-================================================= */}
+        {/* =================================================
+            LOGOUT
+        ================================================= */}
 
-<div
-  className="sidebar-logout"
-  onClick={handleLogout}
-  role="button"
-  tabIndex={0}
-  onKeyDown={(event) => {
-
-    if (event.key === "Enter") {
-      handleLogout();
-    }
-
-  }}
->
-
-  <i className="bi bi-box-arrow-right"></i>
-
-  <span>
-    Logout
-  </span>
-
-</div>
+        <div
+          className="sidebar-logout"
+          onClick={handleLogout}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              handleLogout();
+            }
+          }}
+        >
+          <i className="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </div>
+      </div>
     </>
   );
 }
