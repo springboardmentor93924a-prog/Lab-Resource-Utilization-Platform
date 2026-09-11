@@ -729,3 +729,32 @@ body,
 .close-btn {
     display: none !important;
 }
+
+/* =========================================================
+   SELECT / DROPDOWN
+========================================================= */
+
+select {
+    width: 100%;
+    border: 1px solid #365778;
+    border-radius: 7px;
+    padding: 11px 13px;
+    font-size: 14px;
+    background: #071a32;
+    color: #ffffff;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+select:focus {
+    border-color: #38bdf8;
+    box-shadow:
+        0 0 0 2px rgba(56, 189, 248, 0.10),
+        0 0 12px rgba(56, 189, 248, 0.08);
+}
+
+select option {
+    background: #071a32;
+    color: #ffffff;
+}
