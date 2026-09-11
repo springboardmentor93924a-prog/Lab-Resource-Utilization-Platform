@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AddEquipment.css";
@@ -8,12 +8,33 @@ import { uploadFile } from "../services/fileService";
 
 const statusOptions = ["Available", "Booked", "Under maintenance", "Out of service", "Retired"];
 
+// TEMP hardcoded reference data (confirmed via psql) until these are fetched
+// from equipment_categories / departments tables (see open issue: real dropdowns).
+const CATEGORY_OPTIONS = [
+  { id: 1, name: "Imaging" },
+  { id: 2, name: "Spectroscopy" },
+  { id: 3, name: "Chromatography" },
+  { id: 4, name: "Centrifugation" },
+  { id: 5, name: "Sample Prep" },
+  { id: 6, name: "Measurement Tools" },
+];
+
+const DEPARTMENT_OPTIONS = [
+  { id: 1, name: "Computer Science" },
+  { id: 2, name: "External Research Department" },
+  { id: 3, name: "Mechanical Engineering" },
+  { id: 4, name: "Electrical Engineering" },
+  { id: 5, name: "Computer Science Engineering" },
+];
+
+// Only one institution exists right now.
+const INSTITUTION_ID = 1;
+
 const initialForm = {
   equipmentName: "",
-  category: "",
+  categoryId: CATEGORY_OPTIONS[0].id,
   assetId: "",
-  department: "",
-  institution: "",
+  departmentId: DEPARTMENT_OPTIONS[0].id,
   manufacturer: "",
   modelNumber: "",
   notes: "",
@@ -84,12 +105,13 @@ export default function AddEquipment() {
       }
 
       const payload = {
-        equipmentName: form.equipmentName,
+        name: form.equipmentName,
         assetTag: form.assetId,
-        category: form.category,
-        department: form.department,
+        category: { categoryId: Number(form.categoryId) },
+        department: { departmentId: Number(form.departmentId) },
+        institution: { institutionId: INSTITUTION_ID },
         manufacturer: form.manufacturer,
-        model: form.modelNumber,
+        modelNumber: form.modelNumber,
         imageUrl: form.imageUrl || "https://picsum.photos/seed/newequipment/400/300",
         status: mapStatusToBackend(status),
         calibrationDueDate: form.calibrationDate || null,
@@ -158,7 +180,11 @@ export default function AddEquipment() {
               </div>
               <div>
                 <label>Category / type</label>
-                <input type="text" value={form.category} onChange={(e) => updateField("category", e.target.value)} />
+                <select value={form.categoryId} onChange={(e) => updateField("categoryId", e.target.value)}>
+                  {CATEGORY_OPTIONS.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label>Asset ID / tag</label>
@@ -166,11 +192,11 @@ export default function AddEquipment() {
               </div>
               <div>
                 <label>Department</label>
-                <input type="text" value={form.department} onChange={(e) => updateField("department", e.target.value)} />
-              </div>
-              <div>
-                <label>Institution</label>
-                <input type="text" value={form.institution} onChange={(e) => updateField("institution", e.target.value)} />
+                <select value={form.departmentId} onChange={(e) => updateField("departmentId", e.target.value)}>
+                  {DEPARTMENT_OPTIONS.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label>Image URL</label>
