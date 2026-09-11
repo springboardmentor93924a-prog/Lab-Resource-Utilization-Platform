@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import "./Reports.css";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 const REPORT_TABS = [
   { key: "equipment-utilization", label: "Equipment Utilization" },
@@ -599,7 +599,7 @@ function Reports() {
   useEffect(() => {
     const token = sessionStorage.getItem("token");
 
-    fetch("http://localhost:8080/api/equipment", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -608,7 +608,7 @@ function Reports() {
       .then((data) => setEquipment(data))
       .catch((error) => console.error("Equipment error:", error));
 
-    fetch("http://localhost:8080/api/bookings", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -618,7 +618,7 @@ function Reports() {
       .catch((error) => console.error("Booking error:", error));
 
     if (canViewUsers) {
-      fetch("http://localhost:8080/api/users", {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

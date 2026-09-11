@@ -33,7 +33,7 @@ export default function ResourceSharing() {
   const fetchRequests = async () => {
     try {
       const response = await axios.get(
-        'http://localhost:8080/api/resource-sharing/requests',
+        `${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests`,
         { headers: authHeader }
       );
       setRequests(response.data);
@@ -44,7 +44,7 @@ export default function ResourceSharing() {
 
   const fetchInstitutions = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/institutions');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/institutions`);
       setInstitutions(response.data);
     } catch (error) {
       console.error('Error fetching institutions:', error);
@@ -53,7 +53,7 @@ export default function ResourceSharing() {
 
   const fetchEquipment = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/equipment', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/equipment`, {
         headers: authHeader,
       });
       setEquipmentList(response.data);
@@ -75,7 +75,7 @@ export default function ResourceSharing() {
     e.preventDefault();
     try {
       await axios.post(
-        'http://localhost:8080/api/resource-sharing/requests',
+        `${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests`,
         {
           equipment: { equipmentId: Number(equipmentId) },
           senderInstitution: { institutionId: Number(senderInstitutionId) },
@@ -104,7 +104,7 @@ export default function ResourceSharing() {
   const handleUpdateStatus = async (id, status) => {
     try {
       await axios.put(
-        `http://localhost:8080/api/resource-sharing/requests/${id}/status?status=${status}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests/${id}/status?status=${status}`,
         {},
         { headers: authHeader }
       );

@@ -19,7 +19,7 @@ export default function useNotifications() {
     // EDGE CASE: no token (logged out) — don't even try
     if (!token) return;
 
-    fetch("http://localhost:8080/api/notifications", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notifications`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -42,7 +42,7 @@ export default function useNotifications() {
 
     const client = new Client({
       webSocketFactory: () =>
-        new SockJS(`http://localhost:8080/ws?token=${encodeURIComponent(token)}`),
+        new SockJS(`${import.meta.env.VITE_API_BASE_URL}/ws?token=${encodeURIComponent(token)}`),
       reconnectDelay: 5000, // EDGE CASE: connection drops — auto-retry every 5s
       onConnect: () => {
         setConnected(true);
@@ -74,7 +74,7 @@ export default function useNotifications() {
         prev.map((n) => (n.notificationId === id ? { ...n, isRead: true } : n))
       );
 
-      fetch(`http://localhost:8080/api/notifications/${id}/read`, {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notifications/${id}/read`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {

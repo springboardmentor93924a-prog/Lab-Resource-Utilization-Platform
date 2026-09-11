@@ -138,6 +138,8 @@ public class SecurityConfig {
     // =============================================================
     // CORS CONFIGURATION
     // =============================================================
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-base-url}")
+private String frontendBaseUrl;
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
@@ -145,7 +147,7 @@ public class SecurityConfig {
                 new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-            List.of("http://localhost:5173")
+List.of(frontendBaseUrl)
         );
 
         configuration.setAllowedMethods(

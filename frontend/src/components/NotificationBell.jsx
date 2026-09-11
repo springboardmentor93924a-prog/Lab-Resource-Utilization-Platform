@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useNotifications from "../hooks/useNotifications";
 import "./NotificationBell.css";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 function timeAgo(dateString) {
   if (!dateString) return "just now";

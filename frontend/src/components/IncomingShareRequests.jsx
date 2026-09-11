@@ -10,7 +10,7 @@ export default function IncomingShareRequests() {
 
   const fetchIncomingRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/resource-sharing/requests');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests`);
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching incoming requests:', error);
@@ -19,7 +19,7 @@ export default function IncomingShareRequests() {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:8080/api/resource-sharing/requests/${id}/status?status=${status}`);
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests/${id}/status?status=${status}`);
       fetchIncomingRequests();
       alert(`Request ${status.toLowerCase()} successfully!`);
     } catch (error) {

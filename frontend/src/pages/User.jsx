@@ -7,7 +7,7 @@ function User() {
 
   useEffect(() => {
 
-    fetch("http://localhost:8080/api/users", {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users`, {
   headers: {
     Authorization: `Bearer ${sessionStorage.getItem("token")}`,
   },
