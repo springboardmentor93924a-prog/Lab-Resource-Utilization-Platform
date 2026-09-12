@@ -458,6 +458,8 @@ export default function Maintenance() {
         {!loading && (
           <div
             style={{
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
               background: "#FFFFFF",
               borderRadius: "12px",
               overflow: "hidden",
