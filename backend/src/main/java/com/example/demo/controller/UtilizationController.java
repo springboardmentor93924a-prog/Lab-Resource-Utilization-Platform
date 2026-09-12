@@ -7,6 +7,7 @@ import com.example.demo.repository.DepartmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,45 @@ public class UtilizationController {
             double totalHours = logs.stream().mapToDouble(u -> u.getHoursUsed().doubleValue()).sum();
             double availableHours = 24.0 * 30;
             double rate = availableHours > 0 ? (totalHours / availableHours) * 100 : 0;
+
+            String rawStatus = eq.getStatus();
+            String normalizedStatus;
+            if (rawStatus == null) {
+                normalizedStatus = "UNKNOWN";
+            } else {
+                switch (rawStatus) {
+                    case "Available": normalizedStatus = "AVAILABLE"; break;
+                    case "Booked": normalizedStatus = "IN_USE"; break;
+                    case "Under Maintenance": normalizedStatus = "MAINTENANCE"; break;
+                    case "Outof Service": normalizedStatus = "OUT_OF_SERVICE"; break;
+                    case "Retired": normalizedStatus = "RETIRED"; break;
+                    default: normalizedStatus = rawStatus.toUpperCase().replace(" ", "_");
+                }
+            }
+
+            java.util.Optional<LocalDate> lastUsage = logs.stream()
+                    .map(Utilization::getUsageDate)
+                    .filter(java.util.Objects::nonNull)
+                    .max(LocalDate::compareTo);
+
+            Long daysIdle = lastUsage.map(d ->
+                    java.time.temporal.ChronoUnit.DAYS.between(d, LocalDate.now())
+            ).orElse(null);
+
+            boolean isIdle = logs.isEmpty() || (daysIdle != null && daysIdle >= 14);
+            boolean highDemand = logs.size() >= 3;
+
             Map<String, Object> row = new java.util.LinkedHashMap<>();
             row.put("equipmentId", eq.getEquipmentId());
-            row.put("name", eq.getName());
+            row.put("equipmentName", eq.getName());
             row.put("imageUrl", eq.getImageUrl());
-            row.put("totalHoursUsed", totalHours);
+            row.put("status", normalizedStatus);
+            row.put("usageHours", totalHours);
             row.put("utilizationRate", Math.round(rate * 100.0) / 100.0);
-            row.put("bookingCount", logs.size());
+            row.put("totalBookings", logs.size());
+            row.put("highDemand", highDemand);
+            row.put("isIdle", isIdle);
+            row.put("daysIdle", daysIdle);
             return row;
         }).collect(java.util.stream.Collectors.toList());
     }
@@ -62,5 +95,3 @@ public class UtilizationController {
         return ResponseEntity.ok(utilizationRepository.save(usage));
     }
 }
-
-
