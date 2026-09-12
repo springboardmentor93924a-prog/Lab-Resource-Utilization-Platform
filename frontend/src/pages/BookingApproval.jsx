@@ -80,7 +80,7 @@ export default function BookingApproval() {
       case "COMPLETED":
         return "#94a3b8";
 
-      case "PENDING":
+      case "PENDING_APPROVAL":
         return "#f59e0b";
 
       default:
@@ -184,7 +184,7 @@ export default function BookingApproval() {
                       <td>
 
                         {booking.bookingStatus ===
-                          "PENDING" && (
+                          "PENDING_APPROVAL" && (
                           <>
                             <button
                               className="approve-button"
