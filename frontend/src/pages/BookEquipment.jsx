@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import "./BookEquipment.css";
 import { createBooking } from "../services/bookingService";
 import { getEquipmentById } from "../services/equipmentService";
-import { getCurrentUserId,canMakePriorityBooking } from "../utils/auth";
+import { getCurrentUserId,canMakePriorityBooking } from"../utils/auth";
 import { joinWaitlist } from "../services/waitlistService";
 
 const slots = [
@@ -56,8 +56,6 @@ export default function BookEquipment() {
     }
     fetchEquipment();
   }, [equipmentId]);
-
-  
 
 // ... inside the component:
 
@@ -124,12 +122,9 @@ async function handleWaitlist() {
     const endTime = addHoursToTime(time, durationHours);
 
     const payload = {
-      userId,
-      equipmentId: Number(equipmentId),
-      bookingDate: date,
-      startTime: `${time}:00`,
-      endTime: `${endTime}:00`,
-      durationHours,
+      equipment: { equipmentId: Number(equipmentId) },
+      bookingStart: `${date}T${time}:00`,
+      bookingEnd: `${date}T${endTime}:00`,
       purpose: notes,
       recurring,
       recurringWeeks: recurring ? Number(repeatWeeks) : null,
@@ -140,7 +135,7 @@ async function handleWaitlist() {
       setSubmitting(true);
       const response = await createBooking(payload);
       alert(
-        `Booking Successful!\n\nEquipment: ${response.equipmentName}\nDate: ${response.bookingDate}\nTime: ${response.startTime} - ${response.endTime}\nStatus: ${response.bookingStatus}`
+        `Booking Successful!\n\nEquipment: ${response.equipment?.name}\nStart: ${response.bookingStart}\nEnd: ${response.bookingEnd}\nStatus: ${response.status}`
       );
       navigate("/equipment");
     } catch (err) {
@@ -153,7 +148,7 @@ async function handleWaitlist() {
     }
   } else if (err.response?.status === 403) {
     alert(
-      "You don't have access to this equipment since it belongs to another institution. Go to the Sharing page to request access first."
+      "You don't have access to this equipment since itbelongs to another institution. Go to the Sharing page to request access first."
     );
   } else {
     alert(err.response?.data?.message || "Failed to create booking. Please try again.");
@@ -190,7 +185,7 @@ async function handleWaitlist() {
 
         <div className="close-row">
           <button className="close-btn" onClick={() => navigate(-1)}>
-            ×
+            X
           </button>
         </div>
 
@@ -198,7 +193,7 @@ async function handleWaitlist() {
           {loadingEquipment
             ? "Loading equipment..."
             : equipment
-              ? `${equipment.equipmentName} — ${equipment.department} dept`
+              ? `${equipment.name} - ${equipment.department?.departmentName} dept`
               : "Equipment not found"}
         </div>
 
@@ -216,7 +211,7 @@ async function handleWaitlist() {
 
             <div className="input-group">
               <label>Duration</label>
-              <select value={duration} onChange={(e) => setDuration(e.target.value)}>
+              <select value={duration} onChange={(e) =>setDuration(e.target.value)}>
                 <option>2 hours</option>
                 <option>1 hour</option>
                 <option>3 hours</option>
@@ -282,7 +277,7 @@ async function handleWaitlist() {
           <button className="cancel" onClick={handleCancel}>
             Cancel
           </button>
-          <button className="next" onClick={handleNext} disabled={submitting}>
+          <button className="next" onClick={handleNext}disabled={submitting}>
             <i className="fa-solid fa-arrow-right"></i>
           </button>
         </div>
