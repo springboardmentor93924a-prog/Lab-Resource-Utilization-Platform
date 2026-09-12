@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./BookEquipment.css";
@@ -135,7 +135,7 @@ async function handleWaitlist() {
       setSubmitting(true);
       const response = await createBooking(payload);
       alert(
-        `Booking Successful!\n\nEquipment: ${response.equipment?.name}\nStart: ${response.bookingStart}\nEnd: ${response.bookingEnd}\nStatus: ${response.status}`
+        `Booking Successful!\n\nEquipment: ${response.equipmentName}\nDate: ${response.bookingDate}\nStart: ${response.startTime}\nEnd: ${response.endTime}\nStatus: ${response.bookingStatus}`
       );
       navigate("/equipment");
     } catch (err) {
