@@ -1,4 +1,4 @@
-﻿package com.example.demo.controller;
+package com.example.demo.controller;
 
 import java.math.BigDecimal;
 import java.time.Duration;
