@@ -15,6 +15,7 @@ import com.example.demo.repository.BookingRepository;
 import com.example.demo.repository.UtilizationRepository;
 
 @RestController
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('LAB_MANAGER')")
 public class ExportController {
 
     @Autowired
