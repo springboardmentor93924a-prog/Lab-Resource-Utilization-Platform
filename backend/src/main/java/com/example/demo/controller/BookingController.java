@@ -122,7 +122,7 @@ public class BookingController {
         }
         booking.setCreatedAt(LocalDateTime.now());
         booking.setUpdatedAt(LocalDateTime.now());
-        return ResponseEntity.ok(bookingRepository.save(booking));
+        Booking savedBooking = bookingRepository.save(booking); return ResponseEntity.ok(toResponse(savedBooking));
     }
 
     @PutMapping("/{id}/approve")
