@@ -135,7 +135,7 @@ export default function EquipmentCatalog() {
               title="My Profile"
               aria-label="My Profile"
             >
-              ðŸ‘¤
+              👤
             </button>
 
           </div>
@@ -269,7 +269,7 @@ export default function EquipmentCatalog() {
                 {/* CATEGORY + DEPARTMENT */}
 
                 <p>
-                  {item.category?.categoryName} â€” {item.department?.departmentName}
+                  {item.category?.categoryName} — {item.department?.departmentName}
                 </p>
 
 
