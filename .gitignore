@@ -5,3 +5,7 @@ target/
 .mvn/
 backend/uploads/
 .env
+
+equipment_batch.sql
+check_index.html
+login.json
