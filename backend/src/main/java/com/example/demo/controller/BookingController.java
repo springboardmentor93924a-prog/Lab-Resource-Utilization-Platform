@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+﻿package com.example.demo.controller;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -108,6 +108,7 @@ public class BookingController {
         if (targetEq == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Equipment not found"));
         }
+        booking.setEquipment(targetEq);
         if (requestingUser.getDepartment() != null) {
             Integer userInstitutionId = requestingUser.getDepartment().getInstitution().getInstitutionId();
             Integer eqInstitutionId = targetEq.getInstitution().getInstitutionId();
