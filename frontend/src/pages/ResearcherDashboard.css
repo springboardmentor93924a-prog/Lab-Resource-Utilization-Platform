@@ -155,7 +155,7 @@ body {
    TOP BAR
 ========================================= */
 
-.topbar {
+.rd-topbar {
     height: 75px;
 
     background:
@@ -179,7 +179,7 @@ body {
 }
 
 
-.topbar h4 {
+.rd-topbar h4 {
     color: #f0f9ff !important;
     font-size: 24px;
     font-weight: 800;
@@ -692,11 +692,11 @@ body {
        at every width, matching the full-width layout. Only the title
        shrinks to make room. Left padding keeps the title clear of the
        fixed hamburger button rendered by Sidebar.jsx. */
-    .topbar {
+    .rd-topbar {
         padding: 16px 20px 16px 64px;
     }
 
-    .topbar h4 {
+    .rd-topbar h4 {
         font-size: 18px;
     }
 
