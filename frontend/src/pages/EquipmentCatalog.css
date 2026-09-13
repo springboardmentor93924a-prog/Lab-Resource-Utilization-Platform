@@ -698,17 +698,17 @@ body {
     }
 
     .navbar {
-        flex-direction: column;
+        flex-direction: row;
 
         height: auto;
 
         gap: 15px;
 
-        align-items: flex-start;
+        align-items: center;
     }
 
     .nav-right {
-        width: 100%;
+        width: auto;
     }
 
     .search-top {
