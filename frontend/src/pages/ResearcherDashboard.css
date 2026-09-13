@@ -1,4 +1,4 @@
-/* =========================================
+﻿/* =========================================
    GLOBAL
 ========================================= */
 
@@ -688,14 +688,16 @@ body {
         display: none;
     }
 
+    /* Keep the topbar as a row (title left, profile button pinned right)
+       at every width, matching the full-width layout. Only the title
+       shrinks to make room. Left padding keeps the title clear of the
+       fixed hamburger button rendered by Sidebar.jsx. */
     .topbar {
-        flex-direction: column;
+        padding: 16px 20px 16px 64px;
+    }
 
-        height: auto;
-
-        gap: 15px;
-
-        align-items: flex-start;
+    .topbar h4 {
+        font-size: 18px;
     }
 
     .stats {
@@ -715,55 +717,4 @@ body {
     .search {
         width: 100%;
     }
-}
-    /* =========================================
-   DASHBOARD TOP BAR - FINAL FIX
-========================================= */
-
-.topbar {
-    height: 75px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #020817,
-            #071a36,
-            #020817
-        ) !important;
-
-    border-bottom: 1px solid rgba(56, 189, 248, 0.20);
-
-    padding: 20px 30px;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    box-shadow:
-        0 4px 25px rgba(0, 102, 255, 0.12);
-}
-
-
-/* Researcher dashboard heading */
-
-.topbar h4 {
-    color: #ffffff !important;
-
-    font-size: 24px !important;
-
-    font-weight: 800 !important;
-
-    margin: 0 !important;
-
-    opacity: 1 !important;
-
-    visibility: visible !important;
-
-    text-shadow:
-        0 0 12px rgba(56, 189, 248, 0.25);
-}
-/* Notifications card text */
-.gray small,
-.gray h2 {
-    color: #020817 !important;
 }
