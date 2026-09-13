@@ -83,7 +83,8 @@ public class BookingController {
         m.put("endTime", b.getBookingEnd() != null ? b.getBookingEnd().toLocalTime().toString() : null);
         m.put("purpose", b.getPurpose());
         m.put("bookingStatus", b.getStatus() != null ? b.getStatus().toUpperCase().replace(" ", "_") : null);
-        m.put("priorityBooking", false);
+       m.put("cost", b.getCost() != null ? b.getCost() : java.math.BigDecimal.ZERO);
+m.put("hourlyRate", b.getEquipment() != null && b.getEquipment().getHourlyRate() != null ? b.getEquipment().getHourlyRate() : java.math.BigDecimal.ZERO);
         return m;
     }
 
@@ -121,7 +122,9 @@ public class BookingController {
         } else {
             booking.setStatus("Pending Approval");
         }
-        booking.setCreatedAt(LocalDateTime.now());
+       long estHours = Duration.between(booking.getBookingStart(), booking.getBookingEnd()).toMinutes() / 60;
+BigDecimal estRate = targetEq.getHourlyRate() != null ? targetEq.getHourlyRate() : BigDecimal.ZERO;
+booking.setCost(estRate.multiply(BigDecimal.valueOf(Math.max(estHours, 1))));
         booking.setUpdatedAt(LocalDateTime.now());
         Booking savedBooking = bookingRepository.save(booking); return ResponseEntity.ok(toResponse(savedBooking));
     }
