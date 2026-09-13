@@ -700,6 +700,7 @@ body {
     .rd-topbar h4 {
         font-size: 18px;
         text-align: left;
+        margin-left: 0 !important;
     }
 
     .stats {
