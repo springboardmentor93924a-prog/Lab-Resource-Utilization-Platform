@@ -1,0 +1,545 @@
+.equipment-usage-page {
+  padding: 24px;
+  min-height: 100vh;
+  background: #f6f8fb;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.usage-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+
+.usage-page-header h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.usage-page-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.usage-primary-btn {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 11px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.usage-primary-btn:hover {
+  opacity: 0.9;
+}
+
+/* =========================================================
+   ALERTS
+========================================================= */
+
+.usage-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.usage-alert button {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.usage-alert.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.usage-alert.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.usage-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.usage-summary-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.usage-summary-card span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.usage-summary-card strong {
+  font-size: 23px;
+}
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.usage-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.usage-card-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.usage-card-header h2 {
+  margin: 0 0 5px;
+  font-size: 19px;
+}
+
+.usage-card-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.usage-table-wrapper {
+  overflow-x: auto;
+}
+
+.usage-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+}
+
+.usage-table th {
+  background: #f9fafb;
+  padding: 13px 14px;
+  text-align: left;
+  color: #4b5563;
+  font-size: 12px;
+  white-space: nowrap;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.usage-table td {
+  padding: 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.usage-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.usage-table td strong {
+  display: block;
+}
+
+.usage-table td small {
+  display: block;
+  margin-top: 3px;
+  color: #9ca3af;
+}
+
+/* =========================================================
+   BADGES
+========================================================= */
+
+.usage-type-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.usage-status {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.usage-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.usage-status.generated {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.usage-status.paid,
+.usage-status.recovered {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.usage-status.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.usage-status.unknown {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.usage-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.usage-actions button {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.calculate-action {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.edit-action {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.delete-action {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.usage-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.usage-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.usage-empty-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.usage-empty h3 {
+  margin: 0 0 8px;
+}
+
+.usage-empty p {
+  color: #6b7280;
+  margin: 0 0 18px;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.usage-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.usage-modal {
+  width: 100%;
+  max-width: 760px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.usage-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.usage-modal-header h2 {
+  margin: 0 0 5px;
+  font-size: 20px;
+}
+
+.usage-modal-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.usage-modal-close {
+  width: 35px;
+  height: 35px;
+  border: none;
+  border-radius: 7px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.usage-modal-close:hover {
+  background: #e5e7eb;
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.usage-modal form {
+  padding: 22px;
+}
+
+.usage-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.usage-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.usage-form-group.full {
+  grid-column: 1 / -1;
+}
+
+.usage-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 7px;
+}
+
+.usage-form-group label span {
+  color: #dc2626;
+  margin-left: 3px;
+}
+
+.usage-form-group input,
+.usage-form-group select,
+.usage-form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 14px;
+  background: white;
+}
+
+.usage-form-group textarea {
+  resize: vertical;
+}
+
+.usage-form-group input:focus,
+.usage-form-group select:focus,
+.usage-form-group textarea:focus {
+  border-color: #2563eb;
+}
+
+.usage-form-group small {
+  margin-top: 5px;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+/* =========================================================
+   COST PREVIEW
+========================================================= */
+
+.usage-cost-preview {
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.usage-cost-preview > div {
+  text-align: center;
+}
+
+.usage-cost-preview span {
+  display: block;
+  color: #6b7280;
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+
+.usage-cost-preview strong {
+  font-size: 17px;
+}
+
+.preview-symbol {
+  font-size: 20px !important;
+  color: #6b7280 !important;
+}
+
+.preview-total strong {
+  font-size: 21px;
+}
+
+/* =========================================================
+   MODAL ACTIONS
+========================================================= */
+
+.usage-modal-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.usage-cancel-btn,
+.usage-save-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.usage-cancel-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.usage-save-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.usage-cancel-btn:disabled,
+.usage-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.usage-loading {
+  min-height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #6b7280;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+  .usage-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .equipment-usage-page {
+    padding: 15px;
+  }
+
+  .usage-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .usage-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .usage-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .usage-form-group.full {
+    grid-column: auto;
+  }
+
+  .usage-cost-preview {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,557 @@
+/* .institution-analytics-layout {
+  min-height: 100vh;
+  display: flex;
+  background: #f5f7fb;
+}
+
+.institution-analytics-main {
+  flex: 1;
+  min-width: 0;
+} */
+
+.institution-analytics-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+/* HEADER */
+
+.institution-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.institution-header h1 {
+  margin: 0 0 6px;
+  font-size: 29px;
+  font-weight: 700;
+}
+
+.institution-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.institution-refresh-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.institution-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* FILTER */
+
+.institution-filter {
+  display: flex;
+  align-items: end;
+  gap: 18px;
+  padding: 18px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.institution-filter > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.institution-filter label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.institution-filter input {
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+}
+
+.institution-filter button {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ERROR */
+
+.institution-error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 13px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* SUMMARY */
+
+.institution-summary {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.institution-summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.institution-summary-card span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.institution-summary-card strong {
+  display: block;
+  font-size: 26px;
+  margin-bottom: 5px;
+}
+
+.institution-summary-card small {
+  color: #9ca3af;
+}
+
+/* SECTION */
+
+.institution-section {
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.institution-section-title {
+  margin-bottom: 20px;
+}
+
+.institution-section-title h2 {
+  margin: 0 0 5px;
+  font-size: 20px;
+}
+
+.institution-section-title p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* EQUIPMENT */
+
+.equipment-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.equipment-status-grid > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 17px;
+}
+
+.equipment-status-grid span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.equipment-status-grid strong {
+  font-size: 25px;
+}
+
+/* TWO COLUMNS */
+
+.institution-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+/* DEPARTMENT */
+
+.department-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.department-row {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  align-items: center;
+  gap: 20px;
+}
+
+.department-name strong {
+  display: block;
+}
+
+.department-name small {
+  color: #9ca3af;
+}
+
+.department-bar-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.department-bar-bg {
+  height: 10px;
+  flex: 1;
+  background: #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.department-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 20px;
+}
+
+.department-bar-area span {
+  min-width: 55px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* COST */
+
+.cost-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.cost-grid > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 17px;
+}
+
+.cost-grid span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.cost-grid strong {
+  font-size: 21px;
+}
+
+/* BUDGET */
+
+.budget-number {
+  margin-bottom: 18px;
+}
+
+.budget-number strong {
+  display: block;
+  font-size: 27px;
+}
+
+.budget-number span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.budget-progress-bg {
+  height: 14px;
+  background: #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.budget-progress {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 20px;
+}
+
+.budget-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  color: #6b7280;
+}
+
+.budget-footer strong {
+  color: #111827;
+}
+
+/* SHARING */
+
+.sharing-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.sharing-grid > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 17px;
+}
+
+.sharing-grid span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.sharing-grid strong {
+  font-size: 23px;
+}
+
+/* MAINTENANCE */
+
+.maintenance-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.maintenance-grid > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 17px;
+}
+
+.maintenance-grid span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.maintenance-grid strong {
+  font-size: 24px;
+}
+
+/* INSIGHTS */
+
+.insight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 13px 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.insight-row strong {
+  display: block;
+}
+
+.insight-row small {
+  display: block;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
+.insight-row span {
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ROI */
+
+.roi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.roi-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 20px;
+}
+
+.roi-card span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.roi-card strong {
+  font-size: 27px;
+}
+
+/* TABLE */
+
+.institution-table-wrapper {
+  overflow-x: auto;
+}
+
+.institution-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.institution-table th,
+.institution-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.institution-table th {
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.institution-table td {
+  font-size: 14px;
+}
+
+.institution-utilization {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.institution-progress-bg {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.institution-progress {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 20px;
+}
+
+.institution-utilization span {
+  min-width: 50px;
+  font-weight: 600;
+}
+
+/* EMPTY */
+
+.institution-empty {
+  padding: 35px;
+  text-align: center;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+}
+
+/* FOOTER */
+
+.institution-footer {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 5px 0 25px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1350px) {
+  .institution-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sharing-grid,
+  .maintenance-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .institution-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .equipment-status-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .institution-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .roi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .institution-analytics-content {
+    padding: 18px;
+  }
+
+  .institution-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .institution-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .institution-filter input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .institution-summary,
+  .equipment-status-grid,
+  .sharing-grid,
+  .maintenance-grid,
+  .roi-grid,
+  .cost-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .department-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

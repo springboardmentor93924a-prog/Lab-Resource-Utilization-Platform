@@ -1,0 +1,434 @@
+.department-cost-page {
+  padding: 24px;
+  min-height: 100vh;
+  background: #f6f8fb;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.department-cost-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.department-cost-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.department-cost-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.department-refresh-btn {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.department-refresh-btn:hover {
+  background: #1d4ed8;
+}
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.department-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 13px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* =========================================================
+   SUMMARY CARDS
+========================================================= */
+
+.department-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.department-summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.department-card-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.cost-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.hours-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.department-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.highest-icon {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.department-summary-card p {
+  margin: 0 0 5px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.department-summary-card h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   SECTION CARDS
+========================================================= */
+
+.department-breakdown-card,
+.department-table-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.department-section-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.department-section-header h2 {
+  margin: 0;
+  font-size: 19px;
+  color: #1f2937;
+}
+
+.department-section-header p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* =========================================================
+   COST DISTRIBUTION
+========================================================= */
+
+.department-bars {
+  padding: 22px;
+}
+
+.department-bar-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 70px;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.department-bar-row:last-child {
+  margin-bottom: 0;
+}
+
+.department-bar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.department-bar-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.department-bar-value {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.department-progress-track {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.department-progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 20px;
+  transition: width 0.4s ease;
+}
+
+.department-bar-percentage {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.department-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.department-cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.department-cost-table th {
+  text-align: left;
+  padding: 14px 18px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.department-cost-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #374151;
+  font-size: 14px;
+}
+
+.department-cost-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.department-cost-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================================
+   DEPARTMENT NAME
+========================================================= */
+
+.department-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.department-avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.department-name-cell strong {
+  display: block;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.department-name-cell small {
+  display: block;
+  margin-top: 3px;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+/* =========================================================
+   BADGES / VALUES
+========================================================= */
+
+.usage-hours-badge {
+  display: inline-block;
+  background: #f3f4f6;
+  color: #374151;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.department-cost-value {
+  color: #111827;
+}
+
+/* =========================================================
+   COST SHARE
+========================================================= */
+
+.cost-share-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.cost-share-track {
+  flex: 1;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cost-share-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 10px;
+}
+
+.cost-share-cell span {
+  min-width: 42px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.department-empty-state {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 70px 20px;
+  text-align: center;
+}
+
+.department-empty-icon {
+  font-size: 45px;
+  margin-bottom: 12px;
+}
+
+.department-empty-state h2 {
+  margin: 0 0 8px;
+  color: #1f2937;
+}
+
+.department-empty-state p {
+  margin: 0;
+  color: #6b7280;
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.department-cost-loading {
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #6b7280;
+}
+
+.department-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: departmentSpin 0.8s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes departmentSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+  .department-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .department-cost-page {
+    padding: 15px;
+  }
+
+  .department-cost-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .department-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .department-bar-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .department-bar-percentage {
+    text-align: left;
+  }
+}
