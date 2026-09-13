@@ -41,7 +41,11 @@ export default function BookEquipment() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [priorityBooking, setPriorityBooking] = useState(false);
-  const showPriorityOption = canMakePriorityBooking();
+  const showPriorityOption = canMakePriorityBooking(); 
+  
+  const durationHours = parseInt(duration, 10) || 2;
+  const hourlyRate = equipment?.hourlyRate != null ? Number(equipment.hourlyRate) : 0;
+  const estimatedCost = hourlyRate * durationHours;
 
   useEffect(() => {
     async function fetchEquipment() {
@@ -254,7 +258,11 @@ async function handleWaitlist() {
           </div>
         </section>
 
-        <section className="availability">
+               <div className="equipment-card" style={{ marginTop: "-10px" }}>
+          Estimated cost: ₹{estimatedCost.toFixed(2)}
+          {hourlyRate > 0 && ` (₹${hourlyRate.toFixed(2)}/hr × ${durationHours}hr)`}
+        </div>
+         <section className="availability">
           <h3>Availability preview</h3>
           <div className="slots">
             {slots.map((slot) => (
