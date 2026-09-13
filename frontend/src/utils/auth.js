@@ -1,4 +1,4 @@
-export function getCurrentUserId() {
+﻿export function getCurrentUserId() {
   const token = localStorage.getItem("token");
   if (!token) return null;
   try {
@@ -20,18 +20,23 @@ export function getCurrentUserRole() {
   }
 }
 
+const ADMIN_ROLES = [
+  "LAB_MANAGER",
+  "DEPARTMENT_HEAD",
+  "INSTITUTION_ADMINISTRATOR",
+  "SYSTEM_ADMINISTRATOR",
+];
+
 export function isAdmin() {
   const role = getCurrentUserRole();
-  return (
-    role === "INSTITUTION_ADMIN" ||
-    role === "SYSTEM_ADMIN" ||
-    role === "LAB_MANAGER" ||
-    role === "DEPARTMENT_HEAD"
-  );
+  return ADMIN_ROLES.includes(role);
 }
-
 
 export function canMakePriorityBooking() {
   const role = getCurrentUserRole();
-  return role === "RESEARCHER" || role === "INSTITUTION_ADMIN" || role === "SYSTEM_ADMIN";
+  return (
+    role === "RESEARCHER_STUDENT" ||
+    role === "INSTITUTION_ADMINISTRATOR" ||
+    role === "SYSTEM_ADMINISTRATOR"
+  );
 }
