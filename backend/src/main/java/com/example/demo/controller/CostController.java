@@ -63,4 +63,66 @@ public class CostController {
                 })
                 .collect(java.util.stream.Collectors.toList());
     }
+
+    @GetMapping("/monthly-report")
+    public List<Map<String, Object>> monthlyReport() {
+        List<Booking> all = bookingRepository.findAll().stream()
+                .filter(b -> b.getBookingStart() != null)
+                .collect(java.util.stream.Collectors.toList());
+
+        Map<String, List<Booking>> byMonth = all.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        b -> b.getBookingStart().getYear() + "-" + String.format("%02d", b.getBookingStart().getMonthValue()),
+                        java.util.TreeMap::new,
+                        java.util.stream.Collectors.toList()
+                ));
+
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+
+        for (Map.Entry<String, List<Booking>> monthEntry : byMonth.entrySet()) {
+            List<Booking> monthBookings = monthEntry.getValue();
+
+            java.math.BigDecimal totalCost = monthBookings.stream()
+                    .map(b -> b.getCost() != null ? b.getCost() : java.math.BigDecimal.ZERO)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+            long equipmentBookedCount = monthBookings.stream()
+                    .map(b -> b.getEquipment() != null ? b.getEquipment().getEquipmentId() : null)
+                    .filter(java.util.Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            Map<Integer, Map<String, Object>> byUser = new java.util.LinkedHashMap<>();
+            for (Booking b : monthBookings) {
+                if (b.getUser() == null) continue;
+                Integer userId = b.getUser().getUserId();
+                java.math.BigDecimal cost = b.getCost() != null ? b.getCost() : java.math.BigDecimal.ZERO;
+                boolean isPaid = "Completed".equals(b.getStatus());
+
+                Map<String, Object> userEntry = byUser.computeIfAbsent(userId, id -> {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("userId", id);
+                    m.put("userName", b.getUser().getFirstName() + " " + b.getUser().getLastName());
+                    m.put("paid", java.math.BigDecimal.ZERO);
+                    m.put("pending", java.math.BigDecimal.ZERO);
+                    return m;
+                });
+
+                if (isPaid) {
+                    userEntry.put("paid", ((java.math.BigDecimal) userEntry.get("paid")).add(cost));
+                } else {
+                    userEntry.put("pending", ((java.math.BigDecimal) userEntry.get("pending")).add(cost));
+                }
+            }
+
+            Map<String, Object> monthSummary = new java.util.LinkedHashMap<>();
+            monthSummary.put("month", monthEntry.getKey());
+            monthSummary.put("equipmentBookedCount", equipmentBookedCount);
+            monthSummary.put("totalCost", totalCost);
+            monthSummary.put("byUser", new java.util.ArrayList<>(byUser.values()));
+            result.add(monthSummary);
+        }
+
+        return result;
+    }
 }
