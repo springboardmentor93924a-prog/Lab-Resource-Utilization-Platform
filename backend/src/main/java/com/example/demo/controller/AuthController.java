@@ -42,17 +42,22 @@ public class AuthController {
     @Autowired
     private RoleRepository roleRepository;
 
+    private static String normalizeRoleName(String roleName) {
+        if (roleName == null) {
+            return null;
+        }
+        return roleName.trim().toUpperCase().replaceAll("[\\s/]+", "_");
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
 
-        // Check whether email is already registered
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity
                     .badRequest()
                     .body(Map.of("error", "Email already registered"));
         }
 
-        // Create user
         User user = new User();
 
         user.setFirstName(request.getFirstName());
@@ -62,7 +67,6 @@ public class AuthController {
                 passwordEncoder.encode(request.getPassword())
         );
 
-        // Find department
         Department department = departmentRepository
                 .findById(request.getDepartmentId())
                 .orElseThrow(() ->
@@ -71,7 +75,6 @@ public class AuthController {
 
         user.setDepartment(department);
 
-        // Find role
         Role role = roleRepository
                 .findById(request.getRoleId())
                 .orElseThrow(() ->
@@ -80,18 +83,12 @@ public class AuthController {
 
         user.setRole(role);
 
-        // Timestamps
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
-        // Save user
         userRepository.save(user);
 
-        // Generate JWT immediately after registration
-        String roleName = role.getRoleName()
-                .toUpperCase()
-                .replace(" ", "_")
-                .replace("/", "_");
+        String roleName = normalizeRoleName(role.getRoleName());
 
         String token = jwtUtil.generateToken(
                 user.getEmail(),
@@ -99,7 +96,6 @@ public class AuthController {
                 roleName
         );
 
-        // Return same response shape as login
         Map<String, Object> response = new HashMap<>();
 
         response.put("token", token);
@@ -120,7 +116,6 @@ public class AuthController {
                 .findByEmail(request.getEmail())
                 .orElse(null);
 
-        // Validate credentials
         if (user == null ||
                 !passwordEncoder.matches(
                         request.getPassword(),
@@ -132,23 +127,16 @@ public class AuthController {
                     .body(Map.of("error", "Invalid email or password"));
         }
 
-        // Get role name
         String roleName = user.getRole() != null
-                ? user.getRole()
-                        .getRoleName()
-                        .toUpperCase()
-                        .replace(" ", "_")
-                        .replace("/", "_")
+                ? normalizeRoleName(user.getRole().getRoleName())
                 : null;
 
-        // Generate JWT
         String token = jwtUtil.generateToken(
                 user.getEmail(),
                 user.getUserId(),
                 roleName
         );
 
-        // Return authentication information
         Map<String, Object> response = new HashMap<>();
 
         response.put("token", token);
@@ -187,16 +175,11 @@ public class AuthController {
         response.put("email", user.getEmail());
 
         String roleName = user.getRole() != null
-                ? user.getRole()
-                        .getRoleName()
-                        .toUpperCase()
-                        .replace(" ", "_")
-                        .replace("/", "_")
+                ? normalizeRoleName(user.getRole().getRoleName())
                 : null;
 
         response.put("role", roleName);
 
-        // Institution information comes through the user's department
         if (user.getDepartment() != null &&
                 user.getDepartment().getInstitution() != null) {
 
