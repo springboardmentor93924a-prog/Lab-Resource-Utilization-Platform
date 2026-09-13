@@ -1,3 +1,8 @@
+databases:
+  - name: lab-resource-utilization-postgresql
+    plan: free
+    postgresMajorVersion: "18"
+    
 services:
   - type: web
     name: lab-resource-utilization-backend
