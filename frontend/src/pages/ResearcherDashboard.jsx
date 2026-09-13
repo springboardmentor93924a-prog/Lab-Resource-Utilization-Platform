@@ -59,7 +59,7 @@ export default function ResearcherDashboard() {
     .slice(0, 3);
 
   return (
-    <div className="container-main">
+    <div className="container-main researcher-dashboard-page">
       <aside className="sidebar">
         <Sidebar />
       </aside>

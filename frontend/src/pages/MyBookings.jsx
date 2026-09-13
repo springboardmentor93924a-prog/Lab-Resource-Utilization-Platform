@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { getBookingsByUser, cancelBooking } from "../services/bookingService";
@@ -41,7 +41,7 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="my-bookings-wrapper">
+    <div className="my-bookings-wrapper my-bookings-page">
 
       <aside className="sidebar">
         <Sidebar />
@@ -67,7 +67,7 @@ export default function MyBookings() {
               title="My Profile"
               aria-label="My Profile"
             >
-              👤
+              ðŸ‘¤
             </button>
 
           </div>
@@ -103,11 +103,11 @@ export default function MyBookings() {
                     </strong>
 
                     <div className="booking-time">
-                      {b.bookingDate}, {b.startTime}–{b.endTime}
+                      {b.bookingDate}, {b.startTime}â€“{b.endTime}
 
                       {b.priorityBooking && (
                         <span className="priority">
-                          • Priority
+                          â€¢ Priority
                         </span>
                       )}
                     </div>

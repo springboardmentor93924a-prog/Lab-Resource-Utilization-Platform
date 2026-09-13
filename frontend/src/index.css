@@ -1,1 +1,3 @@
+﻿@layer bootstrap;
+@import "./bootstrap-lite.css" layer(bootstrap);
 @import "tailwindcss";
