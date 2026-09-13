@@ -1,32 +1,79 @@
-# Lab-Resource-Utilization-Platform
-Infosys Springboard Internship Project
+# Lab Resource Utilization Platform
 
-Team 7
+Full-stack platform for research institutions to manage shared lab equipment — inventory, booking, utilization tracking, and maintenance.
 
-**Tech Stack**
+## Team
+**Team 7**
 
-Frontend: HTML, CSS, JavaScript
+## Tech Stack
 
-**My Contribution (Pranav Patil — team7-Pranav)**
+### Frontend
+- React.js
+- React Router
+- Axios
+- Tailwind CSS
+- Vite
 
--Designed the complete UI/UX of the Java Lab Resource Utilization Platform using Figma.
+### Backend
+- Java
+- Spring Boot
+- Spring Security
+- JWT Authentication
+- REST APIs
+- Hibernate / JPA
+- Maven
 
--Created wireframes for all major modules.
+### Database
+- PostgreSQL
 
--Developed responsive frontend pages using React.js, HTML5, CSS3, Bootstrap 5, and JavaScript.
+### Authentication & Security
+- JWT-based authentication
+- Spring Security
+- Role-based access control
 
--Implemented responsive designs to ensure compatibility across desktop
+### File Management
+- Multipart file upload
+- PDF document storage
+- File download and viewing
+- Equipment manuals and calibration certificates
 
-**Pages Designed & Developed**
+### Development Tools
+- Visual Studio Code
+- IntelliJ IDEA
+- Git
+- GitHub
+- Postman
 
--Researcher Dashboard
+### API & Communication
+- RESTful APIs
+- Axios
+- HTTP/JSON
 
--Equipment Catalog
+### Version Control
+- Git
+- GitHub
+- Feature-based Git branches
 
--Equipment Details
+## Project Structure
+├── frontend/ # React application
+└── backend/ # Spring Boot application
 
--Add Equipment Form
 
--Book Equipment 
+## HOW TO RUN THE PROJECT
+### Backend
+cd backend |
+.\mvnw spring-boot:run |
 
--Equipment Calendar
+Requires PostgreSQL running locally with a database named `lab_resource_db`. Update credentials in `backend/src/main/resources/application.properties`.
+
+### Frontend
+cd frontend |
+npm install |
+npm run dev |
+
+Frontend Runs on `http://localhost:5173`. Backend expected on `http://localhost:8080`.
+
+
+
+
+
