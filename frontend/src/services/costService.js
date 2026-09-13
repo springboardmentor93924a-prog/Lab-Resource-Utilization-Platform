@@ -19,4 +19,8 @@ export async function getBookingsWithCost() {
   const { data } = await api.get("/bookings");
   return data;
 }
+export async function getMonthlyReport() {
+  const { data } = await api.get("/monthly-report");
+  return data;
+}
 export default api;

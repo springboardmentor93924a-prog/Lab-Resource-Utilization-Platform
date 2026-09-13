@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import { getCostSummary, getBookingsWithCost } from "../services/costService";
+import { getCostSummary, getBookingsWithCost, getMonthlyReport } from "../services/costService";
 
 export default function CostBilling() {
-  const [summary, setSummary] = useState(null);
+   const [summary, setSummary] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [monthlyReport, setMonthlyReport] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, b] = await Promise.all([getCostSummary(), getBookingsWithCost()]);
+                const [s, b, m] = await Promise.all([getCostSummary(), getBookingsWithCost(), getMonthlyReport()]);
         setSummary(s);
         setBookings(b);
+        setMonthlyReport(m);
       } catch (err) {
         console.error(err);
         setError("Unable to load cost data.");
@@ -100,11 +102,41 @@ export default function CostBilling() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                           </table>
             </div>
+
+            <h4 style={{ marginBottom: "12px", marginTop: "30px", fontSize: "15px" }}>Monthly report</h4>
+            {monthlyReport.length === 0 && <p style={{ color: "#94a3b8" }}>No monthly data yet.</p>}
+            {monthlyReport.map((m) => (
+              <div key={m.month} style={{ background: "#111827", border: "1px solid #1f2937", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
+                  <h5 style={{ margin: 0 }}>{m.month}</h5>
+                  <span style={{ color: "#94a3b8" }}>{m.equipmentBookedCount} equipment booked · Total: ₹{Number(m.totalCost).toFixed(2)}</span>
+                </div>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "#0F1B2D" }}>
+                      <th style={{ padding: "10px 14px", textAlign: "left" }}>User</th>
+                      <th style={{ padding: "10px 14px", textAlign: "left" }}>Paid</th>
+                      <th style={{ padding: "10px 14px", textAlign: "left" }}>Pending</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {m.byUser.map((u) => (
+                      <tr key={u.userId} style={{ borderTop: "1px solid #1f2937" }}>
+                        <td style={{ padding: "10px 14px" }}>{u.userName}</td>
+                        <td style={{ padding: "10px 14px", color: "#22c55e" }}>₹{Number(u.paid).toFixed(2)}</td>
+                        <td style={{ padding: "10px 14px", color: "#f59e0b" }}>₹{Number(u.pending).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
           </>
         )}
       </main>
     </div>
   );
 }
+         
