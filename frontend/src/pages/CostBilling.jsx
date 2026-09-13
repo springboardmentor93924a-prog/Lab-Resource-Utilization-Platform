@@ -205,6 +205,8 @@ export default function CostBilling() {
             alignItems: "flex-start",
             marginBottom: "28px",
             flexWrap: "wrap",
+            position: "relative",
+            paddingRight: "54px",
             gap: "16px",
           }}
         >
@@ -220,8 +222,8 @@ export default function CostBilling() {
             </p>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-{!loading && !error && summary && (
+          {!loading && !error && summary && (
+
             <button
               onClick={() => downloadCSV(summary, bookings, monthlyReport)}
               onMouseEnter={() => setReportHover(true)}
@@ -242,13 +244,7 @@ export default function CostBilling() {
               Generate report
             </button>
           )}
-        
-
-
-            <button onClick={() => navigate("/profile")} title="My Profile" aria-label="My Profile" style={{ width: 38, height: 38, borderRadius: "50%", background: "#dbeafe", border: "2px solid #93c5fd", color: "#312e81", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.1c0 .7.5 1.2 1.2 1.2h17.2c.7 0 1.2-.5 1.2-1.2v-2.1c0-3.3-6.5-4.9-9.8-4.9z"/></svg></button>
-
-
-          </div>
+          <button onClick={() => navigate("/profile")} title="My Profile" aria-label="My Profile" style={{ position: "absolute", top: 0, right: 0,  width: 38, height: 38, borderRadius: "50%", background: "#dbeafe", border: "2px solid #93c5fd", color: "#312e81", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.1c0 .7.5 1.2 1.2 1.2h17.2c.7 0 1.2-.5 1.2-1.2v-2.1c0-3.3-6.5-4.9-9.8-4.9z"/></svg></button>
         </div>
 
         {loading && <p style={{ color: colors.textMuted }}>Loading cost data...</p>}
