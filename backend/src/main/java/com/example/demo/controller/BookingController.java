@@ -92,6 +92,25 @@ public class BookingController {
     return equipment.getHourlyRate() != null ? equipment.getHourlyRate() : BigDecimal.ZERO;
 }
 
+    @PutMapping("/recalculate-costs")
+    public ResponseEntity<?> recalculateCosts() {
+        List<Booking> all = bookingRepository.findAll();
+        int updated = 0;
+        for (Booking b : all) {
+            if (b.getEquipment() == null || b.getBookingStart() == null || b.getBookingEnd() == null) continue;
+            BigDecimal rate = hourlyRate(b.getEquipment());
+            if (rate.compareTo(BigDecimal.ZERO) == 0) continue;
+            long hrs = Duration.between(b.getBookingStart(), b.getBookingEnd()).toMinutes() / 60;
+            BigDecimal newCost = rate.multiply(BigDecimal.valueOf(Math.max(hrs, 1)));
+            if (b.getCost() == null || b.getCost().compareTo(BigDecimal.ZERO) == 0) {
+                b.setCost(newCost);
+                bookingRepository.save(b);
+                updated++;
+            }
+        }
+        return ResponseEntity.ok(Map.of("updatedCount", updated));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Booking booking, java.security.Principal principal) {
         if (booking.getBookingStart() == null || booking.getBookingEnd() == null) {
