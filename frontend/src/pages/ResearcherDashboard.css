@@ -1,4 +1,4 @@
-﻿/* =========================================
+/* =========================================
    GLOBAL
 ========================================= */
 
@@ -184,6 +184,7 @@ body {
     font-size: 24px;
     font-weight: 800;
     margin: 0;
+    text-align: left;
 
     text-shadow:
         0 0 14px rgba(56, 189, 248, 0.20);
@@ -698,6 +699,7 @@ body {
 
     .rd-topbar h4 {
         font-size: 18px;
+        text-align: left;
     }
 
     .stats {
