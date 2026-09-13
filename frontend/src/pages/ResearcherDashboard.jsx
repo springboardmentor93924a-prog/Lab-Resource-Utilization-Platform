@@ -50,8 +50,8 @@ export default function ResearcherDashboard() {
   }
 
   const availableCount = equipmentList.filter((e) => e.status?.toUpperCase() === "AVAILABLE").length;
-  const upcomingBookings = myBookings.filter(
-    (b) => b.bookingStatus === "PENDING" || b.bookingStatus === "CONFIRMED"
+    const upcomingBookings = myBookings.filter(
+    (b) => b.bookingStatus === "PENDING_APPROVAL" || b.bookingStatus === "CONFIRMED"
   );
   const waitlistCount = myBookings.filter((b) => b.bookingStatus === "WAITLISTED").length;
   const recommended = equipmentList
@@ -68,11 +68,6 @@ export default function ResearcherDashboard() {
         <div className="topbar">
           <h4>Researcher dashboard</h4>
           <div className="top-right">
-    <input
-        type="text"
-        placeholder="Search..."
-        className="form-control search"
-    />
 
     <button
         className="profile-circle"

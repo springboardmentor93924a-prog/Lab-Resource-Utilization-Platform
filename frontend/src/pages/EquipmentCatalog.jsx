@@ -123,11 +123,7 @@ export default function EquipmentCatalog() {
 
           <div className="nav-right">
 
-            <input
-              type="text"
-              className="form-control search-top"
-              placeholder="Search..."
-            />
+            
 
             <button
               className="profile-circle"
