@@ -9,7 +9,7 @@ services:
     runtime: docker
     plan: free
     region: virginia
-    dockerfilePath: ./backend/Dockerfile
+    dockerfilePath: ./Backend/Dockerfile
     dockerContext: .
     envVars:
       - key: DB_URL
@@ -37,8 +37,8 @@ services:
   - type: web
     name: lab-resource-utilization-frontend
     runtime: static
-    buildCommand: cd frontend && npm ci && npm run build
-    staticPublishPath: ./frontend/dist
+    buildCommand: cd Frontend && npm ci && npm run build
+    staticPublishPath: ./Frontend/dist
     envVars:
       - key: VITE_API_URL
         fromService:
