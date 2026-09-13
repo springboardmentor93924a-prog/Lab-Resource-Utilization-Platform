@@ -115,11 +115,26 @@ public class CostController {
                 }
             }
 
+                       Map<String, java.math.BigDecimal> byDepartment = new java.util.LinkedHashMap<>();
+            Map<String, java.math.BigDecimal> byInstitution = new java.util.LinkedHashMap<>();
+
+            for (Booking b : monthBookings) {
+                java.math.BigDecimal cost = b.getCost() != null ? b.getCost() : java.math.BigDecimal.ZERO;
+                String deptName = (b.getEquipment() != null && b.getEquipment().getDepartment() != null)
+                        ? b.getEquipment().getDepartment().getDepartmentName() : "Unassigned";
+                String instName = (b.getEquipment() != null && b.getEquipment().getInstitution() != null)
+                        ? b.getEquipment().getInstitution().getInstitutionName() : "Unassigned";
+                byDepartment.merge(deptName, cost, java.math.BigDecimal::add);
+                byInstitution.merge(instName, cost, java.math.BigDecimal::add);
+            }
+
             Map<String, Object> monthSummary = new java.util.LinkedHashMap<>();
             monthSummary.put("month", monthEntry.getKey());
             monthSummary.put("equipmentBookedCount", equipmentBookedCount);
             monthSummary.put("totalCost", totalCost);
             monthSummary.put("byUser", new java.util.ArrayList<>(byUser.values()));
+            monthSummary.put("byDepartment", byDepartment);
+            monthSummary.put("byInstitution", byInstitution);
             result.add(monthSummary);
         }
 
