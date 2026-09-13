@@ -8,7 +8,6 @@ import { useAuth } from "../context/AuthContext";
 const navItems = [
   { label: "Dashboard", icon: "bi-speedometer2", path: "/dashboard" },
   { label: "Equipment", icon: "bi-box-seam", path: "/equipment" },
-  { label: "Bookings", icon: "bi-calendar-check", path: "/bookings" },
   { label: "My bookings", icon: "bi-list-check", path: "/my-bookings" },
   { label: "Sharing", icon: "bi-share", path: "/sharing" },
   { label: "Utilization", icon: "bi-graph-up", path: "/utilization" },
