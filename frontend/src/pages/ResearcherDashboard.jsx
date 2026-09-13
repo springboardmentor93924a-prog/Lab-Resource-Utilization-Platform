@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./ResearcherDashboard.css";
@@ -75,7 +75,7 @@ export default function ResearcherDashboard() {
         title="My Profile"
         aria-label="My Profile"
     >
-        ðŸ‘¤
+        👤
     </button>
 </div>
         </div>
