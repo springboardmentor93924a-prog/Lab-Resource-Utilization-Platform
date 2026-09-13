@@ -693,7 +693,7 @@ body {
        shrinks to make room. Left padding keeps the title clear of the
        fixed hamburger button rendered by Sidebar.jsx. */
     .rd-topbar {
-        padding: 16px 4px 16px 64px;
+        padding: 16px 0px 16px 64px;
     }
 
     .rd-topbar h4 {
