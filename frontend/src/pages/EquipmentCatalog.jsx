@@ -103,7 +103,7 @@ export default function EquipmentCatalog() {
   }
 
   return (
-    <div className="wrapper">
+    <div className="wrapper equipment-catalog-page">
 
       {/* SIDEBAR */}
       <div className="sidebar">

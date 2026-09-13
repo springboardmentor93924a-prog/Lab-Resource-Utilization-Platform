@@ -2,7 +2,8 @@
    EQUIPMENT DETAIL - DARK BLUE THEME
 ========================================= */
 
-* {
+.equipment-detail-page,
+.equipment-detail-page * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;

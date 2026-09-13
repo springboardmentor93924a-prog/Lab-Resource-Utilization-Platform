@@ -74,7 +74,7 @@ export default function EquipmentDetail() {
 
   if (loading) {
     return (
-      <div className="wrapper">
+      <div className="wrapper equipment-detail-page">
         <aside className="sidebar">
           <Sidebar />
         </aside>
@@ -87,7 +87,7 @@ export default function EquipmentDetail() {
 
   if (error || !equipment) {
     return (
-      <div className="wrapper">
+      <div className="wrapper equipment-detail-page">
         <aside className="sidebar">
           <Sidebar />
         </aside>
@@ -110,7 +110,7 @@ export default function EquipmentDetail() {
   const documents = [equipment.manualDocument, equipment.calibrationCertificate].filter(Boolean);
 
   return (
-    <div className="wrapper">
+    <div className="wrapper equipment-detail-page">
       <aside className="sidebar">
         <Sidebar />
       </aside>

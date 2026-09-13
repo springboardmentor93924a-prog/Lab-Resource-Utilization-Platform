@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./BookEquipment.css";
@@ -159,7 +159,7 @@ async function handleWaitlist() {
   }
 
   return (
-    <div className="container">
+    <div className="container book-equipment-page">
       <aside className="sidebar">
         <Sidebar />
       </aside>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AddEquipment.css";
@@ -180,7 +180,7 @@ export default function AddEquipment() {
   }
 
   return (
-    <div className="container">
+    <div className="container add-equipment-page">
       <aside className="sidebar">
         <Sidebar />
       </aside>
@@ -196,14 +196,14 @@ export default function AddEquipment() {
     title="My Profile"
     aria-label="My Profile"
 >
-    👤
+    ??
 </button>
           </div>
         </header>
 
         <div className="card">
           <button className="close-btn" onClick={handleClose}>
-            ×
+            �
           </button>
 
           {optionsError && (
