@@ -203,7 +203,7 @@ export default function AddEquipment() {
 
         <div className="card">
           <button className="close-btn" onClick={handleClose}>
-            ×
+            Ã—
           </button>
 
           {optionsError && (
