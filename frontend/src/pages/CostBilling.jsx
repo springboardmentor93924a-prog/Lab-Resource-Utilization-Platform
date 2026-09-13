@@ -131,6 +131,27 @@ export default function CostBilling() {
                     ))}
                   </tbody>
                 </table>
+
+                <div style={{ display: "flex", gap: "20px", marginTop: "18px", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: "220px" }}>
+                    <h6 style={{ marginBottom: "8px", color: "#94a3b8", fontSize: "13px" }}>By department</h6>
+                    {Object.entries(m.byDepartment || {}).map(([dept, cost]) => (
+                      <div key={dept} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #1f2937", fontSize: "14px" }}>
+                        <span>{dept}</span>
+                        <span>₹{Number(cost).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ flex: 1, minWidth: "220px" }}>
+                    <h6 style={{ marginBottom: "8px", color: "#94a3b8", fontSize: "13px" }}>By institution</h6>
+                    {Object.entries(m.byInstitution || {}).map(([inst, cost]) => (
+                      <div key={inst} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #1f2937", fontSize: "14px" }}>
+                        <span>{inst}</span>
+                        <span>₹{Number(cost).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ))}
           </>
