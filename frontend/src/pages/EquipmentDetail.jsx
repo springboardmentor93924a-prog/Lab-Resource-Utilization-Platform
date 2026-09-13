@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./EquipmentDetail.css";
@@ -116,7 +116,7 @@ export default function EquipmentDetail() {
       </aside>
 
       <main className="content">
-        <div className="topbar">
+        <div className="topbar rd-topbar-fix">
           <h4>Equipment detail</h4>
           <div className="right">
             <input type="text" className="form-control search" placeholder="Search..." />

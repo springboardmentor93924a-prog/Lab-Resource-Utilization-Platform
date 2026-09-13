@@ -1,4 +1,4 @@
-/* =========================================
+﻿/* =========================================
    EQUIPMENT DETAIL - DARK BLUE THEME
 ========================================= */
 
@@ -538,16 +538,16 @@ body {
         display: none;
     }
 
-    .topbar {
-        flex-direction: column;
+    .rd-topbar-fix {
+        flex-direction: row;
 
         height: auto;
 
-        padding: 20px;
+        padding: 12px 20px;
 
         gap: 15px;
 
-        align-items: flex-start;
+        align-items: center;
     }
 
     .topbar h4 {
