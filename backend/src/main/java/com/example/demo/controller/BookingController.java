@@ -84,9 +84,13 @@ public class BookingController {
         m.put("purpose", b.getPurpose());
         m.put("bookingStatus", b.getStatus() != null ? b.getStatus().toUpperCase().replace(" ", "_") : null);
        m.put("cost", b.getCost() != null ? b.getCost() : java.math.BigDecimal.ZERO);
-m.put("hourlyRate", b.getEquipment() != null && b.getEquipment().getHourlyRate() != null ? b.getEquipment().getHourlyRate() : java.math.BigDecimal.ZERO);
+    m.put("hourlyRate", b.getEquipment() != null ? hourlyRate(b.getEquipment()) : BigDecimal.ZERO);
         return m;
     }
+
+  private BigDecimal hourlyRate(Equipment equipment) {
+    return equipment.getHourlyRate() != null ? equipment.getHourlyRate() : BigDecimal.ZERO;
+}
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Booking booking, java.security.Principal principal) {
@@ -123,9 +127,10 @@ m.put("hourlyRate", b.getEquipment() != null && b.getEquipment().getHourlyRate()
             booking.setStatus("Pending Approval");
         }
        long estHours = Duration.between(booking.getBookingStart(), booking.getBookingEnd()).toMinutes() / 60;
-BigDecimal estRate = targetEq.getHourlyRate() != null ? targetEq.getHourlyRate() : BigDecimal.ZERO;
+BigDecimal estRate = hourlyRate(targetEq);
 booking.setCost(estRate.multiply(BigDecimal.valueOf(Math.max(estHours, 1))));
-        booking.setUpdatedAt(LocalDateTime.now());
+booking.setCreatedAt(LocalDateTime.now());
+booking.setUpdatedAt(LocalDateTime.now());
         Booking savedBooking = bookingRepository.save(booking); return ResponseEntity.ok(toResponse(savedBooking));
     }
 
@@ -182,7 +187,7 @@ booking.setCost(estRate.multiply(BigDecimal.valueOf(Math.max(estHours, 1))));
         b.setStatus("Completed");
         b.setUpdatedAt(LocalDateTime.now());
         long completedHours = Duration.between(b.getBookingStart(), b.getBookingEnd()).toMinutes() / 60;
-        java.math.BigDecimal rate = b.getEquipment().getHourlyRate() != null ? b.getEquipment().getHourlyRate() : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal rate = hourlyRate(b.getEquipment());
         b.setCost(rate.multiply(java.math.BigDecimal.valueOf(Math.max(completedHours, 1))));
         bookingRepository.save(b);
 
