@@ -4,7 +4,7 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 COPY Backend/pom.xml Backend/mvnw Backend/mvnw.cmd /app/Backend/
-COPY Backend/.mvn /app/Backend/.mvn
+COPY Backend/.mvnw /app/Backend/.mvnw
 RUN chmod +x /app/Backend/mvnw
 
 COPY Backend/src /app/Backend/src
