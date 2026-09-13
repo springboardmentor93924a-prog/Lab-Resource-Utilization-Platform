@@ -79,7 +79,7 @@ export default function EquipmentCalendar() {
   }
 
   return (
-    <div className="container">
+    <div className="container equipment-calendar-page">
       <aside className="sidebar">
         <Sidebar />
       </aside>
