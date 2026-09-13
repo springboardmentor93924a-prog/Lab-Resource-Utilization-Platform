@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -126,20 +126,20 @@ export default function Register() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-16"
+      className="min-h-screen flex items-center justify-center px-4 py-6"
       style={{
         background:
           "linear-gradient(135deg, #0F1B2D 0%, #1e3a5f 50%, #0F1B2D 100%)",
       }}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-2xl px-10 pt-12 pb-10"
+        className="w-full max-w-lg bg-white rounded-2xl px-8 pt-8 pb-8"
         style={{
           boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
         }}
       >
         {/* Logo */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-4">
           <div
             className="w-14 h-14 rounded-xl flex items-center justify-center"
             style={{
@@ -166,7 +166,7 @@ export default function Register() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-center text-gray-900 mb-10">
+        <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
           Create your account
         </h1>
 
@@ -177,7 +177,7 @@ export default function Register() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name */}
           <div>
             <label className={labelClass}>Full name</label>
@@ -421,7 +421,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-12 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 mt-2"
+            className="w-full h-11 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 mt-1"
             style={{
               background:
                 "linear-gradient(135deg, #1557a8, #0F1B2D)",
@@ -434,7 +434,7 @@ export default function Register() {
         </form>
 
         {/* Login link */}
-        <p className="text-sm text-gray-500 text-center mt-10">
+        <p className="text-sm text-gray-500 text-center mt-6">
           Already have an account?{" "}
           <Link
             to="/login"
@@ -448,3 +448,4 @@ export default function Register() {
     </div>
   );
 }
+
