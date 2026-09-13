@@ -193,7 +193,7 @@ async function handleWaitlist() {
           </button>
         </div>
 
-        <div className="equipment-card">
+               <div className="equipment-info-card">
           {loadingEquipment
             ? "Loading equipment..."
             : equipment
@@ -258,7 +258,7 @@ async function handleWaitlist() {
           </div>
         </section>
 
-               <div className="equipment-card" style={{ marginTop: "-10px" }}>
+                     <div className="cost-estimate-card">
           Estimated cost: ₹{estimatedCost.toFixed(2)}
           {hourlyRate > 0 && ` (₹${hourlyRate.toFixed(2)}/hr × ${durationHours}hr)`}
         </div>

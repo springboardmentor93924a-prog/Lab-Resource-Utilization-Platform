@@ -169,13 +169,26 @@ body {
    EQUIPMENT CARD
 ========================= */
 
-.equipment-card {
-    margin: 20px 35px;
-    background: #102b4a;
+
+.cost-estimate-card {
+    margin: 0 35px 20px;
+    background: #102b4a !important;
     border: 1px solid #315477;
     padding: 18px;
     border-radius: 10px;
-    color: #ffffff;
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+
+.equipment-info-card {
+    margin: 20px 35px;
+    background: #102b4a !important;
+    border: 1px solid #315477;
+    padding: 18px;
+    border-radius: 10px;
+    color: #ffffff !important;
     font-weight: 600;
     font-size: 16px;
 }
