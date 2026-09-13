@@ -1,0 +1,782 @@
+/* =========================================================
+   SETTINGS CONTAINER
+========================================================= */
+
+.sidebar-settings {
+  position: relative;
+  width: 100%;
+}
+
+
+/* =========================================================
+   SETTINGS BUTTON
+========================================================= */
+
+.sidebar-settings-button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  /* color: #ffffff; */
+  cursor: pointer;
+
+  padding: 14px 18px;
+
+  display: flex;
+  align-items: center;
+
+  font-size: 14px;
+  font-family: inherit;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+
+/* .sidebar-settings-button:hover {
+  background: #16243a;
+}
+
+
+.sidebar-settings-button.active {
+  background: #16243a;
+  border-left: 4px solid #2dd4bf;
+} */
+
+
+
+.sidebar-settings-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+}
+
+
+.sidebar-settings-content i {
+  font-size: 17px;
+  color: #2dd4bf;
+}
+
+
+.sidebar-settings-content span {
+  font-weight: 500;
+}
+
+
+/* =========================================================
+   SETTINGS PANEL
+========================================================= */
+
+.sidebar-settings-panel {
+  position: fixed;
+
+  left: 235px;
+  bottom: 20px;
+
+  width: 390px;
+  max-width: calc(100vw - 255px);
+
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  background: #ffffff;
+
+  border-radius: 16px;
+
+  border: 1px solid #e7edf3;
+
+  box-shadow:
+    0 20px 60px rgba(15, 27, 45, 0.25);
+
+  z-index: 9999;
+
+  animation:
+    settingsSlideIn 0.25s ease;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.sidebar-settings-panel::-webkit-scrollbar {
+  width: 7px;
+}
+
+
+.sidebar-settings-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+.sidebar-settings-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+
+.sidebar-settings-panel::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* =========================================================
+   SETTINGS ANIMATION
+========================================================= */
+
+@keyframes settingsSlideIn {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateX(-15px)
+      translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateX(0)
+      translateY(0);
+  }
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.sidebar-settings-header {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  padding: 20px 22px;
+
+  border-bottom:
+    1px solid #e7edf3;
+}
+
+
+.sidebar-settings-header h4 {
+  margin: 0;
+
+  color: #0f1b2d;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+
+.sidebar-settings-header p {
+  margin: 5px 0 0;
+
+  color: #7b8794;
+
+  font-size: 13px;
+}
+
+
+.sidebar-settings-close {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: #f3f6f9;
+
+  color: #52606d;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+
+.sidebar-settings-close:hover {
+  background: #e7edf3;
+  color: #0f1b2d;
+}
+
+
+/* =========================================================
+   SETTINGS SECTION
+========================================================= */
+
+.sidebar-settings-section {
+  padding: 18px 22px;
+
+  border-bottom:
+    1px solid #edf1f5;
+}
+
+
+.sidebar-settings-section h5 {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  margin: 0 0 16px;
+
+  color: #0f1b2d;
+
+  font-size: 14px;
+
+  font-weight: 700;
+}
+
+
+.sidebar-settings-section h5 i {
+  color: #2dd4bf;
+}
+
+
+/* =========================================================
+   SETTINGS ROW
+========================================================= */
+
+.sidebar-settings-row {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 13px 0;
+}
+
+
+.sidebar-settings-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+
+  flex: 1;
+}
+
+
+.sidebar-settings-info strong {
+  color: #243b53;
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+
+.sidebar-settings-info span {
+  color: #7b8794;
+
+  font-size: 12px;
+
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   THEME SELECT
+========================================================= */
+
+.sidebar-settings-select {
+  border: 1px solid #d9e2ec;
+
+  border-radius: 8px;
+
+  padding: 8px 10px;
+
+  outline: none;
+
+  color: #243b53;
+
+  background: #ffffff;
+
+  cursor: pointer;
+
+  font-family: inherit;
+
+  transition: all 0.2s ease;
+}
+
+
+.sidebar-settings-select:hover {
+  border-color: #94a3b8;
+}
+
+
+.sidebar-settings-select:focus {
+  border-color: #2dd4bf;
+
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 191, 0.12);
+}
+
+
+/* =========================================================
+   TOGGLE SWITCH
+========================================================= */
+
+.sidebar-settings-switch {
+  position: relative;
+
+  width: 46px;
+  height: 24px;
+
+  flex-shrink: 0;
+}
+
+
+.sidebar-settings-switch input {
+  opacity: 0;
+
+  width: 0;
+  height: 0;
+}
+
+
+.sidebar-settings-slider {
+  position: absolute;
+
+  inset: 0;
+
+  background: #cbd5e1;
+
+  border-radius: 30px;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+}
+
+
+.sidebar-settings-slider::before {
+  content: "";
+
+  position: absolute;
+
+  width: 18px;
+  height: 18px;
+
+  left: 3px;
+  top: 3px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  transition: 0.25s ease;
+
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.18);
+}
+
+
+.sidebar-settings-switch input:checked
++ .sidebar-settings-slider {
+  background: #2dd4bf;
+}
+
+
+.sidebar-settings-switch input:checked
++ .sidebar-settings-slider::before {
+  transform:
+    translateX(22px);
+}
+
+
+.sidebar-settings-switch input:disabled
++ .sidebar-settings-slider {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   PROFILE BUTTON
+========================================================= */
+
+.sidebar-settings-profile {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  border: 1px solid #e7edf3;
+
+  background: #f8fafc;
+
+  padding: 12px 14px;
+
+  border-radius: 10px;
+
+  color: #243b53;
+
+  cursor: pointer;
+
+  font-family: inherit;
+
+  transition: all 0.2s ease;
+}
+
+
+.sidebar-settings-profile span {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.sidebar-settings-profile:hover {
+  background: #eef8f7;
+
+  border-color: #2dd4bf;
+
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.sidebar-settings-footer {
+  padding: 18px 22px;
+}
+
+
+.sidebar-settings-reset {
+  width: 100%;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 11px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #fff1f1;
+
+  color: #dc2626;
+
+  cursor: pointer;
+
+  font-family: inherit;
+
+  font-weight: 600;
+
+  transition: all 0.2s ease;
+}
+
+
+.sidebar-settings-reset:hover {
+  background: #fee2e2;
+
+  transform: translateY(-1px);
+}
+
+
+.sidebar-settings-reset:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   SUCCESS MESSAGE
+========================================================= */
+
+.settings-success-message {
+  margin: 15px 22px 0;
+
+  padding: 11px 13px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  background: #ecfdf5;
+
+  color: #047857;
+
+  border:
+    1px solid #a7f3d0;
+
+  border-radius: 9px;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   ERROR MESSAGE
+========================================================= */
+
+.settings-error-message {
+  margin: 15px 22px 0;
+
+  padding: 11px 13px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  background: #fef2f2;
+
+  color: #dc2626;
+
+  border:
+    1px solid #fecaca;
+
+  border-radius: 9px;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.settings-loading {
+  min-height: 250px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  color: #64748b;
+
+  font-size: 14px;
+}
+
+
+.settings-spinner {
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+
+  border:
+    3px solid #d9e2ec;
+
+  border-top-color:
+    #2dd4bf;
+
+  animation:
+    settingsSpin 0.8s linear infinite;
+}
+
+
+@keyframes settingsSpin {
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+
+}
+
+
+/* =========================================================
+   DARK THEME SUPPORT
+========================================================= */
+
+body.dark-theme
+.sidebar-settings-panel {
+  background: #0f1b2d;
+
+  border-color: #243b53;
+}
+
+
+body.dark-theme
+.sidebar-settings-header {
+  border-color: #243b53;
+}
+
+
+body.dark-theme
+.sidebar-settings-header h4,
+
+body.dark-theme
+.sidebar-settings-section h5 {
+  color: #f8fafc;
+}
+
+
+body.dark-theme
+.sidebar-settings-header p,
+
+body.dark-theme
+.sidebar-settings-info span {
+  color: #94a3b8;
+}
+
+
+body.dark-theme
+.sidebar-settings-section {
+  border-color: #243b53;
+}
+
+
+body.dark-theme
+.sidebar-settings-info strong {
+  color: #e2e8f0;
+}
+
+
+body.dark-theme
+.sidebar-settings-select {
+  background: #16243a;
+
+  border-color: #334155;
+
+  color: #f8fafc;
+}
+
+
+body.dark-theme
+.sidebar-settings-profile {
+  background: #16243a;
+
+  border-color: #334155;
+
+  color: #e2e8f0;
+}
+
+
+body.dark-theme
+.sidebar-settings-profile:hover {
+  background: #1d344f;
+
+  border-color: #2dd4bf;
+}
+
+
+body.dark-theme
+.sidebar-settings-close {
+  background: #16243a;
+
+  color: #cbd5e1;
+}
+
+
+body.dark-theme
+.sidebar-settings-close:hover {
+  background: #243b53;
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   COMPACT MODE SUPPORT
+========================================================= */
+
+body.compact-mode
+.sidebar-settings-section {
+  padding:
+    12px 18px;
+}
+
+
+body.compact-mode
+.sidebar-settings-row {
+  padding:
+    8px 0;
+}
+
+
+body.compact-mode
+.sidebar-settings-header {
+  padding:
+    15px 18px;
+}
+
+
+body.compact-mode
+.sidebar-settings-footer {
+  padding:
+    14px 18px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .sidebar-settings-panel {
+    left: 10px;
+
+    bottom: 10px;
+
+    width:
+      calc(100vw - 20px);
+
+    max-width:
+      calc(100vw - 20px);
+
+    max-height:
+      calc(100vh - 20px);
+  }
+
+}
+
+
+@media (max-width: 480px) {
+
+  .sidebar-settings-panel {
+    border-radius: 12px;
+  }
+
+
+  .sidebar-settings-row {
+    gap: 12px;
+  }
+
+
+  .sidebar-settings-header h4 {
+    font-size: 18px;
+  }
+
+}
