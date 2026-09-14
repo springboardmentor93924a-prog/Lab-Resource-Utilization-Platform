@@ -1,0 +1,30 @@
+# Maven
+target/
+.mvn/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Git
+.git/
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local configuration / secrets
+src/main/resources/application.properties
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
