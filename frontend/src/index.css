@@ -168,3 +168,37 @@ body.global-dark-theme {
 .global-compact-mode .booking-card {
   padding: 14px !important;
 }
+
+/* Unified, larger page-heading size across all pages */
+.analytics-header h1,
+.approval-hero-text h1,
+.catalog-hero h1,
+.feedback-header h1,
+.forgot-brand h1,
+.summary-left h1,
+.hero-left h1,
+.notifications-header h1,
+.reports-title-wrapper h1,
+.sharing-hero h1,
+.heatmap-header h1,
+.content h1 {
+  font-size: clamp(1.75rem, 3vw, 2.5rem) !important;
+}
+
+@media (max-width: 768px) {
+  .analytics-header h1,
+  .approval-hero-text h1,
+  .catalog-hero h1,
+  .feedback-header h1,
+  .forgot-brand h1,
+  .summary-left h1,
+  .hero-left h1,
+  .notifications-header h1,
+  .reports-title-wrapper h1,
+  .reports-title-wrapper h1,
+  .sharing-hero h1,
+  .heatmap-header h1,
+  .content h1 {
+    font-size: clamp(1.4rem, 5vw, 1.8rem) !important;
+  }
+}
