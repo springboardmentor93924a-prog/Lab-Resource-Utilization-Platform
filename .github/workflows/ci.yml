@@ -1,29 +1,27 @@
- 
-  name: Backend CI Build Check
+name: Backend CI Build Check
 
-  on:
-    push:
-      branches:
-        - team2-Nivetha
-    pull_request:
-      branches:
-        - main
+on:
+  push:
+    branches:
+      - team2-Nivetha
+  pull_request:
+    branches:
+      - main
 
-  jobs:
-    backend-check:
-      runs-on: ubuntu-latest
+jobs:
+  backend-check:
+    runs-on: ubuntu-latest
 
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        - name: Setup Java
-          uses: actions/setup-java@v4
-          with:
-            distribution: 'temurin'
-            java-version: '21'
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
-        - name: Build and test backend with Maven
-          working-directory: ./backend
-          run: ./mvnw clean verify
-    ```
+      - name: Build and test backend with Maven
+        working-directory: ./backend
+        run: ./mvnw clean verify
