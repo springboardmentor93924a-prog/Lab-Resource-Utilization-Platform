@@ -1,121 +1,101 @@
-import React, { useState } from 'react';
-import './MaintenancePage.css';
+import { useEffect, useState } from "react";
+import { getTechnicianWorkOrders, startWorkOrder, completeWorkOrder } from "../api/maintenanceApi";
+import { extractErrorMessage } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { page, headerRow, h1Style, subStyle, card, thStyle, tdStyle, actionBtn, errorText, emptyText, pill } from "../styles/shared";
 
-export default function TechnicianTasksPage() {
-  // Technician's assigned tasks state
-  const [tasks, setTasks] = useState([
-    {
-      id: 'WO-201',
-      equipment: 'Centrifuge X200',
-      priority: 'HIGH',
-      scheduledTime: '2026-08-25 10:00 AM',
-      status: 'ASSIGNED',
-    },
-    {
-      id: 'WO-202',
-      equipment: 'HPLC System',
-      priority: 'MEDIUM',
-      scheduledTime: '2026-08-25 02:00 PM',
-      status: 'IN_PROGRESS',
-    },
-    {
-      id: 'WO-203',
-      equipment: 'Spectrophotometer',
-      priority: 'LOW',
-      scheduledTime: '2026-08-24 09:00 AM',
-      status: 'COMPLETED',
-    },
-  ]);
+function TechnicianTasksPage({ showToast }) {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Handle Work Order Transition (ASSIGNED -> IN_PROGRESS)
-  const handleStartWork = (id) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, status: 'IN_PROGRESS' } : task
-      )
-    );
+  const load = () => {
+    if (!user?.userId) return;
+    setLoading(true);
+    getTechnicianWorkOrders(user.userId)
+      .then(setOrders)
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load your work orders.")))
+      .finally(() => setLoading(false));
   };
 
-  // Handle Work Order Transition (IN_PROGRESS -> COMPLETED)
-  const handleCompleteWork = (id) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, status: 'COMPLETED' } : task
-      )
-    );
+  useEffect(load, [user?.userId]);
+
+  const runAction = async (action, id, successMsg) => {
+    try {
+      await action(id);
+      showToast?.(successMsg, "success");
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Action failed."), "warning");
+    }
   };
 
   return (
-    <div className="maintenance-page">
-      <div className="maintenance-header">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <div className="eyebrow">LAB TECHNICIAN VIEW</div>
-          <h1>My Maintenance Tasks</h1>
-          <p>View and manage assigned work orders.</p>
+          <h1 style={h1Style}>My Work Orders</h1>
+          <p style={subStyle}>Maintenance work orders assigned to you</p>
         </div>
       </div>
 
-      <div className="maintenance-panel">
-        <div className="table-responsive">
-          <table className="maintenance-table">
-            <thead>
-              <tr>
-                <th>Work Order</th>
-                <th>Equipment</th>
-                <th>Priority</th>
-                <th>Scheduled Time</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task) => {
-                const canStart = task.status === 'ASSIGNED';
-                const canComplete = task.status === 'IN_PROGRESS';
+      {error && <p style={errorText}>{error}</p>}
 
-                return (
-                  <tr key={task.id}>
-                    <td><strong>{task.id}</strong></td>
-                    <td>{task.equipment}</td>
-                    <td>
-                      <span className={`badge priority-${task.priority.toLowerCase()}`}>
-                        {task.priority}
+      <div style={card}>
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading work orders...</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 850 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>ID</th>
+                  <th style={thStyle}>Equipment</th>
+                  <th style={thStyle}>Description</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Started</th>
+                  <th style={thStyle}>Completed</th>
+                  <th style={thStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.workOrderId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>#{o.workOrderId}</td>
+                    <td style={tdStyle}>{o.equipment?.equipName || o.equipment?.equipId}</td>
+                    <td style={tdStyle}>{o.description}</td>
+                    <td style={tdStyle}>
+                      <span style={
+                        o.status === "COMPLETED" ? pill("#e8f7ee", "#16834b") :
+                        o.status === "IN_PROGRESS" ? pill("#eaf2ff", "#2563eb") :
+                        pill("#fff4df", "#b56a00")
+                      }>
+                        {o.status}
                       </span>
                     </td>
-                    <td>{task.scheduledTime}</td>
-                    <td>
-                      <span className={`badge status-${task.status.toLowerCase()}`}>
-                        {task.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="action-btn primary-btn-sm"
-                          disabled={!canStart}
-                          style={{ opacity: canStart ? 1 : 0.4, cursor: canStart ? 'pointer' : 'not-allowed' }}
-                          onClick={() => handleStartWork(task.id)}
-                        >
-                          Start Work
-                        </button>
-
-                        <button
-                          className="action-btn success-btn"
-                          disabled={!canComplete}
-                          style={{ opacity: canComplete ? 1 : 0.4, cursor: canComplete ? 'pointer' : 'not-allowed' }}
-                          onClick={() => handleCompleteWork(task.id)}
-                        >
-                          Complete Work
-                        </button>
-                      </div>
+                    <td style={tdStyle}>{o.actualStart ? new Date(o.actualStart).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>{o.actualEnd ? new Date(o.actualEnd).toLocaleString() : "-"}</td>
+                    <td style={{ ...tdStyle, display: "flex", gap: 6 }}>
+                      {(o.status === "CREATED" || o.status === "ASSIGNED") && (
+                        <button onClick={() => runAction(startWorkOrder, o.workOrderId, `Work order #${o.workOrderId} started.`)} style={actionBtn}>Start</button>
+                      )}
+                      {o.status === "IN_PROGRESS" && (
+                        <button onClick={() => runAction(completeWorkOrder, o.workOrderId, `Work order #${o.workOrderId} completed.`)} style={{ ...actionBtn, color: "#16834b" }}>Complete</button>
+                      )}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+                {orders.length === 0 && (
+                  <tr><td colSpan={7} style={emptyText}>No work orders assigned to you yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+export default TechnicianTasksPage;

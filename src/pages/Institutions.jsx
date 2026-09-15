@@ -1,293 +1,205 @@
-function Institutions() {
-  const institution = {
-    id: "INS001",
-    name: "Lab Resource Institution",
-    type: "Educational Institution",
-    address: "Mysuru, Karnataka",
-    contactEmail: "admin@labresource.com",
-    contactPhone: "+91 9876543210",
-    departments: 4,
-    equipment: 25,
-    users: 6,
+import { useEffect, useState } from "react";
+import {
+  getAllInstitutions,
+  createInstitution,
+  updateInstitution,
+  deleteInstitution,
+} from "../api/institutionApi";
+import { extractErrorMessage } from "../api/client";
+import {
+  page, headerRow, h1Style, subStyle, primaryBtn, cancelBtn, card, filterBar,
+  searchInput, thStyle, tdStyle, actionBtn, modalOverlay, modalCard, labelStyle,
+  inputStyle, errorText, emptyText,
+} from "../styles/shared";
+
+// Only SYSTEM_ADMIN manages institutions in practice, though the backend
+// currently leaves POST/PUT/DELETE open (see SecurityConfig) - the UI still
+// only exposes the controls to admins to match intended usage.
+const WRITE_ROLES = ["SYSTEM_ADMIN"];
+
+const emptyForm = {
+  institutionName: "", institutionCode: "", address: "", city: "",
+  state: "", country: "", pincode: "", contactEmail: "", contactPhone: "",
+};
+
+function Institutions({ userRole, showToast }) {
+  const [institutions, setInstitutions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(emptyForm);
+
+  const canWrite = WRITE_ROLES.includes(userRole);
+
+  const load = () => {
+    setLoading(true);
+    getAllInstitutions()
+      .then(setInstitutions)
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load institutions.")))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  const filtered = institutions.filter((i) =>
+    (i.institutionName || "").toLowerCase().includes(search.toLowerCase()) ||
+    (i.institutionCode || "").toLowerCase().includes(search.toLowerCase()) ||
+    (i.city || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const resetForm = () => { setForm(emptyForm); setEditingId(null); setShowForm(false); };
+
+  const openEdit = (inst) => {
+    setForm({
+      institutionName: inst.institutionName || "",
+      institutionCode: inst.institutionCode || "",
+      address: inst.address || "",
+      city: inst.city || "",
+      state: inst.state || "",
+      country: inst.country || "",
+      pincode: inst.pincode || "",
+      contactEmail: inst.contactEmail || "",
+      contactPhone: inst.contactPhone || "",
+    });
+    setEditingId(inst.institutionId);
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingId) {
+        await updateInstitution(editingId, form);
+        showToast?.(`"${form.institutionName}" updated.`, "success");
+      } else {
+        await createInstitution(form);
+        showToast?.(`"${form.institutionName}" created.`, "success");
+      }
+      resetForm();
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to save institution."), "warning");
+    }
+  };
+
+  const handleDelete = async (inst) => {
+    if (!window.confirm(`Delete "${inst.institutionName}"?`)) return;
+    try {
+      await deleteInstitution(inst.institutionId);
+      showToast?.(`"${inst.institutionName}" deleted.`, "success");
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to delete institution."), "warning");
+    }
   };
 
   return (
-    <div
-      style={{
-        padding: "30px 34px",
-        background: "#f6f8fc",
-        minHeight: "100%",
-        boxSizing: "border-box",
-      }}
-    >
-      {/* HEADER */}
-
-      <div style={{ marginBottom: "26px" }}>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "28px",
-            fontWeight: 700,
-            color: "#172b4d",
-          }}
-        >
-          Institution
-        </h1>
-
-        <p
-          style={{
-            margin: "7px 0 0",
-            fontSize: "14px",
-            color: "#718096",
-          }}
-        >
-          Manage your institution information
-        </p>
+    <div style={page}>
+      <div style={headerRow}>
+        <div>
+          <h1 style={h1Style}>Institutions</h1>
+          <p style={subStyle}>Manage partner institutions on the platform</p>
+        </div>
+        {canWrite && (
+          <button onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }} style={primaryBtn}>
+            + Add Institution
+          </button>
+        )}
       </div>
 
-      {/* MAIN CARD */}
+      {error && <p style={errorText}>{error}</p>}
 
-      <div
-        style={{
-          background: "white",
-          border: "1px solid #e4e8ef",
-          borderRadius: "12px",
-          padding: "28px",
-          boxShadow: "0 2px 8px rgba(20, 40, 70, 0.04)",
-          marginBottom: "20px",
-        }}
-      >
-        {/* INSTITUTION HEADER */}
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "18px",
-            paddingBottom: "24px",
-            borderBottom: "1px solid #edf0f4",
-          }}
-        >
-          <div
-            style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "12px",
-              background: "#eaf2ff",
-              color: "#2563eb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "25px",
-              fontWeight: 700,
-            }}
-          >
-            I
-          </div>
-
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "21px",
-                color: "#24344d",
-              }}
-            >
-              {institution.name}
-            </h2>
-
-            <p
-              style={{
-                margin: "6px 0 0",
-                fontSize: "12px",
-                color: "#8792a3",
-              }}
-            >
-              Institution ID: {institution.id}
-            </p>
-          </div>
-
-          <span
-            style={{
-              marginLeft: "auto",
-              background: "#e8f7ee",
-              color: "#16834b",
-              padding: "6px 12px",
-              borderRadius: "20px",
-              fontSize: "11px",
-              fontWeight: 600,
-            }}
-          >
-            Active
-          </span>
+      <div style={card}>
+        <div style={filterBar}>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, code, or city..."
+            style={searchInput}
+          />
         </div>
-
-        {/* DETAILS */}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "24px",
-            paddingTop: "25px",
-          }}
-        >
-          <InfoItem
-            label="Institution Type"
-            value={institution.type}
-          />
-
-          <InfoItem
-            label="Address"
-            value={institution.address}
-          />
-
-          <InfoItem
-            label="Contact Email"
-            value={institution.contactEmail}
-          />
-
-          <InfoItem
-            label="Contact Phone"
-            value={institution.contactPhone}
-          />
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading institutions...</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>ID</th>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Code</th>
+                  <th style={thStyle}>City</th>
+                  <th style={thStyle}>Country</th>
+                  <th style={thStyle}>Contact Email</th>
+                  <th style={thStyle}>Phone</th>
+                  {canWrite && <th style={thStyle}>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((inst) => (
+                  <tr key={inst.institutionId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>{inst.institutionId}</td>
+                    <td style={tdStyle}>{inst.institutionName}</td>
+                    <td style={tdStyle}>{inst.institutionCode}</td>
+                    <td style={tdStyle}>{inst.city || "-"}</td>
+                    <td style={tdStyle}>{inst.country || "-"}</td>
+                    <td style={tdStyle}>{inst.contactEmail || "-"}</td>
+                    <td style={tdStyle}>{inst.contactPhone || "-"}</td>
+                    {canWrite && (
+                      <td style={{ ...tdStyle, display: "flex", gap: 6 }}>
+                        <button onClick={() => openEdit(inst)} style={actionBtn}>Edit</button>
+                        <button onClick={() => handleDelete(inst)} style={{ ...actionBtn, color: "#c0392b" }}>Delete</button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={8} style={emptyText}>No institutions found.</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
-      {/* STATISTICS */}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "16px",
-        }}
-      >
-        <StatCard
-          title="Departments"
-          value={institution.departments}
-          icon="▣"
-          background="#eaf2ff"
-          color="#2563eb"
-        />
-
-        <StatCard
-          title="Equipment"
-          value={institution.equipment}
-          icon="⚙"
-          background="#eee9ff"
-          color="#6941c6"
-        />
-
-        <StatCard
-          title="Users"
-          value={institution.users}
-          icon="●"
-          background="#e9f8ef"
-          color="#16834b"
-        />
-      </div>
+      {showForm && (
+        <div style={modalOverlay}>
+          <div style={modalCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 19 }}>{editingId ? "Edit Institution" : "Add Institution"}</h2>
+              <button onClick={resetForm} style={{ border: "none", background: "none", fontSize: 19, cursor: "pointer" }}>×</button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <Field label="Institution Name" value={form.institutionName} onChange={(v) => setForm({ ...form, institutionName: v })} required />
+                <Field label="Institution Code" value={form.institutionCode} onChange={(v) => setForm({ ...form, institutionCode: v })} required />
+                <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
+                <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+                <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
+                <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
+                <Field label="Pincode" value={form.pincode} onChange={(v) => setForm({ ...form, pincode: v })} />
+                <Field label="Contact Email" type="email" value={form.contactEmail} onChange={(v) => setForm({ ...form, contactEmail: v })} />
+                <Field label="Contact Phone" value={form.contactPhone} onChange={(v) => setForm({ ...form, contactPhone: v })} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 22 }}>
+                <button type="button" onClick={resetForm} style={cancelBtn}>Cancel</button>
+                <button type="submit" style={primaryBtn}>{editingId ? "Save Changes" : "Create Institution"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-
-/* =========================
-   INFORMATION ITEM
-========================= */
-
-function InfoItem({ label, value }) {
+function Field({ label, value, onChange, type = "text", required }) {
   return (
     <div>
-      <p
-        style={{
-          margin: "0 0 6px",
-          fontSize: "11px",
-          color: "#8792a3",
-          fontWeight: 600,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </p>
-
-      <p
-        style={{
-          margin: 0,
-          fontSize: "14px",
-          color: "#334155",
-          fontWeight: 500,
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-
-/* =========================
-   STAT CARD
-========================= */
-
-function StatCard({
-  title,
-  value,
-  icon,
-  background,
-  color,
-}) {
-  return (
-    <div
-      style={{
-        background: "white",
-        border: "1px solid #e4e8ef",
-        borderRadius: "12px",
-        padding: "20px",
-        display: "flex",
-        alignItems: "center",
-        gap: "14px",
-        boxShadow: "0 2px 8px rgba(20, 40, 70, 0.04)",
-      }}
-    >
-      <div
-        style={{
-          width: "44px",
-          height: "44px",
-          borderRadius: "9px",
-          background,
-          color,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "18px",
-          fontWeight: 700,
-        }}
-      >
-        {icon}
-      </div>
-
-      <div>
-        <p
-          style={{
-            margin: "0 0 4px",
-            fontSize: "12px",
-            color: "#718096",
-          }}
-        >
-          {title}
-        </p>
-
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "23px",
-            color: "#172b4d",
-          }}
-        >
-          {value}
-        </h2>
-      </div>
+      <label style={labelStyle}>{label}</label>
+      <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} style={inputStyle} />
     </div>
   );
 }

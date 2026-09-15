@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import Institutions from './pages/Institutions'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -29,33 +30,16 @@ import Analytics from './pages/Analytics'
 import Notifications from './pages/Notifications'
 import Toast from './components/Toast'
 
-function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    !!localStorage.getItem('token')
-  )
-  const [userRole, setUserRole] = useState(
-    localStorage.getItem('selectedRole') || 'RESEARCHER'
-  )
+function AuthedApp() {
+  const { user, role, logout } = useAuth()
   const [page, setPage] = useState('dashboard')
-
   const [toast, setToast] = useState(null)
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type })
   }
 
-  if (page === 'register') {
-    return <Register onLogin={() => setPage('dashboard')} />
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <Login
-        onLogin={() => setIsLoggedIn(true)}
-        onRegister={() => setPage('register')}
-      />
-    )
-  }
+  const userRole = role || 'RESEARCHER'
 
   return (
     <DashboardLayout
@@ -63,70 +47,49 @@ function App() {
       currentPage={page}
       setPage={setPage}
       onLogout={() => {
-        localStorage.clear()
-        setIsLoggedIn(false)
+        logout()
         setPage('dashboard')
       }}
     >
-      {page === 'dashboard' && (
-        <Dashboard role={userRole} />
-      )}
+      {page === 'dashboard' && <Dashboard role={userRole} user={user} showToast={showToast} />}
 
-      {page === 'institutions' && (
-        <Institutions />
-      )}
+      {page === 'institutions' && <Institutions userRole={userRole} showToast={showToast} />}
 
-      {page === 'departments' && (
-        <Departments />
-      )}
+      {page === 'departments' && <Departments userRole={userRole} showToast={showToast} />}
 
       {page === 'equipment' && userRole === 'RESEARCHER' && (
-        <ResearcherEquipment />
+        <ResearcherEquipment showToast={showToast} />
       )}
 
       {page === 'equipment' && userRole !== 'RESEARCHER' && (
-        <Equipment />
+        <Equipment userRole={userRole} showToast={showToast} />
       )}
 
-      {page === 'categories' && (
-        <Categories />
-      )}
+      {page === 'categories' && <Categories />}
 
       {page === 'bookings' && userRole === 'RESEARCHER' && (
         <MyBookings showToast={showToast} />
       )}
 
       {page === 'bookings' && userRole !== 'RESEARCHER' && (
-        <Bookings showToast={showToast} />
+        <Bookings userRole={userRole} showToast={showToast} />
       )}
 
-      {page === 'users' && (
-        <Users />
-      )}
+      {page === 'users' && <Users userRole={userRole} showToast={showToast} />}
 
-      {page === 'reports' && (
-        <Reports />
-      )}
+      {page === 'reports' && <Reports userRole={userRole} />}
 
-      {page === 'utilization' && (
-        <UtilizationPage />
-      )}
+      {page === 'utilization' && <UtilizationPage userRole={userRole} />}
 
-      {page === 'heatmap' && (
-        <Heatmap />
-      )}
+      {page === 'heatmap' && <Heatmap userRole={userRole} />}
 
       {page === 'resource-sharing' && (
-        <ResourceSharing />
+        <ResourceSharing userRole={userRole} showToast={showToast} />
       )}
 
-      {page === 'external-booking' && (
-        <ExternalBooking showToast={showToast} />
-      )}
+      {page === 'external-booking' && <ExternalBooking userRole={userRole} showToast={showToast} />}
 
-      {page === 'demand-analysis' && (
-        <DemandAnalysis />
-      )}
+      {page === 'demand-analysis' && <DemandAnalysis userRole={userRole} />}
 
       {page === 'waitlist' && userRole === 'RESEARCHER' && (
         <Waitlist showToast={showToast} />
@@ -136,33 +99,25 @@ function App() {
         <ManagerWaitlist showToast={showToast} />
       )}
 
-      {page === 'maintenance' && (
+      {page === 'maintenance' && userRole === 'LAB_TECHNICIAN' && (
+        <TechnicianTasksPage showToast={showToast} />
+      )}
+
+      {page === 'maintenance' && userRole !== 'LAB_TECHNICIAN' && (
         <MaintenancePage userRole={userRole} showToast={showToast} />
       )}
 
-      {page === 'technician-tasks' && (
-        <TechnicianTasksPage />
-      )}
+      {page === 'calibration' && <CalibrationPage userRole={userRole} showToast={showToast} />}
 
-      {page === 'calibration' && (
-        <CalibrationPage />
-      )}
+      {page === 'cost' && <CostManagementPage userRole={userRole} />}
 
-      {page === 'cost' && (
-        <CostManagementPage userRole={userRole} />
-      )}
-
-      {(page === 'analytics' || page === 'heatmap') && (
-        <Analytics userRole={userRole} />
-      )}
+      {page === 'analytics' && <Analytics userRole={userRole} />}
 
       {page === 'notifications' && (
         <Notifications userRole={userRole} showToast={showToast} />
       )}
 
-      {page === 'profile' && (
-        <Profile userRole={userRole} showToast={showToast} />
-      )}
+      {page === 'profile' && <Profile showToast={showToast} />}
 
       {toast && (
         <Toast
@@ -172,6 +127,42 @@ function App() {
         />
       )}
     </DashboardLayout>
+  )
+}
+
+function Gate() {
+  const { isAuthenticated, loading } = useAuth()
+  const [showRegister, setShowRegister] = useState(false)
+
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  if (showRegister) {
+    return <Register onLogin={() => setShowRegister(false)} />
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Login
+        onLogin={() => setShowRegister(false)}
+        onRegister={() => setShowRegister(true)}
+      />
+    )
+  }
+
+  return <AuthedApp />
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
   )
 }
 

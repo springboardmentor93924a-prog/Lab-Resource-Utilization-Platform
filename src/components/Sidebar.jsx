@@ -39,6 +39,7 @@ function Sidebar({ currentPage, setPage, role, onLogout }) {
       { id: "departments", label: "Departments" },
       { id: "equipment", label: "Equipment" },
       { id: "bookings", label: "Bookings" },
+      { id: "users", label: "Users" },
       { id: "utilization", label: "Utilization " },
       { id: "analytics", label: "Utilization & Analytics" },
       { id: "heatmap", label: "Heatmap" },
