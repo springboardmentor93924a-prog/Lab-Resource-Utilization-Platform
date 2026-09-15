@@ -769,7 +769,7 @@ export default function ResearcherDashboard() {
 
                 <div
                   style={{
-                    fontSize: "12px",
+                    fontSize: "16px",
                     fontWeight: 700,
                     letterSpacing: "1px",
                     opacity: 0.85,
@@ -910,8 +910,8 @@ export default function ResearcherDashboard() {
 
                 <div
                   style={{
-                    fontSize: "12px",
-                    fontWeight: 700,
+                    fontSize: "16px",
+                    fontWeight: 800,
                     letterSpacing: "1px",
                     opacity: 0.85,
                     marginBottom: "10px",
@@ -1051,8 +1051,8 @@ export default function ResearcherDashboard() {
 
                 <div
                   style={{
-                    fontSize: "12px",
-                    fontWeight: 700,
+                    fontSize: "16px",
+                    fontWeight: 800,
                     letterSpacing: "1px",
                     opacity: 0.85,
                     marginBottom: "10px",

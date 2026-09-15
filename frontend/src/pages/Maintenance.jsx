@@ -288,7 +288,7 @@ export default function Maintenance() {
               <h2
                 style={{
                   fontWeight: 800,
-                  fontSize: "26px",
+                  fontSize: "28px",
                   color: "#FFFFFF",
                   margin: 0,
                 }}

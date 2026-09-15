@@ -311,10 +311,10 @@ export default function UtilizationDashboard() {
 
         <h2
           style={{
-            fontWeight: 700,
+            fontWeight: 800,
             color: "#ffffff",
             marginBottom: "4px",
-            fontSize: "22px",
+            fontSize: "28px",
           }}
         >
           Utilization Dashboard

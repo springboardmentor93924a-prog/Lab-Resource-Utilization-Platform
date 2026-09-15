@@ -1068,7 +1068,7 @@ export default function Billing() {
                 style={{
                   margin: 0,
                   color: "#FFFFFF",
-                  fontSize: "27px",
+                  fontSize: "28px",
                   fontWeight: 850,
                 }}
               >

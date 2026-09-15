@@ -599,7 +599,7 @@ export default function BookEquipment() {
               style={{
                 margin: 0,
 
-                fontSize: "25px",
+                fontSize: "28px",
 
                 fontWeight: 800,
 
