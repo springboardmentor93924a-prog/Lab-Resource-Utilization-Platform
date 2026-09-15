@@ -19,16 +19,18 @@ public class CloudinaryService {
     private final Cloudinary cloudinary;
 
     public CloudinaryUploadResult uploadFile(MultipartFile file, String folder) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        String contentType = file.getContentType();
-        long size = file.getSize();
+        return uploadBytes(file.getBytes(), file.getOriginalFilename(), file.getContentType(), folder);
+    }
 
-        log.info("Uploading file to Cloudinary. Name: {}, Content-Type: {}, Size: {}", originalFilename, contentType, size);
+    public CloudinaryUploadResult uploadBytes(byte[] fileBytes, String originalFilename, String contentType, String folder) throws IOException {
+        long size = fileBytes != null ? fileBytes.length : 0;
+
+        log.info("Uploading bytes to Cloudinary. Name: {}, Content-Type: {}, Size: {}", originalFilename, contentType, size);
 
         // Fallback check if Cloudinary is not fully configured
         if (cloudinary.config.cloudName == null || cloudinary.config.cloudName.isBlank()) {
             log.warn("Cloudinary cloud name is not configured. Simulating successful upload.");
-            String dummyId = "dummy_folder/" + UUID.randomUUID().toString();
+            String dummyId = (folder != null ? folder : "dummy_folder") + "/" + UUID.randomUUID().toString();
             return CloudinaryUploadResult.builder()
                     .publicId(dummyId)
                     .secureUrl("https://res.cloudinary.com/demo/image/upload/" + dummyId)
@@ -43,7 +45,7 @@ public class CloudinaryService {
                     "folder", folder,
                     "resource_type", "auto"
             );
-            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(fileBytes, options);
 
             String publicId = (String) uploadResult.get("public_id");
             String secureUrl = (String) uploadResult.get("secure_url");

@@ -8,4 +8,5 @@ import java.util.List;
 public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findByInstitutionIdOrderByGeneratedAtDesc(Long institutionId);
     List<Report> findByDepartmentIdOrderByGeneratedAtDesc(Long departmentId);
+    List<Report> findAllByOrderByGeneratedAtDesc();
 }

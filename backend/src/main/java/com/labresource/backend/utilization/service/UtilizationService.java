@@ -1,5 +1,7 @@
 package com.labresource.backend.utilization.service;
 
+import com.labresource.backend.booking.entity.Booking;
+import com.labresource.backend.booking.repository.BookingRepository;
 import com.labresource.backend.common.exception.ApiException;
 import com.labresource.backend.equipment.entity.Equipment;
 import com.labresource.backend.equipment.repository.EquipmentRepository;
@@ -15,10 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +27,7 @@ public class UtilizationService {
     private final UtilizationLogRepository utilizationLogRepository;
     private final UtilizationMetricRepository utilizationMetricRepository;
     private final EquipmentRepository equipmentRepository;
+    private final BookingRepository bookingRepository;
 
     public List<UtilizationMetric> getEquipmentHistory(Long equipmentId, String period, LocalDate from, LocalDate to) {
         return utilizationMetricRepository.findByEquipmentIdAndPeriodTypeOrderByPeriodDateAsc(equipmentId, period.toUpperCase())
@@ -40,23 +41,39 @@ public class UtilizationService {
     }
 
     public List<Map<String, Object>> getHeatmap(String scope, Long id, String period) {
-        // Aggregate utilization percentage by hour of day (0-23) or day of week (1-7)
-        // Group by day/hour and compute mock/real active density.
         List<Map<String, Object>> heatmapList = new ArrayList<>();
         List<Equipment> equipmentList;
 
         if ("DEPARTMENT".equalsIgnoreCase(scope) && id != null) {
-            equipmentList = equipmentRepository.findAll().stream()
-                    .filter(e -> id.equals(e.getDepartmentId()))
-                    .toList();
+            equipmentList = equipmentRepository.findByDepartmentId(id);
         } else {
             equipmentList = equipmentRepository.findAll();
         }
 
-        // Return a grid of [dayOfWeek 1..7, hourOfDay 0..23, utilizationPct] for each equipment
+        if (equipmentList.isEmpty()) {
+            return heatmapList;
+        }
+
+        List<Long> eqIds = equipmentList.stream().map(Equipment::getEquipmentId).toList();
+        List<Booking> bookings = bookingRepository.findByEquipmentIdIn(eqIds).stream()
+                .filter(b -> Booking.CONFIRMED.equals(b.getStatus())
+                        || Booking.IN_USE.equals(b.getStatus())
+                        || Booking.COMPLETED.equals(b.getStatus()))
+                .toList();
+
+        Map<Long, UtilizationLog> logMap = bookings.isEmpty()
+                ? Collections.emptyMap()
+                : utilizationLogRepository.findByBookingIdIn(bookings.stream().map(Booking::getBookingId).toList())
+                .stream().collect(Collectors.toMap(UtilizationLog::getBookingId, l -> l, (a, b) -> a));
+
+        // Group bookings by equipmentId
+        Map<Long, List<Booking>> eqBookings = bookings.stream()
+                .collect(Collectors.groupingBy(Booking::getEquipmentId));
+
         for (Equipment eq : equipmentList) {
+            List<Booking> eqBList = eqBookings.getOrDefault(eq.getEquipmentId(), Collections.emptyList());
+
             for (int day = 1; day <= 7; day++) {
-                // Generate a typical bell-curve utilization centered around working hours (9 AM - 5 PM)
                 for (int hour = 8; hour <= 18; hour += 2) {
                     Map<String, Object> point = new HashMap<>();
                     point.put("equipmentId", eq.getEquipmentId());
@@ -64,12 +81,39 @@ public class UtilizationService {
                     point.put("dayOfWeek", day);
                     point.put("hourOfDay", hour);
 
-                    // Mock bell curve: peaks on mid-week, mid-day
-                    double base = 30.0;
-                    double dayFactor = (4.0 - Math.abs(4.0 - day)) * 10.0; // peak on Wed/Thu
-                    double hourFactor = (5.0 - Math.abs(13.0 - hour)) * 8.0; // peak around 1 PM
-                    double pct = Math.min(100.0, Math.max(0.0, base + dayFactor + hourFactor));
+                    // Compute actual overlap duration for this dayOfWeek (1=Mon..7=Sun) and hour slot (hour..hour+2)
+                    double totalOccupiedMinutes = 0.0;
+                    double slotMinutes = 120.0; // 2-hour window
 
+                    final int targetDay = day;
+                    final int targetHour = hour;
+
+                    for (Booking b : eqBList) {
+                        UtilizationLog ul = logMap.get(b.getBookingId());
+                        java.time.LocalDateTime start = (ul != null && ul.getUsageStartTime() != null)
+                                ? ul.getUsageStartTime() : b.getStartTime();
+                        java.time.LocalDateTime end = (ul != null && ul.getUsageEndTime() != null)
+                                ? ul.getUsageEndTime() : b.getEndTime();
+
+                        if (start != null && end != null && end.isAfter(start)) {
+                            // Check day of week match
+                            int bookingDay = start.getDayOfWeek().getValue();
+                            if (bookingDay == targetDay) {
+                                int bStartMin = start.getHour() * 60 + start.getMinute();
+                                int bEndMin = end.getHour() * 60 + end.getMinute();
+                                int slotStartMin = targetHour * 60;
+                                int slotEndMin = (targetHour + 2) * 60;
+
+                                int overlapStart = Math.max(bStartMin, slotStartMin);
+                                int overlapEnd = Math.min(bEndMin, slotEndMin);
+                                if (overlapEnd > overlapStart) {
+                                    totalOccupiedMinutes += (overlapEnd - overlapStart);
+                                }
+                            }
+                        }
+                    }
+
+                    double pct = slotMinutes > 0 ? Math.min(100.0, (totalOccupiedMinutes / slotMinutes) * 100.0) : 0.0;
                     point.put("utilizationPct", BigDecimal.valueOf(pct).setScale(1, RoundingMode.HALF_UP));
                     heatmapList.add(point);
                 }

@@ -20,6 +20,7 @@ public class Booking {
     public static final String IN_USE = "IN_USE";
     public static final String COMPLETED = "COMPLETED";
     public static final String CANCELLED = "CANCELLED";
+    public static final String REJECTED = "REJECTED";
     public static final String NO_SHOW = "NO_SHOW";
 
     @Id
@@ -62,6 +63,24 @@ public class Booking {
 
     @Column(name = "approved_by")
     private Long approvedBy;
+
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
+
+    @Column(name = "rejected_by")
+    private Long rejectedBy;
+
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+
+    @Column(name = "agreement_accepted", nullable = false)
+    private Boolean agreementAccepted = false;
+
+    @Column(name = "agreement_version", length = 50)
+    private String agreementVersion;
+
+    @Column(name = "agreement_accepted_at")
+    private LocalDateTime agreementAcceptedAt;
 
     @Column(name = "estimated_cost")
     private BigDecimal estimatedCost;

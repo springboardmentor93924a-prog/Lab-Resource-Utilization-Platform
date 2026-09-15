@@ -21,6 +21,9 @@ public class Invoice {
     @Column(name = "invoice_id")
     private Long invoiceId;
 
+    @Column(name = "invoice_number", unique = true, length = 100)
+    private String invoiceNumber;
+
     @Column(name = "institution_id", nullable = false)
     private Long institutionId;
 
@@ -47,6 +50,9 @@ public class Invoice {
 
     @Column(name = "external_institution_id")
     private Long externalInstitutionId;
+
+    @Column(name = "invoice_period", length = 50)
+    private String invoicePeriod;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

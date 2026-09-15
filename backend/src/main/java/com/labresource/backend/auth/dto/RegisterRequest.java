@@ -3,36 +3,32 @@ package com.labresource.backend.auth.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class RegisterRequest {
-    @NotBlank
+    @NotBlank(message = "First name is required")
     private String firstName;
 
     private String lastName;
 
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email is required")
+    @Email(message = "Enter a valid email address")
     private String email;
 
     private String phone;
 
-    @NotNull
+    @NotNull(message = "Institution is required")
     private Long institutionId;
 
-    @NotNull
+    @NotNull(message = "Department is required")
     private Long departmentId;
 
-    @NotBlank
-    @Size(min = 8, message = "Password must be at least 8 characters.")
-    private String password;
+    private String rollNumber;
 
-    @NotBlank
-    private String confirmPassword;
+    private String researcherId;
 
-    private String role = "RESEARCHER"; // RESEARCHER or INSTITUTION_ADMIN
+    private String role = "STUDENT"; // STUDENT or RESEARCHER
 }

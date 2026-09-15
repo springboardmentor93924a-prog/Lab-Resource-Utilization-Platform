@@ -46,7 +46,7 @@ public class DashboardController {
     private final ResourceSharingRequestRepository sharingRequestRepository;
     private final EquipmentCalibrationRepository calibrationRepository;
 
-    // ─── Student Dashboard ─────────────────────────────────────────────────────
+    // Student Dashboard
 
     @GetMapping("/student")
     @PreAuthorize("hasAnyAuthority('BOOK_EQUIPMENT', 'ROLE_STUDENT', 'ROLE_RESEARCHER')")
@@ -58,49 +58,43 @@ public class DashboardController {
         Long userId = principal.getUserId();
         Map<String, Object> dashboard = new HashMap<>();
 
-        // Upcoming bookings
         List<Booking> upcoming = bookingRepository.findByUserIdAndStatusInOrderByStartTimeAsc(
                 userId, List.of(Booking.PENDING_APPROVAL, Booking.CONFIRMED));
         dashboard.put("upcomingBookings", upcoming.size());
         dashboard.put("upcomingBookingsList", upcoming);
 
-        // Usage history
         List<Booking> history = bookingRepository.findByUserIdAndStatusInOrderByStartTimeDesc(
                 userId, List.of(Booking.COMPLETED));
         dashboard.put("totalCompletedBookings", history.size());
 
-        // Total usage cost
         BigDecimal totalUsageCost = history.stream()
                 .map(b -> b.getActualCost() != null ? b.getActualCost() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.put("totalUsageCost", totalUsageCost);
 
-        // Active waitlist entries
         List<Waitlist> waitlistEntries = waitlistRepository.findByUserIdAndStatusInOrderByPositionAsc(
                 userId, List.of("WAITING"));
         dashboard.put("waitlistCount", waitlistEntries.size());
         dashboard.put("waitlistEntries", waitlistEntries);
 
-        // Unread notifications
         dashboard.put("unreadNotifications", notificationRepository.countByUserIdAndIsReadFalse(userId));
 
-        // Recent notifications (latest 10)
         dashboard.put("recentNotifications",
                 notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().limit(10).toList());
 
         return dashboard;
     }
 
-    // ─── Technician Dashboard ──────────────────────────────────────────────────
+    // Technician Dashboard
 
     @GetMapping("/technician")
     @PreAuthorize("hasAnyAuthority('VIEW_MAINTENANCE', 'ROLE_LAB_TECHNICIAN', 'ROLE_SYSTEM_ADMIN')")
     public Map<String, Object> technicianDashboard(@AuthenticationPrincipal UserPrincipal principal) {
         Long userId = principal.getUserId();
         Long deptId = principal.getDepartmentId();
+        Long instId = principal.getInstitutionId();
         Map<String, Object> dashboard = new HashMap<>();
 
-        // All work orders assigned to this technician
         List<MaintenanceRequest> allTasks = maintenanceRequestRepository.findByAssignedTechnicianId(userId);
 
         dashboard.put("assignedWorkOrders", allTasks.stream()
@@ -110,39 +104,38 @@ public class DashboardController {
         dashboard.put("pendingVerificationCount", allTasks.stream()
                 .filter(m -> MaintenanceRequest.PENDING_VERIFICATION.equals(m.getStatus())).count());
 
-        // Active tasks (ASSIGNED or IN_PROGRESS)
         dashboard.put("activeTasks", allTasks.stream()
                 .filter(m -> MaintenanceRequest.ASSIGNED.equals(m.getStatus())
                         || MaintenanceRequest.IN_PROGRESS.equals(m.getStatus()))
                 .toList());
 
-        // Completed this month
         dashboard.put("completedThisMonth", allTasks.stream()
                 .filter(m -> MaintenanceRequest.COMPLETED.equals(m.getStatus())
                         && m.getCompletedAt() != null
                         && m.getCompletedAt().getMonth() == LocalDateTime.now().getMonth())
                 .count());
 
-        // Equipment under maintenance in the technician's department
-        if (deptId != null) {
+        if (deptId != null && instId != null) {
             dashboard.put("deptEquipmentUnderMaintenance",
-                    equipmentRepository.countByDepartmentIdAndStatus(deptId, Equipment.UNDER_MAINTENANCE));
+                    equipmentRepository.countByDepartmentIdAndInstitutionIdAndStatus(deptId, instId, Equipment.UNDER_MAINTENANCE));
 
-            // Upcoming calibration alerts (within 30 days) for dept equipment
             LocalDate today = LocalDate.now();
-            long calibrationAlerts = equipmentRepository.findByDepartmentId(deptId).stream()
+            long calibrationAlerts = equipmentRepository.findByDepartmentIdAndInstitutionId(deptId, instId).stream()
                     .filter(e -> calibrationRepository.findByEquipmentIdOrderByNextDueDateDesc(e.getEquipmentId())
                             .stream().findFirst()
                             .map(c -> !c.getNextDueDate().isAfter(today.plusDays(30)))
                             .orElse(false))
                     .count();
             dashboard.put("pendingCalibrations", calibrationAlerts);
+        } else {
+            dashboard.put("deptEquipmentUnderMaintenance", 0);
+            dashboard.put("pendingCalibrations", 0);
         }
 
         return dashboard;
     }
 
-    // ─── Lab Manager Dashboard ─────────────────────────────────────────────────
+    // Lab Manager Dashboard
 
     @GetMapping("/manager")
     @PreAuthorize("hasAnyAuthority('VIEW_MAINTENANCE', 'ROLE_LAB_MANAGER', 'ROLE_SYSTEM_ADMIN')")
@@ -152,17 +145,37 @@ public class DashboardController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
 
         Long deptId = principal.getDepartmentId();
+        Long instId = principal.getInstitutionId();
         Map<String, Object> dashboard = new HashMap<>();
 
-        // Issue reports pending action
+        if (deptId == null || instId == null) {
+            dashboard.put("pendingIssueReports", 0);
+            dashboard.put("pendingIssueReportsList", List.of());
+            dashboard.put("workOrderStatusBreakdown", Map.of());
+            dashboard.put("activeWorkOrders", 0);
+            dashboard.put("pendingVerification", List.of());
+            dashboard.put("totalEquipment", 0);
+            dashboard.put("availableEquipment", 0);
+            dashboard.put("underMaintenanceEquipment", 0);
+            dashboard.put("outOfServiceEquipment", 0);
+            dashboard.put("calibrationAlertCount", 0);
+            dashboard.put("totalBookings", 0);
+            dashboard.put("completedBookings", 0);
+            dashboard.put("cancelledBookings", 0);
+            dashboard.put("noShowBookings", 0);
+            dashboard.put("confirmedBookings", 0);
+            dashboard.put("pendingApprovalBookings", 0);
+            dashboard.put("pendingApprovalList", List.of());
+            return dashboard;
+        }
+
         List<EquipmentIssueReport> pendingReports = issueReportRepository
                 .findByDepartmentIdAndStatusOrderByCreatedAtDesc(deptId, "OPEN");
         dashboard.put("pendingIssueReports", pendingReports.size());
         dashboard.put("pendingIssueReportsList", pendingReports);
 
-        // Work orders
         List<MaintenanceRequest> workOrders = maintenanceRequestRepository
-                .findByDepartmentIdOrderByCreatedAtDesc(deptId);
+                .findByDepartmentIdOrderByMaintenanceIdDesc(deptId);
         Map<String, Long> workOrderByStatus = workOrders.stream()
                 .collect(Collectors.groupingBy(MaintenanceRequest::getStatus, Collectors.counting()));
         dashboard.put("workOrderStatusBreakdown", workOrderByStatus);
@@ -174,8 +187,7 @@ public class DashboardController {
                 .filter(m -> MaintenanceRequest.PENDING_VERIFICATION.equals(m.getStatus()))
                 .toList());
 
-        // Equipment overview
-        List<Equipment> deptEquipment = equipmentRepository.findByDepartmentId(deptId);
+        List<Equipment> deptEquipment = equipmentRepository.findByDepartmentIdAndInstitutionId(deptId, instId);
         dashboard.put("totalEquipment", deptEquipment.size());
         dashboard.put("availableEquipment", deptEquipment.stream()
                 .filter(e -> Equipment.AVAILABLE.equals(e.getStatus())).count());
@@ -184,7 +196,6 @@ public class DashboardController {
         dashboard.put("outOfServiceEquipment", deptEquipment.stream()
                 .filter(e -> Equipment.OUT_OF_SERVICE.equals(e.getStatus())).count());
 
-        // Calibration alerts (within 30 days)
         LocalDate today = LocalDate.now();
         long calibrationAlerts = deptEquipment.stream()
                 .filter(e -> calibrationRepository.findByEquipmentIdOrderByNextDueDateDesc(e.getEquipmentId())
@@ -194,35 +205,71 @@ public class DashboardController {
                 .count();
         dashboard.put("calibrationAlertCount", calibrationAlerts);
 
-        // Sharing requests for this department's equipment
         List<Long> deptEquipmentIds = deptEquipment.stream()
                 .map(Equipment::getEquipmentId).toList();
-        List<ResourceSharingRequest> sharingRequests = sharingRequestRepository
-                .findByEquipmentIdIn(deptEquipmentIds);
-        dashboard.put("pendingSharingRequests", sharingRequests.stream()
-                .filter(r -> "PENDING".equals(r.getStatus())).count());
+
+        long totalBookings = 0;
+        long completedCount = 0;
+        long cancelledCount = 0;
+        long noShowCount = 0;
+        long confirmedCount = 0;
+        List<Booking> pendingApprovalList = List.of();
+
+        if (!deptEquipmentIds.isEmpty()) {
+            completedCount = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED);
+            cancelledCount = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.CANCELLED);
+            noShowCount = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.NO_SHOW);
+            confirmedCount = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.CONFIRMED);
+            totalBookings = completedCount + cancelledCount + noShowCount + confirmedCount;
+            pendingApprovalList = bookingRepository.findByEquipmentIdInAndStatus(deptEquipmentIds, Booking.PENDING_APPROVAL);
+        }
+
+        dashboard.put("totalBookings", totalBookings);
+        dashboard.put("completedBookings", completedCount);
+        dashboard.put("cancelledBookings", cancelledCount);
+        dashboard.put("noShowBookings", noShowCount);
+        dashboard.put("confirmedBookings", confirmedCount);
+        dashboard.put("pendingApprovalBookings", pendingApprovalList.size());
+        dashboard.put("pendingApprovalList", pendingApprovalList);
 
         return dashboard;
     }
 
-    // ─── Department Head Dashboard ─────────────────────────────────────────────
+    // Department Head Dashboard
 
     @GetMapping("/department-head")
-    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('VIEW_MAINTENANCE', 'ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
     public Map<String, Object> departmentHeadDashboard(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
 
-        // Department resolved from security principal — never from a query param
         Long deptId = principal.getDepartmentId();
+        Long instId = principal.getInstitutionId();
         Map<String, Object> dashboard = new HashMap<>();
 
-        List<Equipment> deptEquipment = equipmentRepository.findByDepartmentId(deptId);
+        if (deptId == null || instId == null) {
+            dashboard.put("totalEquipment", 0);
+            dashboard.put("availableEquipment", 0);
+            dashboard.put("underMaintenanceEquipment", 0);
+            dashboard.put("outOfServiceEquipment", 0);
+            dashboard.put("totalBookings", 0);
+            dashboard.put("completedBookings", 0);
+            dashboard.put("noShowBookings", 0);
+            dashboard.put("noShowRate", 0.0);
+            dashboard.put("totalDowntimeHours", BigDecimal.ZERO);
+            dashboard.put("maintenanceCount", 0);
+            dashboard.put("activeMaintenanceCount", 0);
+            dashboard.put("departmentUsageCost", BigDecimal.ZERO);
+            dashboard.put("pendingSharingRequests", 0);
+            dashboard.put("activeSharingAgreements", 0);
+            return dashboard;
+        }
+
+        List<Equipment> deptEquipment = equipmentRepository.findByDepartmentIdAndInstitutionId(deptId, instId);
         List<Long> deptEquipmentIds = deptEquipment.stream()
                 .map(Equipment::getEquipmentId).toList();
 
-        // Equipment overview
         dashboard.put("totalEquipment", deptEquipment.size());
         dashboard.put("availableEquipment", deptEquipment.stream()
                 .filter(e -> Equipment.AVAILABLE.equals(e.getStatus())).count());
@@ -231,23 +278,26 @@ public class DashboardController {
         dashboard.put("outOfServiceEquipment", deptEquipment.stream()
                 .filter(e -> Equipment.OUT_OF_SERVICE.equals(e.getStatus())).count());
 
-        // Booking stats
-        long totalBookings = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED)
-                + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.CANCELLED)
-                + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.NO_SHOW)
-                + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.IN_USE)
-                + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.CONFIRMED);
-        long completedBookings = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED);
-        long noShowBookings = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.NO_SHOW);
+        long totalBookings = 0;
+        long completedBookings = 0;
+        long noShowBookings = 0;
+        if (!deptEquipmentIds.isEmpty()) {
+            totalBookings = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED)
+                    + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.CANCELLED)
+                    + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.NO_SHOW)
+                    + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.IN_USE)
+                    + bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.CONFIRMED);
+            completedBookings = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED);
+            noShowBookings = bookingRepository.countByEquipmentIdInAndStatus(deptEquipmentIds, Booking.NO_SHOW);
+        }
         dashboard.put("totalBookings", totalBookings);
         dashboard.put("completedBookings", completedBookings);
         dashboard.put("noShowBookings", noShowBookings);
         dashboard.put("noShowRate", totalBookings > 0
                 ? Math.round((noShowBookings * 100.0 / totalBookings) * 100.0) / 100.0 : 0.0);
 
-        // Maintenance & downtime
         List<MaintenanceRequest> maintenanceList = maintenanceRequestRepository
-                .findByDepartmentIdOrderByCreatedAtDesc(deptId);
+                .findByDepartmentIdOrderByMaintenanceIdDesc(deptId);
         BigDecimal totalDowntime = maintenanceList.stream()
                 .filter(m -> m.getDowntimeHours() != null)
                 .map(MaintenanceRequest::getDowntimeHours)
@@ -259,17 +309,15 @@ public class DashboardController {
                         && !MaintenanceRequest.CANCELLED.equals(m.getStatus()))
                 .count());
 
-        // Dept usage cost (sum of actualCost on COMPLETED bookings)
-        List<Booking> deptCompletedBookings = bookingRepository
-                .findByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED);
+        List<Booking> deptCompletedBookings = deptEquipmentIds.isEmpty() ? List.of() :
+                bookingRepository.findByEquipmentIdInAndStatus(deptEquipmentIds, Booking.COMPLETED);
         BigDecimal deptUsageCost = deptCompletedBookings.stream()
                 .map(b -> b.getActualCost() != null ? b.getActualCost() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.put("departmentUsageCost", deptUsageCost);
 
-        // Sharing requests
-        List<ResourceSharingRequest> sharingRequests = sharingRequestRepository
-                .findByEquipmentIdIn(deptEquipmentIds);
+        List<ResourceSharingRequest> sharingRequests = deptEquipmentIds.isEmpty() ? List.of() :
+                sharingRequestRepository.findByEquipmentIdIn(deptEquipmentIds);
         dashboard.put("pendingSharingRequests", sharingRequests.stream()
                 .filter(r -> "PENDING".equals(r.getStatus())).count());
         dashboard.put("activeSharingAgreements", sharingRequests.stream()
@@ -278,7 +326,7 @@ public class DashboardController {
         return dashboard;
     }
 
-    // ─── Institution Admin Dashboard ───────────────────────────────────────────
+    // Institution Admin Dashboard
 
     @GetMapping("/admin")
     @PreAuthorize("hasAnyAuthority('ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
@@ -294,7 +342,6 @@ public class DashboardController {
         List<Long> institutionEquipmentIds = institutionEquipment.stream()
                 .map(Equipment::getEquipmentId).toList();
 
-        // Equipment overview
         dashboard.put("totalEquipment", institutionEquipment.size());
         dashboard.put("availableEquipment", institutionEquipment.stream()
                 .filter(e -> Equipment.AVAILABLE.equals(e.getStatus())).count());
@@ -303,24 +350,25 @@ public class DashboardController {
         dashboard.put("outOfServiceEquipment", institutionEquipment.stream()
                 .filter(e -> Equipment.OUT_OF_SERVICE.equals(e.getStatus())).count());
 
-        // Total usage cost across the institution
-        List<Booking> institutionCompletedBookings = bookingRepository
-                .findByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.COMPLETED);
+        List<Booking> institutionCompletedBookings = institutionEquipmentIds.isEmpty() ? List.of() :
+                bookingRepository.findByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.COMPLETED);
         BigDecimal totalUsageCost = institutionCompletedBookings.stream()
                 .map(b -> b.getActualCost() != null ? b.getActualCost() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.put("totalUsageCost", totalUsageCost);
 
-        // Utilization rate
-        long totalBookings = bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.COMPLETED)
-                + bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.CANCELLED)
-                + bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.NO_SHOW);
-        long completedBookings = bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.COMPLETED);
+        long totalBookings = 0;
+        long completedBookings = 0;
+        if (!institutionEquipmentIds.isEmpty()) {
+            totalBookings = bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.COMPLETED)
+                    + bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.CANCELLED)
+                    + bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.NO_SHOW);
+            completedBookings = bookingRepository.countByEquipmentIdInAndStatus(institutionEquipmentIds, Booking.COMPLETED);
+        }
         dashboard.put("totalBookings", totalBookings);
         dashboard.put("utilizationRate", totalBookings > 0
                 ? Math.round((completedBookings * 100.0 / totalBookings) * 100.0) / 100.0 : 0.0);
 
-        // Maintenance downtime
         List<MaintenanceRequest> allMaintenance = maintenanceRequestRepository.findAll().stream()
                 .filter(m -> institutionEquipmentIds.contains(m.getEquipmentId()))
                 .toList();
@@ -330,7 +378,6 @@ public class DashboardController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.put("totalDowntimeHours", totalDowntime);
 
-        // Sharing statistics
         List<ResourceSharingRequest> sharingRequests = sharingRequestRepository
                 .findByOwningInstitutionIdOrderByCreatedAtDesc(institutionId);
         dashboard.put("totalSharingRequests", sharingRequests.size());

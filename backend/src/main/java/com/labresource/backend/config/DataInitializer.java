@@ -2,19 +2,15 @@ package com.labresource.backend.config;
 
 import com.labresource.backend.auth.entity.AppUser;
 import com.labresource.backend.auth.repository.AppUserRepository;
-import com.labresource.backend.department.entity.Department;
-import com.labresource.backend.department.repository.DepartmentRepository;
-import com.labresource.backend.institution.entity.Institution;
-import com.labresource.backend.institution.repository.InstitutionRepository;
 import com.labresource.backend.role.entity.Role;
 import com.labresource.backend.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 
@@ -24,16 +20,20 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
-    private final InstitutionRepository institutionRepository;
-    private final DepartmentRepository departmentRepository;
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${ADMIN_EMAIL:${app.admin.email:}}")
+    private String adminEmail;
+
+    @Value("${ADMIN_PASSWORD:${app.admin.password:}}")
+    private String adminPassword;
 
     @Override
     public void run(String... args) throws Exception {
         log.info("Checking database data initialization status...");
 
-        // 1. Seed Roles
+        // 1. Seed Roles (Reference Configuration)
         List<String> roleNames = List.of(
                 Role.SYSTEM_ADMIN,
                 Role.INSTITUTION_ADMIN,
@@ -52,61 +52,46 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // 2. Seed Default Institution if empty
-        if (institutionRepository.count() == 0) {
-            Institution inst = new Institution();
-            inst.setName("Default Testing Institution");
-            inst.setAddress("123 Science Way");
-            inst.setCity("Mumbai");
-            inst.setState("Maharashtra");
-            inst.setCountry("India");
-            inst.setContactEmail("info@defaultinst.edu");
-            inst.setIsActive(true);
-            Institution savedInst = institutionRepository.save(inst);
-            log.info("Seeded Default Institution with ID: {}", savedInst.getInstitutionId());
+        // 2. Bootstrap System Administrator from environment configuration if provided
+        if (adminEmail != null && !adminEmail.isBlank() && adminPassword != null && !adminPassword.isBlank()) {
+            final String targetEmail = adminEmail.trim();
+            appUserRepository.findByEmail(targetEmail).ifPresentOrElse(
+                admin -> {
+                    if (Boolean.FALSE.equals(admin.getIsActive())) {
+                        admin.setIsActive(true);
+                        admin.setIsEmailVerified(true);
+                        appUserRepository.save(admin);
+                        log.info("Activated existing System Administrator account ({})", targetEmail);
+                    }
+                },
+                () -> {
+                    Role sysAdminRole = roleRepository.findByRoleName(Role.SYSTEM_ADMIN).orElse(null);
+                    if (sysAdminRole == null) {
+                        sysAdminRole = new Role();
+                        sysAdminRole.setRoleName(Role.SYSTEM_ADMIN);
+                        sysAdminRole = roleRepository.save(sysAdminRole);
+                    }
 
-            // 3. Seed Default Department
-            Department dept = new Department();
-            dept.setInstitutionId(savedInst.getInstitutionId());
-            dept.setName("Default Research Lab Department");
-            dept.setBudgetAllocated(BigDecimal.valueOf(1000000.00));
-            dept.setIsActive(true);
-            Department savedDept = departmentRepository.save(dept);
-            log.info("Seeded Default Department with ID: {}", savedDept.getDepartmentId());
-        }
-
-        // 4. Seed initial System Admin if none exists or activate if deactivated
-        String adminEmail = "systemadmin@labresource.com";
-        appUserRepository.findByEmail(adminEmail).ifPresentOrElse(
-            admin -> {
-                if (Boolean.FALSE.equals(admin.getIsActive())) {
+                    AppUser admin = new AppUser();
+                    admin.setFirstName("System");
+                    admin.setLastName("Administrator");
+                    admin.setEmail(targetEmail);
+                    admin.setPasswordHash(passwordEncoder.encode(adminPassword));
+                    admin.setAuthProvider("LOCAL");
+                    admin.setInstitutionId(null);
+                    admin.setDepartmentId(null);
                     admin.setIsActive(true);
                     admin.setIsEmailVerified(true);
+                    final Role roleToAssign = sysAdminRole;
+                    admin.setRoles(new HashSet<>() {{ add(roleToAssign); }});
+
                     appUserRepository.save(admin);
-                    log.info("Activated existing System Administrator account ({})", adminEmail);
+                    log.info("Bootstrapped System Administrator account from environment configuration ({})", targetEmail);
                 }
-            },
-            () -> {
-                Role sysAdminRole = roleRepository.findByRoleName(Role.SYSTEM_ADMIN).get();
-                Institution defaultInst = institutionRepository.findAll().get(0);
-                Department defaultDept = departmentRepository.findAll().get(0);
-
-                AppUser admin = new AppUser();
-                admin.setFirstName("System");
-                admin.setLastName("Administrator");
-                admin.setEmail(adminEmail);
-                admin.setPasswordHash(passwordEncoder.encode("Password123")); // Default password
-                admin.setAuthProvider("LOCAL");
-                admin.setInstitutionId(defaultInst.getInstitutionId());
-                admin.setDepartmentId(defaultDept.getDepartmentId());
-                admin.setIsActive(true);
-                admin.setIsEmailVerified(true);
-                admin.setRoles(new HashSet<>() {{ add(sysAdminRole); }});
-
-                appUserRepository.save(admin);
-                log.info("Seeded Default System Administrator account ({} / Password123)", adminEmail);
-            }
-        );
+            );
+        } else {
+            log.info("No ADMIN_EMAIL / ADMIN_PASSWORD configured. Skipping System Administrator bootstrapping.");
+        }
 
         log.info("Data initialization check completed successfully.");
     }

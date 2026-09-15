@@ -59,14 +59,15 @@ public class RecurringBookingGeneratorJob {
                     booking.setUserId(template.getUserId());
                     
                     // Fetch equipment to get the correct institution/department IDs
-                    equipmentRepository.findById(template.getEquipmentId()).ifPresent(eq -> {
-                        booking.setInstitutionId(eq.getInstitutionId());
-                        booking.setDepartmentId(eq.getDepartmentId());
-                    });
-
-                    if (booking.getInstitutionId() == null) {
-                        booking.setInstitutionId(1L); // Fallback dummy if equipment lookup fails
+                    var eqOpt = equipmentRepository.findById(template.getEquipmentId());
+                    if (eqOpt.isEmpty()) {
+                        log.warn("Skipping recurring booking generation for template {} because equipment {} was not found.",
+                                template.getRecurringBookingId(), template.getEquipmentId());
+                        continue;
                     }
+                    var eq = eqOpt.get();
+                    booking.setInstitutionId(eq.getInstitutionId());
+                    booking.setDepartmentId(eq.getDepartmentId());
 
                     booking.setStartTime(start);
                     booking.setEndTime(end);

@@ -2,10 +2,16 @@ package com.labresource.backend.report.controller;
 
 import com.labresource.backend.report.dto.*;
 import com.labresource.backend.report.entity.Report;
+import com.labresource.backend.report.service.ReportCsvExportService;
+import com.labresource.backend.report.service.ReportExcelExportService;
+import com.labresource.backend.report.service.ReportPdfExportService;
 import com.labresource.backend.report.service.ReportService;
 import com.labresource.backend.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +26,15 @@ import java.util.List;
 public class ReportsController {
 
     private final ReportService reportService;
+    private final ReportPdfExportService pdfExportService;
+    private final ReportExcelExportService excelExportService;
+    private final ReportCsvExportService csvExportService;
 
-    // ─── Migrated/Preserved Active Endpoints ───────────────────────────────
+    // ─── Generate & Fetch Preserved Reports ─────────────────────────────────
 
+    @Deprecated
     @PostMapping("/generate")
-    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
     public Report generateReport(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam String reportType,
@@ -40,14 +50,14 @@ public class ReportsController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
     public List<Report> getReports(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) Long departmentId) {
-        return reportService.getReports(principal.getInstitutionId(), departmentId);
+        return reportService.getReports(principal, departmentId);
     }
 
-    // ─── New Dynamic Report Endpoints ──────────────────────────────────────
+    // ─── Dynamic Reports Endpoints (All 7 Available to INSTITUTION_ADMIN) ────
 
     @GetMapping("/utilization")
     @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
@@ -61,7 +71,7 @@ public class ReportsController {
     }
 
     @GetMapping("/maintenance")
-    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
     public List<MaintenanceDowntimeReportDTO> getMaintenanceDowntime(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -72,7 +82,7 @@ public class ReportsController {
     }
 
     @GetMapping("/bookings")
-    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
     public List<BookingUsageReportDTO> getBookingUsage(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -83,12 +93,13 @@ public class ReportsController {
     }
 
     @GetMapping("/department-performance")
-    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
     public DepartmentPerformanceReportDTO getDepartmentPerformance(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return reportService.getDepartmentPerformanceReport(principal, from, to);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId) {
+        return reportService.getDepartmentPerformanceReport(principal, from, to, departmentId);
     }
 
     @GetMapping("/compliance")
@@ -108,7 +119,7 @@ public class ReportsController {
     }
 
     @GetMapping("/issues")
-    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
     public IssueSummaryResponseDTO getIssues(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) Long departmentId,
@@ -117,5 +128,127 @@ public class ReportsController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return reportService.getIssueSummaryReport(principal, departmentId, equipmentId, status, from, to);
+    }
+
+    // ─── Milestone 3 — Phase 1: New Analytics Report Endpoints ────────────────
+
+    @GetMapping("/utilization-effectiveness")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public UtilizationEffectivenessReportDto getUtilizationEffectivenessReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long laboratoryId) {
+        return reportService.getUtilizationEffectivenessReport(principal, from, to, departmentId, laboratoryId);
+    }
+
+    @GetMapping("/cost-analysis")
+    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public CostAnalysisReportDto getCostAnalysisReport(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String fiscalYear) {
+        return reportService.getCostAnalysisReport(principal, from, to, departmentId, fiscalYear);
+    }
+
+    // ─── Milestone 3 — Phase 3: Real Export Endpoints ─────────────────────────
+
+    @GetMapping("/utilization-effectiveness/export/pdf")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public ResponseEntity<byte[]> exportUtilizationPdf(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long laboratoryId) {
+        UtilizationEffectivenessReportDto report = reportService.getUtilizationEffectivenessReport(principal, from, to, departmentId, laboratoryId);
+        byte[] pdfBytes = pdfExportService.exportUtilizationPdf(report);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"utilization-effectiveness-report.pdf\"")
+                .body(pdfBytes);
+    }
+
+    @GetMapping("/utilization-effectiveness/export/excel")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public ResponseEntity<byte[]> exportUtilizationExcel(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long laboratoryId) {
+        UtilizationEffectivenessReportDto report = reportService.getUtilizationEffectivenessReport(principal, from, to, departmentId, laboratoryId);
+        byte[] excelBytes = excelExportService.exportUtilizationExcel(report);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"utilization-effectiveness-report.xlsx\"")
+                .body(excelBytes);
+    }
+
+    @GetMapping("/utilization-effectiveness/export/csv")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_MANAGER', 'ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public ResponseEntity<byte[]> exportUtilizationCsv(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long laboratoryId) {
+        UtilizationEffectivenessReportDto report = reportService.getUtilizationEffectivenessReport(principal, from, to, departmentId, laboratoryId);
+        byte[] csvBytes = csvExportService.exportUtilizationCsv(report);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"utilization-effectiveness-report.csv\"")
+                .body(csvBytes);
+    }
+
+    @GetMapping("/cost-analysis/export/pdf")
+    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public ResponseEntity<byte[]> exportCostPdf(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String fiscalYear) {
+        CostAnalysisReportDto report = reportService.getCostAnalysisReport(principal, from, to, departmentId, fiscalYear);
+        byte[] pdfBytes = pdfExportService.exportCostPdf(report);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cost-analysis-report.pdf\"")
+                .body(pdfBytes);
+    }
+
+    @GetMapping("/cost-analysis/export/excel")
+    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public ResponseEntity<byte[]> exportCostExcel(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String fiscalYear) {
+        CostAnalysisReportDto report = reportService.getCostAnalysisReport(principal, from, to, departmentId, fiscalYear);
+        byte[] excelBytes = excelExportService.exportCostExcel(report);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cost-analysis-report.xlsx\"")
+                .body(excelBytes);
+    }
+
+    @GetMapping("/cost-analysis/export/csv")
+    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN')")
+    public ResponseEntity<byte[]> exportCostCsv(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String fiscalYear) {
+        CostAnalysisReportDto report = reportService.getCostAnalysisReport(principal, from, to, departmentId, fiscalYear);
+        byte[] csvBytes = csvExportService.exportCostCsv(report);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cost-analysis-report.csv\"")
+                .body(csvBytes);
     }
 }

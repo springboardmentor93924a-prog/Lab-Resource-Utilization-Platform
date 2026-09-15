@@ -22,6 +22,12 @@ public class Institution {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
+    @Column(name = "code", length = 50)
+    private String code;
+
+    @Column(name = "institution_type", length = 100)
+    private String institutionType;
+
     @Column(name = "address", length = 255)
     private String address;
 
@@ -31,8 +37,17 @@ public class Institution {
     @Column(name = "state", length = 100)
     private String state;
 
+    @Column(name = "pincode", length = 20)
+    private String pincode;
+
     @Column(name = "country", length = 100)
     private String country;
+
+    @Column(name = "website", length = 255)
+    private String website;
+
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
 
     @Column(name = "contact_email", length = 150)
     private String contactEmail;
@@ -52,8 +67,20 @@ public class Institution {
     @Column(name = "logo_content_type", length = 100)
     private String logoContentType;
 
+    @Column(name = "approval_status", length = 50)
+    private String approvalStatus = "APPROVED";
+
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

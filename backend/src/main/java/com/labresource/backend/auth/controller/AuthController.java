@@ -43,4 +43,14 @@ public class AuthController {
     public UserSummaryDto me(@AuthenticationPrincipal UserPrincipal principal) {
         return authService.currentUser(principal.getUserId());
     }
+
+    @GetMapping("/auth/setup-token/validate")
+    public Map<String, Object> validateSetupToken(@RequestParam("token") String token) {
+        return authService.validateSetupToken(token);
+    }
+
+    @PostMapping("/auth/setup-password")
+    public Map<String, Object> setupPassword(@Valid @RequestBody SetupPasswordRequestDto request) {
+        return authService.setupPassword(request);
+    }
 }

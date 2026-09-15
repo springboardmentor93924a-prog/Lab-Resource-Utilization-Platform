@@ -22,11 +22,23 @@ public class EquipmentIssueReport {
     @Column(name = "equipment_id", nullable = false)
     private Long equipmentId;
 
-    @Column(name = "booking_id", nullable = false)
+    @Column(name = "booking_id")
     private Long bookingId;
 
     @Column(name = "reported_by", nullable = false)
     private Long reportedBy;
+
+    @Column(name = "reporter_role", length = 50)
+    private String reporterRole;
+
+    @Column(name = "institution_id")
+    private Long institutionId;
+
+    @Column(name = "department_id")
+    private Long departmentId;
+
+    @Column(name = "reported_at")
+    private LocalDateTime reportedAt;
 
     @Column(name = "issue_type", length = 100)
     private String issueType;
@@ -36,6 +48,12 @@ public class EquipmentIssueReport {
 
     @Column(name = "priority", nullable = false, length = 20)
     private String priority = "MEDIUM"; // LOW, MEDIUM, HIGH, CRITICAL
+
+    @Column(name = "incident_timestamp")
+    private LocalDateTime incidentTimestamp;
+
+    @Column(name = "damage_acknowledged", nullable = false)
+    private Boolean damageAcknowledged = false;
 
     @Column(name = "attachment_public_id", length = 500)
     private String attachmentPublicId;
@@ -66,6 +84,34 @@ public class EquipmentIssueReport {
 
     @Column(name = "resolution_notes", columnDefinition = "text")
     private String resolutionNotes;
+
+    // ── Inspection & Damage Liability Fields (Phase 6) ────────────────────────
+    @Column(name = "condition_before", length = 100)
+    private String conditionBefore;
+
+    @Column(name = "observed_problem", columnDefinition = "text")
+    private String observedProblem;
+
+    @Column(name = "inspection_notes", columnDefinition = "text")
+    private String inspectionNotes;
+
+    @Column(name = "estimated_repair_cost")
+    private java.math.BigDecimal estimatedRepairCost = java.math.BigDecimal.ZERO;
+
+    @Column(name = "recommended_action", length = 100)
+    private String recommendedAction;
+
+    @Column(name = "liability_type", length = 20)
+    private String liabilityType; // INSTITUTION, STUDENT
+
+    @Column(name = "student_liability_amount")
+    private java.math.BigDecimal studentLiabilityAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "liability_decided_by")
+    private Long liabilityDecidedBy;
+
+    @Column(name = "liability_decided_at")
+    private LocalDateTime liabilityDecidedAt;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

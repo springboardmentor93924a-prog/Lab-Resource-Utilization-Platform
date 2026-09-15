@@ -32,6 +32,9 @@ public class CostRecord {
     @Column(name = "booking_id")
     private Long bookingId;
 
+    @Column(name = "maintenance_id")
+    private Long maintenanceId;
+
     @Column(name = "cost_type", nullable = false, length = 30)
     private String costType; // USAGE, MAINTENANCE, SHARING_FEE
 

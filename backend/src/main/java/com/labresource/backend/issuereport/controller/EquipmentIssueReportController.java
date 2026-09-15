@@ -38,6 +38,27 @@ public class EquipmentIssueReportController {
         return issueReportService.myReports(principal.getUserId());
     }
 
+    @GetMapping("/{id}")
+    public EquipmentIssueReport getDetails(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+        return issueReportService.getIssueReportDetails(principal.getUserId(), id);
+    }
+
+    @GetMapping(value = "/{id}/download", produces = "application/pdf")
+    public org.springframework.http.ResponseEntity<byte[]> downloadPdf(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @org.springframework.beans.factory.annotation.Autowired com.labresource.backend.common.service.ReceiptPdfGeneratorService pdfGenerator,
+            @org.springframework.beans.factory.annotation.Autowired com.labresource.backend.auth.repository.AppUserRepository appUserRepository,
+            @org.springframework.beans.factory.annotation.Autowired com.labresource.backend.department.repository.DepartmentRepository departmentRepository) {
+
+        byte[] pdfBytes = issueReportService.downloadIssueReportPdf(principal.getUserId(), id, pdfGenerator, appUserRepository, departmentRepository);
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incident_report_" + id + ".pdf\"")
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyAuthority('VIEW_EQUIPMENT_ISSUES', 'ROLE_LAB_MANAGER', 'ROLE_SYSTEM_ADMIN')")
     public List<EquipmentIssueReport> getDepartmentIssues(
@@ -56,5 +77,28 @@ public class EquipmentIssueReportController {
     @PreAuthorize("hasAnyAuthority('RESOLVE_EQUIPMENT_ISSUE', 'ROLE_LAB_MANAGER', 'ROLE_SYSTEM_ADMIN')")
     public EquipmentIssueReport resolveIssue(@PathVariable Long id) {
         return issueReportService.resolveIssue(id);
+    }
+
+    @PostMapping("/{id}/inspect")
+    @PreAuthorize("hasAnyAuthority('ROLE_LAB_TECHNICIAN', 'ROLE_LAB_MANAGER', 'ROLE_SYSTEM_ADMIN')")
+    public EquipmentIssueReport inspectIssue(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @RequestParam(required = false) String conditionBefore,
+            @RequestParam(required = false) String observedProblem,
+            @RequestParam(required = false) java.math.BigDecimal estimatedRepairCost,
+            @RequestParam(required = false) String recommendedAction,
+            @RequestParam(required = false) String notes) {
+        return issueReportService.inspectIssue(id, principal.getUserId(), conditionBefore, observedProblem, estimatedRepairCost, recommendedAction, notes);
+    }
+
+    @PostMapping("/{id}/decide-liability")
+    @PreAuthorize("hasAnyAuthority('ROLE_DEPARTMENT_HEAD', 'ROLE_INSTITUTION_ADMIN', 'ROLE_SYSTEM_ADMIN')")
+    public EquipmentIssueReport decideLiability(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @RequestParam String liabilityType,
+            @RequestParam(required = false) java.math.BigDecimal studentAmount) {
+        return issueReportService.decideLiability(id, principal.getUserId(), liabilityType, studentAmount);
     }
 }

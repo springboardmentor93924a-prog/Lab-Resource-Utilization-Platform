@@ -33,7 +33,36 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByEquipmentIdInAndStartTimeBetween(List<Long> equipmentIds, LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT b FROM Booking b WHERE b.equipmentId IN :equipmentIds " +
+           "AND b.startTime < :end AND b.endTime > :start")
+    List<Booking> findByEquipmentIdInAndOverlapping(
+            @Param("equipmentIds") List<Long> equipmentIds,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
     List<Booking> findByEquipmentIdIn(List<Long> equipmentIds);
+
+    @Query("SELECT b FROM Booking b WHERE b.equipmentId IN " +
+           "(SELECT e.equipmentId FROM Equipment e WHERE e.departmentId = :departmentId) " +
+           "ORDER BY b.startTime DESC")
+    List<Booking> findByDepartmentId(@Param("departmentId") Long departmentId);
+
+    @Query("SELECT b FROM Booking b WHERE b.equipmentId IN " +
+           "(SELECT e.equipmentId FROM Equipment e WHERE e.departmentId = :departmentId) " +
+           "AND (:status IS NULL OR b.status = :status) " +
+           "ORDER BY b.startTime DESC")
+    List<Booking> findByDepartmentIdAndStatus(@Param("departmentId") Long departmentId, @Param("status") String status);
+
+    @Query("SELECT b FROM Booking b WHERE b.equipmentId IN " +
+           "(SELECT e.equipmentId FROM Equipment e WHERE e.institutionId = :institutionId) " +
+           "ORDER BY b.startTime DESC")
+    List<Booking> findByInstitutionId(@Param("institutionId") Long institutionId);
+
+    @Query("SELECT b FROM Booking b WHERE b.userId = :userId " +
+           "AND b.status = 'IN_USE' " +
+           "AND b.startTime <= :now AND b.endTime > :now " +
+           "ORDER BY b.startTime ASC")
+    List<Booking> findActiveInUseBookingsForUser(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 }
 
 

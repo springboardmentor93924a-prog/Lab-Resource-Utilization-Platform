@@ -64,6 +64,15 @@ public class AppUser {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "deactivated_at")
+    private LocalDateTime deactivatedAt;
+
+    @Column(name = "deactivation_reason", length = 1000)
+    private String deactivationReason;
+
+    @Column(name = "deactivated_by")
+    private Long deactivatedBy;
+
     @Column(name = "is_email_verified", nullable = false)
     private Boolean isEmailVerified = false;
 
@@ -84,6 +93,21 @@ public class AppUser {
 
     @Column(name = "privacy_accepted_at")
     private LocalDateTime privacyAcceptedAt;
+
+    @Column(name = "roll_number", length = 100)
+    private String rollNumber;
+
+    @Column(name = "researcher_id", length = 100)
+    private String researcherId;
+
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

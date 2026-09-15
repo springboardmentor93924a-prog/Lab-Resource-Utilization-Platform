@@ -1,12 +1,16 @@
 package com.labresource.backend.scheduler;
 
 import com.labresource.backend.billing.service.BillingService;
+import com.labresource.backend.billing.service.InvoiceService;
 import com.labresource.backend.booking.entity.Booking;
 import com.labresource.backend.booking.repository.BookingRepository;
+import com.labresource.backend.budget.util.FiscalYearUtil;
 import com.labresource.backend.equipment.entity.Equipment;
 import com.labresource.backend.equipment.repository.EquipmentRepository;
 import com.labresource.backend.sharing.entity.SharedBooking;
+import com.labresource.backend.sharing.entity.SharingAgreement;
 import com.labresource.backend.sharing.repository.SharedBookingRepository;
+import com.labresource.backend.sharing.repository.SharingAgreementRepository;
 import com.labresource.backend.utilization.entity.UtilizationLog;
 import com.labresource.backend.utilization.repository.UtilizationLogRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +35,11 @@ public class BookingLifecycleJob {
     private final EquipmentRepository equipmentRepository;
     private final UtilizationLogRepository utilizationLogRepository;
     private final SharedBookingRepository sharedBookingRepository;
+    private final SharingAgreementRepository sharingAgreementRepository;
     private final BillingService billingService;
+    private final InvoiceService invoiceService;
+
+    private final com.labresource.backend.billing.repository.CostRecordRepository costRecordRepository;
 
     @Scheduled(cron = "0 */5 * * * *") // Runs every 5 minutes
     @Transactional
@@ -95,11 +103,13 @@ public class BookingLifecycleJob {
                 if (equipment.getHourlyRate() != null && equipment.getHourlyRate().compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal actualCost = equipment.getHourlyRate().multiply(actualHours).setScale(2, RoundingMode.HALF_UP);
                     booking.setActualCost(actualCost);
-                    booking.setPaymentStatus("COMPLETED");
+                    booking.setPaymentStatus("PAID");
 
-                    // Record cost against department budget
-                    billingService.recordCost(
+                    // Record cost against researcher's department budget
+                    billingService.recordCostWithDetails(
                             booking.getBookingId(),
+                            null,
+                            null,
                             equipment.getEquipmentId(),
                             equipment.getDepartmentId(),
                             equipment.getInstitutionId(),
@@ -108,25 +118,48 @@ public class BookingLifecycleJob {
                     );
                 }
 
-                // For inter-institution shared bookings: compute final usageFee
+                // For inter-institution shared bookings: compute final usageFee & generate invoice
                 Optional<SharedBooking> sharedOpt = sharedBookingRepository.findByBookingId(booking.getBookingId());
                 if (sharedOpt.isPresent()) {
                     SharedBooking sharedBooking = sharedOpt.get();
-                    if (equipment.getExternalHourlyRate() != null && equipment.getExternalHourlyRate().compareTo(BigDecimal.ZERO) > 0) {
-                        BigDecimal usageFee = equipment.getExternalHourlyRate().multiply(actualHours).setScale(2, RoundingMode.HALF_UP);
+                    Optional<SharingAgreement> agreementOpt = sharingAgreementRepository.findById(sharedBooking.getAgreementId());
+                    Long requestingInstId = agreementOpt.map(SharingAgreement::getRequestingInstitutionId).orElse(null);
+                    BigDecimal rateToUse = (agreementOpt.isPresent() && agreementOpt.get().getHourlyRate() != null && agreementOpt.get().getHourlyRate().compareTo(BigDecimal.ZERO) > 0)
+                            ? agreementOpt.get().getHourlyRate()
+                            : equipment.getExternalHourlyRate();
+
+                    if (rateToUse != null && rateToUse.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal usageFee = rateToUse.multiply(actualHours).setScale(2, RoundingMode.HALF_UP);
                         sharedBooking.setUsageFee(usageFee);
-                        sharedBooking.setPaymentStatus("COMPLETED");
+                        sharedBooking.setPaymentStatus("INVOICED");
                         sharedBookingRepository.save(sharedBooking);
 
-                        // Record sharing fee against cost record
-                        billingService.recordCost(
+                        boolean isNewCost = costRecordRepository.findByBookingIdAndCostType(booking.getBookingId(), "SHARING_FEE").isEmpty();
+
+                        // Record sharing cost entry for transaction ledger
+                        billingService.recordCostWithDetails(
                                 booking.getBookingId(),
+                                null,
+                                sharedBooking.getAgreementId(),
                                 equipment.getEquipmentId(),
                                 equipment.getDepartmentId(),
                                 equipment.getInstitutionId(),
                                 usageFee,
                                 "SHARING_FEE"
                         );
+
+                        // Generate/Update Invoice for inter-institution billing (idempotent & consolidated)
+                        if (requestingInstId != null && usageFee.compareTo(BigDecimal.ZERO) > 0) {
+                            invoiceService.createSharingInvoice(
+                                    sharedBooking.getAgreementId(),
+                                    equipment.getInstitutionId(),
+                                    requestingInstId,
+                                    equipment.getDepartmentId(),
+                                    usageFee,
+                                    FiscalYearUtil.getCurrentFiscalYear(),
+                                    isNewCost
+                            );
+                        }
                     }
                 }
 

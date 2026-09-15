@@ -28,28 +28,30 @@ public class PasswordResetService {
 
     @Transactional
     public void requestPasswordReset(String email) {
-        AppUser user = appUserRepository.findByEmail(email.toLowerCase())
+        AppUser user = appUserRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User with this email does not exist."));
 
-        String token = UUID.randomUUID().toString();
-        log.info("Generated password reset token for {}: {} (use this to reset)", email, token);
+        String rawToken = UUID.randomUUID().toString();
+        String tokenHash = com.labresource.backend.security.TokenHashUtil.hashToken(rawToken);
+        log.info("Generated password reset request for email: {}", email);
 
         PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUserId(user.getUserId());
-        resetToken.setToken(token);
+        resetToken.setTokenHash(tokenHash);
         resetToken.setExpiresAt(LocalDateTime.now().plusHours(2)); // expires in 2 hours
         resetToken.setIsUsed(false);
         tokenRepository.save(resetToken);
 
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        String resetLink = "http://localhost:5173/reset-password?token=" + rawToken;
         String body = "You requested a password reset. Click the link below to set a new password:\n" + resetLink;
 
         emailService.sendEmail(email, "Password Reset Link - Lab Resource Platform", body);
     }
 
     @Transactional
-    public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+    public void resetPassword(String rawToken, String newPassword) {
+        String tokenHash = com.labresource.backend.security.TokenHashUtil.hashToken(rawToken);
+        PasswordResetToken resetToken = tokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid reset token."));
 
         if (Boolean.TRUE.equals(resetToken.getIsUsed())) {

@@ -35,6 +35,9 @@ public class Equipment {
     @Column(name = "department_id", nullable = false)
     private Long departmentId;
 
+    @Column(name = "lab_id")
+    private Long labId;
+
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
@@ -55,6 +58,9 @@ public class Equipment {
 
     @Column(name = "purchase_cost")
     private BigDecimal purchaseCost;
+
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
 
     @Column(name = "specifications", columnDefinition = "jsonb")
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
@@ -95,6 +101,12 @@ public class Equipment {
 
     @Column(name = "external_hourly_rate")
     private BigDecimal externalHourlyRate;
+
+    @Column(name = "condition", length = 100)
+    private String condition;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

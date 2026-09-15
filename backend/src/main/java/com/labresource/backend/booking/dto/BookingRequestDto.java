@@ -22,4 +22,7 @@ public class BookingRequestDto {
 
     private Boolean isRecurring = false;
     private String recurrencePattern; // e.g. "WEEKLY until 2026-12-01"
+
+    private Boolean agreementAccepted = false;
+    private String agreementVersion;
 }

@@ -42,8 +42,18 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/institutions", "/api/institutions/*/departments").permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/staff/invitations/validate",
+                                "/api/staff/invitations/accept",
+                                "/ws/**"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/institutions/register").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/institutions/active",
+                                "/api/institutions/check-code",
+                                "/api/institutions/*/departments"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -54,7 +64,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
