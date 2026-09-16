@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Lock, Mail, User, Phone, ShieldCheck, ArrowRight, Building2, CheckCircle2 } from "lucide-react";
-import { Logo } from "../components/common/Logo.jsx";
+import { Logo } from "../Components/common/Logo.jsx";
 import { API_BASE_URL } from "../api/client.js";
 
 const ROLE_MAP = {

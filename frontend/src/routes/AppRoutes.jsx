@@ -1,22 +1,22 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useToasts } from "../components/common/useToasts";
-import { ToastStack } from "../components/common/ToastStack";
+import { useToasts } from "../Components/common/useToasts";
+import { ToastStack } from "../Components/common/ToastStack";
 import { LoginPage } from "../backend-integration/components/auth/LoginPage";
 import { LandingPage } from "../backend-integration/components/landing/LandingPage";
 import { RegisterPage } from "../backend-integration/components/auth/RegisterPage";
 import { InstitutionAdminRegisterPage } from "../backend-integration/components/auth/InstitutionAdminRegisterPage";
 import { RoleSelectPage } from "../backend-integration/components/auth/RoleSelectPage";
 import { PendingPage } from "../backend-integration/components/auth/PendingPage";
-import StaffPasswordSetupPage from "../components/auth/StaffPasswordSetupPage";
-import PasswordSetupPage from "../components/auth/PasswordSetupPage";
+import StaffPasswordSetupPage from "../Components/auth/StaffPasswordSetupPage";
+import PasswordSetupPage from "../Components/auth/PasswordSetupPage";
 import { ResearcherApp } from "../backend-integration/components/researcher/ResearcherApp";
-import TechnicianDashboard from "../components/technician/dashboard/TechnicianDashboard";
-import ManagerDashboard from "../components/manager/dashboard/ManagerDashboard";
-import DepartmentHeadDashboard from "../components/departmentHead/dashboard/DepartmentHeadDashboard";
-import InstitutionAdminDashboard from "../components/institutionAdmin/dashboard/InstitutionAdminDashboard";
-import SystemAdminDashboard from "../components/systemAdmin/dashboard/SystemAdminDashboard";
-import UtilizationHeatmapPage from "../components/shared/UtilizationHeatmapPage";
+import TechnicianDashboard from "../Components/technician/dashboard/TechnicianDashboard";
+import ManagerDashboard from "../Components/manager/dashboard/ManagerDashboard";
+import DepartmentHeadDashboard from "../Components/departmentHead/dashboard/DepartmentHeadDashboard";
+import InstitutionAdminDashboard from "../Components/institutionAdmin/dashboard/InstitutionAdminDashboard";
+import SystemAdminDashboard from "../Components/systemAdmin/dashboard/SystemAdminDashboard";
+import UtilizationHeatmapPage from "../Components/shared/UtilizationHeatmapPage";
 
 function getInitialRoute() {
   const path = window.location.pathname.replace(/^\/+/, "");

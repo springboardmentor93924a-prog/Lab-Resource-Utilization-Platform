@@ -1,5 +1,5 @@
 import { LogOut, ShieldCheck } from "lucide-react";
-import { Logo } from "../components/common/Logo.jsx";
+import { Logo } from "../Components/common/Logo.jsx";
 
 export default 
 function DashboardPage({ goTo, user, onLogout }) {

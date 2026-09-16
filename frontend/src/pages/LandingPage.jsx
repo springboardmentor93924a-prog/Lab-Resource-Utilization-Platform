@@ -3,7 +3,7 @@ import {
   Microscope, Wrench, BarChart3, Building2, Landmark, Settings,
   ArrowRight, Menu, X, TrendingUp, CalendarClock, Share2, LineChart,
 } from "lucide-react";
-import { Logo } from "../components/common/Logo.jsx";
+import { Logo } from "../Components/common/Logo.jsx";
 
 export default 
 function LandingPage({ goTo, toast }) {
