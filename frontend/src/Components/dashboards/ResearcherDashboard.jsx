@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   LayoutDashboard, Search, CalendarClock, AlertTriangle, Bell, UserRound,
   Microscope, MapPin, Tag, Repeat, Clock, CheckCircle2, Camera,
@@ -8,9 +8,10 @@ import {
   Modal, Field, inputClass, StatusBadge, StatCard, DashboardShell, ViewHeader, EmptyState,
 } from "../shared/ui.jsx";
 import {
-  DEMO_EQUIPMENT, DEMO_BOOKINGS, DEMO_WAITLIST, DEMO_MAINTENANCE_REQUESTS,
+  DEMO_BOOKINGS, DEMO_WAITLIST, DEMO_MAINTENANCE_REQUESTS,
   DEMO_NOTIFICATIONS, formatDateTime, formatDate,
 } from "../../data/mockData.js";
+import { equipmentApi } from "../../api/equipmentApi.js";
 
 const NAV_ITEMS = [
   { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -27,7 +28,8 @@ let wlCounter = 502;
 
 export default function ResearcherDashboard({ user, onLogout, toast }) {
   const [view, setView] = useState("home");
-  const [equipment] = useState(DEMO_EQUIPMENT);
+  const [equipment, setEquipment] = useState([]);
+  const [loadingEq, setLoadingEq] = useState(true);
   const [bookings, setBookings] = useState(DEMO_BOOKINGS);
   const [waitlist, setWaitlist] = useState(DEMO_WAITLIST);
   const [maintenance, setMaintenance] = useState(DEMO_MAINTENANCE_REQUESTS);
@@ -40,9 +42,25 @@ export default function ResearcherDashboard({ user, onLogout, toast }) {
   const [bookingsTab, setBookingsTab] = useState("upcoming");
   const [confirmModal, setConfirmModal] = useState(null); // { title, message }
 
+  useEffect(() => {
+    setLoadingEq(true);
+    equipmentApi
+      .search({ institutionId: user?.institutionId })
+      .then((data) => setEquipment(data || []))
+      .catch((err) => toast?.(err.message || "Failed to load equipment.", "error"))
+      .finally(() => setLoadingEq(false));
+  }, [user?.institutionId]);
+
   const myBookings = useMemo(() => bookings.filter((b) => b.researcher === "You"), [bookings]);
-  const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.id, e])), [equipment]);
+  const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.equipmentId || e.id, e])), [equipment]);
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Researchers can only report an issue for equipment they've actually booked — a confirmed,
+  // in-use, or completed reservation, not a pending/rejected/cancelled one.
+  const bookedEquipment = useMemo(() => {
+    const ids = [...new Set(myBookings.filter((b) => ["CONFIRMED", "IN_USE", "COMPLETED"].includes(b.status)).map((b) => b.equipmentId))];
+    return ids.map((id) => equipmentById[id]).filter(Boolean);
+  }, [myBookings, equipmentById]);
 
   const goToDetails = (id) => { setSelectedEquipmentId(id); setView("search"); };
 
@@ -93,10 +111,10 @@ export default function ResearcherDashboard({ user, onLogout, toast }) {
     setView("bookings");
   };
 
-  const submitIssue = ({ equipmentId, issueType, description, priority }) => {
+  const submitIssue = ({ equipmentId, issueType, description, priority, photoName }) => {
     const code = `MR-2026-${String(mrCounter++).padStart(5, "0")}`;
     setMaintenance((list) => [
-      { id: code, equipmentId, reportedBy: "You", issueType, description, priority, status: "OPEN", assignedTechnicianId: null, dueDate: "", notes: "" },
+      { id: code, equipmentId, reportedBy: "You", issueType, description, priority, status: "OPEN", assignedTechnicianId: null, dueDate: "", notes: "", photoName: photoName || null },
       ...list,
     ]);
     toast(`Issue reported — Lab Manager notified.`, "success");
@@ -140,7 +158,6 @@ export default function ResearcherDashboard({ user, onLogout, toast }) {
           setSelectedEquipmentId={setSelectedEquipmentId}
           onBookNow={(id) => setBookingModalFor(id)}
           onJoinWaitlist={(id) => setWaitlistModalFor(id)}
-          onReportIssue={(id) => { setSelectedEquipmentId(id); setView("report"); }}
         />
       )}
 
@@ -154,16 +171,18 @@ export default function ResearcherDashboard({ user, onLogout, toast }) {
           onCancel={cancelBooking}
           onReschedule={(b) => setRescheduleTarget(b)}
           onBookNew={() => setView("search")}
+          onReportIssue={(id) => { setSelectedEquipmentId(id); setView("report"); }}
         />
       )}
 
       {view === "report" && (
         <ReportIssueView
-          equipment={equipment}
+          bookedEquipment={bookedEquipment}
           myReports={maintenance.filter((m) => m.reportedBy === "You")}
           equipmentById={equipmentById}
-          prefillEquipmentId={selectedEquipmentId}
+          prefillEquipmentId={selectedEquipmentId && equipmentById[selectedEquipmentId] && bookedEquipment.some((e) => e.id === selectedEquipmentId) ? selectedEquipmentId : ""}
           onSubmit={submitIssue}
+          onBrowseEquipment={() => setView("search")}
         />
       )}
 
@@ -311,7 +330,7 @@ function HomeView({ user, equipment, myBookings, waitlist, notifications, onOpen
 /* ================================================================== */
 /*  1.7 / 1.8  Search Equipment + Equipment Details                     */
 /* ================================================================== */
-function SearchView({ equipment, selectedEquipmentId, setSelectedEquipmentId, onBookNow, onJoinWaitlist, onReportIssue }) {
+function SearchView({ equipment, selectedEquipmentId, setSelectedEquipmentId, onBookNow, onJoinWaitlist }) {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All");
   const [department, setDepartment] = useState("All");
@@ -337,7 +356,6 @@ function SearchView({ equipment, selectedEquipmentId, setSelectedEquipmentId, on
         onBack={() => setSelectedEquipmentId(null)}
         onBookNow={() => onBookNow(selected.id)}
         onJoinWaitlist={() => onJoinWaitlist(selected.id)}
-        onReportIssue={() => onReportIssue(selected.id)}
       />
     );
   }
@@ -378,12 +396,17 @@ function SearchView({ equipment, selectedEquipmentId, setSelectedEquipmentId, on
           {filtered.map((e) => (
             <div key={e.id} className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition-all flex flex-col">
               <div className="flex items-start justify-between">
-                <span className="text-3xl">{e.image}</span>
+                {e.photoUrl ? (
+                  <img src={e.photoUrl} alt={e.name} className="h-12 w-12 rounded-xl object-cover border border-slate-200" />
+                ) : (
+                  <span className="text-3xl">{e.image}</span>
+                )}
                 <StatusBadge status={e.status} />
               </div>
               <h3 className="mt-3 text-sm font-bold text-slate-900">{e.name}</h3>
               <p className="mt-1 text-xs text-slate-500 flex items-center gap-1"><Tag size={11} /> {e.category}</p>
-              <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-1"><MapPin size={11} /> {e.location}</p>
+              <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-1"><FlaskConical size={11} /> {e.labName || "—"}</p>
+              {e.location && <p className="mt-0.5 text-xs text-slate-400 flex items-center gap-1"><MapPin size={11} /> {e.location}</p>}
               <div className="mt-4 flex gap-2">
                 <button onClick={() => setSelectedEquipmentId(e.id)} className="flex-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 transition-colors">
                   View Details
@@ -410,7 +433,7 @@ function SearchView({ equipment, selectedEquipmentId, setSelectedEquipmentId, on
   );
 }
 
-function EquipmentDetails({ equipment, onBack, onBookNow, onJoinWaitlist, onReportIssue }) {
+function EquipmentDetails({ equipment, onBack, onBookNow, onJoinWaitlist }) {
   return (
     <div>
       <button onClick={onBack} className="mb-5 text-sm font-semibold text-slate-500 hover:text-blue-600 flex items-center gap-1">
@@ -419,7 +442,9 @@ function EquipmentDetails({ equipment, onBack, onBookNow, onJoinWaitlist, onRepo
       <div className="rounded-2xl border border-slate-200 bg-white p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-4xl">{equipment.image}</span>
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-4xl overflow-hidden">
+              {equipment.photoUrl ? <img src={equipment.photoUrl} alt={equipment.name} className="h-full w-full object-cover" /> : equipment.image}
+            </span>
             <div>
               <h1 className="text-xl font-extrabold text-slate-900">{equipment.name}</h1>
               <p className="text-sm text-slate-500">{equipment.category} · {equipment.department}</p>
@@ -436,8 +461,12 @@ function EquipmentDetails({ equipment, onBack, onBookNow, onJoinWaitlist, onRepo
             <p className="mt-1.5 text-sm text-slate-700">{equipment.specs}</p>
           </div>
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Laboratory</p>
+            <p className="mt-1.5 text-sm text-slate-700">{equipment.labName || "—"}</p>
+          </div>
+          <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Location</p>
-            <p className="mt-1.5 text-sm text-slate-700 flex items-center gap-1"><MapPin size={13} /> {equipment.location}</p>
+            <p className="mt-1.5 text-sm text-slate-700 flex items-center gap-1"><MapPin size={13} /> {equipment.location || "—"}</p>
           </div>
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Calibration Status</p>
@@ -460,9 +489,6 @@ function EquipmentDetails({ equipment, onBack, onBookNow, onJoinWaitlist, onRepo
               Join Waitlist
             </button>
           )}
-          <button onClick={onReportIssue} className="rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 transition-colors">
-            Report Issue
-          </button>
           <button onClick={onBack} className="rounded-lg text-slate-500 hover:text-slate-700 text-sm font-semibold px-5 py-2.5 transition-colors">
             Back
           </button>
@@ -599,7 +625,7 @@ function RescheduleModal({ booking, equipment, onClose, onConfirm }) {
 /* ================================================================== */
 /*  1.11  My Bookings (4 tabs)                                          */
 /* ================================================================== */
-function BookingsView({ myBookings, waitlist, equipmentById, activeTab, setActiveTab, onCancel, onReschedule, onBookNew }) {
+function BookingsView({ myBookings, waitlist, equipmentById, activeTab, setActiveTab, onCancel, onReschedule, onBookNew, onReportIssue }) {
   const tabs = [
     { id: "upcoming", label: "Upcoming" },
     { id: "active", label: "Active" },
@@ -643,11 +669,11 @@ function BookingsView({ myBookings, waitlist, equipmentById, activeTab, setActiv
       )}
       {activeTab === "active" && (
         active.length === 0 ? <EmptyState icon={FlaskConical} title="No equipment currently in use" /> :
-        <BookingTable rows={active} equipmentById={equipmentById} />
+        <BookingTable rows={active} equipmentById={equipmentById} onReportIssue={onReportIssue} showReportIssue />
       )}
       {activeTab === "history" && (
         history.length === 0 ? <EmptyState icon={ClipboardList} title="No booking history yet" /> :
-        <BookingTable rows={history} equipmentById={equipmentById} showReason />
+        <BookingTable rows={history} equipmentById={equipmentById} onReportIssue={onReportIssue} showReportIssue showReason />
       )}
       {activeTab === "waitlist" && (
         waitlist.length === 0 ? <EmptyState icon={Clock} title="You're not on any waitlists" /> : (
@@ -678,7 +704,7 @@ function BookingsView({ myBookings, waitlist, equipmentById, activeTab, setActiv
   );
 }
 
-function BookingTable({ rows, equipmentById, onCancel, onReschedule, showActions, showReason }) {
+function BookingTable({ rows, equipmentById, onCancel, onReschedule, onReportIssue, showActions, showReportIssue, showReason }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
       <table className="w-full text-sm">
@@ -687,7 +713,7 @@ function BookingTable({ rows, equipmentById, onCancel, onReschedule, showActions
             <th className="text-left font-semibold px-5 py-3">Equipment</th>
             <th className="text-left font-semibold px-5 py-3">Schedule</th>
             <th className="text-left font-semibold px-5 py-3">Status</th>
-            {showActions && <th className="text-right font-semibold px-5 py-3">Actions</th>}
+            {(showActions || showReportIssue) && <th className="text-right font-semibold px-5 py-3">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -708,6 +734,15 @@ function BookingTable({ rows, equipmentById, onCancel, onReschedule, showActions
                   <button onClick={() => onCancel(b.id)} className="text-xs font-semibold text-red-500 hover:text-red-600">Cancel</button>
                 </td>
               )}
+              {showReportIssue && (
+                <td className="px-5 py-3.5 text-right">
+                  {(b.status === "IN_USE" || b.status === "COMPLETED") && (
+                    <button onClick={() => onReportIssue(b.equipmentId)} className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1 ml-auto">
+                      <AlertTriangle size={12} /> Report Issue
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -719,14 +754,30 @@ function BookingTable({ rows, equipmentById, onCancel, onReschedule, showActions
 /* ================================================================== */
 /*  1.12  Report Issue                                                  */
 /* ================================================================== */
-function ReportIssueView({ equipment, myReports, equipmentById, prefillEquipmentId, onSubmit }) {
+function ReportIssueView({ bookedEquipment, myReports, equipmentById, prefillEquipmentId, onSubmit, onBrowseEquipment }) {
   const [equipmentId, setEquipmentId] = useState(prefillEquipmentId || "");
   const [issueType, setIssueType] = useState("Mechanical Fault");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
-  const [fileName, setFileName] = useState("");
+  const [photo, setPhoto] = useState(null); // { name, previewUrl }
   const [errors, setErrors] = useState({});
   const locked = Boolean(prefillEquipmentId);
+
+  const handlePhoto = (fileList) => {
+    const file = fileList?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setErrors((e) => ({ ...e, photo: "Please attach an image file (JPG, PNG, HEIC…)." }));
+      return;
+    }
+    if (photo?.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+    setErrors((e) => ({ ...e, photo: undefined }));
+    setPhoto({ name: file.name, previewUrl: URL.createObjectURL(file) });
+  };
+  const removePhoto = () => {
+    if (photo?.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+    setPhoto(null);
+  };
 
   const submit = () => {
     const e = {};
@@ -734,25 +785,43 @@ function ReportIssueView({ equipment, myReports, equipmentById, prefillEquipment
     if (!description.trim()) e.description = "Please describe the problem.";
     setErrors(e);
     if (Object.keys(e).length) return;
-    onSubmit({ equipmentId, issueType, description, priority });
+    onSubmit({ equipmentId, issueType, description, priority, photoName: photo?.name || null });
     setDescription("");
-    setFileName("");
+    removePhoto();
   };
+
+  if (bookedEquipment.length === 0) {
+    return (
+      <div>
+        <ViewHeader title="Report Issue" subtitle="Flag a problem with laboratory equipment for the Lab Manager to triage." />
+        <EmptyState
+          icon={AlertTriangle}
+          title="You haven't booked any equipment yet"
+          subtitle="You can report an issue once you have an active or completed booking for that equipment."
+        />
+        <div className="mt-5 text-center">
+          <button onClick={onBrowseEquipment} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 transition-colors">
+            Browse Equipment
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <ViewHeader title="Report Issue" subtitle="Flag a problem with laboratory equipment for the Lab Manager to triage." />
+      <ViewHeader title="Report Issue" subtitle="Flag a problem with equipment you've booked, for the Lab Manager to triage." />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6">
           <div className="space-y-4">
-            <Field label="Equipment" required error={errors.equipmentId}>
+            <Field label="Equipment" required error={errors.equipmentId} hint={!locked ? "Only equipment you've booked appears here." : undefined}>
               {locked ? (
                 <input readOnly value={equipmentById[equipmentId]?.name || ""} className={`${inputClass()} bg-slate-50 text-slate-500`} />
               ) : (
                 <select value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} className={inputClass(errors.equipmentId)}>
-                  <option value="">Select equipment…</option>
-                  {equipment.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  <option value="">Select equipment you've booked…</option>
+                  {bookedEquipment.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               )}
             </Field>
@@ -774,12 +843,27 @@ function ReportIssueView({ equipment, myReports, equipmentById, prefillEquipment
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Describe what happened…" className={inputClass(errors.description)} />
             </Field>
 
-            <Field label="Attachment">
-              <label className="w-full rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/40 transition-colors py-5 flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer">
-                <input type="file" className="hidden" onChange={(e) => setFileName(e.target.files?.[0]?.name || "")} />
-                <Camera size={18} className="text-blue-600" />
-                <span className="text-xs">{fileName || "Attach a photo or document"}</span>
-              </label>
+            <Field label="Photo" error={errors.photo} hint="A photo helps the technician diagnose the issue faster.">
+              {photo ? (
+                <div className="relative w-fit">
+                  <img src={photo.previewUrl} alt="Issue preview" className="h-32 w-32 rounded-lg object-cover border border-slate-200" />
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-bold shadow hover:bg-slate-700 transition-colors"
+                    aria-label="Remove photo"
+                  >
+                    ×
+                  </button>
+                  <p className="mt-1.5 text-xs text-slate-400 truncate max-w-32">{photo.name}</p>
+                </div>
+              ) : (
+                <label className="w-full rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/40 transition-colors py-5 flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer">
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handlePhoto(e.target.files)} />
+                  <Camera size={18} className="text-blue-600" />
+                  <span className="text-xs">Attach a photo of the equipment</span>
+                </label>
+              )}
             </Field>
 
             <button onClick={submit} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">

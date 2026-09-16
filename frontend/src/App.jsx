@@ -1,11 +1,11 @@
-import LabFlowPro from './Components/LabFlowPro.jsx'
+import AppRoutes from "./routes/AppRoutes.jsx";
 
 function App() {
   return (
     <>
-    <LabFlowPro />
+      <AppRoutes />
     </>
-  )
+  );
 }
 
-export default App
+export default App;

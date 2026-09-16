@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import {
   Search, UserPlus, MoreVertical, ArrowLeft, Building2, Users as UsersIcon,
-  ShieldCheck, UserCog, Wrench, ChevronRight,
+  ShieldCheck, UserCog, Wrench, ChevronRight, Mail, Copy, Link2, ExternalLink, CheckCircle2
 } from "lucide-react";
 import { Modal, Field, inputClass, EmptyState } from "../shared/ui.jsx";
+import { authApi } from "../../api/authApi.js";
 
 /* ================================================================== *
  *  User Management (Institution Admin)                                *
@@ -75,6 +76,8 @@ export default function UserManagementView({ toast }) {
   const [page, setPage] = useState(1);
 
   const [inviteTarget, setInviteTarget] = useState(null); // { department, role } | null
+  const [setupModalData, setSetupModalData] = useState(null); // { fullName, email, setupUrl, token } | null
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
   const [roleModalUser, setRoleModalUser] = useState(null);
   const [detailModal, setDetailModal] = useState(null); // { user, mode: "view" | "edit" }
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -105,17 +108,37 @@ export default function UserManagementView({ toast }) {
   const clearFilters = () => { setSearch(""); setDeptFilter("ALL"); setRoleFilter("ALL"); setStatusFilter("ALL"); setPage(1); };
 
   /* ---- actions ---- */
-  const applyInvite = (form) => {
-    const conflict = findRoleConflict(users, form.department, form.role, null);
-    if (conflict) {
-      toast(`${form.department} already has ${conflict.status === "ACTIVE" ? "an active" : "an invited"} ${ROLE_LABEL[form.role]}: ${conflict.name}. Change their role first.`, "error");
+  const applyInvite = async (form) => {
+    try {
+      const roleName = form.role === "TECHNICIAN" ? "LAB_TECHNICIAN" : form.role;
+      const payload = {
+        fullName: `${form.firstName} ${form.lastName}`.trim(),
+        email: form.email.trim(),
+        phoneNumber: form.phone.trim(),
+        departmentId: 21,
+        roleName: roleName,
+      };
+
+      const res = await authApi.inviteStaff(payload);
+      const setupUrl = res.setupUrl || `${window.location.origin}/accept-invitation?token=${res.token}`;
+
+      setSetupModalData({
+        fullName: res.fullName || payload.fullName,
+        email: res.email || payload.email,
+        roleName: res.roleName || payload.roleName,
+        setupUrl: setupUrl,
+        token: res.token,
+      });
+
+      const id = `U-${Date.now()}`;
+      setUsers((list) => [{ id, name: payload.fullName, email: payload.email, department: form.department || "Computer Science and Engineering", role: form.role, status: "INVITED" }, ...list]);
+      toast(`Invitation sent to ${form.email}.`, "success");
+      setInviteTarget(null);
+      return true;
+    } catch (err) {
+      toast(err.message || "Failed to create staff invitation.", "error");
       return false;
     }
-    const id = `U-${Date.now()}`;
-    setUsers((list) => [{ id, name: form.name, email: form.email, department: form.department, role: form.role, status: "INVITED" }, ...list]);
-    toast(`Invitation sent to ${form.email}.`, "success");
-    setInviteTarget(null);
-    return true;
   };
   const applyRoleChange = (userId, newRole) => {
     const user = users.find((u) => u.id === userId);
@@ -139,12 +162,35 @@ export default function UserManagementView({ toast }) {
     toast(message, status === "REMOVED" ? "error" : "success");
     setOpenMenuId(null);
   };
-  const cancelInvitation = (userId) => {
+  const cancelInvitation = async (userId) => {
     const user = users.find((u) => u.id === userId);
-    setUsers((list) => list.filter((u) => u.id !== userId));
-    toast(`Invitation to ${user?.email} cancelled.`, "info");
+    try {
+      if (user?.invitationId) {
+        await authApi.cancelStaffInvitation(user.invitationId);
+      }
+      setUsers((list) => list.filter((u) => u.id !== userId));
+      toast(`Invitation to ${user?.email || "staff"} cancelled.`, "info");
+    } catch (err) {
+      toast(err.message || "Failed to cancel invitation.", "error");
+    }
     setOpenMenuId(null);
   };
+
+  const handleDeactivateConfirm = async (user, reason) => {
+    try {
+      if (user.rawUserId || user.userId) {
+        const uId = user.rawUserId || user.userId;
+        await authApi.deactivateStaff(uId, reason);
+      }
+      setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, status: "INACTIVE", deactivationReason: reason, deactivatedAt: new Date().toISOString() } : u)));
+      toast(`${user.name} deactivated. Email notification sent to staff.`, "success");
+      return true;
+    } catch (err) {
+      toast(err.message || "Failed to deactivate staff user.", "error");
+      return false;
+    }
+  };
+
   const resendInvitation = (user) => {
     toast(`Invitation resent to ${user.email}.`, "success");
     setOpenMenuId(null);
@@ -164,21 +210,14 @@ export default function UserManagementView({ toast }) {
     if (user.status === "INACTIVE") {
       return [
         view,
-        { label: "Edit User", onClick: () => setDetailModal({ user, mode: "edit" }) },
-        { label: "Activate", onClick: () => setStatus(user.id, "ACTIVE", `${user.name} reactivated.`) },
-        { divider: true },
-        { label: "Remove User", danger: true, onClick: () => setStatus(user.id, "REMOVED", `${user.name} removed from the institution.`) },
       ];
     }
     // ACTIVE
     return [
       view,
-      { label: "Edit User", onClick: () => setDetailModal({ user, mode: "edit" }) },
       { label: "Change Role", onClick: () => setRoleModalUser(user) },
       { divider: true },
-      { label: "Deactivate", onClick: () => setStatus(user.id, "INACTIVE", `${user.name} deactivated.`) },
-      { divider: true },
-      { label: "Remove User", danger: true, onClick: () => setStatus(user.id, "REMOVED", `${user.name} removed from the institution.`) },
+      { label: "Deactivate Account", danger: true, onClick: () => setDeactivateTarget(user) },
     ];
   };
 
@@ -338,6 +377,20 @@ export default function UserManagementView({ toast }) {
           defaultRole={inviteTarget.role}
           onClose={() => setInviteTarget(null)}
           onSubmit={applyInvite}
+        />
+      )}
+      {setupModalData && (
+        <StaffPasswordSetupLinkModal
+          data={setupModalData}
+          onClose={() => setSetupModalData(null)}
+          toast={toast}
+        />
+      )}
+      {deactivateTarget && (
+        <DeactivateStaffModal
+          user={deactivateTarget}
+          onClose={() => setDeactivateTarget(null)}
+          onConfirm={handleDeactivateConfirm}
         />
       )}
       {roleModalUser && (
@@ -507,43 +560,147 @@ function SlotRow({ label, user, emptyAction, emptyLabel, menuActions, openMenuId
 /*  Modals                                                             */
 /* ---------------------------------------------------------------- */
 function InviteUserModal({ departments, defaultDepartment, defaultRole, onClose, onSubmit }) {
-  const [form, setForm] = useState({ name: "", email: "", department: defaultDepartment, role: defaultRole });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    department: defaultDepartment,
+    role: defaultRole,
+  });
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const submit = () => {
+  const submit = async () => {
     const e = {};
-    if (!form.name.trim()) e.name = "Name is required.";
+    if (!form.firstName.trim()) e.firstName = "First name is required.";
     if (!form.email.trim()) e.email = "Email is required.";
+    if (!form.phone.trim()) e.phone = "Phone number is required.";
     setErrors(e);
     if (Object.keys(e).length) return;
-    onSubmit(form);
+
+    setSubmitting(true);
+    const success = await onSubmit(form);
+    setSubmitting(false);
+    if (success) onClose();
   };
 
   return (
-    <Modal title="Invite User" subtitle={`New ${ROLE_LABEL[form.role]} for ${form.department}`} onClose={onClose}>
+    <Modal title="Invite Staff Member" subtitle={`New ${ROLE_LABEL[form.role]} for ${form.department}`} onClose={onClose}>
       <div className="space-y-4">
-        <Field label="Full Name" required error={errors.name}>
-          <input value={form.name} onChange={set("name")} placeholder="e.g. Priya Sharma" className={inputClass(errors.name)} />
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="First Name" required error={errors.firstName}>
+            <input value={form.firstName} onChange={set("firstName")} placeholder="e.g. Ramesh" className={inputClass(errors.firstName)} />
+          </Field>
+          <Field label="Last Name">
+            <input value={form.lastName} onChange={set("lastName")} placeholder="e.g. Kumar" className={inputClass()} />
+          </Field>
+        </div>
+
+        <Field label="Email Address" required error={errors.email}>
+          <input type="email" value={form.email} onChange={set("email")} placeholder="ramesh.tech@kce.ac.in" className={inputClass(errors.email)} />
         </Field>
-        <Field label="Email" required error={errors.email}>
-          <input type="email" value={form.email} onChange={set("email")} placeholder="name@sunrise.edu" className={inputClass(errors.email)} />
+
+        <Field label="Phone Number" required error={errors.phone} hint="Must be a valid 10-digit mobile number">
+          <input value={form.phone} onChange={set("phone")} placeholder="9870012345" className={inputClass(errors.phone)} />
         </Field>
+
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Department">
             <select value={form.department} onChange={set("department")} className={inputClass()}>
               {departments.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </Field>
-          <Field label="Role">
+          <Field label="Staff Role">
             <select value={form.role} onChange={set("role")} className={inputClass()}>
               {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
           </Field>
         </div>
-        <button onClick={submit} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">
-          Send Invitation
+
+        <button
+          onClick={submit}
+          disabled={submitting}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-sm disabled:opacity-50"
+        >
+          {submitting ? "Creating Invitation..." : "Send Invitation"}
         </button>
+      </div>
+    </Modal>
+  );
+}
+
+function StaffPasswordSetupLinkModal({ data, onClose, toast }) {
+  const handleCopy = () => {
+    if (data?.setupUrl) {
+      navigator.clipboard.writeText(data.setupUrl);
+      toast("Password setup link copied to clipboard!", "success");
+    }
+  };
+
+  const handleOpenNewTab = () => {
+    if (data?.setupUrl) {
+      window.open(data.setupUrl, "_blank");
+    }
+  };
+
+  return (
+    <Modal title="Staff Password Setup Link" subtitle={`Invitation created for ${data?.fullName}`} onClose={onClose}>
+      <div className="space-y-5">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800">
+          <p className="font-bold flex items-center gap-1.5 mb-1">
+            <CheckCircle2 size={16} className="text-emerald-600" /> Invitation Created Successfully
+          </p>
+          <p>An email containing the setup link has been automatically dispatched to <strong>{data?.email}</strong>.</p>
+        </div>
+
+        {/* OPTION 1 */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-1 text-xs">
+          <p className="font-bold text-slate-800 flex items-center gap-1.5">
+            <Mail size={15} className="text-blue-600" /> OPTION 1 — Email Sent
+          </p>
+          <p className="text-slate-600">The staff member will receive an email containing the password setup link.</p>
+        </div>
+
+        {/* OPTION 2 */}
+        <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-3 text-xs">
+          <p className="font-bold text-blue-900 flex items-center gap-1.5">
+            <Link2 size={15} className="text-blue-600" /> OPTION 2 — Manual Copy Link
+          </p>
+          <p className="text-slate-600">If the staff member does not receive the email, manually copy and share this link:</p>
+          
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={data?.setupUrl || ""}
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 font-mono select-all focus:outline-none"
+            />
+            <button
+              onClick={handleCopy}
+              className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3.5 py-2 flex items-center gap-1.5 transition-colors text-xs shrink-0"
+            >
+              <Copy size={14} /> Copy Link
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <button
+            onClick={handleOpenNewTab}
+            className="rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold px-4 py-2 flex items-center gap-1.5 transition-colors"
+          >
+            <ExternalLink size={14} /> Open Link in New Tab
+          </button>
+
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-5 py-2 transition-colors"
+          >
+            Done
+          </button>
+        </div>
       </div>
     </Modal>
   );
@@ -585,6 +742,14 @@ function UserDetailModal({ user, mode, departments, onClose, onSave }) {
           </div>
         </div>
 
+        {user.deactivationReason && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 space-y-1">
+            <p className="font-bold">Deactivation Details:</p>
+            <p><span className="font-semibold">Reason:</span> "{user.deactivationReason}"</p>
+            {user.deactivatedAt && <p><span className="font-semibold">Date:</span> {new Date(user.deactivatedAt).toLocaleString()}</p>}
+          </div>
+        )}
+
         <Field label="Full Name"><input disabled={!editing} value={form.name} onChange={set("name")} className={`${inputClass()} ${!editing ? "bg-slate-50 text-slate-500" : ""}`} /></Field>
         <Field label="Email"><input disabled={!editing} value={form.email} onChange={set("email")} className={`${inputClass()} ${!editing ? "bg-slate-50 text-slate-500" : ""}`} /></Field>
         <Field label="Department">
@@ -600,8 +765,65 @@ function UserDetailModal({ user, mode, departments, onClose, onSave }) {
         {editing ? (
           <button onClick={() => onSave(form)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">Save Changes</button>
         ) : (
-          <button onClick={() => setEditing(true)} className="w-full rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold py-3 transition-colors">Edit</button>
+          <button onClick={() => setEditing(true)} className="w-full rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold py-3 transition-colors">Close</button>
         )}
+      </div>
+    </Modal>
+  );
+}
+
+function DeactivateStaffModal({ user, onClose, onConfirm }) {
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      setError("Reason for deactivation is required.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    const success = await onConfirm(user, reason.trim());
+    setSubmitting(false);
+    if (success) onClose();
+  };
+
+  return (
+    <Modal title="Deactivate Staff Account" subtitle={`${user.name} · ${user.email}`} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900">
+          <p className="font-bold mb-1">Warning: Account Deactivation</p>
+          <p>Deactivating this staff account will immediately block sign-in access. The staff member will receive an email notification detailing the reason.</p>
+        </div>
+
+        <Field label="Reason for Deactivation" required error={error} hint="Please provide a clear reason for deactivation">
+          <textarea
+            rows={3}
+            value={reason}
+            onChange={(e) => { setReason(e.target.value); setError(""); }}
+            placeholder="e.g. Staff member is no longer assigned to this laboratory position."
+            className={inputClass(error)}
+          />
+        </Field>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold py-2.5 transition-colors text-xs"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition-colors text-xs shadow-sm disabled:opacity-50"
+          >
+            {submitting ? "Deactivating..." : "Confirm Deactivation"}
+          </button>
+        </div>
       </div>
     </Modal>
   );

@@ -61,6 +61,8 @@ export function Logo({ onClick, dark = false }) {
 export function Modal({ title, subtitle, onClose, children, wide = false, footer }) {
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 py-8 overflow-y-auto"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >

@@ -2,7 +2,24 @@
 // Reads/writes the JWT to localStorage under LABFLOW_TOKEN_KEY so a page
 // refresh doesn't sign the user out.
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+// Backend origin comes from the Vite env var VITE_API_URL (e.g.
+// http://localhost:8080 locally, https://<your-service>.onrender.com in production).
+// VITE_API_BASE_URL is still honoured for backwards compatibility; a trailing
+// "/api" on either value is stripped so the "/api" suffix is never duplicated.
+const RAW_API_URL = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8080"
+).trim().replace(/\/+$/, "");
+
+/** Backend origin, no trailing slash and no "/api" suffix. */
+export const API_ORIGIN = RAW_API_URL.replace(/\/api$/, "");
+
+/** Base URL for REST calls. All existing code appends paths like "/bookings". */
+export const API_BASE_URL = `${API_ORIGIN}/api`;
+
+/** WebSocket origin derived from the same env var (http -> ws, https -> wss). */
+export const WS_ORIGIN = API_ORIGIN.replace(/^http/, "ws");
 
 const TOKEN_KEY = "labflow_token";
 const USER_KEY = "labflow_user";
@@ -47,7 +64,10 @@ export async function apiFetch(path, { method = "GET", body, params } = {}) {
     if (query) url += `?${query}`;
   }
 
-  const headers = { "Content-Type": "application/json" };
+  const headers = {};
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -56,11 +76,12 @@ export async function apiFetch(path, { method = "GET", body, params } = {}) {
     response = await fetch(url, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : (body !== undefined ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined),
     });
   } catch (networkErr) {
+    if (networkErr instanceof ApiError) throw networkErr;
     throw new ApiError(
-      "Could not reach the LabFlow Pro server. Is the backend running on " + API_BASE_URL + "?",
+      "Could not reach the LabFlow Pro server. Please make sure the backend is running and try again.",
       0
     );
   }

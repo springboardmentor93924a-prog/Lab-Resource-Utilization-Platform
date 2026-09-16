@@ -1,17 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   LayoutDashboard, CalendarClock, Wrench, Gauge, FileText, Bell, UserRound,
   Package, Plus, Pencil, ThumbsUp, ThumbsDown, ChevronRight, AlertTriangle,
-  CircleCheckBig, Download,
+  CircleCheckBig, Download, Camera,
 } from "lucide-react";
 import {
   Modal, Field, inputClass, StatusBadge, StatCard, DashboardShell, ViewHeader, EmptyState,
 } from "../shared/ui.jsx";
 import UtilizationHeatmapPage from "../shared/UtilizationHeatmapPage.jsx";
-import {
-  DEMO_EQUIPMENT, DEMO_BOOKINGS, DEMO_MAINTENANCE_REQUESTS, DEMO_TECHNICIANS,
-  DEMO_NOTIFICATIONS, formatDateTime,
-} from "../../data/mockData.js";
+import MaintenanceOversightView from "../shared/MaintenanceOversightView.jsx";
+import DepartmentEquipmentView from "../shared/DepartmentEquipmentView.jsx";
+import { formatDateTime } from "../../data/mockData.js";
+import { equipmentApi } from "../../api/equipmentApi.js";
+import { maintenanceApi } from "../../api/maintenanceApi.js";
+import { bookingApi } from "../../api/bookingApi.js";
 
 const NAV_ITEMS = [
   { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -28,25 +30,66 @@ let eqCounter = 109;
 
 export default function ManagerDashboard({ user, onLogout, toast }) {
   const [view, setView] = useState("home");
-  const [equipment, setEquipment] = useState(DEMO_EQUIPMENT);
-  const [bookings, setBookings] = useState(DEMO_BOOKINGS);
-  const [maintenance, setMaintenance] = useState(DEMO_MAINTENANCE_REQUESTS);
-  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS.manager);
+  const [equipment, setEquipment] = useState([]);
+  const [loadingEq, setLoadingEq] = useState(true);
+  const [bookings, setBookings] = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [equipModal, setEquipModal] = useState(null); // "new" | equipmentId
   const [rejectTarget, setRejectTarget] = useState(null); // booking
+  const [cancelTarget, setCancelTarget] = useState(null); // maintenance task
 
-  const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.id, e])), [equipment]);
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const approveBooking = (id) => {
-    setBookings((list) => list.map((b) => (b.id === id ? { ...b, status: "CONFIRMED" } : b)));
-    toast(`Booking ${id} approved — researcher notified.`, "success");
+  const loadBookings = () => {
+    bookingApi
+      .getDepartmentBookings()
+      .then((data) => setBookings(data || []))
+      .catch(() => setBookings([]));
   };
 
-  const rejectBooking = (id, reason) => {
-    setBookings((list) => list.map((b) => (b.id === id ? { ...b, status: "REJECTED", rejectionReason: reason } : b)));
-    toast(`Booking ${id} rejected — researcher notified.`, "error");
-    setRejectTarget(null);
+  useEffect(() => {
+    setLoadingEq(true);
+    equipmentApi
+      .search({ institutionId: user?.institutionId, departmentId: user?.departmentId })
+      .then((data) => setEquipment(data || []))
+      .catch((err) => toast?.(err.message || "Failed to load equipment.", "error"))
+      .finally(() => setLoadingEq(false));
+
+    loadBookings();
+  }, [user?.institutionId, user?.departmentId]);
+
+  const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.equipmentId || e.id, e])), [equipment]);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const approveBooking = async (id) => {
+    try {
+      await bookingApi.approve(id);
+      toast(`Booking ${id} approved — researcher notified.`, "success");
+      loadBookings();
+    } catch (err) {
+      toast(err?.message || `Failed to approve booking ${id}.`, "error");
+    }
+  };
+
+  const rejectBooking = async (id, reason) => {
+    try {
+      await bookingApi.reject(id, reason);
+      toast(`Booking ${id} rejected — researcher notified.`, "error");
+      setRejectTarget(null);
+      loadBookings();
+    } catch (err) {
+      toast(err?.message || `Failed to reject booking ${id}.`, "error");
+    }
+  };
+
+  const handleManagerCancelTask = async (task, reason) => {
+    try {
+      const taskId = task.maintenanceId || task.id;
+      await maintenanceApi.managerCancel(taskId, reason);
+      toast(`Maintenance task ${taskId} cancelled successfully.`, "success");
+      setCancelTarget(null);
+    } catch (err) {
+      toast(err.message || "Failed to cancel maintenance task.", "error");
+    }
   };
 
   const saveEquipment = (payload, editingId) => {
@@ -93,8 +136,9 @@ export default function ManagerDashboard({ user, onLogout, toast }) {
       )}
 
       {view === "equipment" && (
-        <EquipmentView
-          equipment={equipment}
+        <DepartmentEquipmentView
+          user={user}
+          toast={toast}
           onAdd={() => setEquipModal("new")}
           onEdit={(id) => setEquipModal(id)}
         />
@@ -110,11 +154,7 @@ export default function ManagerDashboard({ user, onLogout, toast }) {
       )}
 
       {view === "maintenance" && (
-        <MaintenanceOversightView
-          maintenance={maintenance}
-          equipmentById={equipmentById}
-          onAssign={assignTask}
-        />
+        <MaintenanceOversightView user={user} toast={toast} />
       )}
 
       {view === "utilization" && (
@@ -152,8 +192,9 @@ export default function ManagerDashboard({ user, onLogout, toast }) {
 /* ================================================================== */
 function HomeView({ bookings, equipment, maintenance, notifications, onOpenApprovals, onOpenUtilization, onOpenMaintenance }) {
   const pending = bookings.filter((b) => b.status === "PENDING_APPROVAL").length;
-  const activeMaintenance = maintenance.filter((m) => m.status !== "COMPLETED").length;
-  const utilization = 71.4;
+  const activeMaintenance = maintenance.filter((m) => m.status !== "COMPLETED" && m.status !== "CANCELLED").length;
+  const bookedCount = equipment.filter((e) => e.status === "BOOKED").length;
+  const utilization = equipment.length > 0 ? ((bookedCount / equipment.length) * 100).toFixed(1) : "0.0";
 
   const statusCounts = ["AVAILABLE", "BOOKED", "UNDER_MAINTENANCE", "OUT_OF_SERVICE", "RETIRED"].map((s) => ({
     status: s,
@@ -185,15 +226,18 @@ function HomeView({ bookings, equipment, maintenance, notifications, onOpenAppro
             <EmptyState icon={CalendarClock} title="No approval activity yet" />
           ) : (
             <div className="divide-y divide-slate-100">
-              {recentApprovals.map((b) => (
-                <div key={b.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{b.researcher} — {b.id}</p>
-                    <p className="text-xs text-slate-500">{formatDateTime(b.start)}</p>
+              {recentApprovals.map((b, idx) => {
+                const bKey = b.bookingId || b.id || `bk-${idx}`;
+                return (
+                  <div key={bKey} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{b.researcher || b.userEmail || "Researcher"} — Booking #{bKey}</p>
+                      <p className="text-xs text-slate-500">{formatDateTime(b.start || b.startDatetime)}</p>
+                    </div>
+                    <StatusBadge status={b.status} />
                   </div>
-                  <StatusBadge status={b.status} />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -214,8 +258,8 @@ function HomeView({ bookings, equipment, maintenance, notifications, onOpenAppro
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
         <h2 className="text-base font-bold text-slate-900 mb-4">Notifications</h2>
         <div className="grid sm:grid-cols-3 gap-3">
-          {notifications.map((n) => (
-            <div key={n.id} className={`rounded-lg border p-3 text-xs ${n.read ? "border-slate-100 bg-slate-50" : "border-blue-100 bg-blue-50"}`}>
+          {notifications.map((n, idx) => (
+            <div key={n.id || `notif-${idx}`} className={`rounded-lg border p-3 text-xs ${n.read ? "border-slate-100 bg-slate-50" : "border-blue-100 bg-blue-50"}`}>
               <p className="font-semibold text-slate-800">{n.title}</p>
               <p className="text-slate-500 mt-1">{n.message}</p>
             </div>
@@ -322,60 +366,7 @@ function RejectModal({ booking, equipmentName, onClose, onConfirm }) {
   );
 }
 
-/* ================================================================== */
-/*  3.3  Department Equipment Management                                */
-/* ================================================================== */
-function EquipmentView({ equipment, onAdd, onEdit }) {
-  return (
-    <div>
-      <ViewHeader
-        title="Department Equipment"
-        subtitle="Inventory catalog for equipment owned by your department."
-        action={
-          <button onClick={onAdd} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 flex items-center gap-1.5 transition-colors">
-            <Plus size={15} /> Add Equipment
-          </button>
-        }
-      />
-      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-            <tr>
-              <th className="text-left font-semibold px-5 py-3">Equipment</th>
-              <th className="text-left font-semibold px-5 py-3">Category</th>
-              <th className="text-left font-semibold px-5 py-3">Location</th>
-              <th className="text-left font-semibold px-5 py-3">Status</th>
-              <th className="text-right font-semibold px-5 py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {equipment.map((e) => (
-              <tr key={e.id}>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{e.image}</span>
-                    <div>
-                      <p className="font-semibold text-slate-800">{e.name}</p>
-                      <p className="text-xs text-slate-400">{e.id}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-slate-600">{e.category}</td>
-                <td className="px-5 py-3.5 text-slate-600">{e.location}</td>
-                <td className="px-5 py-3.5"><StatusBadge status={e.status} /></td>
-                <td className="px-5 py-3.5 text-right">
-                  <button onClick={() => onEdit(e.id)} className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 ml-auto">
-                    <Pencil size={12} /> Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+
 
 function EquipmentFormModal({ equipment, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -388,8 +379,25 @@ function EquipmentFormModal({ equipment, onClose, onSave }) {
     calibrationInterval: equipment?.calibrationInterval || "6 months",
     description: equipment?.description || "",
   });
+  const [photo, setPhoto] = useState(equipment?.photoUrl ? { name: "Current photo", previewUrl: equipment.photoUrl } : null);
   const [errors, setErrors] = useState({});
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handlePhoto = (fileList) => {
+    const file = fileList?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setErrors((e) => ({ ...e, photo: "Please upload an image file (JPG, PNG…)." }));
+      return;
+    }
+    if (photo?.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+    setErrors((e) => ({ ...e, photo: undefined }));
+    setPhoto({ name: file.name, previewUrl: URL.createObjectURL(file) });
+  };
+  const removePhoto = () => {
+    if (photo?.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+    setPhoto(null);
+  };
 
   const submit = () => {
     const e = {};
@@ -398,7 +406,7 @@ function EquipmentFormModal({ equipment, onClose, onSave }) {
     if (!form.location.trim()) e.location = "Location is required.";
     setErrors(e);
     if (Object.keys(e).length) return;
-    onSave(form);
+    onSave({ ...form, photoUrl: photo?.previewUrl || null });
   };
 
   return (
@@ -427,6 +435,28 @@ function EquipmentFormModal({ equipment, onClose, onSave }) {
         <Field label="Specifications">
           <input value={form.specs} onChange={set("specs")} placeholder="Key technical specifications" className={inputClass()} />
         </Field>
+        <Field label="Equipment Photo" error={errors.photo} hint="Shown to researchers when browsing and booking this equipment.">
+          {photo ? (
+            <div className="relative w-fit">
+              <img src={photo.previewUrl} alt="Equipment preview" className="h-28 w-28 rounded-lg object-cover border border-slate-200" />
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-bold shadow hover:bg-slate-700 transition-colors"
+                aria-label="Remove photo"
+              >
+                ×
+              </button>
+              <p className="mt-1.5 text-xs text-slate-400 truncate max-w-28">{photo.name}</p>
+            </div>
+          ) : (
+            <label className="w-full rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/40 transition-colors py-5 flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer">
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhoto(e.target.files)} />
+              <Camera size={18} className="text-blue-600" />
+              <span className="text-xs">Upload a photo of the equipment</span>
+            </label>
+          )}
+        </Field>
         <Field label="Description">
           <textarea value={form.description} onChange={set("description")} rows={3} placeholder="Short description for researchers" className={inputClass()} />
         </Field>
@@ -445,90 +475,7 @@ function EquipmentFormModal({ equipment, onClose, onSave }) {
   );
 }
 
-/* ================================================================== */
-/*  3.4  Maintenance Oversight & Task Assignment                        */
-/* ================================================================== */
-function MaintenanceOversightView({ maintenance, equipmentById, onAssign }) {
-  const unassigned = maintenance.filter((m) => !m.assignedTechnicianId && m.status === "OPEN");
-  const assigned = maintenance.filter((m) => m.assignedTechnicianId);
 
-  return (
-    <div>
-      <ViewHeader title="Maintenance Oversight" subtitle="Review reported issues and assign work to lab technicians." />
-
-      <h2 className="text-sm font-bold text-slate-900 mb-3">Unassigned Issues</h2>
-      {unassigned.length === 0 ? (
-        <EmptyState icon={CircleCheckBig} title="No unassigned issues" />
-      ) : (
-        <div className="space-y-3 mb-8">
-          {unassigned.map((m) => (
-            <UnassignedRow key={m.id} task={m} equipment={equipmentById[m.equipmentId]} onAssign={onAssign} />
-          ))}
-        </div>
-      )}
-
-      <h2 className="text-sm font-bold text-slate-900 mb-3">Assigned / In Progress</h2>
-      {assigned.length === 0 ? (
-        <EmptyState icon={Wrench} title="No tasks assigned yet" />
-      ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-              <tr>
-                <th className="text-left font-semibold px-5 py-3">Request</th>
-                <th className="text-left font-semibold px-5 py-3">Equipment</th>
-                <th className="text-left font-semibold px-5 py-3">Technician</th>
-                <th className="text-left font-semibold px-5 py-3">Priority</th>
-                <th className="text-left font-semibold px-5 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {assigned.map((m) => (
-                <tr key={m.id}>
-                  <td className="px-5 py-3.5 font-semibold text-blue-600">{m.id}</td>
-                  <td className="px-5 py-3.5 text-slate-700">{equipmentById[m.equipmentId]?.name}</td>
-                  <td className="px-5 py-3.5 text-slate-600">{DEMO_TECHNICIANS.find((t) => t.id === m.assignedTechnicianId)?.name || "—"}</td>
-                  <td className="px-5 py-3.5"><StatusBadge status={m.priority} /></td>
-                  <td className="px-5 py-3.5"><StatusBadge status={m.status} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function UnassignedRow({ task, equipment, onAssign }) {
-  const [technicianId, setTechnicianId] = useState("");
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-wrap items-center justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-bold text-slate-900">{equipment?.name}</p>
-          <span className="text-xs text-slate-400">{task.id}</span>
-          <StatusBadge status={task.priority} />
-        </div>
-        <p className="text-xs text-slate-500 mt-1">{task.issueType} — reported by {task.reportedBy}</p>
-        <p className="text-xs text-slate-600 mt-1">{task.description}</p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <select value={technicianId} onChange={(e) => setTechnicianId(e.target.value)} className="rounded-lg border border-slate-200 text-xs px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">Select technician…</option>
-          {DEMO_TECHNICIANS.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.specialty})</option>)}
-        </select>
-        <button
-          disabled={!technicianId}
-          onClick={() => onAssign(task.id, technicianId)}
-          className="rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:cursor-not-allowed text-white text-xs font-semibold px-4 py-2 transition-colors"
-        >
-          Assign Task
-        </button>
-      </div>
-    </div>
-  );
-}
 
 
 /* ================================================================== */

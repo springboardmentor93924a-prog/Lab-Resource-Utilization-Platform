@@ -1,19 +1,22 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   LayoutDashboard, Share2, Users, Gauge, Receipt, ScrollText, UserRound,
-  Package, Building2, ShieldCheck,
+  Package, Building2, ShieldCheck, Wrench,
 } from "lucide-react";
 import {
   StatusBadge, StatCard, DashboardShell, ViewHeader, inputClass,
 } from "../shared/ui.jsx";
 import UtilizationHeatmapPage from "../shared/UtilizationHeatmapPage.jsx";
+import MaintenanceOversightView from "../shared/MaintenanceOversightView.jsx";
 import CrossInstitutionSharingView from "./CrossInstitutionSharingView.jsx";
 import UserManagementView from "./UserManagementView.jsx";
-import { DEMO_EQUIPMENT, DEMO_BOOKINGS } from "../../data/mockData.js";
+import { DEMO_BOOKINGS } from "../../data/mockData.js";
+import { equipmentApi } from "../../api/equipmentApi.js";
 
 const NAV_ITEMS = [
   { id: "home", label: "Dashboard", icon: LayoutDashboard },
   { id: "network", label: "Institution Equipment Network", icon: Package },
+  { id: "maintenance", label: "Maintenance Oversight", icon: Wrench },
   { id: "sharing", label: "Cross-Institution Sharing", icon: Share2 },
   { id: "users", label: "User Management", icon: Users },
   { id: "analytics", label: "Institution Analytics", icon: Gauge },
@@ -42,10 +45,22 @@ const INVOICE_STATUS_STYLE = { PAID: "CONFIRMED", PENDING: "PENDING_APPROVAL", O
 
 export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
   const [view, setView] = useState("home");
-  const [equipment] = useState(DEMO_EQUIPMENT);
+  const [equipment, setEquipment] = useState([]);
+  const [loadingEq, setLoadingEq] = useState(true);
   const [bookings] = useState(DEMO_BOOKINGS);
 
-  const departments = useMemo(() => [...new Set(equipment.map((e) => e.department))].sort(), [equipment]);
+  useEffect(() => {
+    setLoadingEq(true);
+    equipmentApi
+      .search({ institutionId: user?.institutionId })
+      .then((data) => setEquipment(data || []))
+      .catch((err) => toast?.(err.message || "Failed to load equipment.", "error"))
+      .finally(() => setLoadingEq(false));
+  }, [user?.institutionId]);
+
+  const departments = useMemo(() => {
+    return [...new Set(equipment.map((e) => e.departmentName || e.department).filter(Boolean))].sort();
+  }, [equipment]);
 
   return (
     <DashboardShell
@@ -60,7 +75,8 @@ export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
       {view === "home" && (
         <HomeView user={user} equipment={equipment} onOpenAnalytics={() => setView("analytics")} onOpenSharing={() => setView("sharing")} />
       )}
-      {view === "network" && <NetworkView equipment={equipment} departments={departments} />}
+      {view === "network" && <NetworkView equipment={equipment} loading={loadingEq} departments={departments} />}
+      {view === "maintenance" && <MaintenanceOversightView user={user} toast={toast} />}
       {view === "sharing" && <CrossInstitutionSharingView user={user} toast={toast} />}
       {view === "users" && <UserManagementView toast={toast} />}
       {view === "analytics" && (
@@ -77,10 +93,11 @@ export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
 function HomeView({ user, equipment, onOpenAnalytics, onOpenSharing }) {
   const activeEquipment = equipment.filter((e) => e.status !== "RETIRED");
   const utilization = 68; // institution-wide headline figure — see Institution Analytics for the breakdown
+  const deptList = [...new Set(equipment.map((e) => e.departmentName || e.department).filter(Boolean))].sort();
 
   return (
     <div>
-      <ViewHeader title="Institution Administrator Dashboard" subtitle={`${user.institution} — institution-wide equipment, sharing, and access oversight.`} />
+      <ViewHeader title="Institution Administrator Dashboard" subtitle={`${user.institutionName || user.institution} — institution-wide equipment, sharing, and access oversight.`} />
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Package} label="Total Active Equipment" value={activeEquipment.length} tone="text-blue-600" bg="bg-blue-50" onClick={onOpenAnalytics} />
         <StatCard icon={Gauge} label="Institution-Wide Utilization Rate" value={`${utilization}%`} tone="text-emerald-600" bg="bg-emerald-50" onClick={onOpenAnalytics} />
@@ -91,10 +108,10 @@ function HomeView({ user, equipment, onOpenAnalytics, onOpenSharing }) {
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
         <h2 className="text-base font-bold text-slate-900 mb-4">Equipment by Department</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[...new Set(equipment.map((e) => e.department))].sort().map((d) => (
+          {deptList.map((d) => (
             <div key={d} className="rounded-xl border border-slate-100 bg-slate-50 p-3 flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5"><Building2 size={13} className="text-slate-400" /> {d}</span>
-              <span className="font-bold text-slate-700 text-sm">{equipment.filter((e) => e.department === d).length}</span>
+              <span className="font-bold text-slate-700 text-sm">{equipment.filter((e) => (e.departmentName || e.department) === d).length}</span>
             </div>
           ))}
         </div>
@@ -104,9 +121,9 @@ function HomeView({ user, equipment, onOpenAnalytics, onOpenSharing }) {
 }
 
 /* ---------------------------------------------------------------- */
-function NetworkView({ equipment, departments }) {
+function NetworkView({ equipment, loading, departments }) {
   const [deptFilter, setDeptFilter] = useState("ALL");
-  const rows = equipment.filter((e) => deptFilter === "ALL" || e.department === deptFilter);
+  const rows = equipment.filter((e) => deptFilter === "ALL" || (e.departmentName || e.department) === deptFilter);
   return (
     <div>
       <ViewHeader
@@ -119,33 +136,48 @@ function NetworkView({ equipment, departments }) {
           </select>
         }
       />
-      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-            <tr>
-              <th className="text-left font-semibold px-5 py-3">Equipment</th>
-              <th className="text-left font-semibold px-5 py-3">Department</th>
-              <th className="text-left font-semibold px-5 py-3">Location</th>
-              <th className="text-left font-semibold px-5 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((e) => (
-              <tr key={e.id}>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{e.image}</span>
-                    <div><p className="font-semibold text-slate-800">{e.name}</p><p className="text-xs text-slate-400">{e.id}</p></div>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-slate-600">{e.department}</td>
-                <td className="px-5 py-3.5 text-slate-600">{e.location}</td>
-                <td className="px-5 py-3.5"><StatusBadge status={e.status} /></td>
+      {loading ? (
+        <p className="text-sm text-slate-500 py-4">Loading equipment network...</p>
+      ) : rows.length === 0 ? (
+        <EmptyState icon={Package} title="No equipment found" />
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
+              <tr>
+                <th className="text-left font-semibold px-5 py-3">Equipment</th>
+                <th className="text-left font-semibold px-5 py-3">Department</th>
+                <th className="text-left font-semibold px-5 py-3">Laboratory</th>
+                <th className="text-left font-semibold px-5 py-3">Location</th>
+                <th className="text-left font-semibold px-5 py-3">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((e) => (
+                <tr key={e.equipmentId || e.id}>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      {e.imageSecureUrl ? (
+                        <img src={e.imageSecureUrl} alt={e.name} className="w-8 h-8 rounded object-cover" />
+                      ) : (
+                        <span className="text-lg">{e.image || "🧫"}</span>
+                      )}
+                      <div>
+                        <p className="font-semibold text-slate-800">{e.name}</p>
+                        <p className="text-xs text-slate-400">{e.serialNumber || `ID: ${e.equipmentId || e.id}`}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5 text-slate-600">{e.departmentName || e.department || "N/A"}</td>
+                  <td className="px-5 py-3.5 text-slate-600">{e.labName || "—"}</td>
+                  <td className="px-5 py-3.5 text-slate-600">{e.location || "—"}</td>
+                  <td className="px-5 py-3.5"><StatusBadge status={e.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

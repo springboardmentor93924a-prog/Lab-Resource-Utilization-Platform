@@ -3,7 +3,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Logo } from "../common/Logo";
 import { useAuth } from "../../context/AuthContext";
 
-export function LoginPage({ goTo, toast, pendingAccounts = [], prefillEmail = "" }) {
+export function LoginPage({ goTo, toast, pendingAccounts = [], prefillEmail = "", role, onLoginSuccess }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: prefillEmail, password: "", remember: false });
   const [showPassword, setShowPassword] = useState(false);
@@ -39,14 +39,53 @@ export function LoginPage({ goTo, toast, pendingAccounts = [], prefillEmail = ""
     try {
       const user = await login(form.email.trim().toLowerCase(), form.password);
       toast("Signed in successfully.", "success");
-      if (user.roles?.includes("RESEARCHER")) {
-        goTo("researcher-dashboard");
+      let activeRole = role;
+      if (!activeRole && user?.roles) {
+        if (user.roles.includes("ROLE_LAB_MANAGER") || user.roles.includes("LAB_MANAGER")) {
+          activeRole = { id: "manager", label: "Lab Manager" };
+        } else if (user.roles.includes("ROLE_LAB_TECHNICIAN") || user.roles.includes("LAB_TECHNICIAN")) {
+          activeRole = { id: "technician", label: "Lab Technician" };
+        } else if (user.roles.includes("ROLE_DEPARTMENT_HEAD") || user.roles.includes("DEPARTMENT_HEAD")) {
+          activeRole = { id: "department-head", label: "Department Head" };
+        } else if (user.roles.includes("ROLE_INSTITUTION_ADMIN") || user.roles.includes("INSTITUTION_ADMIN")) {
+          activeRole = { id: "institution-admin", label: "Institution Admin" };
+        }
+      }
+      if (onLoginSuccess) {
+        onLoginSuccess(user, activeRole);
+      } else if (activeRole?.id) {
+        goTo(`dashboard-${activeRole.id}`);
+      } else if (user?.roles?.includes("RESEARCHER")) {
+        goTo("dashboard-researcher");
       } else {
         goTo("dashboard");
       }
     } catch (e) {
-      toast(e.message || "Invalid email or password.", "error");
-      setErrors({ password: "Invalid email or password." });
+      const status = e.status;
+      if (status === 401) {
+        toast("Invalid email or password.", "error");
+        setErrors({ password: "Invalid email or password." });
+      } else if (status === 400) {
+        const msg = e.message || "Account setup is incomplete. Please complete password setup using your account setup link.";
+        toast(msg, "error");
+        setErrors({ email: msg });
+      } else if (status === 403) {
+        const msg = e.message || "This account has been deactivated.";
+        toast(msg, "error");
+        setErrors({ email: msg });
+      } else if (status === 0) {
+        const msg = "Could not reach the LabFlow Pro server. Please make sure the backend is running and try again.";
+        toast(msg, "error");
+        setErrors({ email: msg });
+      } else if (status >= 500) {
+        const msg = "Something went wrong on the server. Please try again.";
+        toast(msg, "error");
+        setErrors({ email: msg });
+      } else {
+        const msg = e.message || "Invalid email or password.";
+        toast(msg, "error");
+        setErrors({ email: msg });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -106,6 +145,7 @@ export function LoginPage({ goTo, toast, pendingAccounts = [], prefillEmail = ""
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
+                  type="email"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="name@institution.edu"

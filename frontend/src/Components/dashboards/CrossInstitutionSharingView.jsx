@@ -334,28 +334,46 @@ function InstitutionDetail({ institution, onBack, onRequestAccess }) {
         <EmptyState icon={Search} title="No equipment matches your filters" />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rows.map((e) => (
-            <div key={e.id} className="rounded-2xl border border-slate-200 bg-white p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-2xl">{e.image}</span>
-                <StatusBadge status={e.status} />
+          {rows.map((e) => {
+            const isEligible = e.isShareable !== false;
+            return (
+              <div key={e.id} className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-2xl">{e.image || "🔬"}</span>
+                    <StatusBadge status={e.status} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-900 leading-snug">{e.name}</p>
+                  <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5"><Building2 size={11} /> Department: {e.department}</p>
+                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5"><MapPin size={11} /> {e.location}</p>
+                  <p className="text-xs text-slate-400 mt-1">Category: {e.category}</p>
+
+                  <div className="mt-2.5">
+                    {isEligible ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700">
+                        🟢 AVAILABLE FOR SHARING REQUEST
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-extrabold text-slate-500">
+                        ⚪ SHARING DISABLED
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button className="flex-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 transition-colors">View Details</button>
+                  <button
+                    disabled={!isEligible || e.status !== "AVAILABLE"}
+                    onClick={() => onRequestAccess(institution, e)}
+                    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:cursor-not-allowed text-white text-xs font-semibold py-2 transition-colors"
+                  >
+                    Request Access
+                  </button>
+                </div>
               </div>
-              <p className="text-sm font-bold text-slate-900 leading-snug">{e.name}</p>
-              <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5"><Building2 size={11} /> Department: {e.department}</p>
-              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5"><MapPin size={11} /> {e.location}</p>
-              <p className="text-xs text-slate-400 mt-1">Category: {e.category}</p>
-              <div className="mt-4 flex gap-2">
-                <button className="flex-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 transition-colors">View Details</button>
-                <button
-                  disabled={e.status !== "AVAILABLE"}
-                  onClick={() => onRequestAccess(institution, e)}
-                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:cursor-not-allowed text-white text-xs font-semibold py-2 transition-colors"
-                >
-                  Request Access
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

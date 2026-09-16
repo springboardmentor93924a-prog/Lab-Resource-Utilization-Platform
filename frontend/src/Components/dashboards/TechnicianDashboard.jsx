@@ -1,15 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard, Wrench, Thermometer, Bell, UserRound, ClipboardList,
-  Camera, Upload, ChevronRight, CircleCheckBig, AlertTriangle,
+  Camera, Upload, ChevronRight, CircleCheckBig, AlertTriangle, Trash2, Send
 } from "lucide-react";
 import {
   Modal, Field, inputClass, StatusBadge, StatCard, DashboardShell, ViewHeader, EmptyState,
-} from "../shared/ui.jsx";
-import {
-  DEMO_EQUIPMENT, DEMO_MAINTENANCE_REQUESTS, DEMO_CALIBRATIONS, DEMO_NOTIFICATIONS,
-  formatDate,
-} from "../../data/mockData.js";
+import { maintenanceApi } from "../../api/maintenanceApi.js";
+import { subscribeToMaintenanceUpdates } from "../../api/wsClient.js";
+import { formatDate, formatDateTime } from "../../utils/formatters.js";
 
 const NAV_ITEMS = [
   { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -20,18 +18,58 @@ const NAV_ITEMS = [
   { id: "profile", label: "Profile", icon: UserRound },
 ];
 
-const TECH_ID = "T-1"; // current signed-in technician for this demo session
-
 export default function TechnicianDashboard({ user, onLogout, toast }) {
   const [view, setView] = useState("home");
-  const [equipment, setEquipment] = useState(DEMO_EQUIPMENT);
-  const [tasks, setTasks] = useState(DEMO_MAINTENANCE_REQUESTS);
-  const [calibrations, setCalibrations] = useState(DEMO_CALIBRATIONS);
-  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS.technician);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
-  const [calModalFor, setCalModalFor] = useState(null);
+  const [notifications, setNotifications] = useState([]);
 
-  const myTasks = useMemo(() => tasks.filter((t) => t.assignedTechnicianId === TECH_ID), [tasks]);
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      const data = await maintenanceApi.getTechnicianTasks();
+      setTasks(data || []);
+    } catch (err) {
+      console.warn("Failed to load technician tasks:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTasks();
+    // Real-time STOMP WebSocket listener for automatic update without page refresh
+    const unsubscribe = subscribeToMaintenanceUpdates((updatedTask) => {
+      setTasks((prev) => {
+        const idx = prev.findIndex((t) => t.maintenanceId === updatedTask.maintenanceId);
+        if (idx !== -1) {
+          const list = [...prev];
+          list[idx] = { ...list[idx], ...updatedTask };
+          return list;
+        }
+        return [updatedTask, ...prev];
+      });
+      toast("Real-time schedule update received from Lab Manager!", "info");
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const selectedTask = useMemo(() => tasks.find((t) => t.maintenanceId === selectedTaskId), [tasks, selectedTaskId]);
+
+  const handleCancelAssignment = async (id) => {
+    try {
+      await maintenanceApi.cancelAssignment(id);
+      toast("Assignment cancelled/removed successfully.", "success");
+      setSelectedTaskId(null);
+      loadTasks();
+    } catch (err) {
+      toast(err.message || "Failed to cancel assignment.", "error");
+    }
+  };
+
+  const myTasks = tasks;
   const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.id, e])), [equipment]);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -85,15 +123,13 @@ export default function TechnicianDashboard({ user, onLogout, toast }) {
       {view === "tasks" && (
         selectedTaskId ? (
           <TaskDetails
-            task={tasks.find((t) => t.id === selectedTaskId)}
-            equipment={equipmentById[tasks.find((t) => t.id === selectedTaskId)?.equipmentId]}
+            task={tasks.find((t) => t.maintenanceId === selectedTaskId)}
             onBack={() => setSelectedTaskId(null)}
-            onUpdateStatus={(status) => updateTask(selectedTaskId, { status })}
-            onSaveNotes={(notes) => updateTask(selectedTaskId, { notes })}
-            onMarkResolved={(notes) => markResolved(selectedTaskId, notes)}
+            onRefresh={loadTasks}
+            toast={toast}
           />
         ) : (
-          <TasksView tasks={myTasks} equipmentById={equipmentById} onOpen={setSelectedTaskId} />
+          <TasksView tasks={tasks} onOpen={setSelectedTaskId} />
         )
       )}
 
@@ -185,34 +221,45 @@ function HomeView({ myTasks, equipment, notifications, onOpenTasks, onOpenCalibr
 /* ================================================================== */
 /*  2.2  Assigned Tasks (Work Orders)                                   */
 /* ================================================================== */
-function TasksView({ tasks, equipmentById, onOpen }) {
+function TasksView({ tasks, onOpen }) {
   return (
     <div>
       <ViewHeader title="Assigned Tasks" subtitle="Work orders assigned to you by the Lab Manager." />
       {tasks.length === 0 ? (
         <EmptyState icon={ClipboardList} title="No tasks assigned yet" />
       ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide border-b border-slate-200">
               <tr>
-                <th className="text-left font-semibold px-5 py-3">Request ID</th>
-                <th className="text-left font-semibold px-5 py-3">Equipment</th>
-                <th className="text-left font-semibold px-5 py-3">Issue</th>
-                <th className="text-left font-semibold px-5 py-3">Priority</th>
-                <th className="text-left font-semibold px-5 py-3">Status</th>
-                <th className="text-left font-semibold px-5 py-3">Due</th>
+                <th className="px-5 py-3.5 font-semibold">Work Order</th>
+                <th className="px-5 py-3.5 font-semibold">Equipment</th>
+                <th className="px-5 py-3.5 font-semibold">Manager Target Schedule</th>
+                <th className="px-5 py-3.5 font-semibold">Priority</th>
+                <th className="px-5 py-3.5 font-semibold">Status</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {tasks.map((t) => (
-                <tr key={t.id} onClick={() => onOpen(t.id)} className="cursor-pointer hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3.5 font-semibold text-blue-600">{t.id}</td>
-                  <td className="px-5 py-3.5 text-slate-700">{equipmentById[t.equipmentId]?.name}</td>
-                  <td className="px-5 py-3.5 text-slate-600 max-w-[220px] truncate">{t.issueType}</td>
+                <tr key={t.maintenanceId} onClick={() => onOpen(t.maintenanceId)} className="cursor-pointer hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3.5 font-semibold text-blue-600">{t.maintenanceCode || `MR-${t.maintenanceId}`}</td>
+                  <td className="px-5 py-3.5 text-slate-800 font-medium">{t.equipmentName || `Equipment #${t.equipmentId}`}</td>
+                  <td className="px-5 py-3.5 text-xs text-slate-600">
+                    {t.managerTargetStartDatetime ? (
+                      <div>
+                        <p className="font-semibold text-slate-800">{new Date(t.managerTargetStartDatetime).toLocaleDateString()}</p>
+                        <p className="text-slate-400">{new Date(t.managerTargetStartDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(t.managerTargetEndDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">Not set</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5"><StatusBadge status={t.priority} /></td>
                   <td className="px-5 py-3.5"><StatusBadge status={t.status} /></td>
-                  <td className="px-5 py-3.5 text-slate-500">{formatDate(t.dueDate)}</td>
+                  <td className="px-5 py-3.5 text-right">
+                    <span className="text-xs font-semibold text-blue-600 hover:text-blue-700">View & Respond →</span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -223,21 +270,103 @@ function TasksView({ tasks, equipmentById, onOpen }) {
   );
 }
 
-function TaskDetails({ task, equipment, onBack, onUpdateStatus, onSaveNotes, onMarkResolved }) {
-  const [notes, setNotes] = useState(task?.notes || "");
-  const [fileName, setFileName] = useState("");
+function TaskDetails({ task, onBack, onRefresh, toast }) {
+  const [proposedStart, setProposedStart] = useState(task?.proposedStartDatetime || task?.managerTargetStartDatetime || "");
+  const [proposedEnd, setProposedEnd] = useState(task?.proposedEndDatetime || task?.managerTargetEndDatetime || "");
+  const [delayReason, setDelayReason] = useState(task?.delayReason || "");
+  const [submittingPlan, setSubmittingPlan] = useState(false);
+  const [acceptingSchedule, setAcceptingSchedule] = useState(false);
+  const [workNotes, setWorkNotes] = useState("");
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   if (!task) return null;
+
+  const isAssigned = task.status === "ASSIGNED" && !task.technicianResponse;
+  const isAccepted = task.status === "ACCEPTED" || task.technicianResponse === "ACCEPTED";
+  const canStartWork = task.status === "FINALIZED" || task.status === "ACCEPTED" || task.status === "SCHEDULED" || task.status === "ASSIGNED";
+  const canComplete = task.status === "IN_PROGRESS";
+
+  const handleAcceptSchedule = async () => {
+    try {
+      setAcceptingSchedule(true);
+      await maintenanceApi.acceptSchedule(task.maintenanceId);
+      toast(`Schedule accepted for ${task.maintenanceCode || `MR-${task.maintenanceId}`}. Lab Manager notified.`, "success");
+      onRefresh();
+    } catch (err) {
+      toast(err.message || "Failed to accept schedule.", "error");
+    } finally {
+      setAcceptingSchedule(false);
+    }
+  };
+
+  const handleSubmitPlan = async () => {
+    if (!delayReason || !delayReason.trim()) {
+      toast("Delay justification is required before requesting a different schedule.", "error");
+      return;
+    }
+    if (!proposedStart || !proposedEnd) {
+      toast("Proposed start and end datetimes are required.", "error");
+      return;
+    }
+    try {
+      setSubmittingPlan(true);
+      await maintenanceApi.submitPlan(task.maintenanceId, {
+        proposedStartDateTime: proposedStart,
+        proposedEndDateTime: proposedEnd,
+        delayReason: delayReason.trim()
+      });
+      toast(`Schedule change requested for ${task.maintenanceCode || `MR-${task.maintenanceId}`}. Pending manager review.`, "success");
+      setShowSubmitModal(false);
+      onRefresh();
+    } catch (err) {
+      toast(err.message || "Failed to submit proposed schedule.", "error");
+    } finally {
+      setSubmittingPlan(false);
+    }
+  };
+
+  const handleStartWork = async () => {
+    try {
+      await apiFetch(`/maintenance/${task.maintenanceId}/start`, { method: "POST" });
+      toast(`Work started for ${task.maintenanceCode || `MR-${task.maintenanceId}`}. Equipment set to UNDER_MAINTENANCE.`, "success");
+      onRefresh();
+    } catch (err) {
+      toast(err.message || "Failed to start work.", "error");
+    }
+  };
+
+  const handleCompleteWork = async () => {
+    try {
+      await apiFetch(`/maintenance/${task.maintenanceId}/complete`, {
+        method: "POST",
+        params: { notes: workNotes }
+      });
+      toast(`Work completed for ${task.maintenanceCode || `MR-${task.maintenanceId}`}. Sent for manager verification.`, "success");
+      onRefresh();
+    } catch (err) {
+      toast(err.message || "Failed to complete work.", "error");
+    }
+  };
+
+  const handleCancelAssignment = async () => {
+    try {
+      await maintenanceApi.cancelAssignment(task.maintenanceId);
+      toast("Assignment cancelled successfully.", "success");
+      onBack();
+    } catch (err) {
+      toast(err.message || "Failed to cancel assignment.", "error");
+    }
+  };
 
   return (
     <div>
       <button onClick={onBack} className="mb-5 text-sm font-semibold text-slate-500 hover:text-blue-600">← Back to Assigned Tasks</button>
-      <div className="rounded-2xl border border-slate-200 bg-white p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
-            <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">{task.id}</p>
-            <h1 className="text-xl font-extrabold text-slate-900 mt-1">{equipment?.name}</h1>
-            <p className="text-sm text-slate-500">{task.issueType} · Reported by {task.reportedBy}</p>
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">{task.maintenanceCode || `MR-${task.maintenanceId}`}</p>
+            <h1 className="text-xl font-extrabold text-slate-900 mt-1">{task.equipmentName || `Equipment #${task.equipmentId}`}</h1>
+            <p className="text-sm text-slate-500">{task.issueType || "General Issue"}</p>
           </div>
           <div className="flex gap-2">
             <StatusBadge status={task.priority} />
@@ -245,49 +374,175 @@ function TaskDetails({ task, equipment, onBack, onUpdateStatus, onSaveNotes, onM
           </div>
         </div>
 
-        <div className="mt-5 rounded-xl bg-slate-50 border border-slate-100 p-4">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Problem Description</p>
-          <p className="mt-1.5 text-sm text-slate-700">{task.description}</p>
+        {/* Problem & Repair Descriptions */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-xl bg-blue-50/50 border border-blue-200 p-4">
+            <p className="text-xs font-bold text-blue-900 uppercase tracking-wide">Problem / Repair Description</p>
+            <p className="mt-1.5 text-sm text-slate-800 font-medium">{task.problemDescription || "NOT RECORDED"}</p>
+          </div>
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Reported Issue Description</p>
+            <p className="mt-1.5 text-sm text-slate-700">{task.issueDescription || "NOT RECORDED"}</p>
+          </div>
         </div>
 
-        <div className="mt-5">
-          <Field label="Repair Notes">
-            <textarea
-              value={notes}
-              onChange={(e) => { setNotes(e.target.value); onSaveNotes(e.target.value); }}
-              rows={4}
-              placeholder="Log diagnostic findings, parts used, and repair steps…"
-              className={inputClass()}
-            />
-          </Field>
+        {/* Manager Target & Technician Schedule Section */}
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* 1. Manager Target */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+            <p className="text-xs font-bold text-blue-900 uppercase tracking-wide">Manager Target Schedule</p>
+            {task.managerTargetStartDatetime ? (
+              <div className="mt-2 text-xs text-blue-800 space-y-1">
+                <p><span className="font-semibold">Start:</span> {new Date(task.managerTargetStartDatetime).toLocaleString()}</p>
+                <p><span className="font-semibold">Target Completion:</span> {new Date(task.managerTargetEndDatetime).toLocaleString()}</p>
+                {task.managerInstructions && <p className="text-blue-700 mt-1 italic">"{task.managerInstructions}"</p>}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 mt-2">Not set</p>
+            )}
+          </div>
+
+          {/* 2. Technician Response */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+            <p className="text-xs font-bold text-amber-900 uppercase tracking-wide">Technician Response</p>
+            {isAccepted ? (
+              <div className="mt-2 text-xs text-emerald-800 space-y-1">
+                <p className="font-bold text-emerald-700 flex items-center gap-1"><CircleCheckBig size={14} /> ACCEPTED</p>
+                {task.technicianAcceptedAt && <p className="text-slate-500">Accepted at: {new Date(task.technicianAcceptedAt).toLocaleString()}</p>}
+                <p className="text-slate-600 italic">Target schedule accepted without changes.</p>
+              </div>
+            ) : task.proposedStartDatetime ? (
+              <div className="mt-2 text-xs text-amber-800 space-y-1">
+                <p className="font-bold text-amber-700">DELAY REQUESTED</p>
+                <p><span className="font-semibold">Proposed Start:</span> {new Date(task.proposedStartDatetime).toLocaleString()}</p>
+                <p><span className="font-semibold">Proposed End:</span> {new Date(task.proposedEndDatetime).toLocaleString()}</p>
+                {task.delayReason && <p className="text-amber-900 mt-1 font-medium">Justification: {task.delayReason}</p>}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 mt-2">Awaiting your response</p>
+            )}
+          </div>
+
+          {/* 3. Final Manager Schedule */}
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+            <p className="text-xs font-bold text-emerald-900 uppercase tracking-wide">Manager Final Schedule</p>
+            {task.finalStartDatetime ? (
+              <div className="mt-2 text-xs text-emerald-800 space-y-1">
+                <p><span className="font-semibold">Start:</span> {new Date(task.finalStartDatetime).toLocaleString()}</p>
+                <p><span className="font-semibold">End:</span> {new Date(task.finalEndDatetime).toLocaleString()}</p>
+                {task.managerNotes && <p className="text-emerald-700 mt-1 italic">"{task.managerNotes}"</p>}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 mt-2">{isAccepted ? "Finalized upon acceptance" : "Pending Manager Review"}</p>
+            )}
+          </div>
         </div>
 
-        <div className="mt-4">
-          <Field label="Diagnostic Photo">
-            <label className="w-full rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/40 transition-colors py-5 flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer">
-              <input type="file" className="hidden" onChange={(e) => setFileName(e.target.files?.[0]?.name || "")} />
-              <Camera size={18} className="text-blue-600" />
-              <span className="text-xs">{fileName || "Upload a diagnostic photo"}</span>
-            </label>
-          </Field>
-        </div>
+        {/* Schedule Agreement Prompt & Action Buttons */}
+        {isAssigned && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 space-y-3">
+            <h3 className="text-sm font-bold text-blue-900">Are you okay with this schedule?</h3>
+            <p className="text-xs text-blue-700">Accept the manager's target schedule directly or submit a request for a different schedule with a delay justification.</p>
+            <div className="flex gap-3 pt-1 flex-wrap">
+              <button
+                disabled={acceptingSchedule}
+                onClick={handleAcceptSchedule}
+                className="rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-sm font-semibold px-4 py-2.5 transition-colors flex items-center gap-2"
+              >
+                <CircleCheckBig size={16} /> Accept Schedule
+              </button>
+              <button
+                onClick={() => setShowSubmitModal(true)}
+                className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 transition-colors flex items-center gap-2"
+              >
+                <Send size={16} /> Request Different Schedule
+              </button>
+              <button
+                onClick={handleCancelAssignment}
+                className="rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold px-4 py-2.5 transition-colors"
+              >
+                Cancel Assignment
+              </button>
+            </div>
+          </div>
+        )}
 
-        <div className="mt-5 grid sm:grid-cols-2 gap-4 items-end">
-          <Field label="Status">
-            <select value={task.status} onChange={(e) => onUpdateStatus(e.target.value)} className={inputClass()}>
-              <option value="OPEN">Open</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="WAITING_FOR_PARTS">Waiting for Parts</option>
-            </select>
-          </Field>
-          <button
-            onClick={() => onMarkResolved(notes)}
-            className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 transition-colors flex items-center justify-center gap-2"
-          >
-            <CircleCheckBig size={16} /> Mark Resolved
-          </button>
+        {/* Work Progress Action Buttons */}
+        <div className="flex items-center justify-between pt-4 border-t border-slate-100 flex-wrap gap-3">
+          {canStartWork && task.status !== "IN_PROGRESS" && task.status !== "COMPLETED" && task.status !== "PENDING_VERIFICATION" && (
+            <button
+              onClick={handleStartWork}
+              className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 transition-colors flex items-center gap-2"
+            >
+              <Wrench size={16} /> Start Repair Work
+            </button>
+          )}
+
+          {canComplete && (
+            <div className="w-full space-y-3">
+              <Field label="Work Log / Summary Notes">
+                <textarea
+                  rows={3}
+                  value={workNotes}
+                  onChange={(e) => setWorkNotes(e.target.value)}
+                  placeholder="Detail repairs executed, components replaced, and tests performed…"
+                  className={inputClass()}
+                />
+              </Field>
+              <button
+                onClick={handleCompleteWork}
+                className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 transition-colors flex items-center justify-center gap-2"
+              >
+                <CircleCheckBig size={16} /> Submit for Verification
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Repair Plan Submission Modal */}
+      {showSubmitModal && (
+        <Modal title="Submit Repair Plan" subtitle={task.maintenanceCode || `MR-${task.maintenanceId}`} onClose={() => setShowSubmitModal(false)}>
+          <div className="space-y-4">
+            <Field label="Delay Justification (Mandatory)" required>
+              <textarea
+                rows={3}
+                value={delayReason}
+                onChange={(e) => setDelayReason(e.target.value)}
+                placeholder="Explain why target schedule cannot be met or detail parts/preparation required…"
+                className={inputClass()}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Proposed Start Datetime" required>
+                <input
+                  type="datetime-local"
+                  value={proposedStart}
+                  onChange={(e) => setProposedStart(e.target.value)}
+                  className={inputClass()}
+                />
+              </Field>
+              <Field label="Proposed End Datetime" required>
+                <input
+                  type="datetime-local"
+                  value={proposedEnd}
+                  onChange={(e) => setProposedEnd(e.target.value)}
+                  className={inputClass()}
+                />
+              </Field>
+            </div>
+
+            <button
+              disabled={submittingPlan}
+              onClick={handleSubmitPlan}
+              className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-semibold py-2.5 rounded-lg transition-colors"
+            >
+              {submittingPlan ? "Submitting Plan…" : "Submit Proposal for Manager Review"}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -309,7 +564,8 @@ function EquipmentMaintenanceView({ equipment, tasks }) {
                 <StatusBadge status={e.status} />
               </div>
               <h3 className="mt-3 text-sm font-bold text-slate-900">{e.name}</h3>
-              <p className="text-xs text-slate-500">{e.location}</p>
+              <p className="text-xs text-slate-600 font-medium">Lab: {e.labName || "—"}</p>
+              {e.location && <p className="text-xs text-slate-400">Location: {e.location}</p>}
               {openTask ? (
                 <div className="mt-3 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 flex items-center gap-2">
                   <AlertTriangle size={13} className="text-amber-500 shrink-0" />

@@ -1,0 +1,16 @@
+import { LayoutDashboard, Package, Share2, Wrench, Gauge, Wallet, FileText, Bell, UserRound } from "lucide-react";
+
+/* ================================================================== */
+/*  Department Head -> Dashboard -> Sidebar nav items                  */
+/* ================================================================== */
+export const NAV_ITEMS = [
+  { id: "home", label: "Dashboard", icon: LayoutDashboard },
+  { id: "equipment", label: "Department Equipment", icon: Package },
+  { id: "sharing", label: "Cross-Institution Sharing", icon: Share2 },
+  { id: "maintenance", label: "Maintenance", icon: Wrench },
+  { id: "utilization", label: "Utilization Heatmap", icon: Gauge },
+  { id: "budget", label: "Cost Management", icon: Wallet },
+  { id: "reports", label: "Reports & Analytics", icon: FileText },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "profile", label: "Profile", icon: UserRound },
+];
