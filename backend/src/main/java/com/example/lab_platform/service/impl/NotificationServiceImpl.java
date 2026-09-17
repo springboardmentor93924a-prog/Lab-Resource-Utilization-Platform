@@ -70,7 +70,7 @@ public class NotificationServiceImpl implements NotificationService {
         // Module 7 - Email notifications. Same best-effort treatment as
         // the WebSocket push above: EmailService.send() never throws, so
         // this can't break the caller's actual workflow (booking approval,
-        // waitlist fulfillment, maintenance alert, etc. already succeeded).
+        // waitlist availability, maintenance alert, etc. already succeeded).
         // Covers every notification type in one place, since they're all
         // already funneled through this single create() method.
         emailService.send(user.getEmail(), title, message);

@@ -49,17 +49,18 @@ function Maintenance() {
     // MaintenanceController.createMaintenance's @PreAuthorize.
     const canManageWorkOrders = canDecide;
 
-    // Rejecting a completed work order is a PUT — INSTITUTION_ADMIN isn't
-    // in MaintenanceController's PUT @PreAuthorize at all, so unlike
-    // canDecide above this is Lab Manager (+ System Admin) only. This is
-    // also enforced server-side in MaintenanceServiceImpl.
-    const canReject = ["LAB_MANAGER", "SYSTEM_ADMIN"].includes(role);
+    // Verifying or rejecting work a technician submitted is a PUT —
+    // INSTITUTION_ADMIN isn't in MaintenanceController's PUT @PreAuthorize
+    // at all, so unlike canDecide above this is Lab Manager (+ System
+    // Admin) only. Also enforced server-side in MaintenanceServiceImpl.
+    const canVerify = ["LAB_MANAGER", "SYSTEM_ADMIN"].includes(role);
 
     // Technicians for the "Assign Technician" dropdown (managers/dept
     // heads/admins only — technicians don't need to see this list).
     const [technicians, setTechnicians] = useState([]);
 
-    // "All / Scheduled / Active / In Progress / Completed / Cancelled" —
+    // "All / Scheduled / Active / In Progress / Pending Verification /
+    // Completed / Rejected / Cancelled" —
     // doubles as the maintenance history view (filter down to Completed
     // or Cancelled to see what's closed out).
     const [statusFilter, setStatusFilter] = useState("All");
@@ -277,9 +278,14 @@ function Maintenance() {
     };
 
     const handleMarkComplete = async (record) => {
-        if (!window.confirm(
-            `Mark maintenance for "${getEquipmentName(record)}" as Completed? The equipment will be released back to Available.`
-        )) {
+        // A technician marking work done doesn't close it — the backend
+        // parks it at "Pending Verification" until a Lab Manager signs it
+        // off. Only the manager's own "Completed" releases the equipment.
+        const message = isTech
+            ? `Submit your work on "${getEquipmentName(record)}" for Lab Manager verification? The equipment stays Under Maintenance until it's verified.`
+            : `Verify the maintenance on "${getEquipmentName(record)}" as complete? The equipment will be released back to Available.`;
+
+        if (!window.confirm(message)) {
             return;
         }
 
@@ -317,7 +323,7 @@ function Maintenance() {
         if (reason === null) return;
 
         if (!reason.trim()) {
-            alert("A reason is required to reject a completed task.");
+            alert("A reason is required to send work back for rework.");
             return;
         }
 
@@ -397,6 +403,10 @@ function Maintenance() {
 
         if (value.includes("cancel")) {
             return "status-cancelled";
+        }
+
+        if (value.includes("pending verification")) {
+            return "status-verify";
         }
 
         if (value.includes("reject")) {
@@ -607,8 +617,13 @@ function Maintenance() {
                                     <option value="In Progress">
                                         In Progress
                                     </option>
+                                    {formData.maintenanceStatus === "Pending Verification" && (
+                                        <option value="Pending Verification" disabled>
+                                            Pending Verification — awaiting your review
+                                        </option>
+                                    )}
                                     <option value="Completed">
-                                        Completed
+                                        Completed (verified)
                                     </option>
                                     <option value="Rejected">
                                         Rejected
@@ -707,7 +722,14 @@ function Maintenance() {
                                     <option value="Scheduled">Scheduled</option>
                                     <option value="Active">Active</option>
                                     <option value="In Progress">In Progress</option>
-                                    <option value="Completed">Completed</option>
+                                    <option value="Completed">
+                                        Done — send for verification
+                                    </option>
+                                    {formData.maintenanceStatus === "Pending Verification" && (
+                                        <option value="Pending Verification" disabled>
+                                            Pending Verification — with your Lab Manager
+                                        </option>
+                                    )}
                                     {formData.maintenanceStatus === "Rejected" && (
                                         <option value="Rejected" disabled>
                                             Rejected — pick a status to resubmit
@@ -749,7 +771,7 @@ function Maintenance() {
 
             {!isTech && (
                 <div className="maintenance-status-tabs" style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
-                    {["All", "Scheduled", "Active", "In Progress", "Completed", "Rejected", "Cancelled"].map((tab) => (
+                    {["All", "Scheduled", "Active", "In Progress", "Pending Verification", "Completed", "Rejected", "Cancelled"].map((tab) => (
                         <button
                             key={tab}
                             type="button"
@@ -847,6 +869,9 @@ function Maintenance() {
                     {filteredRecords.map((record) => {
                         const status = record.maintenanceStatus?.toLowerCase() || "";
                         const isClosed = status === "completed" || status === "cancelled";
+                        // Technician has submitted the work; nothing is
+                        // released until a Lab Manager verifies it.
+                        const awaitingVerification = status === "pending verification";
                         const technicianName = getTechnicianName(record);
                         const downtimeDays = getDowntimeDays(record);
 
@@ -922,6 +947,15 @@ function Maintenance() {
                                     </div>
                                 )}
 
+                                {awaitingVerification && (
+                                    <div className="maintenance-verification-banner">
+                                        <strong>Awaiting Lab Manager verification</strong>
+                                        {technicianName
+                                            ? ` — submitted by ${technicianName}. Equipment stays Under Maintenance until verified.`
+                                            : " — equipment stays Under Maintenance until verified."}
+                                    </div>
+                                )}
+
                                 {status === "rejected" && record.rejectionReason && (
                                     <div className="maintenance-rejection-banner">
                                         <strong>Sent back for rework:</strong>
@@ -938,23 +972,27 @@ function Maintenance() {
                                         Edit
                                     </button>
 
-                                    {!isClosed && (
+                                    {!isClosed && !(isTech && awaitingVerification) && (
                                         <button
                                             type="button"
                                             className="complete-maintenance-btn"
                                             onClick={() => handleMarkComplete(record)}
                                         >
-                                            Mark Complete
+                                            {isTech
+                                                ? "Mark Done"
+                                                : awaitingVerification
+                                                    ? "Verify & Release"
+                                                    : "Mark Complete"}
                                         </button>
                                     )}
 
-                                    {canReject && status === "completed" && (
+                                    {canVerify && awaitingVerification && (
                                         <button
                                             type="button"
                                             className="edit-maintenance-btn"
                                             onClick={() => handleReject(record)}
                                         >
-                                            Reject
+                                            Send Back
                                         </button>
                                     )}
                                 </div>

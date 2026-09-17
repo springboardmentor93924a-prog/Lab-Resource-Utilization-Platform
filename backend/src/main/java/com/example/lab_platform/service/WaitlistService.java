@@ -24,7 +24,7 @@ public interface WaitlistService {
     // waitlist entry gets closed (including the timeout sweep in
     // EquipmentStatusScheduler, if nobody decides in time). There's
     // no separate "rejected" state — Cancelled covers every way an
-    // entry can end without being fulfilled.
+    // entry can end.
     // Only allowed while the entry is still AWAITING_DECISION, and only
     // by the user who owns it.
     Waitlist decideOnMissedWindow(Integer waitlistId, String decision);

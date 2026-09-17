@@ -244,12 +244,11 @@ return saved;
 
     /*
      * Notifies everyone currently active on this equipment's waitlist
-     * that the urgent issue is resolved, then runs the allocation
+     * that the urgent issue is resolved, then runs the waitlist
      * cascade (priority entries first, earliest original booking date
      * within that group) so displaced booking-holders and ordinary
-     * waitlisters get auto-booked into their requested slot wherever
-     * it's still free. Anyone not auto-fulfilled just stays on the
-     * waitlist and can book manually like any other user.
+     * waitlisters are told their slot is free again. Nobody is booked
+     * automatically — each user books the slot themselves.
      */
     private void notifyWaitlistOfResolutionAndCascade(Equipment equipment) {
 
@@ -434,5 +433,13 @@ public List<Integer> getUrgentUnresolvedEquipmentIds() {
     // content, so it's safe for any booking-capable role (including
     // STUDENT) to call from the booking form.
     return feedbackRepository.findEquipmentIdsWithUnresolvedUrgentIssue("URGENT", "RESOLVED");
+}
+
+@Override
+public List<Integer> getUnresolvedEquipmentIds() {
+    // Same no-check reasoning as above — bare IDs only. Every
+    // unresolved report blocks booking now, not just URGENT ones, so
+    // this is what the Equipment list page uses to flag a card.
+    return feedbackRepository.findEquipmentIdsWithUnresolvedIssue("RESOLVED");
 }
 }

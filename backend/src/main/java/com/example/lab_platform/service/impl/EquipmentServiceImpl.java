@@ -189,8 +189,14 @@ public class EquipmentServiceImpl
                 continue;
             }
 
+            // Same rule as EquipmentStatusScheduler.calculateStatus:
+            // work submitted for verification (or sent back for rework)
+            // is still open work, so the equipment stays out of service
+            // until a Lab Manager verifies it.
             if (status.equalsIgnoreCase("Active")
-                    || status.equalsIgnoreCase("In Progress")) {
+                    || status.equalsIgnoreCase("In Progress")
+                    || status.equalsIgnoreCase("Pending Verification")
+                    || status.equalsIgnoreCase("Rejected")) {
 
                 return "Under Maintenance";
             }

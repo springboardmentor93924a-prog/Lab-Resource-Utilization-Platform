@@ -37,10 +37,10 @@ public class Maintenance {
     @JoinColumn(name = "assigned_technician_id")
     private User assignedTechnician;
 
-    // Set only when a Lab Manager rejects a Completed work order and
-    // sends it back to the assigned technician to redo. Cleared again
-    // once the technician moves the status away from "Rejected" (i.e.
-    // resubmits their rework) — see MaintenanceServiceImpl.updateMaintenance.
+    // Set only when a Lab Manager rejects work the technician
+    // submitted for verification and sends it back to be redone.
+    // Cleared again once the task moves on from "Rejected" (the redo
+    // being restarted) — see MaintenanceServiceImpl.updateMaintenance.
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 

@@ -28,6 +28,15 @@ public interface EquipmentFeedbackRepository
             Integer equipmentId, String urgency, String status
     );
 
+    // Same live check, but not filtered to URGENT — any unresolved
+    // report (NORMAL or URGENT) blocks booking. This is the one
+    // actually used to gate bookings/approvals/waitlist now; the
+    // urgency-filtered version above is kept for anywhere that still
+    // needs to distinguish severity specifically.
+    boolean existsByEquipment_EquipmentIdAndStatusNot(
+            Integer equipmentId, String status
+    );
+
     // Same live check as above, but as a bulk list of equipment IDs —
     // used to flag "unbookable" equipment in the booking dropdown before
     // the student even attempts to submit, instead of only failing after.
@@ -37,6 +46,18 @@ public interface EquipmentFeedbackRepository
     )
     java.util.List<Integer> findEquipmentIdsWithUnresolvedUrgentIssue(
             @org.springframework.data.repository.query.Param("urgency") String urgency,
+            @org.springframework.data.repository.query.Param("status") String status
+    );
+
+    // Bulk equivalent of existsByEquipment_EquipmentIdAndStatusNot —
+    // any unresolved report of either urgency, not just URGENT. This is
+    // what the frontend now calls to flag equipment before the student
+    // even opens the reservation form.
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT DISTINCT f.equipment.equipmentId FROM EquipmentFeedback f " +
+        "WHERE f.status <> :status"
+    )
+    java.util.List<Integer> findEquipmentIdsWithUnresolvedIssue(
             @org.springframework.data.repository.query.Param("status") String status
     );
 
