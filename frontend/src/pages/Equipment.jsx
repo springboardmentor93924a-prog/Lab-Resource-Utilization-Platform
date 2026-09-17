@@ -40,7 +40,7 @@ function Equipment() {
   // institution admins, and system admins are read-only here, same
   // restriction now enforced backend-side in EquipmentController.
   const myDepartmentId = sessionStorage.getItem("departmentId");
-
+const canManageEquipment = role === "LAB_MANAGER";
 const ownsEquipment = (item) =>
   role === "LAB_MANAGER" &&
   String(item.institution?.institutionId) === String(myInstitutionId) &&
