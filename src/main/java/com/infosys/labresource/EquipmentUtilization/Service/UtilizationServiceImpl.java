@@ -15,6 +15,9 @@ import com.infosys.labresource.cost.service.CostService;
 import com.infosys.labresource.notification.Repository.NotificationRepository;
 import com.infosys.labresource.notification.entity.NotificationType;
 import com.infosys.labresource.notification.service.NotificationService;
+import com.infosys.labresource.user.Repository.UserRepository;
+import com.infosys.labresource.user.entites.Role;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 import com.infosys.labresource.user.entites.UserEntity;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class UtilizationServiceImpl implements UtilizationService{
     private final BookingWaitlistRepository waitlistRepo;
 private final NotificationService notifService;
 private final CostService costService;
+private final UserRepository userRepo;
     @Override
     public UtilizationResponseDTO startUtilization(Long bookingId) {
         Booking booking = bookingRepo.findById(bookingId)
@@ -123,22 +127,38 @@ private final CostService costService;
     }
 
     @Override
-    public List<UtilizationResponseDTO> getAllUtilization() {
-        List<Utilization> utilList = utilRepo.findAll();
+    public List<UtilizationResponseDTO> getAllUtilization(String email) {
+
+        List<Equipment> scopedEquip = getScopedEquipment(email);
 
         List<UtilizationResponseDTO> responseList = new ArrayList<>();
 
-        for (Utilization util : utilList) {
-            responseList.add(convertToDTO(util));
+        // same per-equipment loop pattern already used below in analytics,
+        // this way no new "find by list of equipment" query is needed
+        for (Equipment equip : scopedEquip) {
+
+            List<Utilization> utilList = utilRepo.findByEquipment(equip);
+
+            for (Utilization util : utilList) {
+                responseList.add(convertToDTO(util));
+            }
         }
 
         return responseList;
     }
 
     @Override
-    public UtilizationResponseDTO getUtilizationById(Long utilizationId) {
+    public UtilizationResponseDTO getUtilizationById(Long utilizationId, String email) {
+
         Utilization util = utilRepo.findById(utilizationId)
                 .orElseThrow(() -> new RuntimeException("Utilization record not found."));
+
+        UserEntity caller = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (!isInCallerScope(util.getEquipment(), caller)) {
+            throw new AccessDeniedException("You are not authorized to view this utilization record.");
+        }
 
         return convertToDTO(util);
     }
@@ -157,9 +177,9 @@ private final CostService costService;
     }
 
     @Override
-    public List<UtilizationAnalyticsDTO> getUtilizationAnalytics() {
+    public List<UtilizationAnalyticsDTO> getUtilizationAnalytics(String email) {
 
-        List<Equipment> equipList = equipRepo.findAll();
+        List<Equipment> equipList = getScopedEquipment(email);
 
         List<UtilizationAnalyticsDTO> responseList = new ArrayList<>();
 
@@ -227,6 +247,44 @@ private final CostService costService;
         }
 
         return responseList;
+    }
+
+    /*
+     * This is the actual fix for the cross-department leak. Instead of
+     * equipRepo.findAll(), the caller's own role decides what they can see:
+     * SYSTEM_ADMIN -> everything, INSTITUTION_ADMIN -> their institution,
+     * everyone else (department head, lab manager, lab technician) -> their
+     * own department only. Nothing here comes from the request, all of it
+     * comes from the authenticated user's own row in the database.
+     */
+    private List<Equipment> getScopedEquipment(String email) {
+
+        UserEntity caller = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (caller.getRole() == Role.SYSTEM_ADMIN) {
+            return equipRepo.findAll();
+        }
+
+        if (caller.getRole() == Role.INSTITUTION_ADMIN) {
+            return equipRepo.findByInstitution(caller.getInstitution());
+        }
+
+        // department head, lab manager, lab technician all get their own department's scope
+        return equipRepo.findByDepartment(caller.getDepartment());
+    }
+
+    private boolean isInCallerScope(Equipment equip, UserEntity caller) {
+
+        if (caller.getRole() == Role.SYSTEM_ADMIN) {
+            return true;
+        }
+
+        if (caller.getRole() == Role.INSTITUTION_ADMIN) {
+            return equip.getInstitution().getInstitutionId().equals(caller.getInstitution().getInstitutionId());
+        }
+
+        return equip.getDepartment().getDepartId().equals(caller.getDepartment().getDepartId());
     }
 
     /*

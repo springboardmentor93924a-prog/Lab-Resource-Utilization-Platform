@@ -10,9 +10,13 @@ import com.infosys.labresource.cost.dtos.CostSummaryDTO;
 import com.infosys.labresource.cost.entity.UsageCost;
 import com.infosys.labresource.user.Repository.DepartmentRepo;
 import com.infosys.labresource.user.Repository.InstitutionRepo;
+import com.infosys.labresource.user.Repository.UserRepository;
 import com.infosys.labresource.user.entites.Department;
 import com.infosys.labresource.user.entites.Institution;
+import com.infosys.labresource.user.entites.Role;
+import com.infosys.labresource.user.entites.UserEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +33,7 @@ public class CostServiceImpl implements CostService{
     private final EquipmentRepository equipRepo;
     private final InstitutionRepo instRepo;
     private final DepartmentRepo deptRepo;
-
+private final UserRepository userRepo;
     @Override
     public void generateCost(Utilization util) {
 
@@ -95,10 +99,28 @@ public class CostServiceImpl implements CostService{
     }
 
     @Override
-    public CostSummaryDTO getCostByDepartment(Long deptId) {
+    public CostSummaryDTO getCostByDepartment(Long deptId, String email) {
 
         Department dept = deptRepo.findById(deptId)
                 .orElseThrow(() -> new RuntimeException("Department not found."));
+
+        // deptId comes from the URL, so it cannot be trusted on its own,
+        // this is what actually checks the caller is allowed to see it
+        UserEntity caller = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (caller.getRole() != Role.SYSTEM_ADMIN) {
+
+            if (caller.getRole() == Role.INSTITUTION_ADMIN) {
+
+                if (!dept.getInstitution().getInstitutionId().equals(caller.getInstitution().getInstitutionId())) {
+                    throw new AccessDeniedException("This department does not belong to your institution.");
+                }
+
+            } else if (!dept.getDepartId().equals(caller.getDepartment().getDepartId())) {
+                throw new AccessDeniedException("You are not authorized to view this department's cost data.");
+            }
+        }
 
         List<UsageCost> costList = costRepo.findByUsedByDepartment(dept);
 
@@ -122,10 +144,12 @@ public class CostServiceImpl implements CostService{
     }
 
     @Override
-    public CostSummaryDTO getCostByInstitution(Long instId) {
+    public CostSummaryDTO getCostByInstitution(Long instId, String email) {
 
         Institution inst = instRepo.findById(instId)
                 .orElseThrow(() -> new RuntimeException("Institution not found."));
+
+        checkInstitutionAccess(inst, email);
 
         List<UsageCost> costList = costRepo.findByUsedByInstitution(inst);
 
@@ -133,15 +157,34 @@ public class CostServiceImpl implements CostService{
     }
 
     @Override
-    public CostSummaryDTO getBillingForInstitution(Long instId) {
+    public CostSummaryDTO getBillingForInstitution(Long instId, String email) {
 
         Institution inst = instRepo.findById(instId)
                 .orElseThrow(() -> new RuntimeException("Institution not found."));
+
+        checkInstitutionAccess(inst, email);
 
         // only the cross institution rows count as billing, internal usage is not billed to anyone
         List<UsageCost> costList = costRepo.findByOwnerInstitutionAndCrossInstitutionTrue(inst);
 
         return buildSummary(inst, costList);
+    }
+
+    // SYSTEM_ADMIN can look at any institution, INSTITUTION_ADMIN only their own
+    private void checkInstitutionAccess(Institution inst, String email) {
+
+        UserEntity caller = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (caller.getRole() == Role.SYSTEM_ADMIN) {
+            return;
+        }
+
+        if (caller.getRole() != Role.INSTITUTION_ADMIN
+                || !inst.getInstitutionId().equals(caller.getInstitution().getInstitutionId())) {
+
+            throw new AccessDeniedException("You are not authorized to view this institution's data.");
+        }
     }
 
     private CostSummaryDTO buildSummary(Institution inst, List<UsageCost> costList) {

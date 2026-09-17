@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface CostService {
 
+
     // called right when a utilization record is completed, this is what actually creates the cost row
     void generateCost(Utilization util);
 
@@ -15,10 +16,11 @@ public interface CostService {
 
     List<CostResponseDTO> getCostByEquipment(Long equipId);
 
-    CostSummaryDTO getCostByDepartment(Long deptId);
+    // email is the caller's own identity, used to check they're actually allowed to see this department
+    CostSummaryDTO getCostByDepartment(Long deptId, String email);
 
-    CostSummaryDTO getCostByInstitution(Long instId);
+    CostSummaryDTO getCostByInstitution(Long instId, String email);
 
     // what other institutions owe this institution for shared equipment usage
-    CostSummaryDTO getBillingForInstitution(Long instId);
+    CostSummaryDTO getBillingForInstitution(Long instId, String email);
 }

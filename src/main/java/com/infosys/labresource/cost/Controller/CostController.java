@@ -7,6 +7,7 @@ import lombok.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.List;
 public class CostController {
     private final CostService costService;
 
+    // system-wide, unscoped, admin only on purpose - this is NOT the endpoint
+    // a department dashboard should ever call, use /department/{deptId} instead
     @GetMapping
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','INSTITUTION_ADMIN')")
     public ResponseEntity<List<CostResponseDTO>> getAllCosts() {
@@ -32,20 +35,20 @@ public class CostController {
 
     @GetMapping("/department/{deptId}")
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','INSTITUTION_ADMIN','DEPARTMENT_HEAD','LAB_MANAGER')")
-    public ResponseEntity<CostSummaryDTO> getCostByDepartment(@PathVariable Long deptId) {
-        return ResponseEntity.ok(costService.getCostByDepartment(deptId));
+    public ResponseEntity<CostSummaryDTO> getCostByDepartment(@PathVariable Long deptId, Authentication auth) {
+        return ResponseEntity.ok(costService.getCostByDepartment(deptId, auth.getName()));
     }
 
     @GetMapping("/institution/{instId}")
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','INSTITUTION_ADMIN')")
-    public ResponseEntity<CostSummaryDTO> getCostByInstitution(@PathVariable Long instId) {
-        return ResponseEntity.ok(costService.getCostByInstitution(instId));
+    public ResponseEntity<CostSummaryDTO> getCostByInstitution(@PathVariable Long instId, Authentication auth) {
+        return ResponseEntity.ok(costService.getCostByInstitution(instId, auth.getName()));
     }
 
     // inter institution billing, what other institutions owe this one for shared equipment usage
     @GetMapping("/billing/{instId}")
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','INSTITUTION_ADMIN')")
-    public ResponseEntity<CostSummaryDTO> getBillingForInstitution(@PathVariable Long instId) {
-        return ResponseEntity.ok(costService.getBillingForInstitution(instId));
+    public ResponseEntity<CostSummaryDTO> getBillingForInstitution(@PathVariable Long instId, Authentication auth) {
+        return ResponseEntity.ok(costService.getBillingForInstitution(instId, auth.getName()));
     }
 }

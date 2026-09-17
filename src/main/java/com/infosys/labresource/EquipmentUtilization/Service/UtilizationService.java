@@ -8,7 +8,8 @@ import java.util.List;
 public interface UtilizationService {
 UtilizationResponseDTO startUtilization(Long bookingId);
 UtilizationResponseDTO endUtilization(Long bookingId);
-    List<UtilizationResponseDTO> getAllUtilization();
-UtilizationResponseDTO getUtilizationById(Long utilizationId);
-    List<UtilizationAnalyticsDTO> getUtilizationAnalytics();
+    // email comes from the authenticated token in the controller, this is what scopes the results
+    List<UtilizationResponseDTO> getAllUtilization(String email);
+    UtilizationResponseDTO getUtilizationById(Long utilizationId, String email);
+    List<UtilizationAnalyticsDTO> getUtilizationAnalytics(String email);
 }
