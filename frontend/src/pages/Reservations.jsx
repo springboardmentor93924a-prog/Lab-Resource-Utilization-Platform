@@ -17,7 +17,10 @@ function Reservations() {
   const [editingId, setEditingId] = useState(null);
   const [sharingBlock, setSharingBlock] = useState(null);
   const [conflictError, setConflictError] = useState(null);
-
+  // Equipment IDs currently blocked by an unresolved URGENT issue report —
+  // fetched once up front so the dropdown can warn before submission
+  // instead of only failing after (see fetchUrgentEquipmentIds below).
+  const [urgentEquipmentIds, setUrgentEquipmentIds] = useState(new Set());
   // Inline "Submit Feedback" panel state — replaces the old navigate-to-
   // /feedback-page flow. feedbackOpenFor holds the bookingId whose row
   // currently has the panel expanded (only one open at a time).
@@ -77,6 +80,15 @@ function Reservations() {
         }
       })
       .catch((err) => console.error("Equipment list error:", err));
+  };
+
+    const fetchUrgentEquipmentIds = () => {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment-feedback/urgent-equipment-ids`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setUrgentEquipmentIds(new Set(Array.isArray(data) ? data : [])))
+      .catch((err) => console.error("Urgent equipment list error:", err));
   };
 
   const fetchBookings = () => {
@@ -888,7 +900,7 @@ function Reservations() {
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Select Equipment</label>
-                <select
+                                <select
                   name="equipmentId"
                   value={formData.equipmentId}
                   onChange={handleChange}
@@ -896,15 +908,21 @@ function Reservations() {
                 >
                   <option value="">-- Choose Equipment --</option>
                   {equipmentList.map((item) => {
+                    const hasUrgentIssue = urgentEquipmentIds.has(item.equipmentId);
                     const isBookable =
                       item.status !== "Under Maintenance" &&
                       item.status !== "Out of Service" &&
-                      item.status !== "Retired";
+                      item.status !== "Retired" &&
+                      !hasUrgentIssue;
 
                     return (
                       <option key={item.equipmentId} value={item.equipmentId} disabled={!isBookable}>
                         {item.equipmentName} ({item.status}) {item.institution?.institutionName ? `— ${item.institution.institutionName}` : ""}
-                        {!isBookable ? " [NOT BOOKABLE]" : ""}
+                        {hasUrgentIssue
+                          ? " [⚠ URGENT ISSUE REPORTED — UNAVAILABLE]"
+                          : !isBookable
+                          ? " [NOT BOOKABLE]"
+                          : ""}
                       </option>
                     );
                   })}
