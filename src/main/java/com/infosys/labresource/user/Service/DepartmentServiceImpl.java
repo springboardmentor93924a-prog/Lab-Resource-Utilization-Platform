@@ -35,18 +35,55 @@ public class DepartmentServiceImpl implements DepartmentService{
         return departmentRepo.save(department);
     }
 
-    @Override
-    public List<Department> getAllDepartments(Authentication authentication) {
-        UserEntity loggedInUser = userRepo.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Role role = loggedInUser.getRole();
-        if (role != Role.SYSTEM_ADMIN &&
-                role != Role.INSTITUTION_ADMIN) {
 
-            throw new RuntimeException("Access Denied");
+    @Override
+    public List<Department> getAllDepartments(
+            Authentication authentication) {
+
+        UserEntity loggedInUser = userRepo
+                .findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Role role = loggedInUser.getRole();
+
+        // System Admin can view all departments
+        if (role == Role.SYSTEM_ADMIN) {
+            return departmentRepo.findAll();
         }
 
-        return departmentRepo.findAll();
+        // Institution Admin can view departments
+        // belonging to their institution
+        if (role == Role.INSTITUTION_ADMIN) {
+
+            Institution institution =
+                    loggedInUser.getInstitution();
+
+            if (institution == null) {
+                throw new RuntimeException(
+                        "Institution not assigned to user");
+            }
+
+            return departmentRepo.findByInstitution(institution);
+        }
+
+        // Department Head can view only their own department
+        if (role == Role.DEPARTMENT_HEAD) {
+
+            Department department =
+                    loggedInUser.getDepartment();
+
+            if (department == null) {
+                throw new RuntimeException(
+                        "Department not assigned to user");
+            }
+
+            return departmentRepo.findById(
+                    department.getDepartId()
+            ).map(List::of).orElseGet(List::of);
+        }
+
+        throw new RuntimeException("Access Denied");
     }
 
     @Override

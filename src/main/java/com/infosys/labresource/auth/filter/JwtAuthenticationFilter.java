@@ -1,8 +1,8 @@
+
 package com.infosys.labresource.auth.filter;
 
-
 import com.infosys.labresource.auth.service.CustomUserDetailsService;
-import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,64 +11,93 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.infosys.labresource.auth.filter.JwtUtil;
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-  private final JwtUtil jwtUtil;
+
+    private final JwtUtil jwtUtil;
     private final CustomUserDetailsService customUserDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        final String authHeader =
+                request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // No Bearer token: continue.
+        // Spring Security will handle authorization for the endpoint.
+        if (authHeader == null ||
+                !authHeader.startsWith("Bearer ")) {
+
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
-
-        String email;
+        final String token = authHeader.substring(7);
 
         try {
-            email = jwtUtil.extractUsername(token);
-        } catch (Exception ex) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+            // Validate token signature and expiration first.
+            if (!jwtUtil.isTokenValid(token)) {
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+            final String email =
+                    jwtUtil.extractUsername(token);
 
-            UserDetails userDetails =
-                    customUserDetailsService.loadUserByUsername(email);
+            if (email == null || email.isBlank()) {
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-            if (jwtUtil.isTokenValid(token)) {
+            // Don't overwrite an existing authentication.
+            if (SecurityContextHolder.getContext()
+                    .getAuthentication() == null) {
 
-                UsernamePasswordAuthenticationToken authentication =new UsernamePasswordAuthenticationToken(
+                UserDetails userDetails =
+                        customUserDetailsService
+                                .loadUserByUsername(email);
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
                                 userDetails,
                                 null,
-                                userDetails.getAuthorities());
+                                userDetails.getAuthorities()
+                        );
 
                 authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request));
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
             }
+
+        } catch (JwtException | IllegalArgumentException ex) {
+
+            // Invalid or expired token.
+            SecurityContextHolder.clearContext();
+
+        } catch (UsernameNotFoundException ex) {
+
+            // Token subject no longer maps to an existing user.
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
     }
-
 }

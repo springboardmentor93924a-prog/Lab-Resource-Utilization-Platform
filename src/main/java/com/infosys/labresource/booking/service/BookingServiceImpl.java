@@ -98,10 +98,32 @@ private final NotificationService notifService;
         return convertToDTO(savedBooking);
     }
 
-    @Override
-    public List<BookingResponseDTO> getAllBookings() {
 
-        List<Booking> bookingList = bookingRepo.findAll();
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingResponseDTO> getAllBookings(String email) {
+
+        UserEntity loggedInUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found.")
+                );
+
+        Role role = loggedInUser.getRole();
+
+        if (role == null) {
+            throw new RuntimeException("User role is not configured.");
+        }
+
+        // Temporary safe default:
+        // Researchers can only retrieve their own bookings.
+        // Other roles retain access to the existing booking list.
+        List<Booking> bookingList;
+
+        if (role == Role.RESEARCHER) {
+            bookingList = bookingRepo.findByRequestedBy(loggedInUser);
+        } else {
+            bookingList = bookingRepo.findAll();
+        }
 
         List<BookingResponseDTO> responseList = new ArrayList<>();
 
@@ -113,10 +135,27 @@ private final NotificationService notifService;
     }
 
     @Override
-    public BookingResponseDTO getBookingById(Long bookingId) {
+    @Transactional(readOnly = true)
+    public BookingResponseDTO getBookingById(
+            Long bookingId,
+            String email) {
+
+        UserEntity loggedInUser = userRepo.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found.")
+                );
 
         Booking booking = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found."));
+                .orElseThrow(() ->
+                        new RuntimeException("Booking not found.")
+                );
+
+        if (loggedInUser.getRole() == Role.RESEARCHER &&
+                !booking.getRequestedBy().getUserId()
+                        .equals(loggedInUser.getUserId())) {
+
+            throw new RuntimeException("Access denied.");
+        }
 
         return convertToDTO(booking);
     }

@@ -28,18 +28,29 @@ public class BookingController {
         return new ResponseEntity<>(booking, HttpStatus.CREATED);
     }
 
+
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
+    public ResponseEntity<List<BookingResponseDTO>> getAllBookings(
+            Authentication auth) {
 
-        return ResponseEntity.ok(bookingService.getAllBookings());
+        return ResponseEntity.ok(
+                bookingService.getAllBookings(auth.getName())
+        );
     }
 
     @GetMapping("/{bookingId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable Long bookingId) {
+    public ResponseEntity<BookingResponseDTO> getBookingById(
+            @PathVariable Long bookingId,
+            Authentication auth) {
 
-        return ResponseEntity.ok(bookingService.getBookingById(bookingId));
+        return ResponseEntity.ok(
+                bookingService.getBookingById(
+                        bookingId,
+                        auth.getName()
+                )
+        );
     }
 
     @PutMapping("/update/{bookingId}")
