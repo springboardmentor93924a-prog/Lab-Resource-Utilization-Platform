@@ -46,6 +46,18 @@ public class EquipmentFeedbackController {
         return ResponseEntity.ok(feedbackService.getFeedbackByEquipment(equipmentId));
     }
 
+        // Minimal endpoint for the booking form: just the list of equipment
+    // IDs currently blocked by an unresolved urgent issue, no feedback
+    // details. Restricted to STUDENT only, matching
+    // BookingController.createBooking — the only role that actually
+    // creates its own bookings — so the dropdown can warn before
+    // submission instead of only failing after.
+    @GetMapping("/urgent-equipment-ids")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<List<Integer>> getUrgentEquipmentIds() {
+        return ResponseEntity.ok(feedbackService.getUrgentUnresolvedEquipmentIds());
+    }
+
     @PutMapping("/{id}/fix")
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<EquipmentFeedback> markAsFixed(@PathVariable Integer id) {

@@ -28,6 +28,18 @@ public interface EquipmentFeedbackRepository
             Integer equipmentId, String urgency, String status
     );
 
+    // Same live check as above, but as a bulk list of equipment IDs —
+    // used to flag "unbookable" equipment in the booking dropdown before
+    // the student even attempts to submit, instead of only failing after.
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT DISTINCT f.equipment.equipmentId FROM EquipmentFeedback f " +
+        "WHERE f.urgency = :urgency AND f.status <> :status"
+    )
+    java.util.List<Integer> findEquipmentIdsWithUnresolvedUrgentIssue(
+            @org.springframework.data.repository.query.Param("urgency") String urgency,
+            @org.springframework.data.repository.query.Param("status") String status
+    );
+
     // Used to stop a second feedback submission against the same
     // booking once one has already gone in (the inline "Submit Feedback"
     // action in My Bookings should disappear after first use).

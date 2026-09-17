@@ -426,4 +426,13 @@ return saved;
             throw new RuntimeException("You can only manage issue reports for your permitted institution/department");
         }
     }
+
+    @Override
+public List<Integer> getUrgentUnresolvedEquipmentIds() {
+    // Deliberately no role/ownership check beyond being logged in —
+    // this only ever returns bare equipment IDs, never feedback
+    // content, so it's safe for any booking-capable role (including
+    // STUDENT) to call from the booking form.
+    return feedbackRepository.findEquipmentIdsWithUnresolvedUrgentIssue("URGENT", "RESOLVED");
+}
 }

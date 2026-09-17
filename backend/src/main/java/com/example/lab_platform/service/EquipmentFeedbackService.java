@@ -12,6 +12,10 @@ public interface EquipmentFeedbackService {
 
     List<EquipmentFeedback> getFeedbackByEquipment(Integer equipmentId);
 
+    // Minimal, non-sensitive list (just IDs, no report details) so any
+// booking-capable role can check before submitting a booking.
+List<Integer> getUrgentUnresolvedEquipmentIds();
+
     EquipmentFeedback submitFeedback(EquipmentFeedback feedback);
 
     // Technician-only: PENDING or REJECTED -> PENDING_APPROVAL
@@ -22,4 +26,5 @@ public interface EquipmentFeedbackService {
     EquipmentFeedback decideOnFix(Integer id, String decision);
 
     EquipmentFeedback updateStatus(Integer id, String status);
+    
 }
