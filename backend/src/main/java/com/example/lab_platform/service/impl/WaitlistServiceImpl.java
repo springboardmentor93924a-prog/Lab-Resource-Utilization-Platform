@@ -139,126 +139,24 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
             waitlist.getRequestedEndTime()
     );
 
-    boolean hasUrgentUnresolvedIssue =
-            equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
-                    equipmentId, "URGENT", "RESOLVED"
+    boolean hasUnresolvedIssue =
+            equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndStatusNot(
+                    equipmentId, "RESOLVED"
             );
 
     boolean unavailable = !overlapping.isEmpty()
             || underMaintenance
-            || hasUrgentUnresolvedIssue
+            || hasUnresolvedIssue
             || !"Available".equalsIgnoreCase(equipment.getStatus());
 
     if (!unavailable) {
         throw new RuntimeException("Equipment is available for the selected time. Please create a booking instead.");
     }
 
-    Equipment substitute = findIdleSubstitute(equipment, waitlist);
-
-    if (substitute != null) {
-        Booking autoBooking = new Booking();
-        autoBooking.setUser(loggedInUser);
-        autoBooking.setEquipment(substitute);
-        /*
-         * bookingDate is the system date this reservation was actually
-         * made (right now) — the user is submitting THIS request at
-         * this very moment, and it's being fulfilled synchronously in
-         * the same call, so "now" IS the submission date here. This is
-         * different from BookingServiceImpl.tryAutoAllocate(), which
-         * runs later (via the cascade) and must use the ORIGINAL
-         * queueDate instead — see that file for why.
-         */
-        autoBooking.setBookingDate(LocalDate.now());
-        autoBooking.setStartTime(waitlist.getRequestedStartTime());
-        autoBooking.setEndTime(waitlist.getRequestedEndTime());
-        autoBooking.setPurpose("Auto-assigned idle substitute (schedule optimization)");
-
-        /*
-         * Same approval rule as everywhere else a booking gets created —
-         * an idle-substitute auto-assignment is not a bypass for
-         * equipment that requires manager sign-off before use.
-         * Previously this always went straight to "Confirmed"
-         * regardless of requiresApproval.
-         */
-        boolean requiresApproval = substitute.getRequiresApproval() == null
-                || substitute.getRequiresApproval();
-
-        if (requiresApproval) {
-
-            autoBooking.setBookingStatus("Pending Approval");
-            bookingRepository.save(autoBooking);
-            // substitute.status intentionally left as-is until a
-            // manager actually approves it — same as createBooking().
-
-        } else {
-
-            autoBooking.setBookingStatus("Confirmed");
-            bookingRepository.save(autoBooking);
-
-            substitute.setStatus("Booked");
-            equipmentRepository.save(substitute);
-        }
-
-        waitlist.setWaitlistStatus("FULFILLED");
-        return waitlistRepository.save(waitlist);
-    }
-
     waitlist.setWaitlistStatus("WAITING");
     waitlist.setQueueDate(LocalDate.now());
     return waitlistRepository.save(waitlist);
 }
-
-    /*
-     * Looks for an idle (Available) equipment of the same category
-     * that is free for the requested window, excluding the originally
-     * requested equipment itself.
-     */
-    private Equipment findIdleSubstitute(Equipment requestedEquipment, Waitlist waitlist) {
-        if (waitlist.getRequestedStartTime() == null || waitlist.getRequestedEndTime() == null) {
-            return null;
-        }
-
-        if (requestedEquipment.getCategory() == null) {
-            return null;
-        }
-
-        List<Equipment> candidates = equipmentRepository.findByCategoryAndStatus(
-                requestedEquipment.getCategory(), "Available"
-        );
-
-        for (Equipment candidate : candidates) {
-            if (candidate.getEquipmentId().equals(requestedEquipment.getEquipmentId())) {
-                continue;
-            }
-            List<Booking> overlapping = bookingRepository.findOverlappingBookings(
-                    candidate.getEquipmentId(),
-                    waitlist.getRequestedStartTime(),
-                    waitlist.getRequestedEndTime()
-            );
-
-            boolean underMaintenance = isUnderMaintenanceDuring(
-                    candidate.getEquipmentId(),
-                    waitlist.getRequestedStartTime(),
-                    waitlist.getRequestedEndTime()
-            );
-
-            /*
-             * Same live urgent-feedback check as BookingServiceImpl.
-             * A candidate substitute with an unresolved URGENT report
-             * must never be silently auto-assigned.
-             */
-            boolean hasUrgentUnresolvedIssue =
-                    equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
-                            candidate.getEquipmentId(), "URGENT", "RESOLVED"
-                    );
-
-            if (overlapping.isEmpty() && !underMaintenance && !hasUrgentUnresolvedIssue) {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
 
     /*
      * Same maintenance-blocking rule as BookingServiceImpl —
@@ -366,8 +264,8 @@ public Waitlist decideOnMissedWindow(Integer waitlistId, String decision) {
     // them there) or EXIT (they're done with this equipment), this
     // entry itself is finished either way. No separate "rejected"
     // status: Cancelled is the one terminal status for every way a
-    // waitlist entry can end without being fulfilled, matching the
-    // timeout sweep in EquipmentStatusScheduler too.
+    // waitlist entry can end, matching the timeout sweep in
+    // EquipmentStatusScheduler too.
     entry.setWaitlistStatus("CANCELLED");
 
     return waitlistRepository.save(entry);

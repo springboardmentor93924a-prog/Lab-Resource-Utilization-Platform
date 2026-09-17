@@ -28,7 +28,7 @@ public class Waitlist {
     private LocalDateTime requestedEndTime;
 
     @Column(name = "waitlist_status", length = 20)
-    private String waitlistStatus = "WAITING"; // WAITING, NOTIFIED, FULFILLED, CANCELLED
+    private String waitlistStatus = "WAITING"; // WAITING, NOTIFIED, AWAITING_DECISION, CANCELLED
 
     /*
      * True only for entries auto-created because the user already had

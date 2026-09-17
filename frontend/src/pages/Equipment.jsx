@@ -28,6 +28,23 @@ function Equipment() {
   const role = sessionStorage.getItem("role");
   const myInstitutionId = sessionStorage.getItem("institutionId");
 
+  // Equipment IDs with an unresolved issue report (NORMAL or URGENT) —
+  // these block booking on the backend even while the equipment's own
+  // status still reads "Available", so the Book button needs its own
+  // check here rather than relying on item.status alone. Only fetched
+  // for students since that's who the Book button is shown to, and
+  // the endpoint is student-only server-side.
+  const [unresolvedEquipmentIds, setUnresolvedEquipmentIds] = useState(new Set());
+
+  const fetchUnresolvedEquipmentIds = () => {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment-feedback/unresolved-equipment-ids`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setUnresolvedEquipmentIds(new Set(Array.isArray(data) ? data : [])))
+      .catch((err) => console.error("Unresolved equipment list error:", err));
+  };
+
   // NEW: search state + filtered list
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -69,6 +86,9 @@ const ownsEquipment = (item) =>
 
   useEffect(() => {
     fetchEquipment();
+    if (role === "STUDENT") {
+      fetchUnresolvedEquipmentIds();
+    }
 
     // Fallback safety net only — the real update path is now the
     // WebSocket push below (useEquipmentRealtime). If the socket ever
@@ -292,13 +312,36 @@ const ownsEquipment = (item) =>
                   >
                     {item.status}
                   </span>
+                  {role === "STUDENT" && unresolvedEquipmentIds.has(item.equipmentId) && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        marginLeft: "4px",
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        fontSize: "11.5px",
+                        fontWeight: 600,
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                      }}
+                      title="An unresolved issue has been reported on this equipment — booking is blocked until it's resolved"
+                    >
+                      ⚠ Issue Reported
+                    </span>
+                  )}
                 </td>
                 <td style={cellStyle}>{item.purchaseDate || "—"}</td>
                 <td style={cellStyle}>
                   {/* Quick Booking — STUDENT only, matching
                       BookingController.createBooking (backend-enforced;
-                      this just avoids showing a button that would 403). */}
-                  {item.status === "Available" && role === "STUDENT" && (
+                      this just avoids showing a button that would 403).
+                      An unresolved issue report blocks booking on the
+                      backend even while status still reads "Available",
+                      so route straight to the waitlist instead of a
+                      reservation form that would just fail on submit. */}
+                  {item.status === "Available" &&
+                    role === "STUDENT" &&
+                    !unresolvedEquipmentIds.has(item.equipmentId) && (
                     <button
                       onClick={() => navigate(`/reservations?equipmentId=${item.equipmentId}`)}
                       style={{
@@ -317,7 +360,10 @@ const ownsEquipment = (item) =>
                     </button>
                   )}
 
-                  {(item.status === "Booked" || item.status === "In Use") && (
+                  {((item.status === "Booked" || item.status === "In Use") ||
+                    (item.status === "Available" &&
+                      role === "STUDENT" &&
+                      unresolvedEquipmentIds.has(item.equipmentId))) && (
                     <button
                       onClick={() => navigate(`/waitlist?equipmentId=${item.equipmentId}`)}
                       style={{
@@ -330,7 +376,11 @@ const ownsEquipment = (item) =>
                         border: "none",
                         borderRadius: "4px",
                       }}
-                      title="Join waitlist for this equipment"
+                      title={
+                        item.status === "Available"
+                          ? "This equipment has an unresolved issue reported — join the waitlist to be notified once it's clear"
+                          : "Join waitlist for this equipment"
+                      }
                     >
                       ⏳ Waitlist
                     </button>

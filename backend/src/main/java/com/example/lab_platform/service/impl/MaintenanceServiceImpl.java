@@ -8,6 +8,7 @@ import com.example.lab_platform.repository.EquipmentRepository;
 import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.service.MaintenanceService;
 import com.example.lab_platform.service.BookingService;
+import com.example.lab_platform.service.NotificationService;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,18 +24,21 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     private final EquipmentRepository equipmentRepository;
     private final BookingService bookingService;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
  
  
     public MaintenanceServiceImpl(
             MaintenanceRepository maintenanceRepository,
             EquipmentRepository equipmentRepository,
             BookingService bookingService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            NotificationService notificationService) {
  
         this.maintenanceRepository = maintenanceRepository;
         this.equipmentRepository = equipmentRepository;
         this.bookingService = bookingService;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
  
  
@@ -125,11 +129,15 @@ public class MaintenanceServiceImpl implements MaintenanceService {
  
     /*
      * Updates an existing maintenance record (type, description,
-     * dates, status). When the status is changed to "Completed",
-     * the linked equipment is immediately released back to
-     * "Available" instead of waiting on the next scheduler pass,
-     * unless another still-active maintenance record exists for
-     * the same equipment.
+     * dates, status).
+     *
+     * Completion is a two-step, two-person flow: a technician marking
+     * their task done moves it to "Pending Verification", and only a
+     * Lab Manager (or admin) can then set "Completed" (verify) or
+     * "Rejected" with a reason (send it back to be redone). The linked
+     * equipment is released back to "Available" only on that manager
+     * verification, and only if no other still-open maintenance record
+     * exists for the same equipment.
      *
      * Role scoping: a Lab Technician may only touch a record already
      * assigned to them (status/description/dates — logging their own
@@ -190,7 +198,10 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
             String requestedStatus = updatedMaintenance.getMaintenanceStatus();
             boolean requestingRejected = requestedStatus.equalsIgnoreCase("Rejected");
+            boolean requestingCompleted = requestedStatus.equalsIgnoreCase("Completed");
             boolean wasRejected = "Rejected".equalsIgnoreCase(existing.getMaintenanceStatus());
+            boolean awaitingVerification =
+                    PENDING_VERIFICATION.equalsIgnoreCase(existing.getMaintenanceStatus());
 
             if (requestingRejected) {
                 // Only a Lab Manager (or System Admin) reviewing finished
@@ -198,27 +209,54 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 // status on their own task.
                 if (isTechnician) {
                     throw new RuntimeException(
-                            "Only a Lab Manager can reject a completed task");
+                            "Only a Lab Manager can reject submitted work");
                 }
-                if (!"Completed".equalsIgnoreCase(existing.getMaintenanceStatus())) {
+                if (!awaitingVerification) {
                     throw new RuntimeException(
-                            "Only a completed task can be rejected");
+                            "Only work submitted for verification can be rejected");
                 }
                 String reason = updatedMaintenance.getRejectionReason();
                 if (reason == null || reason.trim().isEmpty()) {
                     throw new RuntimeException(
-                            "A reason is required to reject a completed task");
+                            "A reason is required to reject submitted work");
                 }
                 existing.setRejectionReason(reason.trim());
+                existing.setMaintenanceStatus(requestedStatus);
+                notifyTechnicianOfReview(existing, false);
 
-            } else if (wasRejected) {
-                // The technician (or a manager) is moving the task on from
-                // "Rejected" — that's the redo being resubmitted, so the
-                // old reason no longer applies once it's acted on.
+            } else if (requestingCompleted && isTechnician) {
+                /*
+                 * A technician never closes their own work order. Marking
+                 * it done submits it to the Lab Manager for verification —
+                 * the equipment stays Under Maintenance until a manager
+                 * signs it off, so nothing gets released back to users on
+                 * the technician's word alone.
+                 */
                 existing.setRejectionReason(null);
-            }
+                existing.setMaintenanceStatus(PENDING_VERIFICATION);
+                notifyManagersOfSubmission(existing);
 
-            existing.setMaintenanceStatus(requestedStatus);
+            } else if (requestingCompleted) {
+                /*
+                 * A manager (or admin) setting Completed IS the
+                 * verification step. Work that a technician submitted has
+                 * to pass through here before the equipment is released.
+                 */
+                existing.setRejectionReason(null);
+                existing.setMaintenanceStatus(requestedStatus);
+                if (awaitingVerification) {
+                    notifyTechnicianOfReview(existing, true);
+                }
+
+            } else {
+                if (wasRejected) {
+                    // The technician (or a manager) is moving the task on
+                    // from "Rejected" — that's the redo being restarted, so
+                    // the old reason no longer applies once it's acted on.
+                    existing.setRejectionReason(null);
+                }
+                existing.setMaintenanceStatus(requestedStatus);
+            }
         }
 
         // Only a manager/dept head/admin can reach this with a non-null
@@ -267,7 +305,13 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                         m.getMaintenanceStatus() != null
                                 && (m.getMaintenanceStatus().equalsIgnoreCase("Active")
                                 || m.getMaintenanceStatus().equalsIgnoreCase("Scheduled")
-                                || m.getMaintenanceStatus().equalsIgnoreCase("In Progress")));
+                                || m.getMaintenanceStatus().equalsIgnoreCase("In Progress")
+                                // Submitted by the technician but not yet
+                                // signed off, or sent back to be redone —
+                                // either way the work isn't finished, so the
+                                // equipment stays out of service.
+                                || m.getMaintenanceStatus().equalsIgnoreCase(PENDING_VERIFICATION)
+                                || m.getMaintenanceStatus().equalsIgnoreCase("Rejected")));
  
         if (!stillBlocked) {
             equipment.setStatus("Available");
@@ -299,6 +343,75 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
         return maintenanceRepository
                 .findByAssignedTechnician_UserId(loggedInUser.getUserId());
+    }
+
+    /*
+     * The state a work order sits in between the technician saying
+     * they're done and a Lab Manager actually verifying it. Equipment
+     * is NOT released while a record is in this state.
+     */
+    static final String PENDING_VERIFICATION = "Pending Verification";
+
+    /*
+     * Technician submitted finished work — tell the Lab Managers in the
+     * equipment's own department that there's something to verify.
+     */
+    private void notifyManagersOfSubmission(Maintenance maintenance) {
+
+        Equipment equipment = maintenance.getEquipment();
+        if (equipment == null || equipment.getInstitution() == null) {
+            return;
+        }
+
+        String technicianName = maintenance.getAssignedTechnician() != null
+                ? maintenance.getAssignedTechnician().getFullName()
+                : "A technician";
+
+        userRepository.findByRole_RoleNameAndInstitution_InstitutionId(
+                        "LAB_MANAGER", equipment.getInstitution().getInstitutionId())
+                .stream()
+                .filter(manager -> equipment.getDepartment() != null
+                        && manager.getDepartment() != null
+                        && manager.getDepartment().getDepartmentId()
+                                .equals(equipment.getDepartment().getDepartmentId()))
+                .forEach(manager -> notificationService.create(
+                        manager,
+                        "MAINTENANCE_VERIFICATION_REQUIRED",
+                        "Maintenance work awaiting your verification",
+                        technicianName + " marked the maintenance on "
+                                + equipment.getEquipmentName()
+                                + " as done. Verify it or send it back before the equipment"
+                                + " is released.",
+                        maintenance.getMaintenanceId()));
+    }
+
+    /*
+     * Manager finished reviewing — tell the assigned technician whether
+     * their work was signed off or sent back.
+     */
+    private void notifyTechnicianOfReview(Maintenance maintenance, boolean verified) {
+
+        User technician = maintenance.getAssignedTechnician();
+        if (technician == null) {
+            return;
+        }
+
+        String equipmentName = maintenance.getEquipment() != null
+                ? maintenance.getEquipment().getEquipmentName()
+                : "the equipment";
+
+        notificationService.create(
+                technician,
+                verified ? "MAINTENANCE_VERIFIED" : "MAINTENANCE_REJECTED",
+                verified
+                        ? "Your maintenance work was verified"
+                        : "Your maintenance work was sent back",
+                verified
+                        ? "Your work on " + equipmentName
+                                + " was verified and the equipment has been released."
+                        : "Your work on " + equipmentName + " needs redoing: "
+                                + maintenance.getRejectionReason(),
+                maintenance.getMaintenanceId());
     }
 
     private User getLoggedInUser() {

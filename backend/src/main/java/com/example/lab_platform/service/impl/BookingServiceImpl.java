@@ -77,23 +77,22 @@ public BookingServiceImpl(
     }
 
     /*
-     * Runs the full waitlist cascade for one equipment: every active
+     * Runs the waitlist cascade for one equipment: every active
      * (WAITING/NOTIFIED) entry is considered, priority entries
      * (displaced booking-holders from an urgent-report auto-add)
-     * first, then earliest requested start time within each group.
-     * Each entry is tried independently against its OWN requested
-     * window — different entries can have non-overlapping windows
-     * and all get fulfilled in the same pass, since this isn't a
-     * single-slot lock, it's per-entry availability.
+     * first, then earliest queueDate within each group.
      *
-     * This is also the fix for the old single-shot bug: previously
-     * only the single oldest WAITING entry was ever looked at, and if
-     * it couldn't be allocated the entry was marked NOTIFIED with no
-     * real notification sent and no fallback to the next person in
-     * line — the whole waitlist for that equipment silently stalled.
-     * Now every active entry is walked in order every time this runs
-     * — if entry #1 can't be fitted, #2, #3, etc. still get their
-     * shot in the same pass. Nobody blocks anybody behind them.
+     * This notifies only — it never creates a booking on the user's
+     * behalf. When the equipment is genuinely free for an entry's own
+     * requested window, that user is told the equipment is available
+     * and goes and books it themselves (the entry stays open as
+     * NOTIFIED until they book, cancel, or the window passes). That
+     * matches the documented flow: "when equipment becomes available,
+     * the waitlist/notification workflow is triggered."
+     *
+     * Every active entry is walked in order every time this runs, so
+     * if entry #1 can't be served, #2, #3, etc. still get their shot
+     * in the same pass. Nobody blocks anybody behind them.
      */
     @Override
     public void processWaitlistForEquipment(Integer equipmentId) {
@@ -118,14 +117,12 @@ public BookingServiceImpl(
 
         for (Waitlist entry : activeEntries) {
 
-            // NEW: if this entry's requested window has already passed,
-            // tryAutoAllocate below will refuse it forever (its own
-            // start-in-the-past check never stops being true) — so
-            // instead of silently cycling it through the generic
-            // "couldn't allocate right now" path indefinitely, notify
-            // the person and let them choose: book a fresh slot, or
-            // exit the waitlist. See WaitlistServiceImpl.decideOnMissedWindow
-            // for the two-button response, and
+            // If this entry's requested window has already passed it can
+            // never be served — so instead of leaving it sitting in the
+            // queue forever, notify the person and let them choose: book
+            // a fresh slot, or exit the waitlist. See
+            // WaitlistServiceImpl.decideOnMissedWindow for the two-button
+            // response, and
             // EquipmentStatusScheduler.expireUndecidedWaitlistEntries()
             // for the timeout if they never decide.
             if (entry.getRequestedStartTime() != null
@@ -150,153 +147,75 @@ public BookingServiceImpl(
                 continue;
             }
 
-            boolean allocated = tryAutoAllocate(entry, equipment);
+            boolean slotFree = isSlotFree(entry, equipment);
 
-            if (allocated) {
+            if (slotFree) {
 
-                entry.setWaitlistStatus("FULFILLED");
-                waitlistRepository.save(entry);
+                // Only notify on the transition into NOTIFIED, so a
+                // repeated cascade for the same still-free equipment
+                // doesn't spam the same person over and over.
+                if (!"NOTIFIED".equals(entry.getWaitlistStatus())) {
 
-                // tryAutoAllocate() now respects equipment.requiresApproval,
-                // so the resulting booking may be Pending Approval rather
-                // than Confirmed — reflect that accurately instead of
-                // always claiming it's confirmed.
-                boolean requiresApproval = equipment.getRequiresApproval() == null
-                        || equipment.getRequiresApproval();
+                    entry.setWaitlistStatus("NOTIFIED");
+                    waitlistRepository.save(entry);
 
-                notificationService.create(
-                        entry.getUser(),
-                        "WAITLIST_FULFILLED",
-                        requiresApproval
-                                ? "Your waitlisted slot is awaiting approval"
-                                : "Your waitlisted slot is booked",
-                        requiresApproval
-                                ? "Your requested slot for " + equipment.getEquipmentName()
-                                        + " has been submitted and is now awaiting manager approval."
-                                : "Your requested slot for " + equipment.getEquipmentName()
-                                        + " is now confirmed.",
-                        equipment.getEquipmentId()
-                );
+                    notificationService.create(
+                            entry.getUser(),
+                            "WAITLIST_AVAILABLE",
+                            "Equipment you waitlisted is now available",
+                            equipment.getEquipmentName() + " is free for your requested slot ("
+                                    + entry.getRequestedStartTime() + " to "
+                                    + entry.getRequestedEndTime()
+                                    + "). Book it now before someone else does.",
+                            equipment.getEquipmentId()
+                    );
+                }
 
-            } else if (!"NOTIFIED".equals(entry.getWaitlistStatus())) {
+            } else if ("NOTIFIED".equals(entry.getWaitlistStatus())) {
 
-                // Checked and couldn't be allocated right now — stays
-                // in the queue and gets reconsidered next time this
-                // equipment frees up or an urgent issue/calibration on
-                // it resolves. The loop keeps going to the next entry
-                // regardless of this outcome.
-                entry.setWaitlistStatus("NOTIFIED");
+                // It was free when we last told them, but isn't any
+                // more (someone booked it, maintenance was raised, an
+                // urgent issue was filed). Drop back to WAITING so a
+                // fresh notification goes out next time it frees up.
+                entry.setWaitlistStatus("WAITING");
                 waitlistRepository.save(entry);
             }
         }
     }
 
-    private boolean tryAutoAllocate(
-            Waitlist entry,
-            Equipment equipment) {
+    /*
+     * Is this equipment actually bookable for this entry's own
+     * requested window right now? Same checks createBooking() applies,
+     * minus anything to do with who's asking — this only decides
+     * whether it's worth telling the waitlisted user to go book.
+     */
+    private boolean isSlotFree(Waitlist entry, Equipment equipment) {
 
-        LocalDateTime start =
-                entry.getRequestedStartTime();
-
-        LocalDateTime end =
-                entry.getRequestedEndTime();
+        LocalDateTime start = entry.getRequestedStartTime();
+        LocalDateTime end = entry.getRequestedEndTime();
 
         if (start == null || end == null) {
             return false;
         }
 
-        if (!end.isAfter(start)
-                || start.isBefore(LocalDateTime.now())) {
-
+        if (!end.isAfter(start) || start.isBefore(LocalDateTime.now())) {
             return false;
         }
 
-        List<Booking> overlapping =
-                bookingRepository.findOverlappingBookings(
-                        equipment.getEquipmentId(),
-                        start,
-                        end
-                );
-
-        if (!overlapping.isEmpty()) {
+        if (!bookingRepository.findOverlappingBookings(
+                equipment.getEquipmentId(), start, end).isEmpty()) {
             return false;
         }
 
-        if (isUnderMaintenanceDuring(
-                equipment.getEquipmentId(),
-                start,
-                end)) {
-
+        if (isUnderMaintenanceDuring(equipment.getEquipmentId(), start, end)) {
             return false;
         }
 
-        /*
-         * Same live urgent-feedback check as createBooking()/
-         * approveBooking(). Without this, a waitlisted student could
-         * get silently auto-booked onto equipment that still has an
-         * unresolved URGENT report, with no error shown to anyone
-         * since this path never goes through createBooking().
-         */
-        if (equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
-                equipment.getEquipmentId(), "URGENT", "RESOLVED")) {
-
-            return false;
-        }
-
-        Booking autoBooking = new Booking();
-
-        autoBooking.setUser(entry.getUser());
-        autoBooking.setEquipment(equipment);
-        /*
-         * bookingDate is the system date the user actually SUBMITTED
-         * their request — for a waitlist entry that's the date they
-         * joined the waitlist (or, for a priority entry auto-added
-         * from a displaced booking, that original booking's own
-         * bookingDate), which is exactly what Waitlist.queueDate
-         * already holds. It is NOT the date this cascade happens to
-         * run (that could be days later) and NOT the requested usage
-         * start date. Falls back to today only in the defensive case
-         * queueDate was somehow never set.
-         */
-        autoBooking.setBookingDate(
-                entry.getQueueDate() != null
-                        ? entry.getQueueDate()
-                        : java.time.LocalDate.now()
-        );
-        autoBooking.setStartTime(start);
-        autoBooking.setEndTime(end);
-        autoBooking.setPurpose("Auto-allocated from waitlist");
-
-        /*
-         * Waitlist fulfillment must respect the SAME approval rule as
-         * a normal createBooking() request — being auto-allocated from
-         * the waitlist is not a bypass for equipment that requires a
-         * manager's sign-off before use. Previously this always went
-         * straight to "Confirmed" regardless of requiresApproval,
-         * which let a waitlisted student get scheduled onto
-         * approval-required equipment with nobody ever reviewing it.
-         */
-        boolean requiresApproval = equipment.getRequiresApproval() == null
-                || equipment.getRequiresApproval();
-
-        if (requiresApproval) {
-
-            autoBooking.setBookingStatus("Pending Approval");
-            bookingRepository.save(autoBooking);
-            // Equipment status is intentionally left as-is here, same
-            // as createBooking()'s Pending Approval branch — it only
-            // changes once a manager actually approves the booking.
-
-        } else {
-
-            autoBooking.setBookingStatus("Confirmed");
-            bookingRepository.save(autoBooking);
-
-            equipment.setStatus("Booked");
-            equipmentRepository.save(equipment);
-        }
-
-        return true;
+        // Any unresolved report — NORMAL or URGENT — means nobody
+        // should be pointed at this equipment yet, waitlisted or not.
+        return !equipmentFeedbackRepository
+                .existsByEquipment_EquipmentIdAndStatusNot(
+                        equipment.getEquipmentId(), "RESOLVED");
     }
 
     private User getLoggedInUser() {
@@ -468,18 +387,18 @@ public BookingServiceImpl(
         }
 
         /*
-* Live check — never a cached flag on Equipment. If there's an
-* unresolved URGENT feedback report against this equipment, block
-* booking immediately, evaluated fresh on every attempt.
+* Live check — never a cached flag on Equipment. Any unresolved
+* feedback report against this equipment — NORMAL or URGENT —
+* blocks booking immediately, evaluated fresh on every attempt.
 */
-boolean hasUrgentUnresolvedIssue =
-        equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
-                fullEquipment.getEquipmentId(), "URGENT", "RESOLVED"
+boolean hasUnresolvedIssue =
+        equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndStatusNot(
+                fullEquipment.getEquipmentId(), "RESOLVED"
         );
 
-if (hasUrgentUnresolvedIssue) {
+if (hasUnresolvedIssue) {
     throw new RuntimeException(
-            "This equipment has an unresolved urgent issue reported and cannot be booked until it is resolved."
+            "This equipment has an unresolved issue reported and cannot be booked until it is resolved."
     );
 }
 
@@ -1021,19 +940,19 @@ public void deleteBooking(Integer id) {
         }
 
         /*
-         * Same live urgent-feedback check as createBooking(): a
-         * booking can be submitted before an urgent report comes in
-         * and still be sitting Pending Approval, so this must be
-         * re-checked here too, not just at submission time.
+         * Same live unresolved-feedback check as createBooking(): a
+         * booking can be submitted before a report comes in and still
+         * be sitting Pending Approval, so this must be re-checked here
+         * too, not just at submission time.
          */
-        boolean hasUrgentUnresolvedIssueAtApproval =
-                equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndUrgencyAndStatusNot(
-                        equipmentId, "URGENT", "RESOLVED"
+        boolean hasUnresolvedIssueAtApproval =
+                equipmentFeedbackRepository.existsByEquipment_EquipmentIdAndStatusNot(
+                        equipmentId, "RESOLVED"
                 );
 
-        if (hasUrgentUnresolvedIssueAtApproval) {
+        if (hasUnresolvedIssueAtApproval) {
             throw new RuntimeException(
-                    "This equipment has an unresolved urgent issue reported and cannot be approved for booking."
+                    "This equipment has an unresolved issue reported and cannot be approved for booking."
             );
         }
 

@@ -58,6 +58,16 @@ public class EquipmentFeedbackController {
         return ResponseEntity.ok(feedbackService.getUrgentUnresolvedEquipmentIds());
     }
 
+    // Same idea, but every unresolved report (NORMAL or URGENT) — this
+    // is the one that actually matches the booking-block rule now.
+    // Used by the Equipment list page to flag a card and route the
+    // "Book" action straight to the waitlist instead of the form.
+    @GetMapping("/unresolved-equipment-ids")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<List<Integer>> getUnresolvedEquipmentIds() {
+        return ResponseEntity.ok(feedbackService.getUnresolvedEquipmentIds());
+    }
+
     @PutMapping("/{id}/fix")
     @PreAuthorize("hasAnyRole('LAB_TECHNICIAN', 'LAB_MANAGER', 'INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
     public ResponseEntity<EquipmentFeedback> markAsFixed(@PathVariable Integer id) {

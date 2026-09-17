@@ -17,10 +17,12 @@ function Reservations() {
   const [editingId, setEditingId] = useState(null);
   const [sharingBlock, setSharingBlock] = useState(null);
   const [conflictError, setConflictError] = useState(null);
-  // Equipment IDs currently blocked by an unresolved URGENT issue report —
+  // Equipment IDs currently blocked by an unresolved issue report —
   // fetched once up front so the dropdown can warn before submission
-  // instead of only failing after (see fetchUrgentEquipmentIds below).
-  const [urgentEquipmentIds, setUrgentEquipmentIds] = useState(new Set());
+  // instead of only failing after (see fetchUnresolvedEquipmentIds below).
+  // Any unresolved issue (NORMAL or URGENT) blocks booking, matching
+  // the backend rule.
+  const [unresolvedEquipmentIds, setUnresolvedEquipmentIds] = useState(new Set());
   // Inline "Submit Feedback" panel state — replaces the old navigate-to-
   // /feedback-page flow. feedbackOpenFor holds the bookingId whose row
   // currently has the panel expanded (only one open at a time).
@@ -82,13 +84,13 @@ function Reservations() {
       .catch((err) => console.error("Equipment list error:", err));
   };
 
-    const fetchUrgentEquipmentIds = () => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment-feedback/urgent-equipment-ids`, {
+    const fetchUnresolvedEquipmentIds = () => {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/equipment-feedback/unresolved-equipment-ids`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setUrgentEquipmentIds(new Set(Array.isArray(data) ? data : [])))
-      .catch((err) => console.error("Urgent equipment list error:", err));
+      .then((data) => setUnresolvedEquipmentIds(new Set(Array.isArray(data) ? data : [])))
+      .catch((err) => console.error("Unresolved equipment list error:", err));
   };
 
   const fetchBookings = () => {
@@ -129,10 +131,25 @@ function Reservations() {
       .catch((err) => console.error("Feedback list error:", err));
   };
 
+  // Safety net: if something links here with a prefilled equipmentId
+  // that turns out to be blocked by an unresolved issue (a stale
+  // "Book" link, browser back/forward, etc.), redirect straight to
+  // the waitlist instead of leaving the student staring at a form
+  // that will just fail on submit. Runs once the unresolved-ids fetch
+  // above actually resolves.
+  useEffect(() => {
+    const prefillId = searchParams.get("equipmentId");
+    if (prefillId && isStudent && unresolvedEquipmentIds.has(Number(prefillId))) {
+      navigate(`/waitlist?equipmentId=${prefillId}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unresolvedEquipmentIds]);
+
   useEffect(() => {
     fetchBookings();
     fetchEquipmentList();
     fetchMyFeedback();
+    fetchUnresolvedEquipmentIds();
 
     const prefillId = searchParams.get("equipmentId");
     if (prefillId && isStudent) {
@@ -908,18 +925,18 @@ function Reservations() {
                 >
                   <option value="">-- Choose Equipment --</option>
                   {equipmentList.map((item) => {
-                    const hasUrgentIssue = urgentEquipmentIds.has(item.equipmentId);
+                    const hasUnresolvedIssue = unresolvedEquipmentIds.has(item.equipmentId);
                     const isBookable =
                       item.status !== "Under Maintenance" &&
                       item.status !== "Out of Service" &&
                       item.status !== "Retired" &&
-                      !hasUrgentIssue;
+                      !hasUnresolvedIssue;
 
                     return (
                       <option key={item.equipmentId} value={item.equipmentId} disabled={!isBookable}>
                         {item.equipmentName} ({item.status}) {item.institution?.institutionName ? `— ${item.institution.institutionName}` : ""}
-                        {hasUrgentIssue
-                          ? " [⚠ URGENT ISSUE REPORTED — UNAVAILABLE]"
+                        {hasUnresolvedIssue
+                          ? " [⚠ ISSUE REPORTED — JOIN WAITLIST INSTEAD]"
                           : !isBookable
                           ? " [NOT BOOKABLE]"
                           : ""}

@@ -194,8 +194,14 @@ public EquipmentStatusScheduler(
             String maintenanceStatus = maintenance.getMaintenanceStatus();
             if (maintenanceStatus == null) continue;
 
+            // "Pending Verification" and "Rejected" are open work too —
+            // the technician is done or has been sent back, but no Lab
+            // Manager has signed the work off yet, so the equipment must
+            // not drift back to Available on a scheduler pass.
             if (maintenanceStatus.equalsIgnoreCase("Active")
-                    || maintenanceStatus.equalsIgnoreCase("In Progress")) {
+                    || maintenanceStatus.equalsIgnoreCase("In Progress")
+                    || maintenanceStatus.equalsIgnoreCase("Pending Verification")
+                    || maintenanceStatus.equalsIgnoreCase("Rejected")) {
                 return "Under Maintenance";
             }
         }

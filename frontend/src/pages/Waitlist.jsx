@@ -204,8 +204,6 @@ useEffect(() => {
         return "waitlist-status notified";
       case "AWAITING_DECISION":
         return "waitlist-status awaiting-decision";
-      case "FULFILLED":
-        return "waitlist-status confirmed";
       case "CANCELLED":
         return "waitlist-status cancelled";
       default:

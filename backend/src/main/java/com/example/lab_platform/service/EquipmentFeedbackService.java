@@ -16,6 +16,12 @@ public interface EquipmentFeedbackService {
 // booking-capable role can check before submitting a booking.
 List<Integer> getUrgentUnresolvedEquipmentIds();
 
+    // Same as above but every unresolved report (NORMAL or URGENT), not
+    // just URGENT — matches the actual booking-block rule, used by the
+    // Equipment list page to flag a piece of equipment before the
+    // student even opens the reservation form.
+    List<Integer> getUnresolvedEquipmentIds();
+
     EquipmentFeedback submitFeedback(EquipmentFeedback feedback);
 
     // Technician-only: PENDING or REJECTED -> PENDING_APPROVAL
