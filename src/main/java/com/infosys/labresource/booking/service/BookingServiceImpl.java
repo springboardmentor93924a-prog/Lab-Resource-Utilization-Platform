@@ -121,8 +121,12 @@ public class BookingServiceImpl implements BookingService {
 
         if (role == Role.RESEARCHER) {
             bookingList = bookingRepo.findByRequestedBy(loggedInUser);
+        } else if (role == Role.DEPARTMENT_HEAD || role == Role.LAB_MANAGER || role == Role.LAB_TECHNICIAN) {
+            bookingList = bookingRepo.findByEquipment_Department(loggedInUser.getDepartment());
+        } else if (role == Role.INSTITUTION_ADMIN) {
+            bookingList = bookingRepo.findByEquipment_Institution(loggedInUser.getInstitution());
         } else {
-            bookingList = bookingRepo.findAll();
+            bookingList = bookingRepo.findAll(); // SYSTEM_ADMIN
         }
 
         List<BookingResponseDTO> responseList = new ArrayList<>();
@@ -342,12 +346,18 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private BookingResponseDTO convertToDTO(Booking booking) {
-
         BookingResponseDTO dto = new BookingResponseDTO();
 
         dto.setBookingId(booking.getBookingId());
-        dto.setEquipId(booking.getEquipment().getEquipId());
-        dto.setRequestedById(booking.getRequestedBy().getUserId());
+
+        if (booking.getEquipment() != null) {
+            dto.setEquipId(booking.getEquipment().getEquipId());
+        }
+
+        // Safe null-check for requestedBy
+        if (booking.getRequestedBy() != null) {
+            dto.setRequestedById(booking.getRequestedBy().getUserId());
+        }
 
         if (booking.getApprovedBy() != null) {
             dto.setApprovedById(booking.getApprovedBy().getUserId());
