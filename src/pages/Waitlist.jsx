@@ -1,154 +1,83 @@
-import { useState } from "react";
-import "./Waitlist.css";
+import { useEffect, useState } from "react";
+import { getAllWaitlistEntries } from "../api/bookingApi";
+import { getAllEquipment } from "../api/equipmentApi";
+import { extractErrorMessage } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { page, headerRow, h1Style, subStyle, card, thStyle, tdStyle, errorText, emptyText, pill } from "../styles/shared";
 
-function Waitlist({ showToast }) {
-  const [myWaitlist, setMyWaitlist] = useState([
-    {
-      id: 1,
-      equipment: "3D Printer",
-      equipmentId: "EQ003",
-      position: 2,
-      requestedDate: "Aug 12, 2026",
-      expectedDate: "Aug 15, 2026",
-      status: "Waiting",
-    },
-    {
-      id: 2,
-      equipment: "Oscilloscope",
-      equipmentId: "EQ001",
-      position: 1,
-      requestedDate: "Aug 11, 2026",
-      expectedDate: "Aug 14, 2026",
-      status: "Available Soon",
-    },
-  ]);
+function Waitlist() {
+  const { user } = useAuth();
+  const [entries, setEntries] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const activeRequestsCount = myWaitlist.length;
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([getAllWaitlistEntries(), getAllEquipment()])
+      .then(([w, eq]) => { setEntries(w); setEquipment(eq); })
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load waitlist.")))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const nextPosition =
-    myWaitlist.length > 0
-      ? `#${Math.min(...myWaitlist.map((item) => item.position))}`
-      : "-";
+  const equipmentName = (id) => equipment.find((e) => e.equipmentId === id)?.equipmentName || `Equipment ${id}`;
 
-  const availableSoonCount = myWaitlist.filter(
-    (item) => item.status === "Available Soon"
-  ).length;
-
-  const handleCancelWaitlist = (id, equipmentName) => {
-    setMyWaitlist((prev) => prev.filter((item) => item.id !== id));
-
-    if (showToast) {
-      showToast(`Removed from waitlist for ${equipmentName}.`, "info");
-    }
-  };
+  // NOTE: the backend has no POST /api/waitlist endpoint - a researcher is added
+  // to a waitlist automatically when they try to book equipment that's taken.
+  // There's also no requester name on WaitlistResponseDTO, so "my" waitlist
+  // entries are matched by numeric user id only.
+  const myEntries = user?.userId ? entries.filter((e) => e.requestedById === user.userId) : [];
 
   return (
-    <div className="waitlist-page">
-      {/* HEADER */}
-      <div className="waitlist-header">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <h1>My Waitlist</h1>
-          <p>Track equipment you are waiting to access</p>
-        </div>
-
-        <div className="waitlist-role-badge">Researcher</div>
-      </div>
-
-      {/* SUMMARY */}
-      <div className="waitlist-summary">
-        <div className="waitlist-summary-card">
-          <span className="summary-icon blue">◷</span>
-          <div>
-            <small>Active Requests</small>
-            <strong>{activeRequestsCount}</strong>
-          </div>
-        </div>
-
-        <div className="waitlist-summary-card">
-          <span className="summary-icon orange">#</span>
-          <div>
-            <small>Next Position</small>
-            <strong>{nextPosition}</strong>
-          </div>
-        </div>
-
-        <div className="waitlist-summary-card">
-          <span className="summary-icon green">✓</span>
-          <div>
-            <small>Available Soon</small>
-            <strong>{availableSoonCount}</strong>
-          </div>
+          <h1 style={h1Style}>My Waitlist</h1>
+          <p style={subStyle}>
+            You're placed here automatically when you try to book equipment that's
+            already reserved for that time slot.
+          </p>
         </div>
       </div>
 
-      {/* WAITLIST CONTAINER */}
-      <div className="my-waitlist-container">
-        <div className="waitlist-section-header">
-          <div>
-            <h2>My Requests</h2>
-            <p>Equipment you have joined the waitlist for</p>
-          </div>
-        </div>
+      {error && <p style={errorText}>{error}</p>}
 
-        <div className="my-waitlist-list">
-          {myWaitlist.length === 0 ? (
-            <div className="no-my-bookings" style={{ padding: "40px", textAlign: "center" }}>
-              <div className="no-booking-icon" style={{ fontSize: "32px", color: "#94a3b8" }}>
-                ◷
-              </div>
-              <h3 style={{ margin: "10px 0 6px", color: "#1e293b" }}>No active waitlist requests</h3>
-              <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
-                You are currently not waiting on any booked equipment.
-              </p>
-            </div>
+      <div style={card}>
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading waitlist...</p>
           ) : (
-            myWaitlist.map((item) => (
-              <div className="my-waitlist-row" key={item.id}>
-                <div className="waitlist-equipment">
-                  <div className="waitlist-equipment-icon">
-                    {item.equipment.charAt(0)}
-                  </div>
-
-                  <div>
-                    <strong>{item.equipment}</strong>
-                    <small>{item.equipmentId}</small>
-                  </div>
-                </div>
-
-                <div className="waitlist-position">
-                  <span>Queue Position</span>
-                  <strong>#{item.position}</strong>
-                </div>
-
-                <div className="waitlist-date">
-                  <span>Requested</span>
-                  <strong>{item.requestedDate}</strong>
-                </div>
-
-                <div className="waitlist-date">
-                  <span>Expected</span>
-                  <strong>{item.expectedDate}</strong>
-                </div>
-
-                <div>
-                  <span
-                    className={`my-waitlist-status ${
-                      item.status === "Waiting" ? "waiting" : "soon"
-                    }`}
-                  >
-                    <span></span>
-                    {item.status}
-                  </span>
-                </div>
-
-                <button
-                  className="cancel-waitlist-btn"
-                  onClick={() => handleCancelWaitlist(item.id, item.equipment)}
-                >
-                  Cancel
-                </button>
-              </div>
-            ))
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>Equipment</th>
+                  <th style={thStyle}>Requested Start</th>
+                  <th style={thStyle}>Requested End</th>
+                  <th style={thStyle}>Position in Queue</th>
+                  <th style={thStyle}>Added</th>
+                  <th style={thStyle}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myEntries.map((e) => (
+                  <tr key={e.waitlistId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>{equipmentName(e.equipId)}</td>
+                    <td style={tdStyle}>{e.startTime ? new Date(e.startTime).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>{e.endTime ? new Date(e.endTime).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>#{e.position}</td>
+                    <td style={tdStyle}>{e.addedAt ? new Date(e.addedAt).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>
+                      <span style={e.active ? pill("#fff4df", "#b56a00") : pill("#f1f5f9", "#475569")}>
+                        {e.active ? "Waiting" : "Cleared"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {myEntries.length === 0 && (
+                  <tr><td colSpan={6} style={emptyText}>You're not on any waitlists right now.</td></tr>
+                )}
+              </tbody>
+            </table>
           )}
         </div>
       </div>

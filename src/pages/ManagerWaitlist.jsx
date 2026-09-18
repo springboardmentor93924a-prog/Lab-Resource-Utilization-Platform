@@ -1,324 +1,90 @@
-import { useState } from "react";
-import "./ManagerWaitlist.css";
+import { useEffect, useState } from "react";
+import { getAllWaitlistEntries } from "../api/bookingApi";
+import { getAllEquipment } from "../api/equipmentApi";
+import { extractErrorMessage } from "../api/client";
+import { page, headerRow, h1Style, subStyle, card, filterBar, selectStyle, thStyle, tdStyle, errorText, emptyText, pill } from "../styles/shared";
 
-function ManagerWaitlist({ showToast }) {
-  const [waitlist, setWaitlist] = useState([
-    {
-      equipment: "3D Printer",
-      id: "EQ003",
-      department: "Mechanical",
-      waiting: 5,
-      nextAvailable: "Aug 15, 2026",
-      demand: "High",
-    },
-    {
-      equipment: "Oscilloscope",
-      id: "EQ001",
-      department: "ECE",
-      waiting: 2,
-      nextAvailable: "Aug 14, 2026",
-      demand: "Medium",
-    },
-    {
-      equipment: "Digital Multimeter",
-      id: "EQ002",
-      department: "ECE",
-      waiting: 1,
-      nextAvailable: "Today",
-      demand: "Low",
-    },
-  ]);
+function ManagerWaitlist() {
+  const [entries, setEntries] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [equipmentFilter, setEquipmentFilter] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [selectedEquipment, setSelectedEquipment] = useState(null);
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([getAllWaitlistEntries(), getAllEquipment()])
+      .then(([w, eq]) => { setEntries(w); setEquipment(eq); })
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load waitlist.")))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const totalWaiting = waitlist.reduce(
-    (sum, item) => sum + item.waiting,
-    0
-  );
+  const equipmentName = (id) => equipment.find((e) => e.equipmentId === id)?.equipmentName || `Equipment ${id}`;
 
-  const highDemandCount = waitlist.filter(
-    (item) => item.demand === "High"
-  ).length;
-
-  const handleNotifyNextUser = (item) => {
-    if (item.waiting <= 0) return;
-
-    setWaitlist((prev) =>
-      prev.map((w) =>
-        w.id === item.id ? { ...w, waiting: w.waiting - 1 } : w
-      )
-    );
-
-    if (showToast) {
-      showToast(
-        `Next waiting user notified for ${item.equipment}!`,
-        "success"
-      );
-    }
-  };
-
-  const handleViewRequests = (item) => {
-    setSelectedEquipment(item);
-
-    if (showToast) {
-      showToast(
-        `Viewing active queue for ${item.equipment} (${item.waiting} waiting)`,
-        "info"
-      );
-    }
-  };
+  const filtered = entries
+    .filter((e) => equipmentFilter === "All" || String(e.equipId) === equipmentFilter)
+    .sort((a, b) => (a.position || 0) - (b.position || 0));
 
   return (
-    <div className="manager-waitlist-page">
-
-      <div className="manager-waitlist-header">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <h1>Waitlist Management</h1>
-
-          <p>
-            Monitor equipment demand and manage waiting requests
+          <h1 style={h1Style}>Equipment Waitlists</h1>
+          <p style={subStyle}>
+            Everyone currently queued for busy equipment, across all requesters.
           </p>
         </div>
-
-        <div className="manager-role-badge">
-          Lab Manager
-        </div>
       </div>
 
+      {error && <p style={errorText}>{error}</p>}
 
-      {/* SUMMARY */}
-
-      <div className="manager-waitlist-summary">
-
-        <div className="manager-waitlist-card">
-          <span className="manager-icon blue">◷</span>
-          <div>
-            <small>Active Waitlists</small>
-            <strong>{waitlist.length}</strong>
-          </div>
+      <div style={card}>
+        <div style={filterBar}>
+          <select value={equipmentFilter} onChange={(e) => setEquipmentFilter(e.target.value)} style={selectStyle}>
+            <option value="All">All Equipment</option>
+            {equipment.map((eq) => (
+              <option key={eq.equipmentId} value={eq.equipmentId}>{eq.equipmentName}</option>
+            ))}
+          </select>
         </div>
-
-        <div className="manager-waitlist-card">
-          <span className="manager-icon orange">#</span>
-          <div>
-            <small>Total Waiting</small>
-            <strong>{totalWaiting}</strong>
-          </div>
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading waitlist...</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>Equipment</th>
+                  <th style={thStyle}>Requester (User ID)</th>
+                  <th style={thStyle}>Requested Start</th>
+                  <th style={thStyle}>Requested End</th>
+                  <th style={thStyle}>Queue Position</th>
+                  <th style={thStyle}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((e) => (
+                  <tr key={e.waitlistId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>{equipmentName(e.equipId)}</td>
+                    <td style={tdStyle}>#{e.requestedById}</td>
+                    <td style={tdStyle}>{e.startTime ? new Date(e.startTime).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>{e.endTime ? new Date(e.endTime).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>#{e.position}</td>
+                    <td style={tdStyle}>
+                      <span style={e.active ? pill("#fff4df", "#b56a00") : pill("#f1f5f9", "#475569")}>
+                        {e.active ? "Waiting" : "Cleared"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={6} style={emptyText}>No one is waitlisted right now.</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
-
-        <div className="manager-waitlist-card">
-          <span className="manager-icon red">!</span>
-          <div>
-            <small>High Demand</small>
-            <strong>{highDemandCount}</strong>
-          </div>
-        </div>
-
-        <div className="manager-waitlist-card">
-          <span className="manager-icon green">✓</span>
-          <div>
-            <small>Available Soon</small>
-            <strong>2</strong>
-          </div>
-        </div>
-
       </div>
-
-
-      {/* MANAGEMENT TABLE */}
-
-      <div className="manager-waitlist-container">
-
-        <div className="manager-section-header">
-
-          <div>
-            <h2>Equipment Waitlists</h2>
-
-            <p>
-              Current demand and queue information
-            </p>
-          </div>
-
-        </div>
-
-
-        <div className="manager-waitlist-table">
-
-          <div className="manager-table-header">
-            <div>Equipment</div>
-            <div>Department</div>
-            <div>Waiting</div>
-            <div>Next Available</div>
-            <div>Demand</div>
-            <div>Action</div>
-          </div>
-
-
-          {waitlist.map((item) => (
-
-            <div
-              className="manager-table-row"
-              key={item.id}
-            >
-
-              <div className="manager-equipment">
-
-                <div className="manager-equipment-icon">
-                  {item.equipment.charAt(0)}
-                </div>
-
-                <div>
-                  <strong>{item.equipment}</strong>
-                  <small>{item.id}</small>
-                </div>
-
-              </div>
-
-
-              <div className="manager-department">
-                {item.department}
-              </div>
-
-
-              <div className="waiting-count">
-                {item.waiting} people
-              </div>
-
-
-              <div className="next-available">
-                {item.nextAvailable}
-              </div>
-
-
-              <div>
-
-                <span
-                  className={`demand-badge ${item.demand.toLowerCase()}`}
-                >
-                  {item.demand}
-                </span>
-
-              </div>
-
-
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  className="manage-request-btn"
-                  onClick={() => handleViewRequests(item)}
-                >
-                  View Requests
-                </button>
-
-                <button
-                  className="manage-request-btn"
-                  style={{
-                    background: "#2563eb",
-                    color: "white",
-                    border: "none",
-                  }}
-                  disabled={item.waiting === 0}
-                  onClick={() => handleNotifyNextUser(item)}
-                >
-                  Notify Next
-                </button>
-              </div>
-
-            </div>
-
-          ))}
-
-        </div>
-
-      </div>
-
-      {/* QUEUE DETAILS MODAL */}
-      {selectedEquipment && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-          }}
-        >
-          <div
-            style={{
-              width: "480px",
-              background: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: "18px", color: "#172b4d" }}>
-                {selectedEquipment.equipment} Queue
-              </h2>
-              <button
-                onClick={() => setSelectedEquipment(null)}
-                style={{
-                  border: "none",
-                  background: "#f1f4f8",
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px" }}>
-              Currently {selectedEquipment.waiting} user(s) waiting in queue. Next slot available: <strong>{selectedEquipment.nextAvailable}</strong>.
-            </p>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button
-                onClick={() => setSelectedEquipment(null)}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  border: "1px solid #cbd5e1",
-                  background: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  handleNotifyNextUser(selectedEquipment);
-                  setSelectedEquipment(null);
-                }}
-                disabled={selectedEquipment.waiting === 0}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: "#2563eb",
-                  color: "white",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Release & Notify Next
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

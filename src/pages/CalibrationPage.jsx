@@ -1,115 +1,198 @@
-import React, { useState } from 'react';
-import './CalibrationPage.css';
+import { useEffect, useState } from "react";
+import {
+  getAllEquipment,
+  getCalibrationByEquipment,
+  createCalibrationRecord,
+  updateCalibrationRecord,
+  deleteCalibrationRecord,
+} from "../api/equipmentApi";
+import { extractErrorMessage } from "../api/client";
+import { CERTIFICATION_STATUSES } from "../utils/constants";
+import { page, headerRow, h1Style, subStyle, card, selectStyle, labelStyle, inputStyle, primaryBtn, cancelBtn, errorText, emptyText, pill } from "../styles/shared";
 
-export default function CalibrationPage() {
-  const [filter, setFilter] = useState('ALL');
+const WRITE_ROLES = ["SYSTEM_ADMIN", "INSTITUTION_ADMIN", "LAB_MANAGER", "LAB_TECHNICIAN"];
+const DELETE_ROLES = ["SYSTEM_ADMIN", "INSTITUTION_ADMIN", "LAB_MANAGER"];
 
-  const [calibrationList] = useState([
-    {
-      id: 1,
-      equipment: 'Oscilloscope',
-      lastCalibration: '10 Jun 2026',
-      nextCalibration: '10 Dec 2026',
-      certificate: 'ISO-1234',
-      expiry: '10 Dec 2026',
-      status: 'VALID',
-    },
-    {
-      id: 2,
-      equipment: 'Centrifuge X200',
-      lastCalibration: '15 Aug 2025',
-      nextCalibration: '15 Aug 2026',
-      certificate: 'CERT-8842',
-      expiry: '15 Aug 2026',
-      status: 'EXPIRED',
-    },
-    {
-      id: 3,
-      equipment: 'HPLC System',
-      lastCalibration: '01 Sep 2025',
-      nextCalibration: '01 Sep 2026',
-      certificate: 'CERT-9102',
-      expiry: '01 Sep 2026',
-      status: 'DUE_SOON',
-    },
-  ]);
+const emptyForm = {
+  lastCalibrationDate: "", nextCalibrationDate: "", calibrationIntervalMonths: "",
+  certificationNumber: "", certificationIssueDate: "", certificationExpiryDate: "",
+  certificationRequired: true,
+};
 
-  const filteredData = calibrationList.filter((item) => {
-    if (filter === 'DUE_SOON') return item.status === 'DUE_SOON';
-    if (filter === 'EXPIRED') return item.status === 'EXPIRED';
-    return true;
-  });
+function CalibrationPage({ userRole, showToast }) {
+  const [equipment, setEquipment] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [record, setRecord] = useState(null);
+  const [notFound, setNotFound] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState(false);
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'VALID':
-        return <span className="badge badge-valid">Valid</span>;
-      case 'DUE_SOON':
-        return <span className="badge badge-due">Due Soon</span>;
-      case 'EXPIRED':
-        return <span className="badge badge-expired">Expired</span>;
-      default:
-        return null;
+  const canWrite = WRITE_ROLES.includes(userRole);
+  const canDelete = DELETE_ROLES.includes(userRole);
+
+  useEffect(() => {
+    getAllEquipment().then(setEquipment).catch(() => setEquipment([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) { setRecord(null); return; }
+    setLoading(true);
+    setNotFound(false);
+    getCalibrationByEquipment(selectedId)
+      .then((r) => { setRecord(r); populateForm(r); })
+      .catch(() => { setRecord(null); setNotFound(true); })
+      .finally(() => setLoading(false));
+  }, [selectedId]);
+
+  const populateForm = (r) => {
+    setForm({
+      lastCalibrationDate: r?.lastCalibrationDate || "",
+      nextCalibrationDate: r?.nextCalibrationDate || "",
+      calibrationIntervalMonths: r?.calibrationIntervalMonths ?? "",
+      certificationNumber: r?.certificationNumber || "",
+      certificationIssueDate: r?.certificationIssueDate || "",
+      certificationExpiryDate: r?.certificationExpiryDate || "",
+      certificationRequired: true,
+    });
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const payload = {
+      equipmentId: Number(selectedId),
+      lastCalibrationDate: form.lastCalibrationDate || null,
+      nextCalibrationDate: form.nextCalibrationDate || null,
+      calibrationIntervalMonths: form.calibrationIntervalMonths ? Number(form.calibrationIntervalMonths) : null,
+      certificationNumber: form.certificationNumber || null,
+      certificationIssueDate: form.certificationIssueDate || null,
+      certificationExpiryDate: form.certificationExpiryDate || null,
+      certificationRequired: true,
+    };
+    try {
+      if (record) {
+        const updated = await updateCalibrationRecord(record.calibrationId, payload);
+        setRecord(updated);
+        showToast?.("Calibration record updated.", "success");
+      } else {
+        const created = await createCalibrationRecord(payload);
+        setRecord(created);
+        setNotFound(false);
+        showToast?.("Calibration record created.", "success");
+      }
+      setEditing(false);
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to save calibration record."), "warning");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!record || !window.confirm("Delete this calibration record?")) return;
+    try {
+      await deleteCalibrationRecord(record.calibrationId);
+      showToast?.("Calibration record deleted.", "success");
+      setRecord(null);
+      setNotFound(true);
+      setForm(emptyForm);
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to delete calibration record."), "warning");
     }
   };
 
   return (
-    <div className="calibration-container">
-      <div className="calibration-header">
-        <span className="eyebrow">LAB MANAGER DASHBOARD</span>
-        <h1>Calibration & Certification</h1>
-        <p>Manage and review equipment calibration history and compliance certifications.</p>
+    <div style={page}>
+      <div style={headerRow}>
+        <div>
+          <h1 style={h1Style}>Calibration Records</h1>
+          <p style={subStyle}>Look up and manage calibration certification per equipment</p>
+        </div>
       </div>
 
-      <div className="filter-tabs">
-        <button
-          className={`tab-btn ${filter === 'ALL' ? 'active' : ''}`}
-          onClick={() => setFilter('ALL')}
-        >
-          All ({calibrationList.length})
-        </button>
-        <button
-          className={`tab-btn ${filter === 'DUE_SOON' ? 'active' : ''}`}
-          onClick={() => setFilter('DUE_SOON')}
-        >
-          Due Soon ({calibrationList.filter((i) => i.status === 'DUE_SOON').length})
-        </button>
-        <button
-          className={`tab-btn ${filter === 'EXPIRED' ? 'active' : ''}`}
-          onClick={() => setFilter('EXPIRED')}
-        >
-          Expired ({calibrationList.filter((i) => i.status === 'EXPIRED').length})
-        </button>
+      <div style={{ ...card, padding: 20, marginBottom: 20 }}>
+        <label style={labelStyle}>Select Equipment</label>
+        <select value={selectedId} onChange={(e) => { setSelectedId(e.target.value); setEditing(false); }} style={selectStyle}>
+          <option value="">Choose equipment...</option>
+          {equipment.map((eq) => (
+            <option key={eq.equipmentId} value={eq.equipmentId}>{eq.equipmentName} ({eq.assetTag})</option>
+          ))}
+        </select>
       </div>
 
-      <div className="table-card">
-        <table className="calibration-table">
-          <thead>
-            <tr>
-              <th>Equipment</th>
-              <th>Last Calibration</th>
-              <th>Next Calibration</th>
-              <th>Certification</th>
-              <th>Expiry</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((item) => (
-              <tr key={item.id}>
-                <td><strong>{item.equipment}</strong></td>
-                <td>{item.lastCalibration}</td>
-                <td>{item.nextCalibration}</td>
-                <td>
-                  <span className="cert-code">📄 {item.certificate}</span>
-                </td>
-                <td>{item.expiry}</td>
-                <td>{getStatusBadge(item.status)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {!selectedId && <p style={emptyText}>Select a piece of equipment to view its calibration record.</p>}
+
+      {selectedId && loading && <p>Loading calibration record...</p>}
+
+      {selectedId && !loading && (
+        <div style={{ ...card, padding: 24 }}>
+          {record && !editing && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h2 style={{ margin: 0, fontSize: 18 }}>Calibration #{record.calibrationId}</h2>
+                <span style={
+                  record.certificationStatus === "ACTIVE" ? pill("#e8f7ee", "#16834b") :
+                  record.certificationStatus === "EXPIRED" ? pill("#fdecec", "#c0392b") :
+                  pill("#f1f5f9", "#475569")
+                }>
+                  {record.certificationStatus || "NOT_CERTIFIED"}
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, fontSize: 13, color: "#334155" }}>
+                <div><strong>Last Calibration:</strong> {record.lastCalibrationDate || "-"}</div>
+                <div><strong>Next Calibration:</strong> {record.nextCalibrationDate || "-"}</div>
+                <div><strong>Interval (months):</strong> {record.calibrationIntervalMonths ?? "-"}</div>
+                <div><strong>Certification #:</strong> {record.certificationNumber || "-"}</div>
+                <div><strong>Cert. Issued:</strong> {record.certificationIssueDate || "-"}</div>
+                <div><strong>Cert. Expires:</strong> {record.certificationExpiryDate || "-"}</div>
+              </div>
+              {canWrite && (
+                <div style={{ display: "flex", gap: 9, marginTop: 20 }}>
+                  <button onClick={() => setEditing(true)} style={primaryBtn}>Edit</button>
+                  {canDelete && <button onClick={handleDelete} style={{ ...cancelBtn, color: "#c0392b" }}>Delete</button>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {notFound && !editing && (
+            <div>
+              <p style={emptyText}>No calibration record exists for this equipment yet.</p>
+              {canWrite && (
+                <button onClick={() => { populateForm(null); setEditing(true); }} style={primaryBtn}>
+                  + Create Calibration Record
+                </button>
+              )}
+            </div>
+          )}
+
+          {editing && (
+            <form onSubmit={handleSave}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <Field label="Last Calibration Date" type="date" value={form.lastCalibrationDate} onChange={(v) => setForm({ ...form, lastCalibrationDate: v })} />
+                <Field label="Next Calibration Date" type="date" value={form.nextCalibrationDate} onChange={(v) => setForm({ ...form, nextCalibrationDate: v })} />
+                <Field label="Interval (months)" type="number" value={form.calibrationIntervalMonths} onChange={(v) => setForm({ ...form, calibrationIntervalMonths: v })} />
+                <Field label="Certification Number" value={form.certificationNumber} onChange={(v) => setForm({ ...form, certificationNumber: v })} />
+                <Field label="Certification Issue Date" type="date" value={form.certificationIssueDate} onChange={(v) => setForm({ ...form, certificationIssueDate: v })} />
+                <Field label="Certification Expiry Date" type="date" value={form.certificationExpiryDate} onChange={(v) => setForm({ ...form, certificationExpiryDate: v })} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 22 }}>
+                <button type="button" onClick={() => { setEditing(false); if (!record) setSelectedId(""); }} style={cancelBtn}>Cancel</button>
+                <button type="submit" style={primaryBtn}>{record ? "Save Changes" : "Create Record"}</button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
+function Field({ label, value, onChange, type = "text" }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} style={inputStyle} />
+    </div>
+  );
+}
+
+export default CalibrationPage;

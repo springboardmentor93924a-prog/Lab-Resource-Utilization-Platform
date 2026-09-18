@@ -1,219 +1,164 @@
-import React, { useState } from 'react';
-import './CostManagementPage.css';
+import { useEffect, useState } from "react";
+import { getAllCosts, getCostByDepartment, getCostByInstitution, getBillingForInstitution } from "../api/costApi";
+import { getAllDepartments } from "../api/departmentApi";
+import { getAllInstitutions } from "../api/institutionApi";
+import { extractErrorMessage } from "../api/client";
+import { page, headerRow, h1Style, subStyle, card, statsRow, statCardStyle, thStyle, tdStyle, errorText, emptyText, pill, selectStyle, labelStyle } from "../styles/shared";
 
-export default function CostManagementPage({ userRole = 'LAB_MANAGER' }) {
-  const [activeTab, setActiveTab] = useState('EQUIPMENT');
-  const [showModal, setShowModal] = useState(false);
+const ALL_ROLES = ["SYSTEM_ADMIN", "INSTITUTION_ADMIN"];
+const DEPT_ROLES = ["SYSTEM_ADMIN", "INSTITUTION_ADMIN", "DEPARTMENT_HEAD", "LAB_MANAGER"];
 
-  // Form State for New Invoice
-  const [newInvoice, setNewInvoice] = useState({
-    equipment: '',
-    requestingInstitution: '',
-    hoursUsed: '',
-    rate: ''
-  });
+function CostManagementPage({ userRole }) {
+  const [costs, setCosts] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
 
-  const [equipmentCosts, setEquipmentCosts] = useState([
-    { id: 'EQ-101', equipment: 'Centrifuge X200', department: 'Biochemistry', rate: 150, hours: 42, totalCost: 6300 },
-    { id: 'EQ-102', equipment: 'HPLC System', department: 'Analytical Chem', rate: 300, hours: 28, totalCost: 8400 },
-    { id: 'EQ-103', equipment: 'Spectrophotometer', department: 'Biochemistry', rate: 100, hours: 15, totalCost: 1500 },
-  ]);
+  const [deptId, setDeptId] = useState("");
+  const [instId, setInstId] = useState("");
+  const [deptSummary, setDeptSummary] = useState(null);
+  const [instSummary, setInstSummary] = useState(null);
+  const [billingSummary, setBillingSummary] = useState(null);
 
-  const [billingLogs, setBillingLogs] = useState([
-    {
-      id: 'INV-301',
-      equipment: 'HPLC System',
-      ownerInstitution: 'National Institute of Tech',
-      requestingInstitution: 'Indian Institute of Science',
-      hoursUsed: 12,
-      rate: 300,
-      totalAmount: 3600,
-      status: 'PENDING',
-    },
-    {
-      id: 'INV-302',
-      equipment: 'Centrifuge X200',
-      ownerInstitution: 'National Institute of Tech',
-      requestingInstitution: 'Central University',
-      hoursUsed: 20,
-      rate: 150,
-      totalAmount: 3000,
-      status: 'PAID',
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Handle Creating a New Bill (Connects to Spring Boot POST API later)
-  const handleCreateInvoice = (e) => {
-    e.preventDefault();
-    const totalAmount = Number(newInvoice.hoursUsed) * Number(newInvoice.rate);
-    const invoiceObj = {
-      id: `INV-${Math.floor(100 + Math.random() * 900)}`,
-      equipment: newInvoice.equipment,
-      ownerInstitution: 'National Institute of Tech',
-      requestingInstitution: newInvoice.requestingInstitution,
-      hoursUsed: Number(newInvoice.hoursUsed),
-      rate: Number(newInvoice.rate),
-      totalAmount: totalAmount,
-      status: 'PENDING'
-    };
+  useEffect(() => {
+    getAllDepartments().then(setDepartments).catch(() => setDepartments([]));
+    getAllInstitutions().then(setInstitutions).catch(() => setInstitutions([]));
 
-    setBillingLogs([invoiceObj, ...billingLogs]);
-    setShowModal(false);
-    setNewInvoice({ equipment: '', requestingInstitution: '', hoursUsed: '', rate: '' });
-  };
+    if (ALL_ROLES.includes(userRole)) {
+      setLoading(true);
+      getAllCosts()
+        .then(setCosts)
+        .catch((err) => setError(extractErrorMessage(err, "Failed to load cost data.")))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [userRole]);
+
+  useEffect(() => {
+    if (!deptId) { setDeptSummary(null); return; }
+    getCostByDepartment(deptId).then(setDeptSummary).catch(() => setDeptSummary(null));
+  }, [deptId]);
+
+  useEffect(() => {
+    if (!instId || !ALL_ROLES.includes(userRole)) { setInstSummary(null); setBillingSummary(null); return; }
+    getCostByInstitution(instId).then(setInstSummary).catch(() => setInstSummary(null));
+    getBillingForInstitution(instId).then(setBillingSummary).catch(() => setBillingSummary(null));
+  }, [instId, userRole]);
+
+  const totalCost = costs.reduce((sum, c) => sum + Number(c.totalCost || 0), 0);
+  const crossInstCount = costs.filter((c) => c.crossInstitution).length;
 
   return (
-    <div className="cost-container">
-      <div className="cost-header-flex">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <span className="eyebrow">{userRole} DASHBOARD</span>
-          <h1>Cost Management & Billing</h1>
-          <p>Track hourly equipment usage costs, department expenditure, and inter-institution billing logs.</p>
+          <h1 style={h1Style}>Cost Management</h1>
+          <p style={subStyle}>Equipment usage cost tracking and billing summaries</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
-          + Generate Inter-Inst Bill
-        </button>
       </div>
 
-      <div className="filter-tabs">
-        <button
-          className={`tab-btn ${activeTab === 'EQUIPMENT' ? 'active' : ''}`}
-          onClick={() => setActiveTab('EQUIPMENT')}
-        >
-          Equipment Usage Cost
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'BILLING' ? 'active' : ''}`}
-          onClick={() => setActiveTab('BILLING')}
-        >
-          Inter-Institution Billing
-        </button>
-      </div>
+      {error && <p style={errorText}>{error}</p>}
 
-      {/* Equipment Usage View */}
-      {activeTab === 'EQUIPMENT' && (
-        <div className="table-card">
-          <table className="cost-table">
-            <thead>
-              <tr>
-                <th>Equipment ID</th>
-                <th>Equipment Name</th>
-                <th>Department</th>
-                <th>Hourly Rate (₹)</th>
-                <th>Usage Hours</th>
-                <th>Total Usage Cost (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {equipmentCosts.map((item) => (
-                <tr key={item.id}>
-                  <td><strong>{item.id}</strong></td>
-                  <td>{item.equipment}</td>
-                  <td>{item.department}</td>
-                  <td>₹{item.rate}/hr</td>
-                  <td>{item.hours} hrs</td>
-                  <td className="cost-highlight">₹{item.totalCost.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {ALL_ROLES.includes(userRole) && (
+        <div style={statsRow}>
+          <div style={statCardStyle}><div><p style={{ margin: "0 0 4px", color: "#718096", fontSize: 12 }}>Total Records</p><h2 style={{ margin: 0, fontSize: 22 }}>{costs.length}</h2></div></div>
+          <div style={statCardStyle}><div><p style={{ margin: "0 0 4px", color: "#718096", fontSize: 12 }}>Total Cost</p><h2 style={{ margin: 0, fontSize: 22 }}>₹{totalCost.toFixed(2)}</h2></div></div>
+          <div style={statCardStyle}><div><p style={{ margin: "0 0 4px", color: "#718096", fontSize: 12 }}>Cross-Institution Usage</p><h2 style={{ margin: 0, fontSize: 22 }}>{crossInstCount}</h2></div></div>
         </div>
       )}
 
-      {/* Inter-Institution Billing View */}
-      {activeTab === 'BILLING' && (
-        <div className="table-card">
-          <table className="cost-table">
-            <thead>
-              <tr>
-                <th>Invoice ID</th>
-                <th>Equipment</th>
-                <th>Owner Inst.</th>
-                <th>Requesting Inst.</th>
-                <th>Hours</th>
-                <th>Total Amount</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {billingLogs.map((bill) => (
-                <tr key={bill.id}>
-                  <td><strong>{bill.id}</strong></td>
-                  <td>{bill.equipment}</td>
-                  <td>{bill.ownerInstitution}</td>
-                  <td>{bill.requestingInstitution}</td>
-                  <td>{bill.hoursUsed} hrs</td>
-                  <td className="cost-highlight">₹{bill.totalAmount.toLocaleString()}</td>
-                  <td>
-                    <span className={`badge badge-${bill.status.toLowerCase()}`}>
-                      {bill.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button 
-                           className="btn-action" 
-                             onClick={() => handleDownloadPDF(bill.id)}>
-                             Download PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+        <div style={{ ...card, padding: 20 }}>
+          <label style={labelStyle}>Department Cost Summary</label>
+          <select value={deptId} onChange={(e) => setDeptId(e.target.value)} style={selectStyle}>
+            <option value="">Select department</option>
+            {departments.map((d) => <option key={d.departId} value={d.departId}>{d.departmentName}</option>)}
+          </select>
+          {deptSummary && (
+            <div style={{ marginTop: 14, fontSize: 13, color: "#334155" }}>
+              <p><strong>{deptSummary.name}</strong></p>
+              <p>Total Bookings: {deptSummary.totalBookings}</p>
+              <p>Total Hours: {deptSummary.totalHours}</p>
+              <p>Total Cost: ₹{Number(deptSummary.totalCost || 0).toFixed(2)}</p>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Generate Invoice Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Generate New Invoice</h3>
-            <form onSubmit={handleCreateInvoice}>
-              <div className="form-group">
-                <label>Equipment Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newInvoice.equipment}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, equipment: e.target.value })}
-                />
+        {ALL_ROLES.includes(userRole) && (
+          <div style={{ ...card, padding: 20 }}>
+            <label style={labelStyle}>Institution Cost & Billing</label>
+            <select value={instId} onChange={(e) => setInstId(e.target.value)} style={selectStyle}>
+              <option value="">Select institution</option>
+              {institutions.map((i) => <option key={i.institutionId} value={i.institutionId}>{i.institutionName}</option>)}
+            </select>
+            {instSummary && (
+              <div style={{ marginTop: 14, fontSize: 13, color: "#334155" }}>
+                <p><strong>Usage Cost — {instSummary.name}</strong></p>
+                <p>Total Bookings: {instSummary.totalBookings} | Hours: {instSummary.totalHours} | Cost: ₹{Number(instSummary.totalCost || 0).toFixed(2)}</p>
               </div>
-              <div className="form-group">
-                <label>Requesting Institution</label>
-                <input
-                  type="text"
-                  required
-                  value={newInvoice.requestingInstitution}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, requestingInstitution: e.target.value })}
-                />
+            )}
+            {billingSummary && (
+              <div style={{ marginTop: 10, fontSize: 13, color: "#334155" }}>
+                <p><strong>Owed to this institution (cross-institution usage)</strong></p>
+                <p>Bookings: {billingSummary.totalBookings} | Hours: {billingSummary.totalHours} | Amount: ₹{Number(billingSummary.totalCost || 0).toFixed(2)}</p>
               </div>
-              <div className="form-group">
-                <label>Hours Used</label>
-                <input
-                  type="number"
-                  required
-                  value={newInvoice.hoursUsed}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, hoursUsed: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label>Hourly Rate (₹)</label>
-                <input
-                  type="number"
-                  required
-                  value={newInvoice.rate}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, rate: e.target.value })}
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Generate Invoice</button>
-              </div>
-            </form>
+            )}
+          </div>
+        )}
+      </div>
+
+      {ALL_ROLES.includes(userRole) && (
+        <div style={card}>
+          <div style={{ overflowX: "auto" }}>
+            {loading ? (
+              <p style={{ padding: 20 }}>Loading cost records...</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <th style={thStyle}>Cost ID</th>
+                    <th style={thStyle}>Booking</th>
+                    <th style={thStyle}>Equipment</th>
+                    <th style={thStyle}>Department</th>
+                    <th style={thStyle}>Hours Used</th>
+                    <th style={thStyle}>Rate</th>
+                    <th style={thStyle}>Total</th>
+                    <th style={thStyle}>Cross-Institution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {costs.map((c) => (
+                    <tr key={c.costId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                      <td style={tdStyle}>#{c.costId}</td>
+                      <td style={tdStyle}>#{c.bookingId}</td>
+                      <td style={tdStyle}>{c.equipName}</td>
+                      <td style={tdStyle}>{c.departmentName}</td>
+                      <td style={tdStyle}>{c.hoursUsed}</td>
+                      <td style={tdStyle}>₹{c.hourlyRate}</td>
+                      <td style={tdStyle}>₹{Number(c.totalCost || 0).toFixed(2)}</td>
+                      <td style={tdStyle}>
+                        {c.crossInstitution ? <span style={pill("#fff4df", "#b56a00")}>Yes</span> : <span style={pill("#f1f5f9", "#475569")}>No</span>}
+                      </td>
+                    </tr>
+                  ))}
+                  {costs.length === 0 && (
+                    <tr><td colSpan={8} style={emptyText}>No cost records yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
+      )}
+
+      {!ALL_ROLES.includes(userRole) && !DEPT_ROLES.includes(userRole) && (
+        <p style={emptyText}>You don't have access to cost data.</p>
       )}
     </div>
   );
 }
+
+export default CostManagementPage;

@@ -1,306 +1,214 @@
-import { useState } from "react";
-import "./MyBookings.css";
+import { useEffect, useState } from "react";
+import { getAllBookings, createBooking } from "../api/bookingApi";
+import { getAllEquipment } from "../api/equipmentApi";
+import { extractErrorMessage } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+
+const emptyForm = { equipId: "", startTime: "", endTime: "" };
 
 function MyBookings({ showToast }) {
-  const [selectedStatus, setSelectedStatus] = useState("All");
+  const { user } = useAuth();
+  const [allBookings, setAllBookings] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  const [bookings, setBookings] = useState([
-    {
-      id: "BK001",
-      equipment: "Oscilloscope",
-      equipmentId: "EQ001",
-      category: "Electronics",
-      department: "ECE",
-      location: "Lab 101",
-      date: "12 Aug 2026",
-      startTime: "10:00 AM",
-      endTime: "12:00 PM",
-      status: "Confirmed",
-    },
-    {
-      id: "BK002",
-      equipment: "Digital Multimeter",
-      equipmentId: "EQ002",
-      category: "Electronics",
-      department: "ECE",
-      location: "Lab 102",
-      date: "13 Aug 2026",
-      startTime: "02:00 PM",
-      endTime: "03:00 PM",
-      status: "Pending Approval",
-    },
-    {
-      id: "BK003",
-      equipment: "Spectrometer",
-      equipmentId: "EQ005",
-      category: "Optical",
-      department: "Physics",
-      location: "Lab 301",
-      date: "08 Aug 2026",
-      startTime: "09:00 AM",
-      endTime: "11:00 AM",
-      status: "Completed",
-    },
-    {
-      id: "BK004",
-      equipment: "3D Printer",
-      equipmentId: "EQ003",
-      category: "Manufacturing",
-      department: "Mechanical",
-      location: "Lab 201",
-      date: "05 Aug 2026",
-      startTime: "11:00 AM",
-      endTime: "01:00 PM",
-      status: "Completed",
-    },
-    {
-      id: "BK005",
-      equipment: "CNC Machine",
-      equipmentId: "EQ004",
-      category: "Manufacturing",
-      department: "Mechanical",
-      location: "Workshop",
-      date: "02 Aug 2026",
-      startTime: "03:00 PM",
-      endTime: "05:00 PM",
-      status: "Cancelled",
-    },
-  ]);
-
-  const confirmed = bookings.filter(
-    (item) => item.status === "Confirmed"
-  ).length;
-
-  const pending = bookings.filter(
-    (item) => item.status === "Pending Approval"
-  ).length;
-
-  const completed = bookings.filter(
-    (item) => item.status === "Completed"
-  ).length;
-
-  const cancelled = bookings.filter(
-    (item) => item.status === "Cancelled"
-  ).length;
-
-  const filteredBookings =
-    selectedStatus === "All"
-      ? bookings
-      : bookings.filter((item) => item.status === selectedStatus);
-
-  const cancelBooking = (id, equipmentName) => {
-    setBookings((previousBookings) =>
-      previousBookings.map((booking) =>
-        booking.id === id ? { ...booking, status: "Cancelled" } : booking
-      )
-    );
-
-    if (showToast) {
-      showToast(`Booking ${id} for ${equipmentName} has been cancelled.`, "info");
-    }
+  const load = () => {
+    setLoading(true);
+    getAllBookings()
+      .then(setAllBookings)
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load bookings.")))
+      .finally(() => setLoading(false));
   };
 
-  const handleViewDetails = (booking) => {
-    if (showToast) {
-      showToast(`Showing details for ${booking.equipment} (${booking.id})`, "info");
-    }
-  };
+  useEffect(() => {
+    load();
+    getAllEquipment().then(setEquipment).catch(() => setEquipment([]));
+  }, []);
 
-  const handleNewBookingClick = () => {
-    if (showToast) {
-      showToast("Redirecting to equipment booking page...", "info");
+  // NOTE: the backend has no GET /api/bookings/my endpoint yet (see README),
+  // so "my bookings" is derived client-side from the full list by matching
+  // the logged-in user's id against requestedById.
+  const myBookings = user?.userId
+    ? allBookings.filter((b) => b.requestedById === user.userId)
+    : [];
+
+  const filtered = myBookings.filter(
+    (b) => statusFilter === "All" || b.status === statusFilter
+  );
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await createBooking({
+        equipId: Number(form.equipId),
+        startTime: form.startTime,
+        endTime: form.endTime,
+      });
+      showToast?.("Booking request submitted.", "success");
+      setForm(emptyForm);
+      setShowForm(false);
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to create booking."), "warning");
     }
   };
 
   return (
-    <div className="my-bookings-page">
-      {/* HEADER */}
-      <div className="my-bookings-top">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <h1>My Bookings</h1>
-          <p>View and manage your laboratory equipment reservations</p>
+          <h1 style={h1Style}>My Bookings</h1>
+          <p style={subStyle}>Equipment you've booked, and their current status</p>
         </div>
-
-        <button className="new-booking-button" onClick={handleNewBookingClick}>
-          + New Booking
-        </button>
+        <button onClick={() => setShowForm(true)} style={primaryBtn}>+ New Booking</button>
       </div>
 
-      {/* SUMMARY */}
-      <div className="my-booking-stats">
-        <BookingStat title="Upcoming" value={confirmed} icon="◷" type="blue" />
-        <BookingStat
-          title="Pending Approval"
-          value={pending}
-          icon="◌"
-          type="orange"
-        />
-        <BookingStat title="Completed" value={completed} icon="✓" type="green" />
-        <BookingStat title="Cancelled" value={cancelled} icon="×" type="gray" />
-      </div>
+      {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+      {!user?.userId && (
+        <p style={{ color: "#b56a00" }}>
+          Your profile hasn't loaded yet, so bookings can't be matched to your account.
+        </p>
+      )}
 
-      {/* BOOKINGS SECTION */}
-      <div className="my-bookings-container">
-        <div className="my-bookings-section-header">
-          <div>
-            <h2>My Reservations</h2>
-            <p>Your equipment booking history and upcoming reservations</p>
-          </div>
-
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-          >
-            <option value="All">All Bookings</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Pending Approval">Pending Approval</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
+      <div style={card}>
+        <div style={filterBar}>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+            <option value="All">All Status</option>
+            <option value="PENDING_APPROVAL">Pending Approval</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="COMPLETED">Completed</option>
           </select>
         </div>
 
-        {/* BOOKING LIST */}
-        <div className="researcher-booking-list">
-          {filteredBookings.length === 0 ? (
-            <div className="no-my-bookings">
-              <div className="no-booking-icon">◷</div>
-              <h3>No bookings found</h3>
-              <p>You don't have any bookings with this status.</p>
-            </div>
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading your bookings...</p>
           ) : (
-            filteredBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                booking={booking}
-                onCancel={cancelBooking}
-                onViewDetails={handleViewDetails}
-              />
-            ))
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>ID</th>
+                  <th style={thStyle}>Equipment</th>
+                  <th style={thStyle}>Start</th>
+                  <th style={thStyle}>End</th>
+                  <th style={thStyle}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((b) => (
+                  <tr key={b.bookingId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>#{b.bookingId}</td>
+                    <td style={tdStyle}>{b.equipmentName || b.equipId}</td>
+                    <td style={tdStyle}>{b.startTime ? new Date(b.startTime).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>{b.endTime ? new Date(b.endTime).toLocaleString() : "-"}</td>
+                    <td style={tdStyle}>
+                      <span style={statusPill(b.status)}>{b.status}</span>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ ...tdStyle, textAlign: "center", padding: 30 }}>
+                      You have no bookings yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           )}
         </div>
-
-        {/* FOOTER */}
-        <div className="my-bookings-footer">
-          Showing {filteredBookings.length} of {bookings.length} bookings
-        </div>
       </div>
-    </div>
-  );
-}
 
-/* =========================================
-   BOOKING STAT
-========================================= */
-
-function BookingStat({ title, value, icon, type }) {
-  return (
-    <div className="my-booking-stat-card">
-      <div className={`my-booking-stat-icon ${type}`}>{icon}</div>
-
-      <div>
-        <span>{title}</span>
-        <strong>{value}</strong>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================
-   BOOKING CARD
-========================================= */
-
-function BookingCard({ booking, onCancel, onViewDetails }) {
-  const canCancel =
-    booking.status === "Confirmed" || booking.status === "Pending Approval";
-
-  return (
-    <div className="researcher-booking-card">
-      {/* LEFT */}
-      <div className="researcher-booking-main">
-        <div className="researcher-equipment-icon">
-          {booking.equipment.charAt(0)}
-        </div>
-
-        <div className="researcher-equipment-info">
-          <div className="researcher-equipment-title">
-            <h3>{booking.equipment}</h3>
-            <StatusBadge status={booking.status} />
-          </div>
-
-          <p>
-            {booking.equipmentId} • {booking.category}
-          </p>
-
-          <div className="researcher-booking-details">
-            <span>
-              <strong>Department</strong>
-              {booking.department}
-            </span>
-
-            <span>
-              <strong>Location</strong>
-              {booking.location}
-            </span>
+      {showForm && (
+        <div style={modalOverlay}>
+          <div style={modalCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 19 }}>New Booking</h2>
+              <button onClick={() => setShowForm(false)} style={{ border: "none", background: "none", fontSize: 19, cursor: "pointer" }}>×</button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Equipment</label>
+                <select
+                  required
+                  value={form.equipId}
+                  onChange={(e) => setForm({ ...form, equipId: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="">Select equipment</option>
+                  {equipment.filter((eq) => eq.status === "AVAILABLE").map((eq) => (
+                    <option key={eq.equipmentId} value={eq.equipmentId}>{eq.equipmentName}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Start Time</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={form.startTime}
+                  onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>End Time</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={form.endTime}
+                  onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <p style={{ fontSize: 11, color: "#94a3b8" }}>
+                If the equipment is already booked for this slot, you'll automatically be
+                added to its waitlist by the backend.
+              </p>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 16 }}>
+                <button type="button" onClick={() => setShowForm(false)} style={cancelBtn}>Cancel</button>
+                <button type="submit" style={primaryBtn}>Submit Request</button>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
-
-      {/* DATE/TIME */}
-      <div className="researcher-booking-date">
-        <span className="detail-label">DATE</span>
-        <strong>{booking.date}</strong>
-        <span>
-          {booking.startTime} - {booking.endTime}
-        </span>
-      </div>
-
-      {/* ACTIONS */}
-      <div className="researcher-booking-actions">
-        <button
-          className="view-booking-button"
-          onClick={() => onViewDetails(booking)}
-        >
-          View Details
-        </button>
-
-        {canCancel && (
-          <button
-            className="cancel-booking-button"
-            onClick={() => onCancel(booking.id, booking.equipment)}
-          >
-            Cancel
-          </button>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
-/* =========================================
-   STATUS BADGE
-========================================= */
-
-function StatusBadge({ status }) {
-  let type = "confirmed";
-
-  if (status === "Pending Approval") {
-    type = "pending";
-  }
-
-  if (status === "Completed") {
-    type = "completed";
-  }
-
-  if (status === "Cancelled") {
-    type = "cancelled";
-  }
-
-  return (
-    <span className={`researcher-status ${type}`}>
-      <span></span>
-      {status}
-    </span>
-  );
+function statusPill(status) {
+  const map = {
+    PENDING_APPROVAL: { bg: "#fff4df", fg: "#b56a00" },
+    CONFIRMED: { bg: "#e8f7ee", fg: "#16834b" },
+    REJECTED: { bg: "#fdecec", fg: "#c0392b" },
+    CANCELLED: { bg: "#f1f5f9", fg: "#475569" },
+    COMPLETED: { bg: "#eaf2ff", fg: "#2563eb" },
+  };
+  const s = map[status] || { bg: "#f1f5f9", fg: "#475569" };
+  return { background: s.bg, color: s.fg, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 };
 }
+
+const page = { padding: "30px 34px", background: "#f6f8fc", minHeight: "100%", boxSizing: "border-box", color: "#172b4d" };
+const headerRow = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 26 };
+const h1Style = { margin: 0, fontSize: 28, fontWeight: 700, color: "#172b4d" };
+const subStyle = { margin: "7px 0 0", fontSize: 14, color: "#718096" };
+const primaryBtn = { border: "none", background: "#2563eb", color: "white", padding: "11px 18px", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" };
+const cancelBtn = { padding: "9px 16px", borderRadius: 6, border: "1px solid #d8dee8", background: "white", color: "#64748b", cursor: "pointer" };
+const card = { background: "#fff", border: "1px solid #e4e8ef", borderRadius: 12, boxShadow: "0 2px 8px rgba(20,40,70,0.04)" };
+const filterBar = { padding: "17px 20px", borderBottom: "1px solid #e8ecf2", display: "flex", gap: 12, alignItems: "center" };
+const selectStyle = { height: 40, minWidth: 180, border: "1px solid #d9dfe8", borderRadius: 7, padding: "0 10px", background: "white", color: "#475569", fontSize: 13 };
+const thStyle = { padding: "13px 16px", textAlign: "left", color: "#64748b", fontSize: 11, fontWeight: 700, textTransform: "uppercase", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" };
+const tdStyle = { padding: "14px 16px", color: "#475569", fontSize: 13, whiteSpace: "nowrap" };
+const modalOverlay = { position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 };
+const modalCard = { background: "white", borderRadius: 12, padding: 26, width: 480, maxHeight: "85vh", overflowY: "auto" };
+const labelStyle = { display: "block", marginBottom: 6, fontSize: 12, fontWeight: 600, color: "#334155" };
+const inputStyle = { width: "100%", height: 40, boxSizing: "border-box", border: "1px solid #d8dee8", borderRadius: 6, padding: "0 10px", fontSize: 13, outline: "none" };
 
 export default MyBookings;

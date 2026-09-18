@@ -1,361 +1,306 @@
-import React, { useState } from 'react';
-import MaintenanceHistory from '../components/MaintenanceHistory';
-import './MaintenancePage.css';
+import { useEffect, useState } from "react";
+import {
+  getAllMaintenanceRequests,
+  createMaintenanceRequest,
+  approveMaintenanceRequest,
+  rejectMaintenanceRequest,
+  createMaintenanceSchedule,
+  createWorkOrder,
+  assignTechnician,
+} from "../api/maintenanceApi";
+import { getAllEquipment } from "../api/equipmentApi";
+import { extractErrorMessage } from "../api/client";
+import { MAINTENANCE_PRIORITIES } from "../utils/constants";
+import {
+  page, headerRow, h1Style, subStyle, card, thStyle, tdStyle, actionBtn, primaryBtn,
+  cancelBtn, modalOverlay, modalCard, labelStyle, inputStyle, errorText, emptyText, pill,
+} from "../styles/shared";
 
-export default function MaintenancePage({ userRole = 'LAB_MANAGER', showToast }) {
-  const isManager = userRole === 'LAB_MANAGER';
+const CREATE_ROLES = ["RESEARCHER", "LAB_MANAGER"];
+const APPROVE_ROLES = ["LAB_MANAGER"];
+const SCHEDULE_ROLES = ["LAB_MANAGER"];
 
-  // State
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    equipment: '',
-    description: '',
-    technician: '',
-    scheduledTime: '',
-  });
+function MaintenancePage({ userRole, showToast }) {
+  const [requests, setRequests] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [workOrders, setWorkOrders] = useState([
-    {
-      id: 'WO-201',
-      equipment: 'Centrifuge X200',
-      description: 'Replace motor bearings & rebalance rotor',
-      technician: 'Ravi Kumar',
-      scheduledTime: '2026-08-25 10:00 AM',
-      priority: 'HIGH',
-      status: 'IN_PROGRESS',
-      actualStart: '2026-08-25 10:15 AM',
-      actualEnd: '-',
-    },
-    {
-      id: 'WO-202',
-      equipment: 'HPLC System',
-      description: 'Quarterly pump calibration',
-      technician: 'Suresh Patel',
-      scheduledTime: '2026-08-26 02:00 PM',
-      priority: 'MEDIUM',
-      status: 'SCHEDULED',
-      actualStart: '-',
-      actualEnd: '-',
-    },
-  ]);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestForm, setRequestForm] = useState({ equipmentId: "", reason: "", priority: "MEDIUM", duration: "" });
 
-  const [requests, setRequests] = useState([
-    {
-      id: 'REQ-101',
-      equipment: 'Centrifuge X200',
-      reason: 'Motor vibration noise',
-      priority: 'HIGH',
-      duration: '4 hrs',
-      requestedBy: 'Dr. Smith',
-      status: 'PENDING',
-    },
-  ]);
+  const [schedulingRequest, setSchedulingRequest] = useState(null);
+  const [scheduleForm, setScheduleForm] = useState({ start: "", end: "" });
+  const [createdSchedule, setCreatedSchedule] = useState(null);
+  const [workOrderForm, setWorkOrderForm] = useState({ description: "" });
+  const [createdWorkOrder, setCreatedWorkOrder] = useState(null);
+  const [technicianId, setTechnicianId] = useState("");
 
-  // Handlers
-  const handleStartWorkOrder = (id) => {
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setWorkOrders((prev) =>
-      prev.map((wo) => (wo.id === id ? { ...wo, status: 'IN_PROGRESS', actualStart: now } : wo))
-    );
-
-    if (showToast) {
-      showToast(`Work order ${id} marked as In Progress.`, 'info');
-    }
+  const load = () => {
+    setLoading(true);
+    getAllMaintenanceRequests()
+      .then(setRequests)
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load maintenance requests.")))
+      .finally(() => setLoading(false));
   };
 
-  const handleCompleteWorkOrder = (id) => {
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setWorkOrders((prev) =>
-      prev.map((wo) => (wo.id === id ? { ...wo, status: 'COMPLETED', actualEnd: now } : wo))
-    );
+  useEffect(() => {
+    load();
+    getAllEquipment().then(setEquipment).catch(() => setEquipment([]));
+  }, []);
 
-    if (showToast) {
-      showToast(`Work order ${id} completed successfully!`, 'success');
-    }
-  };
-
-  const handleRequestStatus = (id, newStatus) => {
-    setRequests((prev) =>
-      prev.map((req) => (req.id === id ? { ...req, status: newStatus } : req))
-    );
-
-    if (showToast) {
-      if (newStatus === 'APPROVED') {
-        showToast(`Request ${id} approved successfully!`, 'success');
-      } else if (newStatus === 'REJECTED') {
-        showToast(`Request ${id} rejected.`, 'warning');
-      }
-    }
-  };
-
-  const handleCreateWorkOrder = (e) => {
+  const handleCreateRequest = async (e) => {
     e.preventDefault();
-    const newWO = {
-      id: `WO-${Math.floor(100 + Math.random() * 900)}`,
-      equipment: formData.equipment,
-      description: formData.description,
-      technician: formData.technician || 'Unassigned',
-      scheduledTime: formData.scheduledTime || 'TBD',
-      priority: 'MEDIUM',
-      status: 'SCHEDULED',
-      actualStart: '-',
-      actualEnd: '-',
-    };
-    setWorkOrders([newWO, ...workOrders]);
-
-    if (showToast) {
-      showToast(`Work Order ${newWO.id} created for ${formData.equipment}!`, 'success');
+    try {
+      await createMaintenanceRequest({
+        equipmentId: Number(requestForm.equipmentId),
+        reason: requestForm.reason,
+        priority: requestForm.priority,
+        duration: Number(requestForm.duration),
+      });
+      showToast?.("Maintenance request submitted.", "success");
+      setRequestForm({ equipmentId: "", reason: "", priority: "MEDIUM", duration: "" });
+      setShowRequestForm(false);
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to submit request."), "warning");
     }
-
-    setShowModal(false);
-    setFormData({ equipment: '', description: '', technician: '', scheduledTime: '' });
   };
 
-  // LAB TECHNICIAN VIEW
-  if (!isManager) {
-    return (
-      <div className="maintenance-page">
-        <div className="maintenance-header">
-          <div>
-            <div className="eyebrow">LAB TECHNICIAN VIEW</div>
-            <h1>My Maintenance Tasks</h1>
-            <p>View assigned work orders, update task status, and record progress.</p>
-          </div>
-        </div>
+  const runAction = async (action, id, successMsg) => {
+    try {
+      await action(id);
+      showToast?.(successMsg, "success");
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Action failed."), "warning");
+    }
+  };
 
-        <div className="maintenance-panel">
-          <div className="panel-heading">
-            <h2>My Maintenance Tasks</h2>
-          </div>
-          <div className="table-responsive">
-            <table className="maintenance-table">
+  const openScheduling = (req) => {
+    setSchedulingRequest(req);
+    setScheduleForm({ start: "", end: "" });
+    setCreatedSchedule(null);
+    setCreatedWorkOrder(null);
+    setWorkOrderForm({ description: "" });
+    setTechnicianId("");
+  };
+
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault();
+    try {
+      const schedule = await createMaintenanceSchedule({
+        requestId: schedulingRequest.requestId,
+        start: scheduleForm.start,
+        end: scheduleForm.end,
+      });
+      setCreatedSchedule(schedule);
+      showToast?.(`Schedule #${schedule.scheduleId} created.`, "success");
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to create schedule."), "warning");
+    }
+  };
+
+  const handleCreateWorkOrder = async (e) => {
+    e.preventDefault();
+    try {
+      const order = await createWorkOrder({
+        scheduleId: createdSchedule.scheduleId,
+        description: workOrderForm.description,
+      });
+      setCreatedWorkOrder(order);
+      showToast?.(`Work order #${order.workOrderId} created.`, "success");
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to create work order."), "warning");
+    }
+  };
+
+  const handleAssignTechnician = async (e) => {
+    e.preventDefault();
+    try {
+      const order = await assignTechnician(createdWorkOrder.workOrderId, Number(technicianId));
+      setCreatedWorkOrder(order);
+      showToast?.("Technician assigned.", "success");
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to assign technician."), "warning");
+    }
+  };
+
+  return (
+    <div style={page}>
+      <div style={headerRow}>
+        <div>
+          <h1 style={h1Style}>Maintenance Requests</h1>
+          <p style={subStyle}>Submit and manage equipment maintenance requests</p>
+        </div>
+        {CREATE_ROLES.includes(userRole) && (
+          <button onClick={() => setShowRequestForm(true)} style={primaryBtn}>+ New Request</button>
+        )}
+      </div>
+
+      {error && <p style={errorText}>{error}</p>}
+
+      <div style={card}>
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading requests...</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 950 }}>
               <thead>
-                <tr>
-                  <th>Equipment</th>
-                  <th>Work Order</th>
-                  <th>Priority</th>
-                  <th>Scheduled Time</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>ID</th>
+                  <th style={thStyle}>Equipment</th>
+                  <th style={thStyle}>Requested By</th>
+                  <th style={thStyle}>Reason</th>
+                  <th style={thStyle}>Priority</th>
+                  <th style={thStyle}>Duration (hrs)</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {workOrders.map((task) => (
-                  <tr key={task.id}>
-                    <td><strong>{task.equipment}</strong></td>
-                    <td>{task.id}</td>
-                    <td><span className={`badge priority-${task.priority.toLowerCase()}`}>{task.priority}</span></td>
-                    <td>{task.scheduledTime}</td>
-                    <td><span className={`badge status-${task.status.toLowerCase()}`}>{task.status}</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {task.status === 'SCHEDULED' && (
-                          <button className="action-btn primary-btn-sm" onClick={() => handleStartWorkOrder(task.id)}>Start Work</button>
-                        )}
-                        {task.status === 'IN_PROGRESS' && (
-                          <button className="action-btn success-btn" onClick={() => handleCompleteWorkOrder(task.id)}>Complete Work</button>
-                        )}
-                        {task.status === 'COMPLETED' && <span className="text-muted">—</span>}
-                      </div>
+                {requests.map((r) => (
+                  <tr key={r.requestId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>#{r.requestId}</td>
+                    <td style={tdStyle}>{r.equipment?.equipName || r.equipment?.equipId}</td>
+                    <td style={tdStyle}>{r.requestedBy ? `${r.requestedBy.firstName} ${r.requestedBy.lastName}` : "-"}</td>
+                    <td style={tdStyle}>{r.reason}</td>
+                    <td style={tdStyle}>{r.priority}</td>
+                    <td style={tdStyle}>{r.requiredDuration}</td>
+                    <td style={tdStyle}>
+                      <span style={r.status === "APPROVED" ? pill("#e8f7ee", "#16834b") : r.status === "REJECTED" ? pill("#fdecec", "#c0392b") : pill("#fff4df", "#b56a00")}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {APPROVE_ROLES.includes(userRole) && r.status === "PENDING" && (
+                        <>
+                          <button onClick={() => runAction(approveMaintenanceRequest, r.requestId, `Request #${r.requestId} approved.`)} style={{ ...actionBtn, color: "#16834b" }}>Approve</button>
+                          <button onClick={() => runAction(rejectMaintenanceRequest, r.requestId, `Request #${r.requestId} rejected.`)} style={{ ...actionBtn, color: "#c0392b" }}>Reject</button>
+                        </>
+                      )}
+                      {SCHEDULE_ROLES.includes(userRole) && r.status === "APPROVED" && (
+                        <button onClick={() => openScheduling(r)} style={actionBtn}>Schedule & Assign</button>
+                      )}
                     </td>
                   </tr>
                 ))}
+                {requests.length === 0 && (
+                  <tr><td colSpan={8} style={emptyText}>No maintenance requests yet.</td></tr>
+                )}
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // LAB MANAGER VIEW
-  return (
-    <div className="maintenance-page">
-      <div className="maintenance-header">
-        <div>
-          <div className="eyebrow">LAB MANAGER DASHBOARD</div>
-          <h1>Maintenance Management</h1>
-          <p>Schedule repairs, approve requests, and review downtime logs.</p>
-        </div>
-        <button className="primary-btn" onClick={() => setShowModal(true)}>
-          + Create Work Order
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="maintenance-stats">
-        <div className="stat-card tone-warning">
-          <div className="stat-content">
-            <span className="stat-title">Pending</span>
-            <span className="stat-value">{requests.filter((r) => r.status === 'PENDING').length}</span>
-          </div>
-        </div>
-        <div className="stat-card tone-primary">
-          <div className="stat-content">
-            <span className="stat-title">Approved</span>
-            <span className="stat-value">{requests.filter((r) => r.status === 'APPROVED').length}</span>
-          </div>
-        </div>
-        <div className="stat-card tone-info">
-          <div className="stat-content">
-            <span className="stat-title">In Progress</span>
-            <span className="stat-value">{workOrders.filter((w) => w.status === 'IN_PROGRESS').length}</span>
-          </div>
-        </div>
-        <div className="stat-card tone-success">
-          <div className="stat-content">
-            <span className="stat-title">Completed</span>
-            <span className="stat-value">{workOrders.filter((w) => w.status === 'COMPLETED').length}</span>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Maintenance Requests Table */}
-      <div className="maintenance-panel" style={{ marginBottom: '20px' }}>
-        <div className="panel-heading">
-          <h2>Maintenance Requests</h2>
-        </div>
-        <div className="table-responsive">
-          <table className="maintenance-table">
-            <thead>
-              <tr>
-                <th>Equipment</th>
-                <th>Reason</th>
-                <th>Priority</th>
-                <th>Duration</th>
-                <th>Requested By</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((item) => (
-                <tr key={item.id}>
-                  <td><strong>{item.equipment}</strong></td>
-                  <td>{item.reason}</td>
-                  <td><span className={`badge priority-${item.priority.toLowerCase()}`}>{item.priority}</span></td>
-                  <td>{item.duration}</td>
-                  <td>{item.requestedBy}</td>
-                  <td><span className={`badge status-${item.status.toLowerCase()}`}>{item.status}</span></td>
-                  <td>
-                    {item.status === 'PENDING' ? (
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="action-btn success-btn" onClick={() => handleRequestStatus(item.id, 'APPROVED')}>Approve</button>
-                        <button className="action-btn danger-btn" onClick={() => handleRequestStatus(item.id, 'REJECTED')}>Reject</button>
-                      </div>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Work Orders Table */}
-      <div className="maintenance-panel">
-        <div className="panel-heading">
-          <h2>Work Orders</h2>
-        </div>
-        <div className="table-responsive">
-          <table className="maintenance-table">
-            <thead>
-              <tr>
-                <th>Work Order</th>
-                <th>Equipment</th>
-                <th>Description</th>
-                <th>Technician</th>
-                <th>Scheduled Time</th>
-                <th>Status</th>
-                <th>Actual Start</th>
-                <th>Actual End</th>
-              </tr>
-            </thead>
-            <tbody>
-              {workOrders.map((wo) => (
-                <tr key={wo.id}>
-                  <td><strong>{wo.id}</strong></td>
-                  <td>{wo.equipment}</td>
-                  <td>{wo.description}</td>
-                  <td>{wo.technician}</td>
-                  <td>{wo.scheduledTime}</td>
-                  <td><span className={`badge status-${wo.status.toLowerCase()}`}>{wo.status}</span></td>
-                  <td>{wo.actualStart}</td>
-                  <td>{wo.actualEnd}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* CREATE WORK ORDER MODAL */}
-      {showModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-          }}
-        >
-          <div className="maintenance-panel" style={{ width: '450px', background: '#fff' }}>
-            <h2>Create Work Order</h2>
-            <form onSubmit={handleCreateWorkOrder} style={{ display: 'grid', gap: '14px', marginTop: '16px' }}>
-              <div className="field-group">
-                <label>Equipment Name</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Centrifuge X200"
-                  value={formData.equipment}
-                  onChange={(e) => setFormData({ ...formData, equipment: e.target.value })}
-                />
+      {showRequestForm && (
+        <div style={modalOverlay}>
+          <div style={modalCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 19 }}>New Maintenance Request</h2>
+              <button onClick={() => setShowRequestForm(false)} style={{ border: "none", background: "none", fontSize: 19, cursor: "pointer" }}>×</button>
+            </div>
+            <form onSubmit={handleCreateRequest}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Equipment</label>
+                <select required value={requestForm.equipmentId} onChange={(e) => setRequestForm({ ...requestForm, equipmentId: e.target.value })} style={inputStyle}>
+                  <option value="">Select equipment</option>
+                  {equipment.map((eq) => (
+                    <option key={eq.equipmentId} value={eq.equipmentId}>{eq.equipmentName}</option>
+                  ))}
+                </select>
               </div>
-              <div className="field-group">
-                <label>Description</label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Details of repair work..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Reason</label>
+                <input required value={requestForm.reason} onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })} style={inputStyle} />
               </div>
-              <div className="field-group">
-                <label>Assign Technician</label>
-                <input
-                  type="text"
-                  placeholder="Technician Name"
-                  value={formData.technician}
-                  onChange={(e) => setFormData({ ...formData, technician: e.target.value })}
-                />
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Priority</label>
+                <select value={requestForm.priority} onChange={(e) => setRequestForm({ ...requestForm, priority: e.target.value })} style={inputStyle}>
+                  {MAINTENANCE_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
               </div>
-              <div className="field-group">
-                <label>Scheduled Date & Time</label>
-                <input
-                  type="datetime-local"
-                  value={formData.scheduledTime}
-                  onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
-                />
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Estimated Duration (hours)</label>
+                <input type="number" required value={requestForm.duration} onChange={(e) => setRequestForm({ ...requestForm, duration: e.target.value })} style={inputStyle} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-                <button type="button" className="ghost-btn" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="primary-btn">
-                  Submit Work Order
-                </button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 20 }}>
+                <button type="button" onClick={() => setShowRequestForm(false)} style={cancelBtn}>Cancel</button>
+                <button type="submit" style={primaryBtn}>Submit Request</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {schedulingRequest && (
+        <div style={modalOverlay}>
+          <div style={modalCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 19 }}>Schedule Request #{schedulingRequest.requestId}</h2>
+              <button onClick={() => setSchedulingRequest(null)} style={{ border: "none", background: "none", fontSize: 19, cursor: "pointer" }}>×</button>
+            </div>
+
+            {!createdSchedule && (
+              <form onSubmit={handleCreateSchedule}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>Step 1: Create a maintenance schedule.</p>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Start</label>
+                  <input type="datetime-local" required value={scheduleForm.start} onChange={(e) => setScheduleForm({ ...scheduleForm, start: e.target.value })} style={inputStyle} />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>End</label>
+                  <input type="datetime-local" required value={scheduleForm.end} onChange={(e) => setScheduleForm({ ...scheduleForm, end: e.target.value })} style={inputStyle} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
+                  <button type="button" onClick={() => setSchedulingRequest(null)} style={cancelBtn}>Cancel</button>
+                  <button type="submit" style={primaryBtn}>Create Schedule</button>
+                </div>
+              </form>
+            )}
+
+            {createdSchedule && !createdWorkOrder && (
+              <form onSubmit={handleCreateWorkOrder}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>
+                  Step 2: Schedule #{createdSchedule.scheduleId} created. Now create a work order.
+                </p>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Description</label>
+                  <input required value={workOrderForm.description} onChange={(e) => setWorkOrderForm({ description: e.target.value })} style={inputStyle} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
+                  <button type="button" onClick={() => setSchedulingRequest(null)} style={cancelBtn}>Close</button>
+                  <button type="submit" style={primaryBtn}>Create Work Order</button>
+                </div>
+              </form>
+            )}
+
+            {createdWorkOrder && (
+              <form onSubmit={handleAssignTechnician}>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>
+                  Step 3: Work order #{createdWorkOrder.workOrderId} created (status: {createdWorkOrder.status}).
+                  Assign a technician by their user ID.
+                </p>
+                <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10 }}>
+                  There's no endpoint for Lab Managers to browse the technician list, so enter
+                  the technician's numeric user ID directly (visible to Institution Admins on the Users page).
+                </p>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Technician User ID</label>
+                  <input type="number" required value={technicianId} onChange={(e) => setTechnicianId(e.target.value)} style={inputStyle} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
+                  <button type="button" onClick={() => setSchedulingRequest(null)} style={cancelBtn}>Done</button>
+                  <button type="submit" style={primaryBtn}>Assign Technician</button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
+export default MaintenancePage;

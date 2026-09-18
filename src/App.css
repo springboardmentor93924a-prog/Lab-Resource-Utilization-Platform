@@ -293,3 +293,11 @@ button {
     gap: 15px;
   }
 }
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 16px;
+  color: #64748b;
+}

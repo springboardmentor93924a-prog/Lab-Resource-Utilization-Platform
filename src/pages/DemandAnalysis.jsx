@@ -1,461 +1,106 @@
-import { useState } from "react";
-import "./DemandAnalysis.css";
+import { useEffect, useState } from "react";
+import { getAllEquipment } from "../api/equipmentApi";
+import { getAllBookings, getAllWaitlistEntries } from "../api/bookingApi";
+import { extractErrorMessage } from "../api/client";
+import { page, headerRow, h1Style, subStyle, card, thStyle, tdStyle, errorText, emptyText, pill } from "../styles/shared";
 
 function DemandAnalysis() {
-  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const [equipment, setEquipment] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [waitlist, setWaitlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const equipment = [
-    {
-      id: "EQ001",
-      name: "Oscilloscope",
-      category: "Electronics",
-      department: "ECE",
-      utilization: 82,
-      bookings: 38,
-      demand: "High",
-    },
-    {
-      id: "EQ002",
-      name: "Digital Multimeter",
-      category: "Electronics",
-      department: "ECE",
-      utilization: 35,
-      bookings: 18,
-      demand: "Medium",
-    },
-    {
-      id: "EQ003",
-      name: "3D Printer",
-      category: "Manufacturing",
-      department: "Mechanical",
-      utilization: 68,
-      bookings: 31,
-      demand: "High",
-    },
-    {
-      id: "EQ004",
-      name: "CNC Machine",
-      category: "Manufacturing",
-      department: "Mechanical",
-      utilization: 18,
-      bookings: 8,
-      demand: "Low",
-    },
-    {
-      id: "EQ005",
-      name: "Spectrometer",
-      category: "Optical",
-      department: "Physics",
-      utilization: 22,
-      bookings: 11,
-      demand: "Low",
-    },
-  ];
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([getAllEquipment(), getAllBookings(), getAllWaitlistEntries()])
+      .then(([eq, b, w]) => { setEquipment(eq); setBookings(b); setWaitlist(w); })
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load demand data.")))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const filteredEquipment =
-    selectedDepartment === "All"
-      ? equipment
-      : equipment.filter(
-          (item) => item.department === selectedDepartment
-        );
+  // "Demand" here is derived from what the backend actually gives us: how many
+  // bookings an item has attracted, plus how many people are currently queued
+  // for it on the waitlist. There's no dedicated demand-forecasting endpoint.
+  const rows = equipment
+    .map((eq) => {
+      const bookingCount = bookings.filter((b) => b.equipId === eq.equipmentId).length;
+      const activeWaitlist = waitlist.filter((w) => w.equipId === eq.equipmentId && w.active).length;
+      return {
+        ...eq,
+        bookingCount,
+        activeWaitlist,
+        demandScore: bookingCount + activeWaitlist * 2,
+      };
+    })
+    .sort((a, b) => b.demandScore - a.demandScore);
 
-  const averageUtilization = Math.round(
-    filteredEquipment.reduce(
-      (sum, item) => sum + item.utilization,
-      0
-    ) / filteredEquipment.length
-  );
-
-  const totalBookings = filteredEquipment.reduce(
-    (sum, item) => sum + item.bookings,
-    0
-  );
-
-  const highDemand = filteredEquipment.filter(
-    (item) => item.demand === "High"
-  ).length;
-
-  const mediumDemand = filteredEquipment.filter(
-    (item) => item.demand === "Medium"
-  ).length;
-
-  const lowDemand = filteredEquipment.filter(
-    (item) => item.demand === "Low"
-  ).length;
+  const highDemand = rows.filter((r) => r.activeWaitlist > 0);
 
   return (
-    <div className="demand-page">
-
-      {/* HEADER */}
-
-      <div className="demand-header">
-
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <h1>Utilization & Demand Analysis</h1>
+          <h1 style={h1Style}>Demand Analysis</h1>
+          <p style={subStyle}>Equipment ranked by booking volume and active waitlist queues</p>
+        </div>
+      </div>
 
-          <p>
-            Analyze equipment utilization, booking demand,
-            and resource usage patterns
+      {error && <p style={errorText}>{error}</p>}
+
+      {highDemand.length > 0 && (
+        <div style={{ ...card, padding: 20, marginBottom: 20, borderLeft: "4px solid #f97316" }}>
+          <h3 style={{ marginTop: 0, fontSize: 15 }}>⚠ Equipment with an active waitlist</h3>
+          <p style={{ fontSize: 13, color: "#64748b" }}>
+            These {highDemand.length} item(s) currently have researchers queued and waiting —
+            consider prioritizing maintenance/availability or acquiring more units.
           </p>
         </div>
+      )}
 
-        <div className="analysis-filter">
-
-          <label>Department</label>
-
-          <select
-            value={selectedDepartment}
-            onChange={(e) =>
-              setSelectedDepartment(e.target.value)
-            }
-          >
-            <option value="All">All Departments</option>
-            <option value="ECE">ECE</option>
-            <option value="Mechanical">Mechanical</option>
-            <option value="Physics">Physics</option>
-          </select>
-
+      <div style={card}>
+        <div style={{ overflowX: "auto" }}>
+          {loading ? (
+            <p style={{ padding: 20 }}>Loading demand data...</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={thStyle}>Equipment</th>
+                  <th style={thStyle}>Category</th>
+                  <th style={thStyle}>Total Bookings</th>
+                  <th style={thStyle}>Active Waitlist</th>
+                  <th style={thStyle}>Demand Score</th>
+                  <th style={thStyle}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.equipmentId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                    <td style={tdStyle}>{r.equipmentName}</td>
+                    <td style={tdStyle}>{r.categoryName || "-"}</td>
+                    <td style={tdStyle}>{r.bookingCount}</td>
+                    <td style={tdStyle}>
+                      {r.activeWaitlist > 0 ? (
+                        <span style={pill("#fff4df", "#b56a00")}>{r.activeWaitlist} waiting</span>
+                      ) : (
+                        <span style={pill("#f1f5f9", "#475569")}>None</span>
+                      )}
+                    </td>
+                    <td style={tdStyle}>{r.demandScore}</td>
+                    <td style={tdStyle}>{r.status}</td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr><td colSpan={6} style={emptyText}>No equipment data available.</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
-
       </div>
-
-
-      {/* SUMMARY CARDS */}
-
-      <div className="demand-summary">
-
-        <SummaryCard
-          title="Average Utilization"
-          value={`${averageUtilization}%`}
-          subtitle="Across selected equipment"
-          type="blue"
-        />
-
-        <SummaryCard
-          title="Total Bookings"
-          value={totalBookings}
-          subtitle="Current booking demand"
-          type="purple"
-        />
-
-        <SummaryCard
-          title="High Demand"
-          value={highDemand}
-          subtitle="Equipment requiring attention"
-          type="orange"
-        />
-
-        <SummaryCard
-          title="Low Demand"
-          value={lowDemand}
-          subtitle="Potentially idle resources"
-          type="green"
-        />
-
-      </div>
-
-
-      {/* UTILIZATION OVERVIEW */}
-
-      <div className="analysis-grid">
-
-        <div className="analysis-card utilization-analysis">
-
-          <div className="card-heading">
-
-            <div>
-              <h2>Equipment Utilization</h2>
-
-              <p>
-                Percentage of available time equipment is being used
-              </p>
-            </div>
-
-          </div>
-
-          <div className="utilization-bars">
-
-            {filteredEquipment.map((item) => (
-
-              <div
-                className="utilization-bar-row"
-                key={item.id}
-              >
-
-                <div className="bar-equipment">
-
-                  <span>
-                    {item.name}
-                  </span>
-
-                  <strong>
-                    {item.utilization}%
-                  </strong>
-
-                </div>
-
-                <div className="analysis-progress">
-
-                  <div
-                    className={`analysis-progress-fill ${
-                      item.utilization >= 70
-                        ? "high"
-                        : item.utilization >= 40
-                        ? "medium"
-                        : "low"
-                    }`}
-                    style={{
-                      width: `${item.utilization}%`,
-                    }}
-                  />
-
-                </div>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        </div>
-
-
-        {/* DEMAND DISTRIBUTION */}
-
-        <div className="analysis-card">
-
-          <div className="card-heading">
-
-            <div>
-              <h2>Demand Distribution</h2>
-
-              <p>
-                Equipment grouped by booking demand
-              </p>
-            </div>
-
-          </div>
-
-          <div className="demand-distribution">
-
-            <DemandItem
-              label="High Demand"
-              count={highDemand}
-              description="Frequently requested"
-              type="high"
-            />
-
-            <DemandItem
-              label="Medium Demand"
-              count={mediumDemand}
-              description="Moderately requested"
-              type="medium"
-            />
-
-            <DemandItem
-              label="Low Demand"
-              count={lowDemand}
-              description="Less frequently requested"
-              type="low"
-            />
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* HIGH DEMAND EQUIPMENT */}
-
-      <div className="analysis-card equipment-demand-card">
-
-        <div className="card-heading">
-
-          <div>
-            <h2>Equipment Demand Analysis</h2>
-
-            <p>
-              Identify resources with high booking demand
-            </p>
-          </div>
-
-        </div>
-
-        <div className="demand-table">
-
-          <div className="demand-table-header">
-            <span>Equipment</span>
-            <span>Department</span>
-            <span>Utilization</span>
-            <span>Bookings</span>
-            <span>Demand</span>
-          </div>
-
-          {filteredEquipment.map((item) => (
-
-            <div
-              className="demand-table-row"
-              key={item.id}
-            >
-
-              <div className="demand-equipment">
-
-                <div className="demand-equipment-icon">
-                  {item.name.charAt(0)}
-                </div>
-
-                <div>
-                  <strong>{item.name}</strong>
-
-                  <small>
-                    {item.id} • {item.category}
-                  </small>
-                </div>
-
-              </div>
-
-              <span>
-                {item.department}
-              </span>
-
-              <strong>
-                {item.utilization}%
-              </strong>
-
-              <span className="booking-count">
-                {item.bookings}
-              </span>
-
-              <DemandBadge
-                demand={item.demand}
-              />
-
-            </div>
-
-          ))}
-
-        </div>
-
-        <div className="analysis-footer">
-          Showing {filteredEquipment.length} of{" "}
-          {equipment.length} equipment
-        </div>
-
-      </div>
-
-
-      {/* INSIGHT */}
-
-      <div className="demand-insight">
-
-        <div className="insight-icon">
-          ✦
-        </div>
-
-        <div>
-          <h3>Resource Planning Insight</h3>
-
-          <p>
-            High-demand equipment may require additional
-            booking slots or resource sharing, while
-            low-utilization equipment can be reviewed for
-            better allocation.
-          </p>
-        </div>
-
-      </div>
-
     </div>
   );
 }
-
-
-/* =========================================
-   SUMMARY CARD
-========================================= */
-
-function SummaryCard({
-  title,
-  value,
-  subtitle,
-  type,
-}) {
-  return (
-    <div className="demand-summary-card">
-
-      <div className={`summary-icon ${type}`}>
-        {type === "blue" && "↗"}
-        {type === "purple" && "◷"}
-        {type === "orange" && "!"}
-        {type === "green" && "✓"}
-      </div>
-
-      <div>
-        <span>{title}</span>
-
-        <strong>{value}</strong>
-
-        <small>{subtitle}</small>
-      </div>
-
-    </div>
-  );
-}
-
-
-/* =========================================
-   DEMAND ITEM
-========================================= */
-
-function DemandItem({
-  label,
-  count,
-  description,
-  type,
-}) {
-  return (
-    <div className="demand-item">
-
-      <div className={`demand-indicator ${type}`} />
-
-      <div className="demand-item-info">
-
-        <strong>{label}</strong>
-
-        <span>{description}</span>
-
-      </div>
-
-      <strong className="demand-item-count">
-        {count}
-      </strong>
-
-    </div>
-  );
-}
-
-
-/* =========================================
-   DEMAND BADGE
-========================================= */
-
-function DemandBadge({ demand }) {
-
-  const type =
-    demand === "High"
-      ? "high"
-      : demand === "Medium"
-      ? "medium"
-      : "low";
-
-  return (
-    <span className={`demand-badge ${type}`}>
-      <span />
-      {demand}
-    </span>
-  );
-}
-
 
 export default DemandAnalysis;

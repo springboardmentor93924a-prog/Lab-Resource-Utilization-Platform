@@ -1,411 +1,182 @@
-import { useState } from "react";
-import "./ResourceSharing.css";
+import { useEffect, useState } from "react";
+import {
+  getAllSharingRequests,
+  createSharingRequest,
+  approveSharingRequest,
+  rejectSharingRequest,
+} from "../api/sharingApi";
+import { getAllEquipment } from "../api/equipmentApi";
+import { extractErrorMessage } from "../api/client";
+import {
+  page, headerRow, h1Style, subStyle, card, filterBar, selectStyle, thStyle, tdStyle,
+  actionBtn, primaryBtn, cancelBtn, modalOverlay, modalCard, labelStyle, inputStyle,
+  errorText, emptyText, pill,
+} from "../styles/shared";
 
-function ResourceSharing() {
-  const [activeTab, setActiveTab] = useState("requests");
+const CREATE_ROLES = ["RESEARCHER", "LAB_MANAGER", "DEPARTMENT_HEAD"];
+const MANAGE_ROLES = ["LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN"];
 
-  const [requests, setRequests] = useState([
-    {
-      id: "REQ001",
-      equipment: "Scanning Electron Microscope",
-      fromInstitution: "Mysuru Research Institute",
-      requestedBy: "Dr. Rahul Kumar",
-      date: "18 Aug 2026",
-      duration: "3 Days",
-      status: "Pending",
-    },
-    {
-      id: "REQ002",
-      equipment: "Advanced CNC Machine",
-      fromInstitution: "National Engineering College",
-      requestedBy: "Prof. Anitha Rao",
-      date: "20 Aug 2026",
-      duration: "2 Days",
-      status: "Pending",
-    },
-    {
-      id: "REQ003",
-      equipment: "High Performance Spectrometer",
-      fromInstitution: "Central Science University",
-      requestedBy: "Dr. Kiran",
-      date: "15 Aug 2026",
-      duration: "1 Day",
-      status: "Approved",
-    },
-    {
-      id: "REQ004",
-      equipment: "3D Metal Printer",
-      fromInstitution: "Tech Research Centre",
-      requestedBy: "Dr. Meena",
-      date: "12 Aug 2026",
-      duration: "2 Days",
-      status: "Rejected",
-    },
-  ]);
+function ResourceSharing({ userRole, showToast }) {
+  const [requests, setRequests] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [showForm, setShowForm] = useState(false);
+  const [equipmentId, setEquipmentId] = useState("");
 
-  const sharedEquipment = [
-    {
-      name: "High Performance Spectrometer",
-      owner: "Our Institution",
-      sharedWith: "Central Science University",
-      availability: "Available",
-      status: "Active",
-    },
-    {
-      name: "Scanning Electron Microscope",
-      owner: "Mysuru Research Institute",
-      sharedWith: "Our Institution",
-      availability: "Booked",
-      status: "Active",
-    },
-    {
-      name: "Advanced CNC Machine",
-      owner: "Our Institution",
-      sharedWith: "National Engineering College",
-      availability: "Available",
-      status: "Active",
-    },
-  ];
+  const canManage = MANAGE_ROLES.includes(userRole);
+  const canCreate = CREATE_ROLES.includes(userRole);
 
-  const updateRequest = (id, newStatus) => {
-    setRequests((currentRequests) =>
-      currentRequests.map((request) =>
-        request.id === id
-          ? { ...request, status: newStatus }
-          : request
-      )
-    );
+  const load = () => {
+    if (!canManage) { setLoading(false); return; }
+    setLoading(true);
+    getAllSharingRequests()
+      .then(setRequests)
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load sharing requests.")))
+      .finally(() => setLoading(false));
   };
 
-  const pendingCount = requests.filter(
-    (request) => request.status === "Pending"
-  ).length;
+  useEffect(() => {
+    load();
+    getAllEquipment().then(setEquipment).catch(() => setEquipment([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const approvedCount = requests.filter(
-    (request) => request.status === "Approved"
-  ).length;
+  const filtered = requests.filter((r) => statusFilter === "All" || r.status === statusFilter);
 
-  const rejectedCount = requests.filter(
-    (request) => request.status === "Rejected"
-  ).length;
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await createSharingRequest(Number(equipmentId));
+      showToast?.("Sharing request submitted.", "success");
+      setEquipmentId("");
+      setShowForm(false);
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Failed to submit sharing request."), "warning");
+    }
+  };
+
+  const runAction = async (action, r, successMsg) => {
+    try {
+      await action(r.requestId);
+      showToast?.(successMsg, "success");
+      load();
+    } catch (err) {
+      showToast?.(extractErrorMessage(err, "Action failed."), "warning");
+    }
+  };
 
   return (
-    <div className="sharing-page">
-
-      {/* HEADER */}
-
-      <div className="sharing-header">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <h1>Resource Sharing</h1>
-
-          <p>
-            Share laboratory equipment between institutions
-            and manage access requests.
+          <h1 style={h1Style}>Cross-Institution Resource Sharing</h1>
+          <p style={subStyle}>
+            Request use of equipment that belongs to another institution
           </p>
         </div>
-
-        <button className="sharing-primary-button">
-          + Share Equipment
-        </button>
+        {canCreate && <button onClick={() => setShowForm(true)} style={primaryBtn}>+ Request Equipment Access</button>}
       </div>
 
+      {error && <p style={errorText}>{error}</p>}
 
-      {/* SUMMARY CARDS */}
-
-      <div className="sharing-summary">
-
-        <div className="sharing-summary-card">
-          <div className="sharing-summary-icon blue">
-            ⇄
+      {canManage ? (
+        <div style={card}>
+          <div style={filterBar}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+              <option value="All">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
           </div>
-
-          <div>
-            <span>Shared Equipment</span>
-            <strong>{sharedEquipment.length}</strong>
-          </div>
-        </div>
-
-
-        <div className="sharing-summary-card">
-          <div className="sharing-summary-icon orange">
-            !
-          </div>
-
-          <div>
-            <span>Pending Requests</span>
-            <strong>{pendingCount}</strong>
-          </div>
-        </div>
-
-
-        <div className="sharing-summary-card">
-          <div className="sharing-summary-icon green">
-            ✓
-          </div>
-
-          <div>
-            <span>Approved</span>
-            <strong>{approvedCount}</strong>
-          </div>
-        </div>
-
-
-        <div className="sharing-summary-card">
-          <div className="sharing-summary-icon red">
-            ×
-          </div>
-
-          <div>
-            <span>Rejected</span>
-            <strong>{rejectedCount}</strong>
-          </div>
-        </div>
-
-      </div>
-
-
-      {/* TABS */}
-
-      <div className="sharing-tabs">
-
-        <button
-          className={
-            activeTab === "requests" ? "active" : ""
-          }
-          onClick={() => setActiveTab("requests")}
-        >
-          Sharing Requests
-        </button>
-
-        <button
-          className={
-            activeTab === "equipment" ? "active" : ""
-          }
-          onClick={() => setActiveTab("equipment")}
-        >
-          Shared Equipment
-        </button>
-
-      </div>
-
-
-      {/* REQUESTS */}
-
-      {activeTab === "requests" && (
-
-        <div className="sharing-card">
-
-          <div className="sharing-card-header">
-            <div>
-              <h2>Incoming Sharing Requests</h2>
-
-              <p>
-                Review and manage equipment access requests
-                from other institutions.
-              </p>
-            </div>
-          </div>
-
-
-          <div className="sharing-table">
-
-            <div className="sharing-table-header">
-              <span>Equipment</span>
-              <span>Institution</span>
-              <span>Requested By</span>
-              <span>Date</span>
-              <span>Duration</span>
-              <span>Status</span>
-              <span>Action</span>
-            </div>
-
-
-            {requests.map((request) => (
-
-              <div
-                className="sharing-table-row"
-                key={request.id}
-              >
-
-                <div className="sharing-equipment">
-                  <div className="sharing-equipment-icon">
-                    {request.equipment.charAt(0)}
-                  </div>
-
-                  <div>
-                    <strong>{request.equipment}</strong>
-
-                    <small>
-                      {request.id}
-                    </small>
-                  </div>
-                </div>
-
-
-                <span>
-                  {request.fromInstitution}
-                </span>
-
-
-                <span>
-                  {request.requestedBy}
-                </span>
-
-
-                <span>
-                  {request.date}
-                </span>
-
-
-                <span>
-                  {request.duration}
-                </span>
-
-
-                <StatusBadge
-                  status={request.status}
-                />
-
-
-                <div className="request-actions">
-
-                  {request.status === "Pending" ? (
-                    <>
-                      <button
-                        className="approve-button"
-                        onClick={() =>
-                          updateRequest(
-                            request.id,
-                            "Approved"
-                          )
-                        }
-                      >
-                        Approve
-                      </button>
-
-                      <button
-                        className="reject-button"
-                        onClick={() =>
-                          updateRequest(
-                            request.id,
-                            "Rejected"
-                          )
-                        }
-                      >
-                        Reject
-                      </button>
-                    </>
-                  ) : (
-                    <span className="action-completed">
-                      Completed
-                    </span>
+          <div style={{ overflowX: "auto" }}>
+            {loading ? (
+              <p style={{ padding: 20 }}>Loading requests...</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <th style={thStyle}>ID</th>
+                    <th style={thStyle}>Equipment</th>
+                    <th style={thStyle}>Requesting Institution</th>
+                    <th style={thStyle}>Requested By</th>
+                    <th style={thStyle}>Requested At</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <tr key={r.requestId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                      <td style={tdStyle}>#{r.requestId}</td>
+                      <td style={tdStyle}>{r.equipmentName}</td>
+                      <td style={tdStyle}>{r.requestingInstitutionName}</td>
+                      <td style={tdStyle}>#{r.requestedById}</td>
+                      <td style={tdStyle}>{r.requestedAt ? new Date(r.requestedAt).toLocaleString() : "-"}</td>
+                      <td style={tdStyle}>
+                        <span style={r.status === "APPROVED" ? pill("#e8f7ee", "#16834b") : r.status === "REJECTED" ? pill("#fdecec", "#c0392b") : pill("#fff4df", "#b56a00")}>
+                          {r.status}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, display: "flex", gap: 6 }}>
+                        {r.status === "PENDING" && (
+                          <>
+                            <button onClick={() => runAction(approveSharingRequest, r, `Request #${r.requestId} approved.`)} style={{ ...actionBtn, color: "#16834b" }}>Approve</button>
+                            <button onClick={() => runAction(rejectSharingRequest, r, `Request #${r.requestId} rejected.`)} style={{ ...actionBtn, color: "#c0392b" }}>Reject</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={7} style={emptyText}>No sharing requests found.</td></tr>
                   )}
-
-                </div>
-
-              </div>
-
-            ))}
-
+                </tbody>
+              </table>
+            )}
           </div>
-
         </div>
-
+      ) : (
+        <div style={card}>
+          <p style={emptyText}>
+            You can submit new sharing requests above. Only Lab Managers, Department Heads,
+            and Institution Admins can view and act on the full request list.
+          </p>
+        </div>
       )}
 
-
-      {/* SHARED EQUIPMENT */}
-
-      {activeTab === "equipment" && (
-
-        <div className="sharing-card">
-
-          <div className="sharing-card-header">
-            <div>
-              <h2>Shared Equipment</h2>
-
-              <p>
-                Equipment currently available through
-                institutional resource sharing.
-              </p>
+      {showForm && (
+        <div style={modalOverlay}>
+          <div style={modalCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 19 }}>Request Equipment Access</h2>
+              <button onClick={() => setShowForm(false)} style={{ border: "none", background: "none", fontSize: 19, cursor: "pointer" }}>×</button>
             </div>
-          </div>
-
-
-          <div className="shared-equipment-list">
-
-            {sharedEquipment.map((item) => (
-
-              <div
-                className="shared-equipment-item"
-                key={item.name}
-              >
-
-                <div className="shared-equipment-icon">
-                  {item.name.charAt(0)}
-                </div>
-
-                <div className="shared-equipment-info">
-
-                  <strong>{item.name}</strong>
-
-                  <p>
-                    Owner: {item.owner}
-                  </p>
-
-                  <p>
-                    Shared with: {item.sharedWith}
-                  </p>
-
-                </div>
-
-                <div className="shared-equipment-right">
-
-                  <span
-                    className={`availability ${
-                      item.availability
-                        .toLowerCase()
-                        .replace(" ", "-")
-                    }`}
-                  >
-                    {item.availability}
-                  </span>
-
-                  <span className="active-sharing">
-                    ● {item.status}
-                  </span>
-
-                </div>
-
+            <form onSubmit={handleCreate}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Equipment</label>
+                <select required value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} style={inputStyle}>
+                  <option value="">Select equipment</option>
+                  {equipment.map((eq) => (
+                    <option key={eq.equipmentId} value={eq.equipmentId}>
+                      {eq.equipmentName} ({eq.institutionName})
+                    </option>
+                  ))}
+                </select>
               </div>
-
-            ))}
-
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 20 }}>
+                <button type="button" onClick={() => setShowForm(false)} style={cancelBtn}>Cancel</button>
+                <button type="submit" style={primaryBtn}>Submit Request</button>
+              </div>
+            </form>
           </div>
-
         </div>
-
       )}
-
     </div>
   );
 }
-
-
-/* STATUS BADGE */
-
-function StatusBadge({ status }) {
-
-  return (
-    <span
-      className={`sharing-status ${status
-        .toLowerCase()}`}
-    >
-      <span></span>
-      {status}
-    </span>
-  );
-}
-
 
 export default ResourceSharing;

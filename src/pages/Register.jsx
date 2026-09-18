@@ -1,161 +1,234 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Register.css";
+import { useAuth } from "../context/AuthContext";
+import { getAllInstitutions } from "../api/institutionApi";
+import { getDepartmentsByInstitution } from "../api/departmentApi";
+import { extractErrorMessage } from "../api/client";
+import { ROLES, ROLE_LABELS } from "../utils/constants";
 
 function Register({ onLogin }) {
-    const [fullName, setFullName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [role, setRole] = useState("");
-    const [message, setMessage] = useState("");
-    const [isSuccess, setIsSuccess] = useState(false);
+  const { register } = useAuth();
 
-    const handleRegister = async (e) => {
-        e.preventDefault();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState("");
+  const [institutionId, setInstitutionId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
 
-        if (!role) {
-            setMessage("Please select your role.");
-            setIsSuccess(false);
-            return;
-        }
+  const [institutions, setInstitutions] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
-        try {
-            const response = await fetch(
-                "http://localhost:8080/api/auth/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        fullName: fullName,
-                        email: email,
-                        password: password,
-                        role: role // <-- Included role in API payload
-                    })
-                }
-            );
+  const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-            const data = await response.json().catch(() => ({}));
+  // GET /api/institutions is public - powers the registration dropdown.
+  useEffect(() => {
+    getAllInstitutions()
+      .then(setInstitutions)
+      .catch(() => setInstitutions([]));
+  }, []);
 
-            if (!response.ok) {
-                // Display specific backend message or fallback
-                throw new Error(data.message || data || "Registration failed. Please try again.");
-            }
+  // GET /api/departments/institution/{id} is public - dependent dropdown.
+  useEffect(() => {
+    if (!institutionId) {
+      setDepartments([]);
+      setDepartmentId("");
+      return;
+    }
+    getDepartmentsByInstitution(institutionId)
+      .then(setDepartments)
+      .catch(() => setDepartments([]));
+  }, [institutionId]);
 
-            localStorage.setItem("selectedRole", role);
-            setMessage("Registration successful! Redirecting to login...");
-            setIsSuccess(true);
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
-            // Redirect to login screen after 1.5 seconds
-            setTimeout(() => {
-                if (onLogin) onLogin();
-            }, 1500);
+    if (!role) {
+      setMessage("Please select your role.");
+      setIsSuccess(false);
+      return;
+    }
 
-        } catch (error) {
-            setMessage(error.message);
-            setIsSuccess(false);
-        }
-    };
+    setSubmitting(true);
+    try {
+      // RegisterRequestDTO: firstName, lastName, email, password, phone, role,
+      // institutionId, departmentId
+      await register({
+        firstName,
+        lastName,
+        email,
+        password,
+        phone,
+        role,
+        institutionId: institutionId ? Number(institutionId) : null,
+        departmentId: departmentId ? Number(departmentId) : null,
+      });
 
-    return (
-        <div className="register-page">
-            <div className="register-card">
-                {/* BRANDING */}
-                <div className="register-brand">
-                    <div className="register-brand-icon">LR</div>
-                    <h1>Lab Resource Platform</h1>
-                    <p>Laboratory Resource Utilization Platform</p>
-                </div>
+      setMessage(
+        "Registration successful! Your account may need admin approval before you can log in."
+      );
+      setIsSuccess(true);
 
-                {/* TITLE */}
-                <h2 className="register-title">Create Account</h2>
-                <p className="register-subtitle">
-                    Create your account to access laboratory resources
-                </p>
+      setTimeout(() => {
+        if (onLogin) onLogin();
+      }, 1800);
+    } catch (error) {
+      setMessage(extractErrorMessage(error, "Registration failed. Please try again."));
+      setIsSuccess(false);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-                {/* FORM */}
-                <form className="register-form" onSubmit={handleRegister}>
-                    {/* FULL NAME */}
-                    <div className="register-field">
-                        <label>Full Name</label>
-                        <input
-                            className="register-input"
-                            type="text"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            placeholder="Enter your full name"
-                            required
-                        />
-                    </div>
-
-                    {/* EMAIL */}
-                    <div className="register-field">
-                        <label>Email Address</label>
-                        <input
-                            className="register-input"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            required
-                        />
-                    </div>
-
-                    {/* PASSWORD */}
-                    <div className="register-field">
-                        <label>Password</label>
-                        <input
-                            className="register-input"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Create a password"
-                            required
-                        />
-                    </div>
-
-                    {/* ROLE */}
-                    <div className="register-field">
-                        <label>Select Role</label>
-                        <select
-                            className="register-input register-select"
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            required
-                        >
-                            <option value="">Select your role</option>
-                            <option value="SYSTEM_ADMIN">System Administrator</option>
-                            <option value="INSTITUTION_ADMIN">Institution Administrator</option>
-                            <option value="DEPARTMENT_HEAD">Department Head</option>
-                            <option value="LAB_MANAGER">Lab Manager</option>
-                            <option value="LAB_TECHNICIAN">Lab Technician</option>
-                            <option value="RESEARCHER">Researcher</option>
-                        </select>
-                    </div>
-
-                    {/* REGISTER BUTTON */}
-                    <button className="register-submit" type="submit">
-                        Create Account
-                    </button>
-                </form>
-
-                {/* MESSAGE */}
-                {message && (
-                    <p className={`register-message ${isSuccess ? "success" : "error"}`}>
-                        {message}
-                    </p>
-                )}
-
-                {/* LOGIN */}
-                <div className="register-login">
-                    <span>Already have an account?</span>
-                    <button type="button" onClick={onLogin}>
-                        Login
-                    </button>
-                </div>
-            </div>
+  return (
+    <div className="register-page">
+      <div className="register-card">
+        <div className="register-brand">
+          <div className="register-brand-icon">LR</div>
+          <h1>Lab Resource Platform</h1>
+          <p>Laboratory Resource Utilization Platform</p>
         </div>
-    );
+
+        <h2 className="register-title">Create Account</h2>
+        <p className="register-subtitle">
+          Create your account to access laboratory resources
+        </p>
+
+        <form className="register-form" onSubmit={handleRegister}>
+          <div className="register-field">
+            <label>First Name</label>
+            <input
+              className="register-input"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter your first name"
+              required
+            />
+          </div>
+
+          <div className="register-field">
+            <label>Last Name</label>
+            <input
+              className="register-input"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter your last name"
+              required
+            />
+          </div>
+
+          <div className="register-field">
+            <label>Email Address</label>
+            <input
+              className="register-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+
+          <div className="register-field">
+            <label>Phone</label>
+            <input
+              className="register-input"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="10-digit phone number"
+              maxLength={10}
+            />
+          </div>
+
+          <div className="register-field">
+            <label>Password</label>
+            <input
+              className="register-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              required
+            />
+          </div>
+
+          <div className="register-field">
+            <label>Select Role</label>
+            <select
+              className="register-input register-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              required
+            >
+              <option value="">Select your role</option>
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="register-field">
+            <label>Institution</label>
+            <select
+              className="register-input register-select"
+              value={institutionId}
+              onChange={(e) => setInstitutionId(e.target.value)}
+            >
+              <option value="">Select institution</option>
+              {institutions.map((inst) => (
+                <option key={inst.institutionId} value={inst.institutionId}>
+                  {inst.institutionName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="register-field">
+            <label>Department</label>
+            <select
+              className="register-input register-select"
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              disabled={!institutionId}
+            >
+              <option value="">
+                {institutionId ? "Select department" : "Select an institution first"}
+              </option>
+              {departments.map((dept) => (
+                <option key={dept.departId} value={dept.departId}>
+                  {dept.departmentName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button className="register-submit" type="submit" disabled={submitting}>
+            {submitting ? "Creating account..." : "Create Account"}
+          </button>
+        </form>
+
+        {message && (
+          <p className={`register-message ${isSuccess ? "success" : "error"}`}>{message}</p>
+        )}
+
+        <div className="register-login">
+          <span>Already have an account?</span>
+          <button type="button" onClick={onLogin}>
+            Login
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default Register;

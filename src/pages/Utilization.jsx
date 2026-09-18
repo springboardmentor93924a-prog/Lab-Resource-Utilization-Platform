@@ -1,374 +1,197 @@
-import { useState } from "react";
-import "./Utilization.css";
+import { useEffect, useState } from "react";
+import { getAllUtilization, getUtilizationAnalytics, startUtilization, endUtilization } from "../api/utilizationApi";
+import { getAllBookings } from "../api/bookingApi";
+import { extractErrorMessage } from "../api/client";
+import { page, headerRow, h1Style, subStyle, card, thStyle, tdStyle, actionBtn, errorText, emptyText, pill, primaryBtn, inputStyle, labelStyle, modalOverlay, modalCard, cancelBtn } from "../styles/shared";
 
-function Utilization() {
-  const [selectedStatus, setSelectedStatus] = useState("All");
+const SESSION_ROLES = ["LAB_MANAGER", "LAB_TECHNICIAN"];
 
-  const equipment = [
-    {
-      id: "EQ001",
-      name: "Oscilloscope",
-      category: "Electronics",
-      department: "ECE",
-      location: "Lab 101",
-      status: "In Use",
-      utilization: 82,
-      usageHours: 164,
-      availableHours: 200,
-    },
-    {
-      id: "EQ002",
-      name: "Digital Multimeter",
-      category: "Electronics",
-      department: "ECE",
-      location: "Lab 102",
-      status: "Available",
-      utilization: 35,
-      usageHours: 70,
-      availableHours: 200,
-    },
-    {
-      id: "EQ003",
-      name: "3D Printer",
-      category: "Manufacturing",
-      department: "Mechanical",
-      location: "Lab 201",
-      status: "Booked",
-      utilization: 68,
-      usageHours: 136,
-      availableHours: 200,
-    },
-    {
-      id: "EQ004",
-      name: "CNC Machine",
-      category: "Manufacturing",
-      department: "Mechanical",
-      location: "Workshop",
-      status: "Under Maintenance",
-      utilization: 18,
-      usageHours: 36,
-      availableHours: 200,
-    },
-    {
-      id: "EQ005",
-      name: "Spectrometer",
-      category: "Optical",
-      department: "Physics",
-      location: "Lab 301",
-      status: "Available",
-      utilization: 22,
-      usageHours: 44,
-      availableHours: 200,
-    },
-  ];
+function UtilizationPage({ userRole }) {
+  const [sessions, setSessions] = useState([]);
+  const [analytics, setAnalytics] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [tab, setTab] = useState("analytics");
+  const [showStartForm, setShowStartForm] = useState(false);
+  const [bookingId, setBookingId] = useState("");
 
-  const filteredEquipment =
-    selectedStatus === "All"
-      ? equipment
-      : equipment.filter(
-          (item) => item.status === selectedStatus
-        );
+  const load = () => {
+    setLoading(true);
+    Promise.allSettled([
+      getAllUtilization().then(setSessions),
+      getUtilizationAnalytics().then(setAnalytics),
+      getAllBookings().then(setBookings),
+    ])
+      .then((results) => {
+        const failed = results.find((r) => r.status === "rejected");
+        if (failed) setError(extractErrorMessage(failed.reason, "Failed to load some utilization data."));
+      })
+      .finally(() => setLoading(false));
+  };
 
-  const totalEquipment = equipment.length;
+  useEffect(load, []);
 
-  const inUse = equipment.filter(
-    (item) => item.status === "In Use"
-  ).length;
+  const equipmentName = (id) => bookings.find((b) => b.equipId === id)?.equipmentName || `Equipment ${id}`;
 
-  const booked = equipment.filter(
-    (item) => item.status === "Booked"
-  ).length;
+  const handleStart = async (e) => {
+    e.preventDefault();
+    try {
+      await startUtilization(Number(bookingId));
+      setBookingId("");
+      setShowStartForm(false);
+      load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "Failed to start utilization tracking."));
+    }
+  };
 
-  const available = equipment.filter(
-    (item) => item.status === "Available"
-  ).length;
-
-  const maintenance = equipment.filter(
-    (item) => item.status === "Under Maintenance"
-  ).length;
-
-  const averageUtilization = Math.round(
-    equipment.reduce(
-      (sum, item) => sum + item.utilization,
-      0
-    ) / equipment.length
-  );
+  const handleEnd = async (id) => {
+    try {
+      await endUtilization(id);
+      load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "Failed to end utilization session."));
+    }
+  };
 
   return (
-    <div className="utilization-page">
-
-      {/* HEADER */}
-
-      <div className="utilization-header">
+    <div style={page}>
+      <div style={headerRow}>
         <div>
-          <h1>Equipment Utilization</h1>
-
-          <p>
-            Monitor real-time laboratory equipment status
-            and resource utilization
-          </p>
+          <h1 style={h1Style}>Equipment Utilization</h1>
+          <p style={subStyle}>Usage sessions and utilization analytics</p>
         </div>
-
-        <div className="live-status">
-          <span></span>
-          Live Status
-        </div>
+        {SESSION_ROLES.includes(userRole) && (
+          <button onClick={() => setShowStartForm(true)} style={primaryBtn}>+ Start Session</button>
+        )}
       </div>
 
+      {error && <p style={errorText}>{error}</p>}
 
-      {/* SUMMARY CARDS */}
-
-      <div className="utilization-stats">
-
-        <StatCard
-          title="Total Equipment"
-          value={totalEquipment}
-          icon="▣"
-          className="blue"
-        />
-
-        <StatCard
-          title="In Use"
-          value={inUse}
-          icon="◉"
-          className="green"
-        />
-
-        <StatCard
-          title="Booked"
-          value={booked}
-          icon="◷"
-          className="purple"
-        />
-
-        <StatCard
-          title="Available"
-          value={available}
-          icon="✓"
-          className="teal"
-        />
-
-        <StatCard
-          title="Maintenance"
-          value={maintenance}
-          icon="⚙"
-          className="orange"
-        />
-
+      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        <button onClick={() => setTab("analytics")} style={tab === "analytics" ? tabBtnActive : tabBtn}>Analytics</button>
+        <button onClick={() => setTab("sessions")} style={tab === "sessions" ? tabBtnActive : tabBtn}>Usage Sessions</button>
       </div>
 
-
-      {/* UTILIZATION OVERVIEW */}
-
-      <div className="utilization-overview">
-
-        <div>
-          <h2>Overall Utilization</h2>
-
-          <p>
-            Average equipment utilization across the
-            laboratory
-          </p>
-        </div>
-
-        <div className="utilization-percentage">
-          {averageUtilization}%
-        </div>
-
-      </div>
-
-      <div className="main-progress">
-        <div
-          style={{
-            width: `${averageUtilization}%`,
-          }}
-        ></div>
-      </div>
-
-
-      {/* FILTER */}
-
-      <div className="equipment-section">
-
-        <div className="section-header">
-
-          <div>
-            <h2>Equipment Status</h2>
-
-            <p>
-              Current operational state and utilization
-            </p>
+      {tab === "analytics" && (
+        <div style={card}>
+          <div style={{ overflowX: "auto" }}>
+            {loading ? (
+              <p style={{ padding: 20 }}>Loading analytics...</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <th style={thStyle}>Equipment</th>
+                    <th style={thStyle}>Utilization %</th>
+                    <th style={thStyle}>Total Usage (hrs)</th>
+                    <th style={thStyle}>Idle Hours</th>
+                    <th style={thStyle}>Bookings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.map((a) => (
+                    <tr key={a.equipId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                      <td style={tdStyle}>{a.equipName}</td>
+                      <td style={tdStyle}>
+                        <span style={a.utilizationPercentage >= 70 ? pill("#e8f7ee", "#16834b") : a.utilizationPercentage >= 30 ? pill("#fff4df", "#b56a00") : pill("#fdecec", "#c0392b")}>
+                          {a.utilizationPercentage?.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td style={tdStyle}>{a.totalUsageHours?.toFixed(1)}</td>
+                      <td style={tdStyle}>{a.idleHours?.toFixed(1)}</td>
+                      <td style={tdStyle}>{a.bookingCount}</td>
+                    </tr>
+                  ))}
+                  {analytics.length === 0 && (
+                    <tr><td colSpan={5} style={emptyText}>No utilization analytics available yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
-
-          <select
-            value={selectedStatus}
-            onChange={(e) =>
-              setSelectedStatus(e.target.value)
-            }
-          >
-            <option value="All">All Status</option>
-            <option value="Available">Available</option>
-            <option value="Booked">Booked</option>
-            <option value="In Use">In Use</option>
-            <option value="Under Maintenance">
-              Under Maintenance
-            </option>
-          </select>
-
         </div>
+      )}
 
-
-        {/* EQUIPMENT TABLE */}
-
-        <div className="utilization-table">
-
-          <div className="table-header">
-            <span>Equipment</span>
-            <span>Department</span>
-            <span>Location</span>
-            <span>Status</span>
-            <span>Utilization</span>
-            <span>Usage</span>
+      {tab === "sessions" && (
+        <div style={card}>
+          <div style={{ overflowX: "auto" }}>
+            {loading ? (
+              <p style={{ padding: 20 }}>Loading sessions...</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <th style={thStyle}>Booking</th>
+                    <th style={thStyle}>Equipment</th>
+                    <th style={thStyle}>Start</th>
+                    <th style={thStyle}>End</th>
+                    <th style={thStyle}>Usage Hours</th>
+                    <th style={thStyle}>Status</th>
+                    {SESSION_ROLES.includes(userRole) && <th style={thStyle}>Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map((s) => (
+                    <tr key={s.utilizationId} style={{ borderBottom: "1px solid #f0f2f6" }}>
+                      <td style={tdStyle}>#{s.bookingId}</td>
+                      <td style={tdStyle}>{equipmentName(s.equipId)}</td>
+                      <td style={tdStyle}>{s.startTime ? new Date(s.startTime).toLocaleString() : "-"}</td>
+                      <td style={tdStyle}>{s.endTime ? new Date(s.endTime).toLocaleString() : "-"}</td>
+                      <td style={tdStyle}>{s.usageHours ?? "-"}</td>
+                      <td style={tdStyle}>
+                        <span style={s.status === "ACTIVE" ? pill("#fff4df", "#b56a00") : pill("#e8f7ee", "#16834b")}>{s.status}</span>
+                      </td>
+                      {SESSION_ROLES.includes(userRole) && (
+                        <td style={tdStyle}>
+                          {s.status === "ACTIVE" && (
+                            <button onClick={() => handleEnd(s.bookingId)} style={actionBtn}>End Session</button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  {sessions.length === 0 && (
+                    <tr><td colSpan={7} style={emptyText}>No utilization sessions yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
+        </div>
+      )}
 
-
-          {filteredEquipment.map((item) => (
-
-            <div
-              className="table-row"
-              key={item.id}
-            >
-
-              <div className="equipment-name">
-
-                <div className="equipment-icon">
-                  {item.name.charAt(0)}
-                </div>
-
-                <div>
-                  <strong>{item.name}</strong>
-
-                  <small>
-                    {item.id} • {item.category}
-                  </small>
-                </div>
-
-              </div>
-
-
-              <span>{item.department}</span>
-
-
-              <span>{item.location}</span>
-
-
-              <StatusBadge
-                status={item.status}
-              />
-
-
-              <div className="utilization-cell">
-
-                <div className="mini-progress">
-                  <div
-                    style={{
-                      width: `${item.utilization}%`,
-                    }}
-                  ></div>
-                </div>
-
-                <strong>
-                  {item.utilization}%
-                </strong>
-
-              </div>
-
-
-              <span className="usage-hours">
-                {item.usageHours}h /{" "}
-                {item.availableHours}h
-              </span>
-
+      {showStartForm && (
+        <div style={modalOverlay}>
+          <div style={modalCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 19 }}>Start Utilization Session</h2>
+              <button onClick={() => setShowStartForm(false)} style={{ border: "none", background: "none", fontSize: 19, cursor: "pointer" }}>×</button>
             </div>
-
-          ))}
-
+            <form onSubmit={handleStart}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Booking</label>
+                <select required value={bookingId} onChange={(e) => setBookingId(e.target.value)} style={inputStyle}>
+                  <option value="">Select a confirmed booking</option>
+                  {bookings.filter((b) => b.status === "CONFIRMED").map((b) => (
+                    <option key={b.bookingId} value={b.bookingId}>#{b.bookingId} - {b.equipmentName}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 20 }}>
+                <button type="button" onClick={() => setShowStartForm(false)} style={cancelBtn}>Cancel</button>
+                <button type="submit" style={primaryBtn}>Start Session</button>
+              </div>
+            </form>
+          </div>
         </div>
-
-
-        <div className="table-footer">
-          Showing {filteredEquipment.length} of{" "}
-          {equipment.length} equipment
-        </div>
-
-      </div>
-
+      )}
     </div>
   );
 }
 
+const tabBtn = { padding: "9px 16px", borderRadius: 7, border: "1px solid #d9dfe8", background: "white", color: "#475569", fontSize: 13, cursor: "pointer" };
+const tabBtnActive = { ...tabBtn, background: "#2563eb", borderColor: "#2563eb", color: "white", fontWeight: 600 };
 
-/* =========================
-   STAT CARD
-========================= */
-
-function StatCard({
-  title,
-  value,
-  icon,
-  className,
-}) {
-  return (
-    <div className={`util-stat-card ${className}`}>
-
-      <div className="util-stat-icon">
-        {icon}
-      </div>
-
-      <div>
-        <p>{title}</p>
-        <h2>{value}</h2>
-      </div>
-
-    </div>
-  );
-}
-
-
-/* =========================
-   STATUS BADGE
-========================= */
-
-function StatusBadge({ status }) {
-
-  let className = "available";
-
-  if (status === "Booked") {
-    className = "booked";
-  }
-
-  if (status === "In Use") {
-    className = "in-use";
-  }
-
-  if (status === "Under Maintenance") {
-    className = "maintenance";
-  }
-
-  if (status === "Out of Service") {
-    className = "out-service";
-  }
-
-  if (status === "Retired") {
-    className = "retired";
-  }
-
-  return (
-    <span className={`status-badge ${className}`}>
-      <span className="status-dot"></span>
-      {status}
-    </span>
-  );
-}
-
-export default Utilization;
+export default UtilizationPage;
