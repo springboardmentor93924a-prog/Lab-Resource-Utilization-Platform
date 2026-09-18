@@ -31,7 +31,7 @@ public class BookingServiceImpl implements BookingService {
     private final EquipmentRepository equipRepo;
     private final UserRepository userRepo;
     private final BookingWaitlistRepository waitlistRepo;
-private final NotificationService notifService;
+    private final NotificationService notifService;
     @Override
     @Transactional
     public BookingResponseDTO createBooking(BookingRequestDTO reqDto, String requesterEmail) {

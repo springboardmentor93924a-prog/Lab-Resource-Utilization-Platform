@@ -88,7 +88,7 @@ public class DepartmentServiceImpl implements DepartmentService{
 
     @Override
     public Department getDepartmentById(Long id) {
-       return departmentRepo.findById(id).orElseThrow(()->new RuntimeException("Department not found"));
+        return departmentRepo.findById(id).orElseThrow(()->new RuntimeException("Department not found"));
     }
 
     @Override

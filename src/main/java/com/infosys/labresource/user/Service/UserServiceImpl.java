@@ -120,8 +120,14 @@ public class UserServiceImpl implements UserService{
                         loggedInUser.getInstitution());
 
             case DEPARTMENT_HEAD:
-                return userRepo.findByDepartment(
-                        loggedInUser.getDepartment());
+            case LAB_MANAGER:
+            case LAB_TECHNICIAN:
+                // department alone isn't trustworthy - a user's department and
+                // institution can be mismatched (see Vikram's record), so both
+                // have to agree with the caller's own institution+department
+                return userRepo.findByDepartmentAndInstitution(
+                        loggedInUser.getDepartment(),
+                        loggedInUser.getInstitution());
 
             default:
                 throw new RuntimeException("Access Denied");

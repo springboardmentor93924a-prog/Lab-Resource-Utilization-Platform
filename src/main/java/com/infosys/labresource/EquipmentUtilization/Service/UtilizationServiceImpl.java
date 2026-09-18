@@ -36,9 +36,9 @@ public class UtilizationServiceImpl implements UtilizationService{
     private final BookingRepository bookingRepo;
     private final EquipmentRepository equipRepo;
     private final BookingWaitlistRepository waitlistRepo;
-private final NotificationService notifService;
-private final CostService costService;
-private final UserRepository userRepo;
+    private final NotificationService notifService;
+    private final CostService costService;
+    private final UserRepository userRepo;
     @Override
     public UtilizationResponseDTO startUtilization(Long bookingId) {
         Booking booking = bookingRepo.findById(bookingId)
@@ -238,6 +238,10 @@ private final UserRepository userRepo;
 
             dto.setEquipId(equip.getEquipId());
             dto.setEquipName(equip.getEquipName());
+            dto.setDepartmentId(equip.getDepartment().getDepartId());
+            dto.setDepartmentName(equip.getDepartment().getDepartmentName());
+            dto.setInstitutionId(equip.getInstitution().getInstitutionId());
+            dto.setInstitutionName(equip.getInstitution().getInstitutionName());
             dto.setUtilizationPercentage(utilizationPercentage);
             dto.setTotalUsageHours(usageHours);
             dto.setIdleHours(idleHours);
@@ -270,8 +274,21 @@ private final UserRepository userRepo;
             return equipRepo.findByInstitution(caller.getInstitution());
         }
 
-        // department head, lab manager, lab technician all get their own department's scope
-        return equipRepo.findByDepartment(caller.getDepartment());
+        // department head, lab manager, lab technician all get their own department's scope.
+        // filtering on department alone isn't enough - equipment can have a department
+        // and institution that don't actually match each other (bad data from equipment
+        // creation), so both have to match the caller's own institution too, otherwise
+        // equipment from a different institution can leak in through a shared department id.
+        List<Equipment> deptEquip = equipRepo.findByDepartment(caller.getDepartment());
+        List<Equipment> scoped = new ArrayList<>();
+
+        for (Equipment equip : deptEquip) {
+            if (equip.getInstitution().getInstitutionId().equals(caller.getInstitution().getInstitutionId())) {
+                scoped.add(equip);
+            }
+        }
+
+        return scoped;
     }
 
     private boolean isInCallerScope(Equipment equip, UserEntity caller) {

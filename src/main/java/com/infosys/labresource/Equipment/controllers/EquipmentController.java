@@ -27,9 +27,9 @@ public class EquipmentController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<EquipmentResponseDTO>> getAllEquipment() {
+    public ResponseEntity<List<EquipmentResponseDTO>> getAllEquipment(String email) {
 
-        return ResponseEntity.ok(equipmentService.getAllEquipment());
+        return ResponseEntity.ok(equipmentService.getAllEquipment(email));
     }
 
     @GetMapping("/{equipmentId}")

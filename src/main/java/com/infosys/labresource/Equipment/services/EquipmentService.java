@@ -9,7 +9,7 @@ import java.util.List;
 public interface EquipmentService {
     EquipmentResponseDTO addEquipment(EquipmentRequestDTO requestDTO);
 
-    List<EquipmentResponseDTO> getAllEquipment();
+    List<EquipmentResponseDTO> getAllEquipment(String email);
 
     EquipmentResponseDTO getEquipmentById(Long equipmentId);
 
