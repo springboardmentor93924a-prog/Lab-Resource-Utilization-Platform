@@ -1,7 +1,6 @@
 # Lab-Resource-Utilization-Platform
 Infosys Springboard Internship Project
-# Lab-Resource-Utilization-Platform
-Infosys Springboard Internship Project
+
 # LabFlow Pro — Lab Resource Utilization Platform
 
 A full-stack web application for managing laboratory resources, equipment, bookings, utilization, maintenance, users, and institutional workflows.
