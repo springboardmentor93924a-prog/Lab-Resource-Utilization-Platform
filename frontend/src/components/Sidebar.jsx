@@ -24,8 +24,11 @@ function Sidebar() {
   ].includes(role);
 
   // PDF Section 11 gives Waitlist to Researcher/Student only.
+  // Lab Manager gets a read-only view of who is waiting on their
+  // department's equipment.
   const canAccessWaitlist = [
     "STUDENT",
+    "LAB_MANAGER",
     "SYSTEM_ADMIN"
   ].includes(role);
 
@@ -44,7 +47,6 @@ function Sidebar() {
   const canAccessMaintenance = [
     "LAB_TECHNICIAN",
     "LAB_MANAGER",
-    "INSTITUTION_ADMIN",
     "SYSTEM_ADMIN"
   ].includes(role);
 

@@ -86,16 +86,54 @@ public class ReportServiceImpl implements ReportService {
                 : -1;
     }
 
+    /*
+     * Lab Manager / Department Head / Lab Technician are department-level
+     * roles, so their reports are limited to their OWN department's
+     * equipment. Returns null (= no department restriction) for
+     * Institution Admin and System Admin, and -1 (matches nothing) for a
+     * department-level user who has no department assigned.
+     */
+    private Integer scopedDepartmentIdOrNull() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return null;
+        }
+
+        User loggedInUser = (User) authentication.getPrincipal();
+        String role = loggedInUser.getRole() != null
+                ? loggedInUser.getRole().getRoleName()
+                : null;
+
+        boolean departmentScoped = "LAB_MANAGER".equalsIgnoreCase(role)
+                || "DEPARTMENT_HEAD".equalsIgnoreCase(role)
+                || "LAB_TECHNICIAN".equalsIgnoreCase(role);
+
+        if (!departmentScoped) {
+            return null;
+        }
+
+        return loggedInUser.getDepartment() != null
+                ? loggedInUser.getDepartment().getDepartmentId()
+                : -1;
+    }
+
     private List<Equipment> scopedFilteredEquipment(
             Integer departmentId, Integer institutionId,
             Integer equipmentId, String category) {
 
         Integer autoScopedInstitutionId = scopedInstitutionIdOrNull();
+        Integer autoScopedDepartmentId = scopedDepartmentIdOrNull();
 
         return equipmentRepository.findAll().stream()
                 .filter(e -> autoScopedInstitutionId == null
                         || (e.getInstitution() != null
                                 && autoScopedInstitutionId.equals(e.getInstitution().getInstitutionId())))
+                .filter(e -> autoScopedDepartmentId == null
+                        || (e.getDepartment() != null
+                                && autoScopedDepartmentId.equals(e.getDepartment().getDepartmentId())))
                 .filter(e -> institutionId == null
                         || (e.getInstitution() != null
                                 && institutionId.equals(e.getInstitution().getInstitutionId())))

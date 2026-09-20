@@ -7,7 +7,7 @@ function Waitlist() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [equipmentList, setEquipmentList] = useState([]);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     equipmentId: "",
@@ -22,7 +22,16 @@ function Waitlist() {
   // GET /api/waitlist) but is not permitted to join or cancel one — the
   // "my waitlist" endpoint below is only for roles that can actually
   // hold a waitlist entry themselves.
-  const isTechnicianView = role === "LAB_TECHNICIAN";
+  // Lab Manager (own department only) and System Admin get a read-only
+  // list of everyone on a waitlist; only students hold entries themselves.
+  const isTechnicianView = ["LAB_MANAGER", "LAB_TECHNICIAN", "SYSTEM_ADMIN"].includes(role);
+
+  // Staff can narrow the list to one equipment (?equipmentId=...) coming
+  // from the Equipment page.
+  const equipmentFilterId = isTechnicianView ? searchParams.get("equipmentId") : null;
+  const visibleEntries = equipmentFilterId
+    ? entries.filter((e) => String(e.equipment?.equipmentId) === String(equipmentFilterId))
+    : entries;
 
   const fetchMyWaitlist = () => {
     const url = isTechnicianView
@@ -219,12 +228,26 @@ useEffect(() => {
     <div className="waitlist-container">
       <div className="waitlist-header">
         <div>
-          <h2>{isTechnicianView ? "All Waitlist Entries" : "My Waitlist"}</h2>
+          <h2>{isTechnicianView ? "Waitlist" : "My Waitlist"}</h2>
           <p>
-            {isTechnicianView
+            {role === "SYSTEM_ADMIN"
               ? "Every equipment waitlist entry across the platform."
+              : isTechnicianView
+              ? "Who is waiting for your department's equipment."
               : "Track equipment you're waiting on, or join a new waitlist."}
           </p>
+          {equipmentFilterId && (
+            <p>
+              Showing one equipment only.{" "}
+              <button
+                type="button"
+                onClick={() => setSearchParams({})}
+                style={{ border: "none", background: "none", color: "#2563eb", cursor: "pointer", padding: 0 }}
+              >
+                Show all
+              </button>
+            </p>
+          )}
         </div>
         {!isTechnicianView && (
           <button
@@ -286,7 +309,7 @@ useEffect(() => {
       )}
 
       <div className="waitlist-table-card">
-        {entries.length === 0 ? (
+        {visibleEntries.length === 0 ? (
           <div className="waitlist-empty">
             {isTechnicianView
               ? "No waitlist entries right now."
@@ -305,7 +328,7 @@ useEffect(() => {
               </tr>
             </thead>
             <tbody>
-              {entries.map((entry) => (
+              {visibleEntries.map((entry) => (
                 <tr key={entry.waitlistId}>
                   <td className="equipment-name">
                     {entry.equipment?.equipmentName}

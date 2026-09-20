@@ -105,6 +105,7 @@ function AppRoutes() {
           <ProtectedRoute
             allowedRoles={[
               "STUDENT",
+              "LAB_MANAGER",
               "SYSTEM_ADMIN"
             ]}
           >
@@ -143,7 +144,6 @@ function AppRoutes() {
             allowedRoles={[
               "LAB_TECHNICIAN",
               "LAB_MANAGER",
-              "INSTITUTION_ADMIN",
               "SYSTEM_ADMIN"
             ]}
           >

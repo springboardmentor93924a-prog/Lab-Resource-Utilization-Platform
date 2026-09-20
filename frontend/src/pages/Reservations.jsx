@@ -62,6 +62,56 @@ function Reservations() {
     "SYSTEM_ADMIN",
   ].includes(role);
 
+  const myInstitutionId = sessionStorage.getItem("institutionId");
+  const myDepartmentId = sessionStorage.getItem("departmentId");
+
+  // What can the logged-in official actually do on THIS booking?
+  // Mirrors the backend rules in BookingServiceImpl so buttons are only
+  // shown when the action will really be accepted:
+  //  - Cross-institution requests ("Pending Institution Approval") are
+  //    reviewed first by the Institution Admin of the equipment owner's
+  //    institution.
+  //  - After that (and for normal same-institution requests), the Lab
+  //    Manager / Department Head of the department that OWNS the
+  //    equipment approves ("Pending Approval").
+  const getStaffActions = (booking) => {
+    const none = { canReview: false, canComplete: false, canEditOrCancel: false, waitingOn: "" };
+    if (!canManageBookings) return none;
+
+    const status = booking.bookingStatus;
+    const isPendingInstitution = status === "Pending Institution Approval";
+    const isPendingManager = status === "Pending Approval";
+    const isPending = isPendingInstitution || isPendingManager;
+    const isLive = status === "Confirmed" || status === "In Use";
+
+    if (role === "SYSTEM_ADMIN") {
+      return { canReview: isPending, canComplete: isLive, canEditOrCancel: isPending, waitingOn: "" };
+    }
+
+    const sameInstitution =
+      String(booking.equipment?.institution?.institutionId) === String(myInstitutionId);
+    const sameDepartment =
+      sameInstitution &&
+      String(booking.equipment?.department?.departmentId) === String(myDepartmentId);
+
+    if (role === "INSTITUTION_ADMIN") {
+      return {
+        canReview: isPendingInstitution && sameInstitution,
+        canComplete: false,
+        canEditOrCancel: false,
+        waitingOn: "",
+      };
+    }
+
+    // LAB_MANAGER / DEPARTMENT_HEAD
+    return {
+      canReview: isPendingManager && sameDepartment,
+      canComplete: isLive && sameDepartment,
+      canEditOrCancel: isPending && sameDepartment,
+      waitingOn: isPendingInstitution && sameDepartment ? "Institution Admin" : "",
+    };
+  };
+
   const nowLocalString = () => {
     const now = new Date();
     now.setSeconds(0, 0);
@@ -340,25 +390,6 @@ function Reservations() {
       }
 
       alert("Booking rejected");
-      fetchBookings();
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  const handleComplete = async (id) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}/complete`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "You are not allowed to complete this booking");
-      }
-
-      alert("Booking marked as completed");
       fetchBookings();
     } catch (error) {
       alert(error.message);
@@ -690,17 +721,20 @@ function Reservations() {
                       <td>{booking.purpose || "—"}</td>
                       <td>
                         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-                          {/* Student Edit & Delete on Pending Approval */}
+                          {/* Edit: only the student who owns the pending booking.
+                              Cancel: the owner, or staff within their own scope. */}
                           {(booking.bookingStatus === "Pending Approval"
                             || booking.bookingStatus === "Pending Institution Approval")
-                            && (isOwner || canManageBookings) && (
+                            && (isOwner || getStaffActions(booking).canEditOrCancel) && (
                             <>
-                              <button
-                                onClick={() => handleEdit(booking)}
-                                style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}
-                              >
-                                Edit
-                              </button>
+                              {isOwner && (
+                                <button
+                                  onClick={() => handleEdit(booking)}
+                                  style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}
+                                >
+                                  Edit
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDelete(booking.bookingId)}
                                 style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #fca5a5", background: "#fee2e2", color: "#991b1b", cursor: "pointer" }}
@@ -711,9 +745,13 @@ function Reservations() {
                           )}
 
                           {/* Manager / Tech Approval */}
-                          {(booking.bookingStatus === "Pending Approval"
-                            || booking.bookingStatus === "Pending Institution Approval")
-                            && canManageBookings && (
+                          {getStaffActions(booking).waitingOn && (
+                            <span style={{ fontSize: "11px", color: "#92400e" }}>
+                              Waiting for {getStaffActions(booking).waitingOn}
+                            </span>
+                          )}
+
+                          {getStaffActions(booking).canReview && (
                             <>
                               <button
                                 onClick={() => handleApprove(booking.bookingId)}
@@ -728,16 +766,6 @@ function Reservations() {
                                 Reject
                               </button>
                             </>
-                          )}
-
-                          {/* Complete action */}
-                          {booking.bookingStatus === "Confirmed" && canManageBookings && (
-                            <button
-                              onClick={() => handleComplete(booking.bookingId)}
-                              style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #86efac", background: "#dcfce7", color: "#166534", cursor: "pointer" }}
-                            >
-                              Complete
-                            </button>
                           )}
 
                           {/* Inline issue reporting — two windows, same panel:

@@ -24,6 +24,10 @@ public class UtilizationDTO {
 
     private String friday;
 
+    private String saturday;
+
+    private String sunday;
+
     // ===== NEW: demand analysis fields =====
     private long bookingCount;
 
@@ -149,5 +153,21 @@ public class UtilizationDTO {
 
     public void setWaitlistCount(long waitlistCount) {
         this.waitlistCount = waitlistCount;
+    }
+
+    public String getSaturday() {
+        return saturday;
+    }
+
+    public void setSaturday(String saturday) {
+        this.saturday = saturday;
+    }
+
+    public String getSunday() {
+        return sunday;
+    }
+
+    public void setSunday(String sunday) {
+        this.sunday = sunday;
     }
 }

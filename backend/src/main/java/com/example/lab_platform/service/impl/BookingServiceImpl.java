@@ -576,10 +576,31 @@ public List<Booking> getAllBookings() {
 
     Integer institutionId = loggedInUser.getInstitution().getInstitutionId();
 
+    /*
+     * Lab Manager / Department Head / Lab Technician are department-level
+     * roles: they only see (and can only act on) bookings for equipment
+     * owned by THEIR OWN department. Institution Admin has no single
+     * department, so they keep the institution-wide view.
+     */
+    boolean departmentScoped = role.equalsIgnoreCase("LAB_MANAGER")
+            || role.equalsIgnoreCase("DEPARTMENT_HEAD")
+            || role.equalsIgnoreCase("LAB_TECHNICIAN");
+
+    if (departmentScoped && loggedInUser.getDepartment() == null) {
+        return new java.util.ArrayList<>();
+    }
+
+    Integer departmentId = departmentScoped
+            ? loggedInUser.getDepartment().getDepartmentId()
+            : null;
+
     return bookingRepository.findAll().stream()
             .filter(b -> b.getEquipment() != null
                     && b.getEquipment().getInstitution() != null
                     && institutionId.equals(b.getEquipment().getInstitution().getInstitutionId()))
+            .filter(b -> departmentId == null
+                    || (b.getEquipment().getDepartment() != null
+                        && departmentId.equals(b.getEquipment().getDepartment().getDepartmentId())))
             .collect(java.util.stream.Collectors.toList());
 }
 
@@ -596,6 +617,14 @@ public Optional<Booking> getBookingById(Integer id) {
     if (role.equalsIgnoreCase("STUDENT")
             && !bookingOpt.get().getUser().getUserId().equals(loggedInUser.getUserId())) {
         throw new RuntimeException("You can view only your own booking");
+    }
+
+    // Staff may only open bookings for equipment in their own scope:
+    // Institution Admin = own institution, Lab Manager / Dept Head /
+    // Lab Technician = own institution + department.
+    if (!role.equalsIgnoreCase("STUDENT")
+            && bookingOpt.get().getEquipment() != null) {
+        assertSameInstitutionAsEquipment(loggedInUser, role, bookingOpt.get().getEquipment());
     }
 
     return bookingOpt;
@@ -1142,6 +1171,16 @@ public void deleteBooking(Integer id) {
             assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
         }
 
+        String statusBeforeCompleting = normalizeBookingStatus(booking.getBookingStatus());
+
+        if (!statusBeforeCompleting.equals("confirmed")
+                && !statusBeforeCompleting.equals("in use")) {
+
+            throw new RuntimeException(
+                    "Only Confirmed or In Use bookings can be marked as completed"
+            );
+        }
+
         booking.setBookingStatus("Completed");
 
         Equipment equipment =
@@ -1213,10 +1252,16 @@ public void deleteBooking(Integer id) {
             if (equipment != null) {
                 equipment.setStatus("Available");
 
-                // Same lastUsedDate update as the manual
-                // completeBooking() path above, for bookings that
-                // get auto-completed by the scheduler instead.
-                equipment.setLastUsedDate(java.time.LocalDate.now());
+                // Record the day the booking actually ENDED (not the
+                // day the sweep happened to run), and never move the
+                // date backwards, so a late sweep can't distort idle
+                // days / utilization figures.
+                java.time.LocalDate usedThrough = booking.getEndTime().toLocalDate();
+
+                if (equipment.getLastUsedDate() == null
+                        || usedThrough.isAfter(equipment.getLastUsedDate())) {
+                    equipment.setLastUsedDate(usedThrough);
+                }
 
                 equipmentRepository.save(equipment);
                 notifyNextWaitlistedUser(equipment);

@@ -155,12 +155,23 @@ function Dashboard() {
   // these Dashboard counts should reflect only the viewer's own
   // institution — otherwise every college's admin sees the same
   // combined platform-wide numbers. SYSTEM_ADMIN sees the real total.
+  // Lab Manager / Department Head / Lab Technician are further limited
+  // to their own department's equipment.
+  const myDepartmentId = sessionStorage.getItem("departmentId");
+  const isDepartmentScoped = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "LAB_TECHNICIAN",
+  ].includes(role);
+
   const scopedEquipment =
     role === "SYSTEM_ADMIN" || !myInstitutionId
       ? equipment
       : equipment.filter(
           (item) =>
-            String(item.institution?.institutionId) === String(myInstitutionId)
+            String(item.institution?.institutionId) === String(myInstitutionId) &&
+            (!isDepartmentScoped ||
+              String(item.department?.departmentId) === String(myDepartmentId))
         );
 
   const totalEquipment = scopedEquipment.length;

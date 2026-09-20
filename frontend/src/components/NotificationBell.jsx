@@ -47,8 +47,28 @@ const STATIC_ACTIONS = {
   SHARING_REQUEST_RECEIVED: { label: "View Requests", path: () => "/resource-sharing" },
   SHARING_REQUEST_APPROVED: { label: "View Requests", path: () => "/resource-sharing" },
   SHARING_REQUEST_REJECTED: { label: "View Requests", path: () => "/resource-sharing" },
-  EQUIPMENT_FEEDBACK_REPORTED: { label: "Solve Error", path: (n) => `/feedback?feedbackId=${n.referenceId}` },
+  // The old standalone /feedback page no longer exists - issue reports are
+  // handled from the Maintenance page now.
+  EQUIPMENT_FEEDBACK_REPORTED: { label: "Solve Error", path: () => "/maintenance" },
 };
+
+// Which roles can actually open each page (mirrors AppRoutes.jsx). A
+// notification's action button is only shown when the logged-in role can
+// open its destination - otherwise the click would just bounce to the
+// dashboard.
+const PATH_ROLES = {
+  "/reservations": ["STUDENT", "LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"],
+  "/waitlist": ["STUDENT", "LAB_MANAGER", "SYSTEM_ADMIN"],
+  "/calibration": ["LAB_TECHNICIAN", "SYSTEM_ADMIN"],
+  "/certification": ["LAB_TECHNICIAN", "LAB_MANAGER", "SYSTEM_ADMIN"],
+  "/maintenance": ["LAB_TECHNICIAN", "LAB_MANAGER", "SYSTEM_ADMIN"],
+  "/resource-sharing": ["LAB_MANAGER", "DEPARTMENT_HEAD", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"],
+};
+
+function canOpenPath(path, role) {
+  const allowed = PATH_ROLES[path.split("?")[0]];
+  return !allowed || allowed.includes(role);
+}
 
 // Types where referenceId is an equipmentId and the "right" next step
 // genuinely depends on whether that equipment is bookable right now —
@@ -62,6 +82,7 @@ function NotificationBell() {
   const containerRef = useRef(null);
   const navigate = useNavigate();
   const token = sessionStorage.getItem("token");
+  const role = sessionStorage.getItem("role");
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -129,7 +150,10 @@ function NotificationBell() {
             )}
 
             {notifications.map((n) => {
-              const hasAction = SMART_EQUIPMENT_TYPES.has(n.notificationType) || STATIC_ACTIONS[n.notificationType];
+              const staticAction = STATIC_ACTIONS[n.notificationType];
+              const hasAction = SMART_EQUIPMENT_TYPES.has(n.notificationType)
+                ? role === "STUDENT"
+                : staticAction && canOpenPath(staticAction.path(n), role);
 
               return (
                 <div key={n.notificationId} className={`notification-item ${n.isRead ? "" : "unread"}`}>

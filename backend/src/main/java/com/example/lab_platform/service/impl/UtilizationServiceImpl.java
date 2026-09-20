@@ -40,9 +40,14 @@ public class UtilizationServiceImpl implements UtilizationService {
     }
 
     /*
-     * Manager-tier roles only see utilization/heatmap data for their
-     * own institution's equipment — not every institution combined.
-     * SYSTEM_ADMIN sees everything (platform-wide view).
+     * Who sees which equipment:
+     *   SYSTEM_ADMIN                       -> every institution
+     *   INSTITUTION_ADMIN                  -> their own institution (all departments)
+     *   LAB_MANAGER / DEPARTMENT_HEAD /
+     *   LAB_TECHNICIAN                     -> their own department only
+     *
+     * Previously every role except SYSTEM_ADMIN got the whole institution,
+     * so a CSE manager and an EEE manager saw identical data.
      */
     private List<Equipment> scopedEquipmentToOwnInstitution() {
         Authentication authentication =
@@ -65,9 +70,24 @@ public class UtilizationServiceImpl implements UtilizationService {
 
         Integer institutionId = loggedInUser.getInstitution().getInstitutionId();
 
+        boolean departmentScoped = "LAB_MANAGER".equalsIgnoreCase(role)
+                || "DEPARTMENT_HEAD".equalsIgnoreCase(role)
+                || "LAB_TECHNICIAN".equalsIgnoreCase(role);
+
+        if (departmentScoped && loggedInUser.getDepartment() == null) {
+            return new ArrayList<>();
+        }
+
+        Integer departmentId = departmentScoped
+                ? loggedInUser.getDepartment().getDepartmentId()
+                : null;
+
         return equipmentRepository.findAll().stream()
                 .filter(e -> e.getInstitution() != null
                         && institutionId.equals(e.getInstitution().getInstitutionId()))
+                .filter(e -> departmentId == null
+                        || (e.getDepartment() != null
+                            && departmentId.equals(e.getDepartment().getDepartmentId())))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -83,7 +103,8 @@ public class UtilizationServiceImpl implements UtilizationService {
          * Task 2 analysis period:
          * Last 7 days including today.
          */
-        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
         LocalDate periodStart = today.minusDays(6);
 
         LocalDateTime periodStartDateTime =
@@ -109,6 +130,8 @@ public class UtilizationServiceImpl implements UtilizationService {
             double wednesdayHours = 0.0;
             double thursdayHours = 0.0;
             double fridayHours = 0.0;
+            double saturdayHours = 0.0;
+            double sundayHours = 0.0;
 
             LocalDate latestUsedDate = null;
 
@@ -178,9 +201,20 @@ public class UtilizationServiceImpl implements UtilizationService {
                                 ? periodStartDateTime
                                 : bookingStart;
 
+                /*
+                 * Only time that has actually elapsed counts as usage.
+                 * A confirmed booking for later today / tomorrow used to
+                 * be counted as already-used, which made the heatmap,
+                 * used hours and idle days disagree with each other.
+                 */
+                LocalDateTime usageCutoff =
+                        periodEndDateTime.isAfter(now)
+                                ? now
+                                : periodEndDateTime;
+
                 LocalDateTime effectiveEnd =
-                        bookingEnd.isAfter(periodEndDateTime)
-                                ? periodEndDateTime
+                        bookingEnd.isAfter(usageCutoff)
+                                ? usageCutoff
                                 : bookingEnd;
 
                 if (!effectiveEnd.isAfter(effectiveStart)) {
@@ -199,7 +233,7 @@ public class UtilizationServiceImpl implements UtilizationService {
                  * Latest date used.
                  */
                 LocalDate bookingDate =
-                        effectiveStart.toLocalDate();
+                        effectiveEnd.minusSeconds(1).toLocalDate();
 
                 if (latestUsedDate == null
                         || bookingDate.isAfter(latestUsedDate)) {
@@ -269,6 +303,14 @@ public class UtilizationServiceImpl implements UtilizationService {
                                 fridayHours += dailyHours;
                                 break;
 
+                            case SATURDAY:
+                                saturdayHours += dailyHours;
+                                break;
+
+                            case SUNDAY:
+                                sundayHours += dailyHours;
+                                break;
+
                             default:
                                 break;
                         }
@@ -313,27 +355,34 @@ public class UtilizationServiceImpl implements UtilizationService {
             /*
              * Idle days.
              */
-            long idleDays = 0;
+            long idleDays;
 
             if (latestUsedDate != null) {
 
-                idleDays = Duration.between(
-                        latestUsedDate.atStartOfDay(),
-                        LocalDateTime.now()
-                ).toDays();
+                // Whole calendar days since the equipment was last
+                // actually used (0 = used today).
+                idleDays = java.time.temporal.ChronoUnit.DAYS.between(
+                        latestUsedDate,
+                        today
+                );
 
-                if (idleDays < 0) {
-                    idleDays = 0;
-                }
+            } else if (equipment.getLastUsedDate() != null) {
+
+                // Not used in the 7-day window — fall back to the
+                // stored last-used date so this matches reality.
+                idleDays = java.time.temporal.ChronoUnit.DAYS.between(
+                        equipment.getLastUsedDate(),
+                        today
+                );
 
             } else {
 
-                /*
-                 * If equipment has never been used
-                 * during the period, consider the entire
-                 * seven-day period idle.
-                 */
+                // Never used at all: treat the whole 7-day period as idle.
                 idleDays = 7;
+            }
+
+            if (idleDays < 0) {
+                idleDays = 0;
             }
 
             // ===== NEW: active waitlist size for this equipment =====
@@ -389,6 +438,14 @@ public class UtilizationServiceImpl implements UtilizationService {
 
             dto.setFriday(
                     getHeatmapLevel(fridayHours)
+            );
+
+            dto.setSaturday(
+                    getHeatmapLevel(saturdayHours)
+            );
+
+            dto.setSunday(
+                    getHeatmapLevel(sundayHours)
             );
 
             // ===== NEW: demand analysis fields =====

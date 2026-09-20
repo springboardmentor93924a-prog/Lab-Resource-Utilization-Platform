@@ -101,7 +101,7 @@ function Heatmap() {
           </h2>
 
           <p style={styles.subtitle}>
-            Equipment usage intensity by weekday.
+            Equipment usage intensity for the last 7 days, by day of the week.
           </p>
         </div>
 
@@ -195,6 +195,14 @@ function Heatmap() {
                   </th>
 
                   <th style={styles.th}>
+                    Saturday
+                  </th>
+
+                  <th style={styles.th}>
+                    Sunday
+                  </th>
+
+                  <th style={styles.th}>
                     Idle Days
                   </th>
 
@@ -219,6 +227,8 @@ function Heatmap() {
                       item.wednesday,
                       item.thursday,
                       item.friday,
+                      item.saturday,
+                      item.sunday,
                     ].map((level, dayIndex) => (
 
                       <td

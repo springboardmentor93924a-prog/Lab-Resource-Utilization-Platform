@@ -134,6 +134,19 @@ public class EquipmentController {
         equipment.setInstitution(loggedInUser.getInstitution());
         equipment.setDepartment(loggedInUser.getDepartment());
 
+        // Purchase cost and hourly rate come from the Add Equipment form.
+        // A missing rate defaults to 0; negative numbers are rejected.
+        if (equipment.getRatePerHour() == null) {
+            equipment.setRatePerHour(0.0);
+        }
+
+        if (equipment.getRatePerHour() < 0
+                || (equipment.getPurchaseCost() != null && equipment.getPurchaseCost() < 0)) {
+            throw new RuntimeException(
+                    "Purchase cost and rate per hour cannot be negative."
+            );
+        }
+
         Equipment savedEquipment =
                 equipmentRepository.save(equipment);
 
@@ -196,6 +209,23 @@ public class EquipmentController {
                         eq.setStatus(
                                 updatedEquipment.getStatus()
                         );
+                    }
+
+                    // Purchase cost and rate per hour were silently dropped
+                    // on edit before (the form sent them, the server ignored
+                    // them). Only overwrite when a value is actually sent.
+                    if (updatedEquipment.getPurchaseCost() != null) {
+                        if (updatedEquipment.getPurchaseCost() < 0) {
+                            throw new RuntimeException("Purchase cost cannot be negative.");
+                        }
+                        eq.setPurchaseCost(updatedEquipment.getPurchaseCost());
+                    }
+
+                    if (updatedEquipment.getRatePerHour() != null) {
+                        if (updatedEquipment.getRatePerHour() < 0) {
+                            throw new RuntimeException("Rate per hour cannot be negative.");
+                        }
+                        eq.setRatePerHour(updatedEquipment.getRatePerHour());
                     }
 
                     // requiresApproval, department and institution are
