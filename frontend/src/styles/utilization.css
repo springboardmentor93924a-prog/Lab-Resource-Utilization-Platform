@@ -1,0 +1,202 @@
+.utilization-container{
+    padding:40px;
+}
+
+.utilization-container h1{
+    color:#2d4aa8;
+    margin-bottom:10px;
+}
+
+.utilization-container p{
+    color:#666;
+    margin-bottom:30px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:25px;
+}
+
+.summary-card{
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    text-align:center;
+}
+
+.summary-card h3{
+    color:#666;
+    margin-bottom:10px;
+}
+
+.summary-card h2{
+    font-size:2rem;
+    color:#2d4aa8;
+}
+
+.section-title{
+    margin-top:50px;
+    margin-bottom:20px;
+    color:#2d4aa8;
+    text-align:center;
+}
+
+/* Progress Chart */
+
+.chart-container{
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom:50px;
+}
+
+.chart-item{
+    margin-bottom:25px;
+}
+
+.chart-label{
+    font-weight:600;
+    margin-bottom:8px;
+    color:#444;
+}
+
+.progress{
+    width:100%;
+    height:32px;
+    background:#e9ecef;
+    border-radius:30px;
+    overflow:hidden;
+}
+
+.progress-fill{
+    height:100%;
+    background:#2d4aa8;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding-right:15px;
+    border-radius:30px;
+    font-weight:bold;
+}
+
+/* Heatmap */
+
+.heatmap-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:25px;
+    margin-top:20px;
+}
+
+.heatmap-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    text-align:center;
+    transition:0.3s;
+}
+
+.heatmap-card:hover{
+    transform:translateY(-5px);
+}
+
+.heatmap-card h3{
+    color:#2d4aa8;
+    margin-bottom:10px;
+}
+
+.heatmap-card p{
+    margin-bottom:15px;
+    color:#666;
+}
+
+.badge{
+    display:inline-block;
+    margin-top:10px;
+    padding:8px 18px;
+    border-radius:20px;
+    color:white;
+    font-weight:bold;
+}
+
+.high{
+    background:#28a745;
+}
+
+.medium{
+    background:#ffc107;
+    color:black;
+}
+
+.low{
+    background:#dc3545;
+}
+
+/* Idle Equipment Detection */
+
+.idle-table{
+    background:white;
+    margin-top:40px;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    overflow-x:auto;
+}
+
+.idle-table table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.idle-table th{
+    background:#2d4aa8;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
+.idle-table td{
+    padding:15px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+}
+
+.idle-table tr:hover{
+    background:#f5f7ff;
+}
+
+.idle-badge{
+    display:inline-block;
+    background:#dc3545;
+    color:white;
+    padding:6px 15px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+/* Responsive */
+
+@media (max-width:768px){
+
+    .utilization-container{
+        padding:20px;
+    }
+
+    .summary-grid{
+        grid-template-columns:1fr;
+    }
+
+    .heatmap-grid{
+        grid-template-columns:1fr;
+    }
+
+    .chart-container,
+    .idle-table{
+        padding:20px;
+    }
+}

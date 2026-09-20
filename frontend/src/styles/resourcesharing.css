@@ -1,0 +1,158 @@
+.resource-sharing-container{
+    padding:40px;
+}
+
+.resource-sharing-container h1{
+    color:#2d4aa8;
+    margin-bottom:10px;
+}
+
+.resource-sharing-container p{
+    color:#666;
+    margin-bottom:30px;
+}
+
+/* Search Section */
+
+.share-search{
+    display:flex;
+    gap:20px;
+    margin-bottom:35px;
+    flex-wrap:wrap;
+}
+
+.share-search input,
+.share-search select{
+    flex:1;
+    min-width:220px;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+}
+
+/* Equipment Cards */
+
+.share-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:25px;
+    margin-bottom:50px;
+}
+
+.share-card{
+    background:#fff;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    transition:.3s;
+}
+
+.share-card:hover{
+    transform:translateY(-5px);
+}
+
+.share-card h3{
+    color:#2d4aa8;
+    margin-bottom:15px;
+}
+
+.share-card p{
+    margin:8px 0;
+}
+
+.share-status{
+    color:#28a745;
+    font-weight:bold;
+    margin-left:8px;
+}
+
+.request-btn{
+    width:100%;
+    margin-top:20px;
+    padding:12px;
+    background:#2d4aa8;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+}
+
+.request-btn:hover{
+    background:#1d357f;
+}
+
+/* Request Table */
+
+.request-table{
+    background:#fff;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    overflow-x:auto;
+}
+
+.request-table table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.request-table th{
+    background:#2d4aa8;
+    color:white;
+    padding:15px;
+}
+
+.request-table td{
+    padding:15px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+
+.request-table tr:hover{
+    background:#f7f9fc;
+}
+
+/* Buttons */
+
+.approve-btn{
+    background:#28a745;
+    color:white;
+    border:none;
+    padding:8px 15px;
+    border-radius:6px;
+    cursor:pointer;
+    margin-right:8px;
+}
+
+.reject-btn{
+    background:#dc3545;
+    color:white;
+    border:none;
+    padding:8px 15px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.completed{
+    color:#2d4aa8;
+    font-weight:bold;
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+    .resource-sharing-container{
+        padding:20px;
+    }
+
+    .share-search{
+        flex-direction:column;
+    }
+
+    .share-grid{
+        grid-template-columns:1fr;
+    }
+}

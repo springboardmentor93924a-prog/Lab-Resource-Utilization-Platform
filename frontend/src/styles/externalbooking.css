@@ -1,0 +1,258 @@
+/* Main Container */
+
+.external-booking{
+    padding:40px;
+    background:#f8f9fc;
+    min-height:100vh;
+}
+
+/* Heading */
+
+.external-booking h1{
+    color:#2d4aa8;
+    margin-bottom:18px;
+    font-size:2.5rem;
+    font-weight:700;
+}
+
+/* Description */
+
+.external-booking p{
+    color:#666;
+    font-size:1.1rem;
+    margin-top:0;
+    margin-bottom:35px;
+    line-height:1.6;
+}
+
+/* Section Titles */
+
+.external-booking h2{
+    color:#2d4aa8;
+    margin:40px 0 20px;
+    font-size:1.8rem;
+}
+
+/* Search & Filter */
+
+.booking-search{
+    display:flex;
+    gap:20px;
+    margin-bottom:35px;
+    flex-wrap:wrap;
+}
+
+.booking-search input,
+.booking-search select{
+    flex:1;
+    min-width:220px;
+    padding:14px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+    background:white;
+}
+
+/* Booking Form */
+
+.booking-form{
+    background:#fff;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    margin-bottom:40px;
+
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.booking-form input,
+.booking-form select,
+.booking-form textarea{
+    padding:14px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+}
+
+.booking-form textarea{
+    resize:none;
+}
+
+.booking-form button{
+    background:#2d4aa8;
+    color:white;
+    border:none;
+    padding:14px;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.booking-form button:hover{
+    background:#1c3a91;
+}
+
+/* Equipment Cards */
+
+.equipment-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:25px;
+    margin-bottom:50px;
+}
+
+.equipment-card{
+    background:#fff;
+    border-radius:12px;
+    padding:25px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    transition:.3s;
+    text-align:center;
+}
+
+.equipment-card:hover{
+    transform:translateY(-5px);
+}
+
+.equipment-card h3{
+    color:#2d4aa8;
+    margin-bottom:10px;
+    font-size:1.4rem;
+}
+
+.equipment-card p{
+    color:#555;
+    margin-bottom:15px;
+}
+
+.available{
+    display:inline-block;
+    background:#28a745;
+    color:white;
+    padding:8px 18px;
+    border-radius:20px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+.busy{
+    display:inline-block;
+    background:#dc3545;
+    color:white;
+    padding:8px 18px;
+    border-radius:20px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+.equipment-card button{
+    width:100%;
+    padding:12px;
+    background:#2d4aa8;
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.equipment-card button:hover{
+    background:#1c3a91;
+}
+
+.equipment-card button:disabled{
+    background:#b5b5b5;
+    cursor:not-allowed;
+}
+
+/* Booking Table */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+th{
+    background:#2d4aa8;
+    color:white;
+    padding:16px;
+    font-size:16px;
+}
+
+td{
+    padding:16px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+}
+
+tr:hover{
+    background:#f8f9ff;
+}
+
+/* Status Badges */
+
+.pending,
+.approved,
+.rejected,
+.completed{
+    display:inline-block;
+    padding:7px 15px;
+    border-radius:20px;
+    font-weight:bold;
+    color:white;
+}
+
+.pending{
+    background:#ffc107;
+    color:black;
+}
+
+.approved{
+    background:#28a745;
+}
+
+.rejected{
+    background:#dc3545;
+}
+
+.completed{
+    background:#0d6efd;
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+    .external-booking{
+        padding:20px;
+    }
+
+    .external-booking h1{
+        font-size:2rem;
+    }
+
+    .external-booking h2{
+        font-size:1.5rem;
+    }
+
+    .equipment-grid{
+        grid-template-columns:1fr;
+    }
+
+    table{
+        display:block;
+        overflow-x:auto;
+    }
+
+    .booking-search{
+        flex-direction:column;
+    }
+}

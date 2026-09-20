@@ -1,0 +1,87 @@
+.equipment-container{
+    padding:40px;
+}
+
+.equipment-container h1{
+    color:#2d4aa8;
+    margin-bottom:10px;
+}
+
+.equipment-container p{
+    color:#666;
+}
+
+.equipment-controls{
+    display:flex;
+    gap:20px;
+    margin:30px 0;
+    flex-wrap:wrap;
+}
+
+.equipment-controls input,
+.equipment-controls select{
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:15px;
+}
+
+.equipment-controls input{
+    flex:1;
+}
+
+.equipment-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+.equipment-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+.equipment-card h2{
+    margin-bottom:10px;
+}
+
+.status{
+    display:inline-block;
+    padding:8px 15px;
+    border-radius:20px;
+    color:white;
+    margin:15px 0;
+    font-weight:bold;
+}
+
+.available{
+    background:#28a745;
+}
+
+.booked{
+    background:#ff9800;
+}
+
+.inuse{
+    background:#007bff;
+}
+
+.maintenance{
+    background:#dc3545;
+}
+
+.equipment-card button{
+    width:100%;
+    padding:10px;
+    border:none;
+    background:#2d4aa8;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.equipment-card button:hover{
+    background:#1f357c;
+}

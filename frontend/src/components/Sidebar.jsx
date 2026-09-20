@@ -1,5 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 
+import { Link, useLocation } from "react-router-dom";
+import { FaChartBar } from "react-icons/fa";
+import { FaShareAlt } from "react-icons/fa";
+import { FaUniversity } from "react-icons/fa";
+import { FaChartLine } from "react-icons/fa";
+import { FaClock } from "react-icons/fa";
+
 import {
   FaHome,
   FaFlask,
@@ -7,6 +14,7 @@ import {
   FaClipboardList,
   FaUser,
   FaSignOutAlt,
+  FaMicrochip
 } from "react-icons/fa";
 
 import "../styles/sidebar.css";
@@ -36,6 +44,42 @@ function Sidebar() {
             Resources
           </li>
         </Link>
+         <Link to="/equipment" className="sidebar-link">
+  <li className={location.pathname === "/equipment" ? "active" : ""}>
+    <FaMicrochip />
+    Equipment
+  </li>
+</Link>
+<Link to="/resource-sharing" className="sidebar-link">
+  <li className={location.pathname === "/resource-sharing" ? "active" : ""}>
+    <FaShareAlt />
+    Resource Sharing
+  </li>
+</Link>
+<Link to="/external-booking" className="sidebar-link">
+  <li className={location.pathname === "/external-booking" ? "active" : ""}>
+    <FaUniversity />
+    External Booking
+  </li>
+</Link>
+<Link to="/demand-analysis" className="sidebar-link">
+  <li className={location.pathname === "/demand-analysis" ? "active" : ""}>
+    <FaChartLine />
+    Demand Analysis
+  </li>
+</Link>
+<Link to="/waitlist" className="sidebar-link">
+  <li className={location.pathname === "/waitlist" ? "active" : ""}>
+    <FaClock />
+    Waitlist
+  </li>
+</Link>
+<Link to="/utilization" className="sidebar-link">
+  <li className={location.pathname === "/utilization" ? "active" : ""}>
+    <FaChartBar />
+    Utilization
+  </li>
+</Link>
 
         <Link to="/booking" className="sidebar-link">
           <li className={location.pathname === "/booking" ? "active" : ""}>

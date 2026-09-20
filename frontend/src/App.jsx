@@ -14,6 +14,12 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import ManageLabs from "./pages/ManageLabs";
 import ManageEquipment from "./pages/ManageEquipment";
+import Equipment from "./pages/Equipment";
+import UtilizationDashboard from "./pages/UtilizationDashboard";
+import ResourceSharing from "./pages/ResourceSharing";
+import ExternalBooking from "./pages/ExternalBooking";
+import DemandAnalysis from "./pages/DemandAnalysis";
+import WaitlistManagement from "./pages/WaitlistManagement";
 
 import "./App.css";
 
@@ -46,6 +52,22 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/manage-labs" element={<ManageLabs />} />
         <Route path="/manage-equipment" element={<ManageEquipment />} />
+        <Route path="/equipment" element={<Equipment />} />
+        <Route path="/demand-analysis" element={<DemandAnalysis />} />
+        <Route path="/waitlist" element={<WaitlistManagement />} />
+        <Route
+  path="/external-booking"
+  element={<ExternalBooking />}
+/>
+        <Route
+  path="/resource-sharing"
+  element={<ResourceSharing />}
+/>
+        
+        <Route
+  path="/utilization"
+  element={<UtilizationDashboard />}
+/>
       </Routes>
 
       {showLayout && <Footer />}
