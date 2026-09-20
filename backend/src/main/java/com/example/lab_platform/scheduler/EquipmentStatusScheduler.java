@@ -66,15 +66,21 @@ public EquipmentStatusScheduler(
     public void updateEquipmentStatus() {
         LocalDateTime now = LocalDateTime.now();
 
-        activateDueMaintenance();
-        activateInUseBookings();
-        expireUndecidedWaitlistEntries();
-        bookingService.autoCompleteOverdueBookings();
+        // Each step is isolated: if one fails, the others (especially
+        // auto-completing finished bookings) still run on this pass and
+        // on the next one, instead of the whole sweep dying every minute.
+        runSafely("activateDueMaintenance", this::activateDueMaintenance);
+        runSafely("activateInUseBookings", this::activateInUseBookings);
+        runSafely("expireUndecidedWaitlistEntries", this::expireUndecidedWaitlistEntries);
+
+        // Bookings whose end time has passed (In Use / Confirmed) are
+        // marked Completed automatically - nobody has to click Complete.
+        runSafely("autoCompleteOverdueBookings", bookingService::autoCompleteOverdueBookings);
 
         // Task 3: as soon as a booking is auto-completed above, turn
         // it into a billable usage-cost record (and department cost
         // allocation) so Cost Management stays in sync automatically.
-        costManagementService.generateMissingCostRecords();
+        runSafely("generateMissingCostRecords", costManagementService::generateMissingCostRecords);
 
         List<Equipment> equipmentList =
                 equipmentRepository.findAll();
@@ -96,6 +102,14 @@ public EquipmentStatusScheduler(
         // poll interval (or never refreshing at all).
         if (anyChanged) {
             realtimeUpdateService.pingEquipmentUpdated();
+        }
+    }
+
+    private void runSafely(String stepName, Runnable step) {
+        try {
+            step.run();
+        } catch (Exception ex) {
+            System.err.println("EquipmentStatusScheduler step '" + stepName + "' failed: " + ex.getMessage());
         }
     }
 

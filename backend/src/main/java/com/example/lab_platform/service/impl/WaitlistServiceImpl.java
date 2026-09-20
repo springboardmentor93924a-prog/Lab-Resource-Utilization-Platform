@@ -196,14 +196,45 @@ public Waitlist joinWaitlist(Waitlist waitlist) {
         return false;
     }
 
+    /*
+     * Staff view of the waitlist. SYSTEM_ADMIN sees everything. Lab
+     * Manager sees only the ACTIVE entries (not cancelled ones) for
+     * equipment owned by their own institution AND department, so they
+     * can see who is waiting on their department's equipment.
+     */
+    private List<Waitlist> scopeForStaff(List<Waitlist> entries) {
+        User loggedInUser = getLoggedInUser();
+        String role = getRole(loggedInUser);
+
+        if ("SYSTEM_ADMIN".equalsIgnoreCase(role)) {
+            return entries;
+        }
+
+        if (loggedInUser.getInstitution() == null || loggedInUser.getDepartment() == null) {
+            return new java.util.ArrayList<>();
+        }
+
+        Integer institutionId = loggedInUser.getInstitution().getInstitutionId();
+        Integer departmentId = loggedInUser.getDepartment().getDepartmentId();
+
+        return entries.stream()
+                .filter(w -> w.getEquipment() != null
+                        && w.getEquipment().getInstitution() != null
+                        && institutionId.equals(w.getEquipment().getInstitution().getInstitutionId())
+                        && w.getEquipment().getDepartment() != null
+                        && departmentId.equals(w.getEquipment().getDepartment().getDepartmentId()))
+                .filter(w -> !"CANCELLED".equalsIgnoreCase(w.getWaitlistStatus()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @Override
     public List<Waitlist> getAllWaitlistEntries() {
-        return waitlistRepository.findAll();
+        return scopeForStaff(waitlistRepository.findAll());
     }
 
     @Override
     public List<Waitlist> getWaitlistForEquipment(Integer equipmentId) {
-        return waitlistRepository.findByEquipment_EquipmentId(equipmentId);
+        return scopeForStaff(waitlistRepository.findByEquipment_EquipmentId(equipmentId));
     }
 
     @Override

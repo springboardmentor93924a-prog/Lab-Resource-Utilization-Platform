@@ -28,6 +28,7 @@ public class BookingController {
             'STUDENT',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -47,6 +48,7 @@ public class BookingController {
             'STUDENT',
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
             'SYSTEM_ADMIN'
         )
     """)
@@ -78,11 +80,12 @@ public class BookingController {
     // =========================================================
     // UPDATE BOOKING
     // =========================================================
+    // Editing a booking is for the student who owns it (pending only,
+    // enforced in the service). Managers approve/reject/cancel - they
+    // don't rewrite a student's booking.
     @PreAuthorize("""
         hasAnyRole(
             'STUDENT',
-            'LAB_MANAGER',
-            'DEPARTMENT_HEAD',
             'SYSTEM_ADMIN'
         )
     """)
@@ -127,7 +130,8 @@ public class BookingController {
         hasAnyRole(
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN'
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
         )
     """)
     @PutMapping("/{id}/approve")
@@ -148,7 +152,8 @@ public class BookingController {
         hasAnyRole(
             'LAB_MANAGER',
             'DEPARTMENT_HEAD',
-            'INSTITUTION_ADMIN'
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
         )
     """)
     @PutMapping("/{id}/reject")

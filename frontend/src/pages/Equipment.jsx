@@ -360,7 +360,28 @@ const ownsEquipment = (item) =>
                     </button>
                   )}
 
-                  {((item.status === "Booked" || item.status === "In Use") ||
+                  {/* Lab Manager: see who is waiting on their own department's equipment */}
+                  {role === "LAB_MANAGER" &&
+                    String(item.department?.departmentId) === String(sessionStorage.getItem("departmentId")) && (
+                    <button
+                      onClick={() => navigate(`/waitlist?equipmentId=${item.equipmentId}`)}
+                      style={{
+                        padding: "4px 8px",
+                        marginRight: "4px",
+                        fontSize: "11px",
+                        cursor: "pointer",
+                        background: "#f59e0b",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                      }}
+                      title="See who is waiting for this equipment"
+                    >
+                      👥 Waitlist
+                    </button>
+                  )}
+
+                  {role === "STUDENT" && ((item.status === "Booked" || item.status === "In Use") ||
                     (item.status === "Available" &&
                       role === "STUDENT" &&
                       unresolvedEquipmentIds.has(item.equipmentId))) && (
@@ -386,7 +407,7 @@ const ownsEquipment = (item) =>
                     </button>
                   )}
 
-                  {role !== "STUDENT" && (
+                  {["LAB_TECHNICIAN", "LAB_MANAGER", "SYSTEM_ADMIN"].includes(role) && (
                     <button
                       // The standalone /feedback page is gone — general
                       // (non-booking) issue reports now open inline from

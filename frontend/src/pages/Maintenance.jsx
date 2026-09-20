@@ -44,7 +44,7 @@ function Maintenance() {
     const isTech = role === "LAB_TECHNICIAN";
     // Department Head/Institution Admin no longer reach this page at all
     // (see AppRoutes.jsx) — trimmed to match who's actually here now.
-    const canDecide = ["LAB_MANAGER", "INSTITUTION_ADMIN", "SYSTEM_ADMIN"].includes(role);
+    const canDecide = ["LAB_MANAGER", "SYSTEM_ADMIN"].includes(role);
     // Same roles that create/assign maintenance work orders — see
     // MaintenanceController.createMaintenance's @PreAuthorize.
     const canManageWorkOrders = canDecide;

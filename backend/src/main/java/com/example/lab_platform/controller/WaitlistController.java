@@ -48,6 +48,7 @@ public class WaitlistController {
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
+            'LAB_MANAGER',
             'SYSTEM_ADMIN'
         )
     """)
@@ -64,6 +65,7 @@ public class WaitlistController {
     // =========================================================
     @PreAuthorize("""
         hasAnyRole(
+            'LAB_MANAGER',
             'SYSTEM_ADMIN'
         )
     """)

@@ -635,12 +635,24 @@ function Reports() {
   // returns every institution's equipment (needed for cross-college
   // booking), but this report should reflect only the viewer's own
   // institution. SYSTEM_ADMIN sees the real platform-wide total.
+  // Lab Manager / Department Head / Lab Technician are further limited
+  // to their own department's equipment (Institution Admin keeps the
+  // whole institution).
+  const myDepartmentId = sessionStorage.getItem("departmentId");
+  const isDepartmentScoped = [
+    "LAB_MANAGER",
+    "DEPARTMENT_HEAD",
+    "LAB_TECHNICIAN",
+  ].includes(role);
+
   const scopedEquipment =
     role === "SYSTEM_ADMIN" || !myInstitutionId
       ? equipment
       : equipment.filter(
           (item) =>
-            String(item.institution?.institutionId) === String(myInstitutionId)
+            String(item.institution?.institutionId) === String(myInstitutionId) &&
+            (!isDepartmentScoped ||
+              String(item.department?.departmentId) === String(myDepartmentId))
         );
 
   const available = scopedEquipment.filter(
