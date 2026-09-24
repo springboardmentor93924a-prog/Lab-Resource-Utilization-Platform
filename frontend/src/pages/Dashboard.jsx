@@ -18,6 +18,8 @@ function Dashboard() {
   const [myBookings, setMyBookings] = useState([]);
   const [myWaitlist, setMyWaitlist] = useState([]);
   const [maintenanceRecords, setMaintenanceRecords] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
+  const [sharingRequests, setSharingRequests] = useState([]);
 
   const role = sessionStorage.getItem("role");
   const myInstitutionId = sessionStorage.getItem("institutionId");
@@ -141,6 +143,26 @@ function Dashboard() {
           .then(setMaintenanceRecords)
           .catch(console.error);
       }
+
+      // Manager-tier only: booking adoption/no-show rate and pending
+      // sharing requests both need data STUDENT/LAB_TECHNICIAN can't
+      // request (backend restricts these to the same manager-tier
+      // roles as /api/utilization).
+      if (canViewUtilization) {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then(setAllBookings)
+          .catch(console.error);
+
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/api/resource-sharing/requests`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then(setSharingRequests)
+          .catch(console.error);
+      }
     };
 
     fetchData();
@@ -198,6 +220,84 @@ function Dashboard() {
         (b.bookingCount || 0) + (b.waitlistCount || 0) -
         ((a.bookingCount || 0) + (a.waitlistCount || 0))
     );
+
+  // =========================================================
+  // STUDENT: EQUIPMENT RECOMMENDATIONS
+  // Heuristic (no dedicated backend endpoint): find the category the
+  // student books most often, then suggest other Available equipment
+  // in that category they haven't already booked. Falls back to
+  // "most-booked overall" categories once bookings exist.
+  // =========================================================
+  const bookedEquipmentIds = new Set(
+    myBookings.map((b) => b.equipment?.equipmentId).filter(Boolean)
+  );
+
+  const categoryCounts = myBookings.reduce((acc, b) => {
+    const cat = b.equipment?.category;
+    if (cat) acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {});
+
+  const topCategories = Object.keys(categoryCounts).sort(
+    (a, b) => categoryCounts[b] - categoryCounts[a]
+  );
+
+  const recommendedEquipment = equipment
+    .filter(
+      (item) =>
+        item.status === "Available" &&
+        !bookedEquipmentIds.has(item.equipmentId) &&
+        topCategories.includes(item.category)
+    )
+    .sort(
+      (a, b) => categoryCounts[b.category] - categoryCounts[a.category]
+    )
+    .slice(0, 5);
+
+  // =========================================================
+  // MANAGER-TIER: BOOKING ADOPTION & NO-SHOW RATE
+  // Scoped the same way as scopedEquipment above (own institution,
+  // and own department for Lab Manager/Department Head).
+  // =========================================================
+  const scopedBookings = allBookings.filter((b) => {
+    const eq = b.equipment;
+    if (!eq) return false;
+    if (role === "SYSTEM_ADMIN" || !myInstitutionId) return true;
+    return (
+      String(eq.institution?.institutionId) === String(myInstitutionId) &&
+      (!isDepartmentScoped ||
+        String(eq.department?.departmentId) === String(myDepartmentId))
+    );
+  });
+
+  const completedBookings = scopedBookings.filter(
+    (b) => b.bookingStatus === "Completed" || b.bookingStatus === "In Use"
+  ).length;
+
+  const noShowBookings = scopedBookings.filter(
+    (b) => b.bookingStatus === "No Show"
+  ).length;
+
+  const decidedBookings = completedBookings + noShowBookings;
+
+  const adoptionRate =
+    decidedBookings === 0 ? 0 : (completedBookings / decidedBookings) * 100;
+
+  const noShowRate =
+    decidedBookings === 0 ? 0 : (noShowBookings / decidedBookings) * 100;
+
+  // =========================================================
+  // MANAGER-TIER: PENDING SHARING REQUESTS
+  // Only requests where the viewer's own institution is the one
+  // being asked to share (matches who can approve/reject in
+  // ResourceSharingController).
+  // =========================================================
+  const pendingSharingRequests = sharingRequests.filter(
+    (r) =>
+      r.status === "PENDING" &&
+      (role === "SYSTEM_ADMIN" ||
+        String(r.receiverInstitution?.institutionId) === String(myInstitutionId))
+  );
 
   return (
     <div className="dashboard">
@@ -367,6 +467,44 @@ function Dashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+
+      {/* =========================
+          STUDENT: RECOMMENDED EQUIPMENT
+         ========================= */}
+
+      {isStudent && (
+        <div className="dashboard-section">
+
+          <div className="section-header">
+            <div>
+              <h2>Recommended For You</h2>
+              <p>Available equipment based on what you book most</p>
+            </div>
+          </div>
+
+          {recommendedEquipment.length === 0 ? (
+            <div className="empty-card">
+              {myBookings.length === 0
+                ? "Book some equipment and we'll start recommending similar gear."
+                : "No matching available equipment right now — check back later."}
+            </div>
+          ) : (
+            <div className="idle-grid">
+              {recommendedEquipment.map((item) => (
+                <div className="idle-card" key={item.equipmentId}>
+                  <div className="idle-icon">✨</div>
+                  <div>
+                    <h3>{item.equipmentName}</h3>
+                    <p>{item.category}</p>
+                    <span>{item.location}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -826,6 +964,92 @@ function Dashboard() {
 
           )}
 
+        </div>
+      )}
+
+
+      {/* =========================
+          BOOKING ADOPTION & NO-SHOW RATE
+         ========================= */}
+
+      {canViewUtilization && (
+        <div className="dashboard-section">
+          <div className="section-header">
+            <div>
+              <h2>Booking Adoption &amp; No-Show Rate</h2>
+              <p>Share of decided bookings that were kept vs. missed</p>
+            </div>
+          </div>
+
+          <div className="cards">
+            <div className="card">
+              <span className="card-label">Adoption Rate</span>
+              <strong className="card-value">
+                {adoptionRate.toFixed(1)}%
+              </strong>
+            </div>
+
+            <div className="card">
+              <span className="card-label">No-Show Rate</span>
+              <strong className="card-value">
+                {noShowRate.toFixed(1)}%
+              </strong>
+            </div>
+
+            <div className="card">
+              <span className="card-label">Bookings Considered</span>
+              <strong className="card-value">{decidedBookings}</strong>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* =========================
+          PENDING SHARING REQUESTS
+         ========================= */}
+
+      {canViewUtilization && (
+        <div className="dashboard-section">
+          <div className="section-header">
+            <div>
+              <h2>Pending Sharing Requests</h2>
+              <p>Cross-institution requests waiting on your decision</p>
+            </div>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="util-table">
+              <thead>
+                <tr>
+                  <th>Equipment</th>
+                  <th>Requesting Institution</th>
+                  <th>Requested On</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingSharingRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="empty-state">
+                      No pending sharing requests right now.
+                    </td>
+                  </tr>
+                ) : (
+                  pendingSharingRequests.slice(0, 5).map((r) => (
+                    <tr key={r.id}>
+                      <td className="equipment-name">
+                        {r.equipment?.equipmentName}
+                      </td>
+                      <td>{r.senderInstitution?.institutionName}</td>
+                      <td>{r.requestDate?.replace("T", " ")}</td>
+                      <td>{r.status}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
