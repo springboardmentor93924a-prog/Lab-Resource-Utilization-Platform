@@ -26,6 +26,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// Spring Boot 4 defaults to Jackson 3 (package tools.jackson.*), but
+	// EmailService and GoogleTokenVerifier use the classic Jackson 2 API
+	// (com.fasterxml.jackson.databind.ObjectMapper/JsonNode) - as does
+	// the jjwt-jackson dependency below. spring-boot-jackson2 is Spring's
+	// official (deprecated-but-supported) compatibility module that puts
+	// Jackson 2 back on the classpath without touching any code.
+	implementation 'org.springframework.boot:spring-boot-jackson2'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	// Module 7 - Email notifications. Free: works with Gmail SMTP + an
 	// App Password, no paid service (Twilio/Firebase deliberately not
