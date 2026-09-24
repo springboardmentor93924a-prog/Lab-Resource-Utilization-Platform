@@ -66,6 +66,22 @@ public class InstitutionController {
             @PathVariable Integer institutionId,
             @RequestBody DepartmentLinkRequest request) {
 
+        // An Institution Admin may only add departments to THEIR OWN
+        // institution (System Admin can add to any).
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder
+                        .getContext().getAuthentication();
+
+        if (auth != null && auth.getPrincipal() instanceof com.example.lab_platform.entity.User caller
+                && caller.getRole() != null
+                && "INSTITUTION_ADMIN".equalsIgnoreCase(caller.getRole().getRoleName())) {
+
+            if (caller.getInstitution() == null
+                    || !caller.getInstitution().getInstitutionId().equals(institutionId)) {
+                throw new RuntimeException("You can only add departments to your own institution");
+            }
+        }
+
         Institution institution = institutionRepository
                 .findById(institutionId)
                 .orElseThrow(() ->
@@ -147,8 +163,11 @@ public class InstitutionController {
     // CREATE INSTITUTION
     // ============================================================
 
+    // Institutions are created by the System Admin (directly here, or by
+    // approving a new college's Institution Admin registration). An
+    // Institution Admin must not be able to create extra institutions.
     @PostMapping
-    @PreAuthorize("hasAnyRole('INSTITUTION_ADMIN', 'SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Institution createInstitution(
             @RequestBody Institution institution) {
 

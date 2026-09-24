@@ -2,7 +2,10 @@ package com.example.lab_platform.service;
 
 import com.example.lab_platform.entity.Booking;
 
+import com.example.lab_platform.dto.RecurringBookingRequest;
+
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface BookingService {
@@ -22,6 +25,15 @@ public interface BookingService {
     Booking rejectBooking(Integer id);
 
     Booking completeBooking(Integer id);
+
+    // Manager marks a started booking as a No Show (the person never came).
+    Booking markNoShow(Integer id);
+
+    // Recurring bookings: one request creates a series (DAILY / WEEKLY).
+    Map<String, Object> createRecurringBookings(RecurringBookingRequest request);
+
+    // Cancels every still-cancellable future booking of a series.
+    Map<String, Object> cancelRecurringSeries(String groupId);
 
     void autoCompleteOverdueBookings();
 

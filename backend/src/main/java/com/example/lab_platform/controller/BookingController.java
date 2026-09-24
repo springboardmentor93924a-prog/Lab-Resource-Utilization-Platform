@@ -1,6 +1,9 @@
 package com.example.lab_platform.controller;
 
+import com.example.lab_platform.dto.RecurringBookingRequest;
 import com.example.lab_platform.entity.Booking;
+import com.example.lab_platform.entity.BookingAudit;
+import com.example.lab_platform.service.BookingAuditService;
 import com.example.lab_platform.service.BookingService;
 
 import org.springframework.http.ResponseEntity;
@@ -8,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -15,9 +19,12 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final BookingAuditService bookingAuditService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService,
+                             BookingAuditService bookingAuditService) {
         this.bookingService = bookingService;
+        this.bookingAuditService = bookingAuditService;
     }
 
     // =========================================================
@@ -182,5 +189,79 @@ public class BookingController {
         return ResponseEntity.ok(
                 bookingService.completeBooking(id)
         );
+    }
+
+    // =========================================================
+    // MARK NO SHOW
+    // (Lab Manager / Department Head of the equipment's own
+    //  department; enforced in BookingServiceImpl.markNoShow)
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @PutMapping("/{id}/no-show")
+    public ResponseEntity<Booking> markNoShow(
+            @PathVariable Integer id) {
+
+        return ResponseEntity.ok(
+                bookingService.markNoShow(id)
+        );
+    }
+
+    // =========================================================
+    // RECURRING BOOKINGS (students only, like a normal booking)
+    // =========================================================
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/recurring")
+    public ResponseEntity<Map<String, Object>> createRecurring(
+            @RequestBody RecurringBookingRequest request) {
+
+        return ResponseEntity.ok(
+                bookingService.createRecurringBookings(request)
+        );
+    }
+
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @DeleteMapping("/recurring/{groupId}")
+    public ResponseEntity<Map<String, Object>> cancelRecurring(
+            @PathVariable String groupId) {
+
+        return ResponseEntity.ok(
+                bookingService.cancelRecurringSeries(groupId)
+        );
+    }
+
+    // =========================================================
+    // BOOKING HISTORY / AUDIT TRAIL
+    // Same visibility as opening the booking itself (getBookingById
+    // refuses anything outside the caller's own scope).
+    // =========================================================
+    @PreAuthorize("""
+        hasAnyRole(
+            'STUDENT',
+            'LAB_MANAGER',
+            'DEPARTMENT_HEAD',
+            'INSTITUTION_ADMIN',
+            'SYSTEM_ADMIN'
+        )
+    """)
+    @GetMapping("/{id}/audit")
+    public ResponseEntity<List<BookingAudit>> getAuditTrail(
+            @PathVariable Integer id) {
+
+        return bookingService.getBookingById(id)
+                .map(b -> ResponseEntity.ok(bookingAuditService.getTrail(id)))
+                .orElse(ResponseEntity.notFound().build());
     }
 }

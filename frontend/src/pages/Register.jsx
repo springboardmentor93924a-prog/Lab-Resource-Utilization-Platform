@@ -2,6 +2,10 @@ import "./Register.css";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
+// Special dropdown value: an Institution Admin whose college isn't in the
+// list yet. The System Admin creates the college when approving.
+const NEW_COLLEGE = "__new__";
+
 function Register() {
   const navigate = useNavigate();
 
@@ -13,6 +17,8 @@ function Register() {
     roleId: "",
     institutionId: "",
     departmentId: "",
+    newInstitutionName: "",
+    newInstitutionLocation: "",
   });
 
   const [roles, setRoles] = useState([]);
@@ -46,7 +52,13 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
       return res.json();
     })
     .then((data) => {
-      setRoles(Array.isArray(data) ? data : []);
+      // System Admin can never be self-registered - it is created by the
+      // platform owner only, so it is not offered here.
+      setRoles(
+        Array.isArray(data)
+          ? data.filter((r) => String(r.roleName).toUpperCase() !== "SYSTEM_ADMIN")
+          : []
+      );
     })
     .catch((err) => {
       console.error("Error fetching roles:", err);
@@ -73,7 +85,7 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
   // Fetch departments only for the selected institution
   useEffect(() => {
 
-  if (!formData.institutionId) {
+  if (!formData.institutionId || formData.institutionId === NEW_COLLEGE) {
     //setDepartments([]); if required remove slashes
     return;
   }
@@ -128,7 +140,10 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
       setFormData({
         ...formData,
         roleId: value,
-        institutionId: nextIsSystemAdmin ? "" : formData.institutionId,
+        institutionId:
+          nextIsSystemAdmin || (nextRole?.roleName !== "INSTITUTION_ADMIN" && formData.institutionId === NEW_COLLEGE)
+            ? ""
+            : formData.institutionId,
         departmentId: nextIsSystemAdmin ? "" : formData.departmentId,
       });
     } else {
@@ -142,6 +157,14 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+
+    const requestingNewCollege = formData.institutionId === NEW_COLLEGE;
+
+    if (requestingNewCollege && !formData.newInstitutionName.trim()) {
+      setError("Please enter your college name.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -158,9 +181,11 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
             password: formData.password,
             phone: formData.phone,
             roleId: Number(formData.roleId),
-            institutionId: needsInstitution && formData.institutionId
+            institutionId: needsInstitution && formData.institutionId && !requestingNewCollege
               ? Number(formData.institutionId)
               : null,
+            newInstitutionName: requestingNewCollege ? formData.newInstitutionName.trim() : null,
+            newInstitutionLocation: requestingNewCollege ? formData.newInstitutionLocation.trim() : null,
             departmentId: needsDepartment && formData.departmentId
               ? Number(formData.departmentId)
               : null,
@@ -185,7 +210,10 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
         );
       }
 
-      alert("Registration successful! Please login.");
+      alert(
+        (typeof data === "object" && data?.message) ||
+          "Registration successful! You can log in now."
+      );
       navigate("/");
 
     } catch (error) {
@@ -304,8 +332,45 @@ const needsDepartment = !isSystemAdmin && !isInstitutionAdmin;
                     {inst.institutionName}
                   </option>
                 ))}
+                {isInstitutionAdmin && (
+                  <option value={NEW_COLLEGE}>
+                    My college is not listed - request to add it
+                  </option>
+                )}
               </select>
             </div>
+          )}
+
+          {needsInstitution && isInstitutionAdmin && formData.institutionId === NEW_COLLEGE && (
+            <>
+              <div className="form-group">
+                <label>College Name</label>
+                <input
+                  type="text"
+                  name="newInstitutionName"
+                  value={formData.newInstitutionName}
+                  onChange={handleChange}
+                  placeholder="Full name of your college"
+                  maxLength={150}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>College Location (optional)</label>
+                <input
+                  type="text"
+                  name="newInstitutionLocation"
+                  value={formData.newInstitutionLocation}
+                  onChange={handleChange}
+                  placeholder="City, State"
+                  maxLength={200}
+                />
+              </div>
+              <p style={{ color: "#555", fontSize: "0.9em", margin: "4px 0 12px" }}>
+                Your college will be created for you. Add its departments
+                from the Departments page after you log in.
+              </p>
+            </>
           )}
 
           {isSystemAdmin && (

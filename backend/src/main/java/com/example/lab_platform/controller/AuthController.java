@@ -7,6 +7,7 @@ import com.example.lab_platform.dto.ResetPasswordRequest;
 import com.example.lab_platform.entity.User;
 import com.example.lab_platform.security.JwtService;
 import com.example.lab_platform.service.EmailService;
+import com.example.lab_platform.service.GoogleTokenVerifier;
 import com.example.lab_platform.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,15 +23,67 @@ public class AuthController {
     private final UserService userService;
     private final JwtService jwtService;
     private final EmailService emailService;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthController(
             UserService userService,
             JwtService jwtService,
-            EmailService emailService) {
+            EmailService emailService,
+            GoogleTokenVerifier googleTokenVerifier) {
 
         this.userService = userService;
         this.jwtService = jwtService;
         this.emailService = emailService;
+        this.googleTokenVerifier = googleTokenVerifier;
+    }
+
+
+    // Builds the login response (JWT + profile) for an already-verified,
+    // approved user. Shared by password login and Google sign-in.
+    private Map<String, Object> buildLoginResponse(User user) {
+
+        String role = "";
+
+        if (user.getRole() != null) {
+            role = user.getRole()
+                    .getRoleName()
+                    .toUpperCase()
+                    .replace(" ", "_");
+        }
+
+        String token = jwtService.generateToken(
+                user.getEmail(),
+                role
+        );
+
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("token", token);
+        response.put("userId", user.getUserId());
+        response.put("fullName", user.getFullName());
+        response.put("email", user.getEmail());
+        response.put("role", role);
+
+        if (user.getInstitution() != null) {
+            response.put("institutionId", user.getInstitution().getInstitutionId());
+            response.put("institutionName", user.getInstitution().getInstitutionName());
+        }
+
+        if (user.getDepartment() != null) {
+            response.put("departmentId", user.getDepartment().getDepartmentId());
+            response.put("departmentName", user.getDepartment().getDepartmentName());
+        }
+
+        return response;
+    }
+
+    private ResponseEntity<?> errorResponse(RuntimeException e) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("message", e.getMessage());
+
+        return ResponseEntity
+                .badRequest()
+                .body(error);
     }
 
 
@@ -45,56 +98,46 @@ public class AuthController {
 
             User user = userService.loginUser(loginRequest);
 
-            String role = "";
+            return ResponseEntity.ok(buildLoginResponse(user));
 
-            if (user.getRole() != null) {
-                role = user.getRole()
-                        .getRoleName()
-                        .toUpperCase()
-                        .replace(" ", "_");
-            }
+        } catch (RuntimeException e) {
+            return errorResponse(e);
+        }
+    }
 
-            String token = jwtService.generateToken(
-                    user.getEmail(),
-                    role
-            );
 
-            Map<String, Object> response = new HashMap<>();
+    // =========================
+    // LOGIN WITH GOOGLE
+    // The browser sends the Google ID token ("credential"). We verify it
+    // with Google, then log in ONLY if an approved account already exists
+    // for that verified email. No account is created and no role is
+    // granted here - registration + approval is the only way in.
+    // =========================
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(
+            @RequestBody Map<String, String> body) {
 
-            response.put("token", token);
-            response.put("userId", user.getUserId());
-            response.put("fullName", user.getFullName());
-            response.put("email", user.getEmail());
-            response.put("role", role);
+        try {
 
-            if (user.getInstitution() != null) {
-                response.put("institutionId", user.getInstitution().getInstitutionId());
-                response.put("institutionName", user.getInstitution().getInstitutionName());
-            }
+            String email = googleTokenVerifier.verifyAndGetEmail(
+                    body == null ? null : body.get("credential"));
 
-            if (user.getDepartment() != null) {
-    response.put("departmentId", user.getDepartment().getDepartmentId());
-    response.put("departmentName", user.getDepartment().getDepartmentName());
-}
-            return ResponseEntity.ok(response);
+            User user = userService.loginWithGoogleEmail(email);
 
-        }catch (RuntimeException e) {
-    Map<String, Object> error = new HashMap<>();
-    error.put("message", e.getMessage());
+            return ResponseEntity.ok(buildLoginResponse(user));
 
-    return ResponseEntity
-            .badRequest()
-            .body(error);
-}
+        } catch (RuntimeException e) {
+            return errorResponse(e);
+        }
     }
 
 
     // =========================
     // REGISTER
     // =========================
-    // Public self-registration. Any role listed in /api/roles (including
-    // admin-tier roles) can be selected here — self-registration is
-    // intentionally left open for every role.
+    // Public self-registration. Every self-registered account starts as
+    // "Pending" and needs approval before it can log in (see
+    // UserService.registerUserInternal). System Admin can't self-register.
     @PostMapping("/register")
     public ResponseEntity<?> register(
             @RequestBody RegisterRequest registerRequest) {
@@ -104,7 +147,20 @@ public class AuthController {
             User user =
                     userService.registerUser(registerRequest);
 
-            return ResponseEntity.ok(user);
+            // Never return the user record itself here. Self-registered
+            // accounts are "Pending" until an approver accepts them.
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", user.getStatus());
+
+            if ("Pending".equalsIgnoreCase(user.getStatus())) {
+                response.put("message",
+                        "Registration submitted. Your account must be approved before you can log in - "
+                                + "we'll email you at " + user.getEmail() + " once it is reviewed.");
+            } else {
+                response.put("message", "Account created. You can log in now.");
+            }
+
+            return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
 

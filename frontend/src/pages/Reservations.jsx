@@ -46,7 +46,14 @@ function Reservations() {
     startTime: "",
     endTime: "",
     purpose: "",
+    repeat: "NONE",
+    occurrences: 4,
   });
+
+  // Booking history / audit trail popup
+  const [historyFor, setHistoryFor] = useState(null);
+  const [historyRows, setHistoryRows] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const token = sessionStorage.getItem("token");
   const role = sessionStorage.getItem("role");
@@ -75,7 +82,7 @@ function Reservations() {
   //    Manager / Department Head of the department that OWNS the
   //    equipment approves ("Pending Approval").
   const getStaffActions = (booking) => {
-    const none = { canReview: false, canComplete: false, canEditOrCancel: false, waitingOn: "" };
+    const none = { canReview: false, canComplete: false, canEditOrCancel: false, canNoShow: false, waitingOn: "" };
     if (!canManageBookings) return none;
 
     const status = booking.bookingStatus;
@@ -84,8 +91,12 @@ function Reservations() {
     const isPending = isPendingInstitution || isPendingManager;
     const isLive = status === "Confirmed" || status === "In Use";
 
+    // No Show: only once the slot has started and the person never came.
+    const slotStarted = booking.startTime && new Date(booking.startTime) <= new Date();
+    const noShowEligible = isLive && slotStarted;
+
     if (role === "SYSTEM_ADMIN") {
-      return { canReview: isPending, canComplete: isLive, canEditOrCancel: isPending, waitingOn: "" };
+      return { canReview: isPending, canComplete: isLive, canEditOrCancel: isPending, canNoShow: noShowEligible, waitingOn: "" };
     }
 
     const sameInstitution =
@@ -99,6 +110,7 @@ function Reservations() {
         canReview: isPendingInstitution && sameInstitution,
         canComplete: false,
         canEditOrCancel: false,
+        canNoShow: false,
         waitingOn: "",
       };
     }
@@ -108,6 +120,7 @@ function Reservations() {
       canReview: isPendingManager && sameDepartment,
       canComplete: isLive && sameDepartment,
       canEditOrCancel: isPending && sameDepartment,
+      canNoShow: noShowEligible && sameDepartment,
       waitingOn: isPendingInstitution && sameDepartment ? "Institution Admin" : "",
     };
   };
@@ -226,6 +239,8 @@ function Reservations() {
       startTime: "",
       endTime: "",
       purpose: "",
+      repeat: "NONE",
+      occurrences: 4,
     });
     setEditingId(null);
     setShowForm(false);
@@ -248,6 +263,50 @@ function Reservations() {
     };
 
     try {
+      // Recurring: one request creates a daily / weekly series.
+      if (!editingId && formData.repeat !== "NONE") {
+        const recurringResponse = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/bookings/recurring`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              equipmentId: Number(formData.equipmentId),
+              startTime: formData.startTime,
+              endTime: formData.endTime,
+              purpose: formData.purpose,
+              repeat: formData.repeat,
+              occurrences: Number(formData.occurrences),
+            }),
+          }
+        );
+
+        const recurringData = await recurringResponse.json().catch(() => null);
+
+        if (!recurringResponse.ok) {
+          throw new Error(recurringData?.message || "Failed to create recurring booking");
+        }
+
+        const skippedList = Array.isArray(recurringData.skipped) ? recurringData.skipped : [];
+
+        alert(
+          `${recurringData.createdCount} booking(s) created.` +
+            (skippedList.length > 0
+              ? `\n\n${skippedList.length} skipped:\n` +
+                skippedList
+                  .map((x) => `• ${String(x.startTime).replace("T", " ")} - ${x.reason}`)
+                  .join("\n")
+              : "")
+        );
+
+        resetForm();
+        fetchBookings();
+        return;
+      }
+
       const url = editingId
         ? `${import.meta.env.VITE_API_BASE_URL}/api/bookings/${editingId}`
         : `${import.meta.env.VITE_API_BASE_URL}/api/bookings`;
@@ -355,6 +414,74 @@ function Reservations() {
       fetchBookings();
     } catch (error) {
       alert(error.message);
+    }
+  };
+
+  const handleNoShow = async (id) => {
+    if (!window.confirm("Mark this booking as a No Show? The slot will be released.")) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${id}/no-show`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Could not mark this booking as No Show");
+      }
+
+      fetchBookings();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleCancelSeries = async (groupId) => {
+    if (!window.confirm("Cancel all upcoming bookings in this recurring series?")) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/recurring/${groupId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Could not cancel the series");
+      }
+
+      alert(
+        `${data.cancelledCount} booking(s) cancelled.` +
+          (data.couldNotCancelCount > 0
+            ? ` ${data.couldNotCancelCount} could not be cancelled (already approved or started).`
+            : "")
+      );
+
+      fetchBookings();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const openHistory = async (booking) => {
+    setHistoryFor(booking);
+    setHistoryRows([]);
+    setHistoryLoading(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/${booking.bookingId}/audit`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setHistoryRows(await response.json());
+      }
+    } catch (error) {
+      console.error("History error:", error);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -718,7 +845,12 @@ function Reservations() {
                       <td>{booking.startTime ? booking.startTime.replace("T", " ") : "—"}</td>
                       <td>{booking.endTime ? booking.endTime.replace("T", " ") : "—"}</td>
                       <td>{getStatusBadge(booking.bookingStatus)}</td>
-                      <td>{booking.purpose || "—"}</td>
+                      <td>
+                        {booking.purpose || "—"}
+                        {booking.recurrenceGroupId && (
+                          <div style={{ fontSize: "11px", color: "#1d4ed8" }}>🔁 Recurring series</div>
+                        )}
+                      </td>
                       <td>
                         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
                           {/* Edit: only the student who owns the pending booking.
@@ -767,6 +899,36 @@ function Reservations() {
                               </button>
                             </>
                           )}
+
+                          {getStaffActions(booking).canNoShow && (
+                            <button
+                              onClick={() => handleNoShow(booking.bookingId)}
+                              style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #94a3b8", background: "#f1f5f9", color: "#334155", cursor: "pointer" }}
+                              title="The person did not come - release the slot"
+                            >
+                              No Show
+                            </button>
+                          )}
+
+                          {booking.recurrenceGroupId
+                            && (isOwner || getStaffActions(booking).canEditOrCancel)
+                            && ["Pending Approval", "Pending Institution Approval", "Confirmed"].includes(booking.bookingStatus) && (
+                            <button
+                              onClick={() => handleCancelSeries(booking.recurrenceGroupId)}
+                              style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #fca5a5", background: "#fff", color: "#991b1b", cursor: "pointer" }}
+                              title="Cancel every upcoming booking of this recurring series"
+                            >
+                              Cancel series
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => openHistory(booking)}
+                            style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}
+                            title="Who changed this booking, and when"
+                          >
+                            History
+                          </button>
 
                           {/* Inline issue reporting — two windows, same panel:
                               anytime while "In Use" (no deadline), or within
@@ -1010,6 +1172,36 @@ function Reservations() {
                 />
               </div>
 
+              {!editingId && isStudent && (
+                <div className="form-group">
+                  <label>Repeat</label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                    <select name="repeat" value={formData.repeat} onChange={handleChange}>
+                      <option value="NONE">Does not repeat</option>
+                      <option value="DAILY">Every day</option>
+                      <option value="WEEKLY">Every week</option>
+                    </select>
+
+                    {formData.repeat !== "NONE" && (
+                      <>
+                        <input
+                          type="number"
+                          name="occurrences"
+                          min="2"
+                          max="12"
+                          value={formData.occurrences}
+                          onChange={handleChange}
+                          style={{ width: "70px" }}
+                        />
+                        <span style={{ fontSize: "12px", color: "#64748b" }}>
+                          bookings in total (2-12). Clashing dates are skipped.
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="res-modal-actions">
                 <button type="button" className="btn-secondary" onClick={resetForm}>
                   Cancel
@@ -1019,6 +1211,42 @@ function Reservations() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {historyFor && (
+        <div className="res-modal-overlay" onClick={() => setHistoryFor(null)}>
+          <div className="res-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "560px" }}>
+            <h3>Booking #{historyFor.bookingId} history</h3>
+
+            {historyLoading ? (
+              <p>Loading...</p>
+            ) : historyRows.length === 0 ? (
+              <p style={{ color: "#64748b" }}>No history recorded for this booking yet.</p>
+            ) : (
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {historyRows.map((row) => (
+                  <li key={row.auditId} style={{ padding: "8px 0", borderBottom: "1px solid #e2e8f0" }}>
+                    <strong>
+                      {row.fromStatus ? `${row.fromStatus} → ${row.toStatus}` : row.toStatus}
+                    </strong>
+                    <div style={{ fontSize: "12px", color: "#64748b" }}>
+                      {row.changedAt ? String(row.changedAt).replace("T", " ").slice(0, 16) : ""} ·{" "}
+                      {row.actorName}
+                      {row.actorRole && row.actorRole !== "SYSTEM" ? ` (${String(row.actorRole).replace(/_/g, " ").toLowerCase()})` : ""}
+                      {row.note ? ` · ${row.note}` : ""}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="res-modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setHistoryFor(null)}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

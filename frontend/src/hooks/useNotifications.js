@@ -50,6 +50,23 @@ export default function useNotifications() {
           try {
             const notification = JSON.parse(message.body);
             setNotifications((prev) => [notification, ...prev]);
+
+            // Browser (desktop) push notification for a live arrival, when
+            // the user has allowed them - so an alert is visible even while
+            // this tab is in the background.
+            try {
+              if (
+                typeof window !== "undefined" &&
+                "Notification" in window &&
+                window.Notification.permission === "granted"
+              ) {
+                new window.Notification(notification.title || "Lab Platform", {
+                  body: notification.message || "",
+                });
+              }
+            } catch {
+              // browsers that block the constructor (some mobile ones) - ignore
+            }
           } catch {
             // EDGE CASE: malformed push payload — ignore rather than crash the UI
           }

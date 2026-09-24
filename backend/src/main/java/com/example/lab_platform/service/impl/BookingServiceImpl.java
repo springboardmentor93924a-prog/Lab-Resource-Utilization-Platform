@@ -15,6 +15,9 @@ import com.example.lab_platform.repository.ResourceSharingRepository;
 import com.example.lab_platform.repository.UserRepository;
 import com.example.lab_platform.service.NotificationService;
 import com.example.lab_platform.service.RealtimeUpdateService;
+import com.example.lab_platform.service.BookingAuditService;
+import com.example.lab_platform.dto.RecurringBookingRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,6 +39,10 @@ public class BookingServiceImpl implements BookingService {
     private final NotificationService notificationService;
         private final UserRepository userRepository;
         private final RealtimeUpdateService realtimeUpdateService;
+
+    // Booking history / audit trail (who changed which status, and when).
+    @Autowired
+    private BookingAuditService bookingAuditService;
 
 public BookingServiceImpl(
         BookingRepository bookingRepository,
@@ -325,6 +332,12 @@ public BookingServiceImpl(
 
     @Override
     public Booking createBooking(Booking booking) {
+        return createBookingInternal(booking, true);
+    }
+
+    // notify=false is used by recurring bookings, which send ONE summary
+    // notification for the whole series instead of one per occurrence.
+    private Booking createBookingInternal(Booking booking, boolean notify) {
 
         User loggedInUser = getLoggedInUser();
         String role = getRole(loggedInUser);
@@ -488,10 +501,13 @@ if (hasUnresolvedIssue) {
 
         Booking saved = bookingRepository.save(booking);
 
+        bookingAuditService.record(saved, null, saved.getBookingStatus(), loggedInUser,
+                saved.getRecurrenceGroupId() != null ? "Booking requested (recurring series)" : "Booking requested");
+
 // EDGE CASE: notify the actual booking owner, not necessarily the
 // caller — a manager can book on behalf of a student (booking.getUser()
 // is set earlier in this method for both branches).
-        notificationService.create(
+        if (notify) notificationService.create(
         saved.getUser(),
         "BOOKING_CONFIRMATION",
         saved.getBookingStatus().equals("Confirmed") ? "Booking confirmed" : "Booking request submitted",
@@ -500,7 +516,7 @@ if (hasUnresolvedIssue) {
         saved.getBookingId()
         );
 
-                if (crossInstitution) {
+                if (crossInstitution && notify) {
                         notifyInstitutionAdmins(fullEquipment, saved);
                 }
 
@@ -804,9 +820,14 @@ public Booking updateBooking(
         );
     }
 
-    return bookingRepository.save(
+    Booking updatedBooking = bookingRepository.save(
             existingBooking
     );
+
+    bookingAuditService.record(updatedBooking, updatedBooking.getBookingStatus(),
+            updatedBooking.getBookingStatus(), loggedInUser, "Booking details edited");
+
+    return updatedBooking;
 }
 
 public void deleteBooking(Integer id) {
@@ -852,6 +873,8 @@ public void deleteBooking(Integer id) {
 
     existingBooking.setBookingStatus("Cancelled");
     bookingRepository.save(existingBooking);
+
+    bookingAuditService.record(existingBooking, previousStatus, "Cancelled", loggedInUser, "Booking cancelled");
 
     boolean wasHoldingEquipment =
             "Confirmed".equalsIgnoreCase(previousStatus)
@@ -930,6 +953,8 @@ public void deleteBooking(Integer id) {
 
                         booking.setBookingStatus("Pending Approval");
                         Booking saved = bookingRepository.save(booking);
+                        bookingAuditService.record(saved, "Pending Institution Approval", "Pending Approval",
+                                loggedInUser, "Passed institution review");
                         notifyInstitutionManagers(equipment, saved);
                         notificationService.create(
                                         booking.getUser(),
@@ -1070,6 +1095,9 @@ public void deleteBooking(Integer id) {
 
         Booking savedApproval = bookingRepository.save(booking);
 
+        bookingAuditService.record(savedApproval, "Pending Approval", savedApproval.getBookingStatus(),
+                loggedInUser, "Approved");
+
         // Previously nothing notified the requester when their booking
         // was actually approved — only booking creation and the two
         // cross-institution intermediate hops fired a notification.
@@ -1121,10 +1149,14 @@ public void deleteBooking(Integer id) {
                         throw new RuntimeException("Only the equipment owner's institution admin can reject this request first");
                 }
 
+        String statusBeforeReject = booking.getBookingStatus();
+
         booking.setBookingStatus("Rejected");
 
         Booking savedBooking =
                 bookingRepository.save(booking);
+
+        bookingAuditService.record(savedBooking, statusBeforeReject, "Rejected", loggedInUser, "Rejected");
 
         notificationService.create(
                 savedBooking.getUser(),
@@ -1203,6 +1235,10 @@ public void deleteBooking(Integer id) {
 
         Booking savedCompletion = bookingRepository.save(booking);
 
+        bookingAuditService.record(savedCompletion,
+                statusBeforeCompleting.equals("in use") ? "In Use" : "Confirmed",
+                "Completed", loggedInUser, "Marked completed by staff");
+
         notificationService.create(
                 savedCompletion.getUser(),
                 "BOOKING_COMPLETED",
@@ -1245,6 +1281,8 @@ public void deleteBooking(Integer id) {
                 continue;
             }
 
+            String autoFromStatus = booking.getBookingStatus();
+
             booking.setBookingStatus("Completed");
 
             Equipment equipment = booking.getEquipment();
@@ -1268,6 +1306,9 @@ public void deleteBooking(Integer id) {
             }
 
             Booking savedAutoCompletion = bookingRepository.save(booking);
+
+            bookingAuditService.record(savedAutoCompletion, autoFromStatus, "Completed", null,
+                    "Automatically completed after the end time");
 
             notificationService.create(
                     savedAutoCompletion.getUser(),
@@ -1302,8 +1343,13 @@ public void deleteBooking(Integer id) {
                 continue;
             }
 
+            String expiredFromStatus = booking.getBookingStatus();
+
             booking.setBookingStatus("Rejected");
             Booking savedExpiry = bookingRepository.save(booking);
+
+            bookingAuditService.record(savedExpiry, expiredFromStatus, "Rejected", null,
+                    "Expired - the requested slot passed before it was approved");
 
             notificationService.create(
                     savedExpiry.getUser(),
@@ -1319,6 +1365,222 @@ public void deleteBooking(Integer id) {
                 notifyNextWaitlistedUser(booking.getEquipment());
             }
         }
+    }
+
+    // =========================================================
+    // NO SHOW
+    // A Lab Manager / Department Head (of the equipment's own
+    // department) marks a booking whose slot has started as a No
+    // Show: the person never came. The slot is freed, the next
+    // waitlisted user is offered it, and the booking no longer
+    // counts as usage (utilization only counts Confirmed / In Use /
+    // Completed bookings) and never produces a usage cost.
+    // =========================================================
+    @Override
+    public Booking markNoShow(Integer id) {
+
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        User loggedInUser = getLoggedInUser();
+        String role = getRole(loggedInUser);
+
+        if (!role.equalsIgnoreCase("LAB_MANAGER")
+                && !role.equalsIgnoreCase("DEPARTMENT_HEAD")
+                && !role.equalsIgnoreCase("SYSTEM_ADMIN")) {
+
+            throw new RuntimeException("Only a Lab Manager or Department Head can mark a No Show");
+        }
+
+        if (booking.getEquipment() != null) {
+            assertSameInstitutionAsEquipment(loggedInUser, role, booking.getEquipment());
+        }
+
+        String currentStatus = normalizeBookingStatus(booking.getBookingStatus());
+
+        if (!currentStatus.equals("confirmed") && !currentStatus.equals("in use")) {
+            throw new RuntimeException("Only a Confirmed or In Use booking can be marked as No Show");
+        }
+
+        if (booking.getStartTime() == null || booking.getStartTime().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("A booking can only be marked No Show after its start time");
+        }
+
+        String fromStatus = currentStatus.equals("in use") ? "In Use" : "Confirmed";
+
+        booking.setBookingStatus("No Show");
+
+        Equipment equipment = booking.getEquipment();
+
+        if (equipment != null) {
+            equipment.setStatus("Available");
+            equipmentRepository.save(equipment);
+        }
+
+        Booking saved = bookingRepository.save(booking);
+
+        bookingAuditService.record(saved, fromStatus, "No Show", loggedInUser, "Marked as No Show");
+
+        notificationService.create(
+                saved.getUser(),
+                "BOOKING_NO_SHOW",
+                "Booking marked as No Show",
+                "Your booking for " + (equipment != null ? equipment.getEquipmentName() : "the equipment")
+                        + " was marked as a no-show, and the slot has been released.",
+                saved.getBookingId()
+        );
+
+        if (equipment != null) {
+            notifyNextWaitlistedUser(equipment);
+        }
+
+        return saved;
+    }
+
+    // =========================================================
+    // RECURRING BOOKINGS
+    // Books the same slot every day or every week. Each occurrence
+    // is a normal booking (same checks, same approval workflow); an
+    // occurrence that clashes with another booking or maintenance is
+    // skipped and reported back, the rest are still created.
+    // =========================================================
+    @Override
+    public java.util.Map<String, Object> createRecurringBookings(RecurringBookingRequest request) {
+
+        if (request == null
+                || request.getEquipmentId() == null
+                || request.getStartTime() == null
+                || request.getEndTime() == null) {
+
+            throw new RuntimeException("Equipment, start time and end time are required");
+        }
+
+        String repeat = request.getRepeat() == null ? "" : request.getRepeat().trim().toUpperCase();
+
+        if (!repeat.equals("DAILY") && !repeat.equals("WEEKLY")) {
+            throw new RuntimeException("Repeat must be DAILY or WEEKLY");
+        }
+
+        int occurrences = request.getOccurrences() == null ? 0 : request.getOccurrences();
+
+        if (occurrences < 2 || occurrences > 12) {
+            throw new RuntimeException("A recurring booking needs between 2 and 12 occurrences");
+        }
+
+        String groupId = java.util.UUID.randomUUID().toString();
+
+        List<Booking> created = new java.util.ArrayList<>();
+        List<java.util.Map<String, String>> skipped = new java.util.ArrayList<>();
+
+        for (int i = 0; i < occurrences; i++) {
+
+            LocalDateTime start = repeat.equals("DAILY")
+                    ? request.getStartTime().plusDays(i)
+                    : request.getStartTime().plusWeeks(i);
+
+            LocalDateTime end = repeat.equals("DAILY")
+                    ? request.getEndTime().plusDays(i)
+                    : request.getEndTime().plusWeeks(i);
+
+            Equipment stub = new Equipment();
+            stub.setEquipmentId(request.getEquipmentId());
+
+            Booking occurrence = new Booking();
+            occurrence.setEquipment(stub);
+            occurrence.setStartTime(start);
+            occurrence.setEndTime(end);
+            occurrence.setPurpose(request.getPurpose());
+            occurrence.setRecurrenceGroupId(groupId);
+
+            try {
+
+                created.add(createBookingInternal(occurrence, false));
+
+            } catch (RuntimeException ex) {
+
+                java.util.Map<String, String> skip = new java.util.HashMap<>();
+                skip.put("startTime", start.toString());
+                skip.put("reason", ex.getMessage());
+                skipped.add(skip);
+            }
+        }
+
+        if (created.isEmpty()) {
+            throw new RuntimeException(
+                    "No occurrence could be booked. " + skipped.get(0).get("reason"));
+        }
+
+        Booking first = created.get(0);
+
+        String equipmentName = first.getEquipment() != null
+                ? first.getEquipment().getEquipmentName() : "the equipment";
+
+        notificationService.create(
+                first.getUser(),
+                "BOOKING_CONFIRMATION",
+                "Recurring booking submitted",
+                created.size() + " " + repeat.toLowerCase() + " bookings for " + equipmentName
+                        + " were requested"
+                        + (skipped.isEmpty() ? "." : " (" + skipped.size() + " skipped because of clashes)."),
+                first.getBookingId()
+        );
+
+        if ("Pending Institution Approval".equalsIgnoreCase(first.getBookingStatus())
+                && first.getEquipment() != null) {
+
+            notifyInstitutionAdmins(first.getEquipment(), first);
+        }
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("groupId", groupId);
+        result.put("createdCount", created.size());
+        result.put("skipped", skipped);
+        result.put("bookings", created);
+
+        return result;
+    }
+
+    @Override
+    public java.util.Map<String, Object> cancelRecurringSeries(String groupId) {
+
+        List<Booking> series = bookingRepository.findByRecurrenceGroupId(groupId);
+
+        if (series.isEmpty()) {
+            throw new RuntimeException("Recurring series not found");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        int cancelled = 0;
+        int couldNotCancel = 0;
+
+        for (Booking booking : series) {
+
+            String status = normalizeBookingStatus(booking.getBookingStatus());
+
+            boolean stillOpen = status.equals("pending approval")
+                    || status.equals("pending institution approval")
+                    || status.equals("confirmed");
+
+            if (!stillOpen
+                    || booking.getStartTime() == null
+                    || booking.getStartTime().isBefore(now)) {
+                continue;
+            }
+
+            try {
+                // Same permission rules as cancelling a single booking.
+                deleteBooking(booking.getBookingId());
+                cancelled++;
+            } catch (RuntimeException ex) {
+                couldNotCancel++;
+            }
+        }
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("cancelledCount", cancelled);
+        result.put("couldNotCancelCount", couldNotCancel);
+
+        return result;
     }
 
     private String normalizeBookingStatus(String status) {

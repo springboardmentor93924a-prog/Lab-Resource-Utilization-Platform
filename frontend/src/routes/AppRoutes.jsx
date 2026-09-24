@@ -15,6 +15,9 @@ import ResourceSharing from "../pages/ResourceSharing";
 import DemandAnalysis from "../pages/DemandAnalysis";
 import CostManagement from "../pages/CostManagement";
 import AnalyticsDashboard from "../pages/AnalyticsDashboard";
+import Departments from "../pages/Departments";
+import Profile from "../pages/Profile";
+import Notifications from "../pages/Notifications";
 
 // Task 2
 import Utilization from "../pages/Utilization";
@@ -305,6 +308,65 @@ function AppRoutes() {
           >
             <MainLayout>
               <AnalyticsDashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Notifications Center - every role */}
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "STUDENT",
+              "LAB_TECHNICIAN",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Notifications />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* My profile - every role */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "STUDENT",
+              "LAB_TECHNICIAN",
+              "LAB_MANAGER",
+              "DEPARTMENT_HEAD",
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Profile />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Departments of an institution */}
+      <Route
+        path="/departments"
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "INSTITUTION_ADMIN",
+              "SYSTEM_ADMIN"
+            ]}
+          >
+            <MainLayout>
+              <Departments />
             </MainLayout>
           </ProtectedRoute>
         }
