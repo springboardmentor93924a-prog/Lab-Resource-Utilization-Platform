@@ -36,6 +36,10 @@ public class Booking {
     @Column(name = "purpose")
     private String purpose;
 
+    // Bookings created together as one recurring series share this id.
+    @Column(name = "recurrence_group_id", length = 40)
+    private String recurrenceGroupId;
+
     public Booking() {
     }
 
@@ -101,5 +105,13 @@ public class Booking {
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
+    }
+
+    public String getRecurrenceGroupId() {
+        return recurrenceGroupId;
+    }
+
+    public void setRecurrenceGroupId(String recurrenceGroupId) {
+        this.recurrenceGroupId = recurrenceGroupId;
     }
 }

@@ -31,6 +31,15 @@ public class UserService {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(UserService.class);
+
     private User getLoggedInUser() {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -60,29 +69,54 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
     // =========================
     // REGISTER USER
     // Used by both the public POST /api/auth/register endpoint and the
-    // admin-only POST /api/users/register endpoint. Self-registration is
-    // intentionally unrestricted for every role.
+    // admin-only POST /api/users/register endpoint.
+    //
+    //  - Registration is open: every self-registered account (any role
+    //    except SYSTEM_ADMIN) is Active immediately, so anyone can log in
+    //    and try the platform's functionality right away. There is no
+    //    approval queue - roles are picked at registration and can be
+    //    corrected later by an Institution Admin / System Admin from the
+    //    Users page if needed.
+    //  - SYSTEM_ADMIN can never be self-registered.
+    //  - A logged-in Institution Admin / System Admin creating a user
+    //    from the Users page creates an already-"Active" account, since
+    //    the admin is the approver.
     // =========================
     public User registerUser(RegisterRequest registerRequest) {
         return registerUserInternal(registerRequest);
     }
 
+    private String roleKey(Role role) {
+        if (role == null || role.getRoleName() == null) {
+            return "";
+        }
+        return role.getRoleName().trim().toUpperCase().replace(" ", "_");
+    }
+
+    private String roleKey(User user) {
+        return user == null ? "" : roleKey(user.getRole());
+    }
+
+    private String prettyRole(User user) {
+        String key = roleKey(user).replace("_", " ").toLowerCase();
+        return key.isEmpty() ? "user" : Character.toUpperCase(key.charAt(0)) + key.substring(1);
+    }
+
     private User registerUserInternal(RegisterRequest registerRequest) {
 
-        // If this is an authenticated INSTITUTION_ADMIN registering a
-        // user via POST /api/users/register (as opposed to the public,
-        // unauthenticated POST /api/auth/register self-signup path),
-        // the institutionId in the request body is NEVER trusted —
-        // it's always forced to the admin's own institution. Previously
-        // an Institution Admin could send any institutionId and create
-        // users under a completely different college than their own.
-        // SYSTEM_ADMIN is exempt (platform-wide, can onboard any
-        // institution), and unauthenticated self-registration is
-        // untouched (there is no caller to scope to).
         User caller = getLoggedInUser();
-        if (caller != null
-                && caller.getRole() != null
-                && "INSTITUTION_ADMIN".equalsIgnoreCase(caller.getRole().getRoleName())) {
+        String callerRole = roleKey(caller);
+
+        // Only a logged-in Institution Admin / System Admin creates
+        // ready-to-use accounts. Anyone else - including a logged-in
+        // user who calls the public endpoint - is a self-registration.
+        boolean createdByAdmin = callerRole.equals("INSTITUTION_ADMIN")
+                || callerRole.equals("SYSTEM_ADMIN");
+
+        // If this is an authenticated INSTITUTION_ADMIN registering a
+        // user, the institutionId in the request body is NEVER trusted -
+        // it's always forced to the admin's own institution.
+        if (callerRole.equals("INSTITUTION_ADMIN")) {
 
             if (caller.getInstitution() == null) {
                 throw new RuntimeException("Your account has no institution on file");
@@ -91,12 +125,18 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
             registerRequest.setInstitutionId(caller.getInstitution().getInstitutionId());
         }
 
-        // Check duplicate email
+        // Check duplicate email. A previously REJECTED request may be
+        // submitted again (the same account record is reused).
         String normalizedEmail = registerRequest.getEmail() == null
                 ? null
                 : registerRequest.getEmail().trim().toLowerCase();
 
-        if (userRepository.existsByEmail(normalizedEmail)) {
+        User existingUser = normalizedEmail == null
+                ? null
+                : userRepository.findByEmail(normalizedEmail).orElse(null);
+
+        if (existingUser != null) {
+
             throw new RuntimeException("Email is already registered!");
         }
 
@@ -106,24 +146,60 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
                         new RuntimeException("Invalid role selected!")
                 );
 
-       // Institution/Department requirements are role-dependent, matching
-       // how these roles actually behave everywhere else in the app
-       // (see e.g. BookingServiceImpl.assertSameInstitutionAsEquipment,
-       // which already treats SYSTEM_ADMIN as platform-wide):
-       //   - SYSTEM_ADMIN:       platform-wide — belongs to NO institution
-       //                         and NO department.
-       //   - INSTITUTION_ADMIN:  oversees one whole institution — needs an
-       //                         institution, but no single department
-       //                         within it.
-       //   - every other role:   scoped to one department inside one
-       //                         institution — needs both.
-        boolean isSystemAdmin = "SYSTEM_ADMIN".equalsIgnoreCase(role.getRoleName());
-        boolean isInstitutionAdmin = "INSTITUTION_ADMIN".equalsIgnoreCase(role.getRoleName());
+        String targetRole = roleKey(role);
+
+        // A System Admin can only ever be created by another System Admin.
+        if (targetRole.equals("SYSTEM_ADMIN") && !callerRole.equals("SYSTEM_ADMIN")) {
+            throw new RuntimeException(
+                    "System Admin accounts cannot be created through registration. "
+                            + "Contact the platform owner.");
+        }
+
+        // Institution/Department requirements are role-dependent:
+        //   - SYSTEM_ADMIN:       platform-wide - no institution, no department.
+        //   - INSTITUTION_ADMIN:  needs an institution, no single department.
+        //   - every other role:   needs both.
+        boolean isSystemAdmin = targetRole.equals("SYSTEM_ADMIN");
+        boolean isInstitutionAdmin = targetRole.equals("INSTITUTION_ADMIN");
+
+        // A new college's head can register before the college exists in
+        // the system: they type the college name instead of picking one,
+        // and it is created right away (there is no approval step to wait
+        // for - see the comment at the top of this method).
+        final String newInstitutionName = registerRequest.getNewInstitutionName() == null
+                ? ""
+                : registerRequest.getNewInstitutionName().trim();
+
+        String newInstitutionLocation = registerRequest.getNewInstitutionLocation() == null
+                ? ""
+                : registerRequest.getNewInstitutionLocation().trim();
+
+        boolean requestsNewInstitution = isInstitutionAdmin
+                && registerRequest.getInstitutionId() == null
+                && !newInstitutionName.isEmpty();
 
         Institution institution = null;
         Department department = null;
 
-        if (!isSystemAdmin) {
+        if (requestsNewInstitution) {
+
+            if (newInstitutionName.length() > 150 || newInstitutionLocation.length() > 200) {
+                throw new RuntimeException("College name or location is too long.");
+            }
+
+            if (institutionRepository.existsByInstitutionNameIgnoreCase(newInstitutionName)) {
+                throw new RuntimeException(
+                        "A college with this name is already registered. "
+                                + "Select it from the list instead.");
+            }
+
+            Institution newInstitution = new Institution();
+            newInstitution.setInstitutionName(newInstitutionName);
+            newInstitution.setLocation(newInstitutionLocation.isEmpty() ? null : newInstitutionLocation);
+
+            institution = institutionRepository.save(newInstitution);
+
+        } else if (!isSystemAdmin) {
 
             if (registerRequest.getInstitutionId() == null) {
                 throw new RuntimeException("Institution is required for this role!");
@@ -152,30 +228,83 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
                 }
             }
         }
-        // SYSTEM_ADMIN: institution and department both stay null —
-        // intentionally, not a bug. Enforced above, not left implicit.
 
-        // Create user
-        User user = new User();
+        // Create (or refresh a rejected) user
+        User user = existingUser != null ? existingUser : new User();
 
         user.setFullName(registerRequest.getFullName());
         user.setEmail(normalizedEmail);
-        
-        // Encode password using BCrypt instead of storing in plain text
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        
         user.setPhone(registerRequest.getPhone());
-
-        // Set role and department
         user.setRole(role);
         user.setDepartment(department);
-
         user.setInstitution(institution);
-
-        // Default status
+        user.setStatusReason(null);
         user.setStatus("Active");
 
         return userRepository.save(user);
+    }
+
+
+    // =========================
+    // PROFILE
+    // Every logged-in user manages their OWN profile: name, phone and
+    // password. Email, role, institution and department can only be
+    // changed by an administrator.
+    // =========================
+    public User getMyProfile() {
+
+        User me = getLoggedInUser();
+
+        if (me == null) {
+            throw new RuntimeException("You are not logged in");
+        }
+
+        return userRepository.findById(me.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public User updateMyProfile(String fullName, String phone) {
+
+        User user = getMyProfile();
+
+        String cleanName = fullName == null ? "" : fullName.trim();
+
+        if (cleanName.length() < 2 || cleanName.length() > 100) {
+            throw new RuntimeException("Name must be between 2 and 100 characters");
+        }
+
+        String cleanPhone = phone == null ? "" : phone.trim();
+
+        if (!cleanPhone.isEmpty() && !cleanPhone.matches("^[+]?[0-9 ()-]{7,20}$")) {
+            throw new RuntimeException("Enter a valid phone number");
+        }
+
+        user.setFullName(cleanName);
+        user.setPhone(cleanPhone.isEmpty() ? null : cleanPhone);
+
+        return userRepository.save(user);
+    }
+
+    public void changeMyPassword(String currentPassword, String newPassword) {
+
+        User user = getMyProfile();
+
+        if (currentPassword == null
+                || !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new RuntimeException("New password must be at least 6 characters");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new RuntimeException("New password must be different from the current one");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
 
@@ -197,15 +326,40 @@ private PasswordResetTokenRepository passwordResetTokenRepository;
 
         User user = userOptional.get();
 
-        // Check account status
-        if (!"Active".equalsIgnoreCase(user.getStatus())) {
-            throw new RuntimeException("User account is inactive!");
-        }
-
-        // Check password using passwordEncoder matches for hashed passwords
+        // Check the password FIRST, so the account's approval status is
+        // only revealed to someone who actually knows the password.
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid credentials!");
         }
+
+        assertCanLogin(user);
+
+        return user;
+    }
+
+    // Shared by password login and Google sign-in. Registration is open
+    // (no approval queue), so the only reason an account isn't Active is
+    // an administrator deactivating it from the Users page.
+    private void assertCanLogin(User user) {
+
+        String status = user.getStatus() == null ? "" : user.getStatus();
+
+        if (!"Active".equalsIgnoreCase(status)) {
+            throw new RuntimeException("User account is inactive!");
+        }
+    }
+
+    // "Sign in with Google": Google has already proven the email belongs to
+    // this person. We still require an EXISTING, APPROVED account - Google
+    // sign-in never creates an account or grants any role.
+    public User loginWithGoogleEmail(String verifiedEmail) {
+
+        User user = userRepository.findByEmail(verifiedEmail)
+                .orElseThrow(() -> new RuntimeException(
+                        "No account found for this Google email. Please register first "
+                                + "using the same email address."));
+
+        assertCanLogin(user);
 
         return user;
     }

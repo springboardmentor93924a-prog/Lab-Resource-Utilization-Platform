@@ -320,6 +320,19 @@ const canAccessCertification = [
           </Link>
         )}
 
+        {/* Departments of the institution */}
+        {canAccessUsers && (
+          <Link
+            to="/departments"
+            className={`sidebar-link ${
+              isActive("/departments") ? "active" : ""
+            }`}
+          >
+            <span>🏛️</span>
+            Departments
+          </Link>
+        )}
+
         {/* Users */}
         {canAccessUsers && (
           <Link
@@ -332,6 +345,28 @@ const canAccessCertification = [
             Users
           </Link>
         )}
+
+        {/* Notifications Center - every role */}
+        <Link
+          to="/notifications"
+          className={`sidebar-link ${
+            isActive("/notifications") ? "active" : ""
+          }`}
+        >
+          <span>🔔</span>
+          Notifications
+        </Link>
+
+        {/* My profile - every role */}
+        <Link
+          to="/profile"
+          className={`sidebar-link ${
+            isActive("/profile") ? "active" : ""
+          }`}
+        >
+          <span>🙍</span>
+          Profile
+        </Link>
 
       </nav>
 

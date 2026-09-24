@@ -14,6 +14,8 @@ import java.util.List;
 public interface BookingRepository
         extends JpaRepository<Booking, Integer> {
 List<Booking> findByUser_UserId(Integer userId);
+
+    List<Booking> findByRecurrenceGroupId(String recurrenceGroupId);
     List<Booking> findByBookingStatus(
             String bookingStatus
     );

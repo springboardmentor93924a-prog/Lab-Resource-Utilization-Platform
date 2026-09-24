@@ -41,6 +41,20 @@ public class User {
     @Column(name = "status", length = 20)
     private String status = "Active";
 
+    // Why a registration was rejected (shown to the applicant on login and in
+    // the rejection email). Empty for every other status.
+    @Column(name = "status_reason", length = 255)
+    private String statusReason;
+
+    // A new Institution Admin whose college doesn't exist yet: the
+    // requested college is stored here until the System Admin approves,
+    // at which point the institution is created and linked to this user.
+    @Column(name = "requested_institution_name", length = 150)
+    private String requestedInstitutionName;
+
+    @Column(name = "requested_institution_location", length = 200)
+    private String requestedInstitutionLocation;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -145,4 +159,28 @@ public void setInstitution(Institution institution) {
     this.institution = institution;
 }
 
+
+    public String getRequestedInstitutionName() {
+        return requestedInstitutionName;
+    }
+
+    public void setRequestedInstitutionName(String requestedInstitutionName) {
+        this.requestedInstitutionName = requestedInstitutionName;
+    }
+
+    public String getRequestedInstitutionLocation() {
+        return requestedInstitutionLocation;
+    }
+
+    public void setRequestedInstitutionLocation(String requestedInstitutionLocation) {
+        this.requestedInstitutionLocation = requestedInstitutionLocation;
+    }
+
+    public String getStatusReason() {
+        return statusReason;
+    }
+
+    public void setStatusReason(String statusReason) {
+        this.statusReason = statusReason;
+    }
 }

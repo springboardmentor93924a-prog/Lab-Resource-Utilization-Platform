@@ -6,6 +6,8 @@ import com.example.lab_platform.service.BookingService;
 import com.example.lab_platform.service.NotificationService;
 import com.example.lab_platform.service.CostManagementService;
 import com.example.lab_platform.service.RealtimeUpdateService;
+import com.example.lab_platform.service.BookingAuditService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,9 @@ private final UserRepository userRepository;
 private final CostManagementService costManagementService;
 private final WaitlistRepository waitlistRepository;
 private final RealtimeUpdateService realtimeUpdateService;
+
+@Autowired
+private BookingAuditService bookingAuditService;
 
 public EquipmentStatusScheduler(
         BookingRepository bookingRepository,
@@ -150,6 +155,9 @@ public EquipmentStatusScheduler(
             if (!now.isBefore(booking.getStartTime()) && now.isBefore(booking.getEndTime())) {
                 booking.setBookingStatus("In Use");
                 bookingRepository.save(booking);
+
+                bookingAuditService.record(booking, "Confirmed", "In Use", null,
+                        "Started automatically at the booked start time");
             }
         }
     }
