@@ -1,4 +1,4 @@
-import { LayoutDashboard, Share2, Users, Gauge, Receipt, ScrollText, UserRound, Package, GraduationCap, FileText } from "lucide-react";
+import { LayoutDashboard, Share2, Users, Gauge, Receipt, ScrollText, UserRound, Package, GraduationCap, FileText, Bell } from "lucide-react";
 
 /* ================================================================== */
 /*  Institution Admin -> Dashboard -> Sidebar nav items                 */
@@ -13,5 +13,6 @@ export const NAV_ITEMS = [
   { id: "analytics", label: "Utilization Heatmap", icon: Gauge },
   { id: "billing", label: "Billing & Cost Recovery", icon: Receipt },
   { id: "audit", label: "Audit Logs", icon: ScrollText },
+  { id: "notifications", label: "Notifications", icon: Bell },
   { id: "profile", label: "Profile", icon: UserRound },
 ];

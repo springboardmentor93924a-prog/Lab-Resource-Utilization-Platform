@@ -14,6 +14,7 @@ import Notifications from "../notifications/Notifications.jsx";
 import Profile from "../profile/Profile.jsx";
 import { maintenanceApi } from "../../../api/maintenanceApi.js";
 import { equipmentApi } from "../../../api/equipmentApi.js";
+import { notificationApi } from "../../../api/notificationApi.js";
 import { formatDate } from "../../../utils/formatters.js";
 
 /* ================================================================== */
@@ -75,6 +76,14 @@ export default function TechnicianDashboard({ user, onLogout, toast }) {
     } catch (e) {
       console.warn("Could not fetch backend technician tasks:", e);
     }
+
+    // 3. Fetch real notifications from backend via notificationApi
+    try {
+      const apiNotifs = await notificationApi.list();
+      setNotifications(apiNotifs || []);
+    } catch (nErr) {
+      console.warn("Could not fetch notifications for technician:", nErr);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -87,7 +96,9 @@ export default function TechnicianDashboard({ user, onLogout, toast }) {
 
   const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.id, e])), [equipment]);
   const myTasks = useMemo(() => tasks, [tasks]);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !(n.isRead ?? n.read)).length;
+  }, [notifications]);
 
   const handleSubmitPlan = async (payload) => {
     if (!selectedTaskId) return;
@@ -146,7 +157,16 @@ export default function TechnicianDashboard({ user, onLogout, toast }) {
     setCalModalFor(null);
   };
 
-  const markNotifRead = (id) => setNotifications((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  const markNotifRead = async (id) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications((list) =>
+        list.map((n) => ((n.notificationId === id || n.id === id) ? { ...n, isRead: true, read: true } : n))
+      );
+    } catch (err) {
+      toast(err?.message || "Could not update notification.", "error");
+    }
+  };
 
   return (
     <DashboardShell

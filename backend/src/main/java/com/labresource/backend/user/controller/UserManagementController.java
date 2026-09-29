@@ -1,5 +1,6 @@
 package com.labresource.backend.user.controller;
 
+import com.labresource.backend.auth.dto.UserSummaryDto;
 import com.labresource.backend.security.UserPrincipal;
 import com.labresource.backend.user.dto.InstitutionStaffRosterDto;
 import com.labresource.backend.user.dto.StaffMemberDto;
@@ -19,6 +20,32 @@ import java.util.Map;
 public class UserManagementController {
 
     private final UserManagementService userManagementService;
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN', 'ROLE_SYSTEM_ADMIN')")
+    public List<UserSummaryDto> getAllUsers(
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long institutionId,
+            @RequestParam(required = false) String search) {
+        return userManagementService.getAllUsers(role, status, institutionId, search);
+    }
+
+    @PostMapping("/{userId}/toggle-active")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN', 'ROLE_SYSTEM_ADMIN')")
+    public UserSummaryDto toggleUserActiveStatus(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long userId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null ? body.get("reason") : null;
+        return userManagementService.toggleUserActiveStatus(principal, userId, reason);
+    }
+
+    @GetMapping("/pending-registrations")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN', 'ROLE_SYSTEM_ADMIN')")
+    public List<UserSummaryDto> getPendingRegistrations() {
+        return userManagementService.getPendingRegistrations();
+    }
 
     @GetMapping("/staff-roster")
     @PreAuthorize("hasAnyAuthority('INSTITUTION_ADMIN', 'ROLE_INSTITUTION_ADMIN', 'MANAGE_USERS', 'VIEW_STAFF')")

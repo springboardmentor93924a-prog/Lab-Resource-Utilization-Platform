@@ -35,6 +35,12 @@ public class StaffInvitationController {
         return invitationService.getInvitations(admin);
     }
 
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN', 'ROLE_SYSTEM_ADMIN')")
+    public List<StaffInvitationResponseDto> getAllInvitations() {
+        return invitationService.getAllInvitations();
+    }
+
     @PostMapping("/{invitationId}/cancel")
     @PreAuthorize("hasAuthority('MANAGE_USERS') or hasRole('INSTITUTION_ADMIN')")
     public void cancelInvitation(

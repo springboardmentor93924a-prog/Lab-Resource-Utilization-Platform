@@ -32,6 +32,7 @@ public class InstitutionService {
     private final com.labresource.backend.auth.repository.PasswordResetTokenRepository passwordResetTokenRepository;
     private final com.labresource.backend.notification.service.NotificationService notificationService;
     private final com.labresource.backend.common.util.EmailService emailService;
+    private final com.labresource.backend.settings.service.SystemSettingsService systemSettingsService;
 
     public List<InstitutionDto> getAll() {
         return institutionRepository.findAll().stream()
@@ -46,21 +47,22 @@ public class InstitutionService {
                 .toList();
     }
 
+    public List<InstitutionDto> getActiveInstitutions() {
+        return institutionRepository.findAll().stream()
+                .filter(i -> Boolean.TRUE.equals(i.getIsActive()))
+                .map(this::enrichWithAdminDetails)
+                .toList();
+    }
+
     public InstitutionDto getById(Long id) {
         Institution inst = institutionRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Institution not found."));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Institution not found with id: " + id));
         return enrichWithAdminDetails(inst);
     }
 
     public Institution getEntity(Long id) {
         return institutionRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Institution not found."));
-    }
-
-    public List<InstitutionDto> getActiveInstitutions() {
-        return institutionRepository.findByApprovalStatusIgnoreCaseAndIsActiveTrue("APPROVED").stream()
-                .map(this::enrichWithAdminDetails)
-                .toList();
     }
 
     public boolean isCodeTaken(String code) {
@@ -88,6 +90,9 @@ public class InstitutionService {
 
     @Transactional
     public InstitutionDto registerInstitution(InstitutionRegistrationRequestDto dto) {
+        if (!systemSettingsService.isInstitutionRegistrationEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Institution registration is currently disabled by system administrator.");
+        }
         if (dto.getName() == null || dto.getName().trim().isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Institution name is required.");
         }

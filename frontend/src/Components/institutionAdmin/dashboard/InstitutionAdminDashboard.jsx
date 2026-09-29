@@ -13,8 +13,10 @@ import ReportsContainer from "../../reports/ReportsContainer.jsx";
 import Billing from "../billing/Billing.jsx";
 import AuditLogs from "../audit/AuditLogs.jsx";
 import Profile from "../profile/Profile.jsx";
+import Notifications from "../notifications/Notifications.jsx";
 import { equipmentApi } from "../../../api/equipmentApi.js";
 import { sharingApi } from "../../../api/sharingApi.js";
+import { notificationApi } from "../../../api/notificationApi.js";
 import { API_BASE_URL } from "../../../api/client.js";
 
 /* ================================================================== */
@@ -24,6 +26,7 @@ export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
   const [view, setView] = useState("home");
   const [equipment, setEquipment] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   const [incomingSharingCount, setIncomingSharingCount] = useState(0);
   const [selectedDepartment, setSelectedDepartment] = useState("ALL");
@@ -55,7 +58,27 @@ export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
     sharingApi.getIncomingRequests()
       .then((data) => setIncomingSharingCount(Array.isArray(data) ? data.filter((r) => r.status === "PENDING").length : 0))
       .catch(() => setIncomingSharingCount(0));
+
+    // Fetch real notifications from backend via notificationApi
+    notificationApi.list()
+      .then((data) => setNotifications(data || []))
+      .catch((err) => console.warn("Could not fetch notifications for institution admin:", err));
   }, [user]);
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !(n.isRead ?? n.read)).length;
+  }, [notifications]);
+
+  const markNotifRead = async (id) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications((list) =>
+        list.map((n) => ((n.notificationId === id || n.id === id) ? { ...n, isRead: true, read: true } : n))
+      );
+    } catch (err) {
+      toast(err?.message || "Could not update notification.", "error");
+    }
+  };
 
   const departments = useMemo(() => [...new Set(equipment.map((e) => e.departmentName || e.department).filter(Boolean))].sort(), [equipment]);
 
@@ -84,6 +107,7 @@ export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
       roleLabel="Institution Administrator"
       roleTag="Signed in as"
       userName={user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || "Administrator"}
+      notifCount={unreadCount}
     >
       {view === "home" && (
         <HomeView
@@ -116,6 +140,7 @@ export default function InstitutionAdminDashboard({ user, onLogout, toast }) {
       )}
       {view === "billing" && <Billing />}
       {view === "audit" && <AuditLogs />}
+      {view === "notifications" && <Notifications notifications={notifications} onRead={markNotifRead} />}
       {view === "profile" && <Profile user={user} toast={toast} />}
     </DashboardShell>
   );

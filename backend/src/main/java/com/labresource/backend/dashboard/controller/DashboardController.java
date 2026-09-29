@@ -1,12 +1,16 @@
 package com.labresource.backend.dashboard.controller;
 
+import com.labresource.backend.audit.repository.AuditLogRepository;
+import com.labresource.backend.auth.repository.AppUserRepository;
 import com.labresource.backend.booking.entity.Booking;
 import com.labresource.backend.booking.repository.BookingRepository;
 import com.labresource.backend.calibration.repository.EquipmentCalibrationRepository;
 import com.labresource.backend.equipment.entity.Equipment;
 import com.labresource.backend.equipment.repository.EquipmentRepository;
+import com.labresource.backend.institution.repository.InstitutionRepository;
 import com.labresource.backend.issuereport.entity.EquipmentIssueReport;
 import com.labresource.backend.issuereport.repository.EquipmentIssueReportRepository;
+import com.labresource.backend.laboratory.repository.LaboratoryRepository;
 import com.labresource.backend.maintenance.entity.MaintenanceRequest;
 import com.labresource.backend.maintenance.repository.MaintenanceRequestRepository;
 import com.labresource.backend.notification.repository.NotificationRepository;
@@ -45,6 +49,10 @@ public class DashboardController {
     private final WaitlistRepository waitlistRepository;
     private final ResourceSharingRequestRepository sharingRequestRepository;
     private final EquipmentCalibrationRepository calibrationRepository;
+    private final InstitutionRepository institutionRepository;
+    private final AppUserRepository appUserRepository;
+    private final LaboratoryRepository laboratoryRepository;
+    private final AuditLogRepository auditLogRepository;
 
     // Student Dashboard
 
@@ -383,6 +391,46 @@ public class DashboardController {
         dashboard.put("totalSharingRequests", sharingRequests.size());
         dashboard.put("activeSharingAgreements", sharingRequests.stream()
                 .filter(r -> "APPROVED".equals(r.getStatus())).count());
+
+        return dashboard;
+    }
+
+    // System Admin Dashboard
+
+    @GetMapping("/system-admin")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN', 'ROLE_SYSTEM_ADMIN')")
+    public Map<String, Object> systemAdminDashboard() {
+        Map<String, Object> dashboard = new HashMap<>();
+
+        long totalInstitutions = institutionRepository.count();
+        long pendingInstitutions = institutionRepository.findAll().stream()
+                .filter(i -> "PENDING".equalsIgnoreCase(i.getApprovalStatus()))
+                .count();
+        long approvedInstitutions = institutionRepository.findAll().stream()
+                .filter(i -> "APPROVED".equalsIgnoreCase(i.getApprovalStatus()) || Boolean.TRUE.equals(i.getIsActive()))
+                .count();
+
+        long totalUsers = appUserRepository.count();
+        long activeUsers = appUserRepository.findAll().stream()
+                .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                .count();
+        long pendingUsers = totalUsers - activeUsers;
+
+        long totalLaboratories = laboratoryRepository.count();
+        long totalEquipment = equipmentRepository.count();
+
+        dashboard.put("totalInstitutions", totalInstitutions);
+        dashboard.put("pendingInstitutions", pendingInstitutions);
+        dashboard.put("approvedInstitutions", approvedInstitutions);
+        dashboard.put("totalUsers", totalUsers);
+        dashboard.put("activeUsers", activeUsers);
+        dashboard.put("pendingUsers", pendingUsers);
+        dashboard.put("totalLaboratories", totalLaboratories);
+        dashboard.put("totalEquipment", totalEquipment);
+        dashboard.put("recentAuditLogs", auditLogRepository.findTop50ByOrderByTimestampDesc().stream().limit(10).toList());
+        dashboard.put("recentInstitutions", institutionRepository.findAll().stream()
+                .sorted((a, b) -> (b.getCreatedAt() != null && a.getCreatedAt() != null) ? b.getCreatedAt().compareTo(a.getCreatedAt()) : 0)
+                .limit(5).toList());
 
         return dashboard;
     }

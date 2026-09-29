@@ -12,29 +12,21 @@ import Reports from "../reports/Reports.jsx";
 import Profile from "../profile/Profile.jsx";
 import { SharingControlCenter } from "../sharing/SharingControlCenter.jsx";
 import MaintenanceOversightView from "../../shared/MaintenanceOversightView.jsx";
+import Notifications from "../notifications/Notifications.jsx";
 import { equipmentApi } from "../../../api/equipmentApi.js";
+import { notificationApi } from "../../../api/notificationApi.js";
 
 /* ================================================================== */
 /*  Department Head -> Dashboard (orchestrator: state + nav + Home)     */
-/*                                                                       */
-/*  IMPORTANT: This dashboard used to include an "Inter-Institution      */
-/*  Requests" sharing feature (SharingView + DEMO_SHARING_REQUESTS).     */
-/*  Per the strict requirement that equipment sharing must exist ONLY    */
-/*  under Institution Admin, that feature (and its demo data) has been   */
-/*  moved to institutionAdmin/sharing/DepartmentSharingRequests.jsx,     */
-/*  reachable there as the "Department Requests" tab. The "Cross-        */
-/*  Department Sharing Requests" stat card that used to link to it has   */
-/*  been removed from this Home view accordingly.                       */
 /* ================================================================== */
 export default function DepartmentHeadDashboard({ user, onLogout, toast }) {
   const [view, setView] = useState("home");
   const [equipment, setEquipment] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
-    const token = localStorage.getItem("labflow_token");
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     const fetchLiveData = async () => {
       try {
@@ -54,12 +46,10 @@ export default function DepartmentHeadDashboard({ user, onLogout, toast }) {
             calibrationStatus: e.calibrationStatus || "NOT_RECORDED",
             nextCalibrationDue: e.nextCalibrationDue || e.nextCalibrationDate || null,
             nextCalibration: e.nextCalibrationDue || e.nextCalibrationDate || null,
-            // Sharing fields — preserved from backend EquipmentDto
             isShareable: e.isShareable ?? false,
             externalHourlyRate: e.externalHourlyRate ?? null,
             capacityPerSlot: e.capacityPerSlot ?? null,
             specifications: e.specifications ?? null,
-            // Image — keep raw Cloudinary URL (rendered by <img> tag, NOT as text)
             imageSecureUrl: e.imageSecureUrl || null,
             image: e.imageSecureUrl || null,
           }));
@@ -68,11 +58,33 @@ export default function DepartmentHeadDashboard({ user, onLogout, toast }) {
       } catch (err) {
         console.warn("Could not fetch equipment for department head:", err);
       }
+
+      try {
+        const apiNotifs = await notificationApi.list();
+        if (isMounted) setNotifications(apiNotifs || []);
+      } catch (nErr) {
+        console.warn("Could not fetch notifications for department head:", nErr);
+      }
     };
 
     fetchLiveData();
     return () => { isMounted = false; };
   }, [user]);
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !(n.isRead ?? n.read)).length;
+  }, [notifications]);
+
+  const markNotifRead = async (id) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications((list) =>
+        list.map((n) => ((n.notificationId === id || n.id === id) ? { ...n, isRead: true, read: true } : n))
+      );
+    } catch (err) {
+      toast(err?.message || "Could not update notification.", "error");
+    }
+  };
 
   const deptEquipment = useMemo(() => {
     const userDept = (user.department || "Computer Science and Engineering").toLowerCase();
@@ -108,6 +120,7 @@ export default function DepartmentHeadDashboard({ user, onLogout, toast }) {
       roleLabel="Department Head"
       roleTag="Signed in as"
       userName={user.name}
+      notifCount={unreadCount}
     >
       {view === "home" && (
         <HomeView user={user} deptEquipment={deptEquipment} onOpenUtilization={() => setView("utilization")} />
@@ -122,6 +135,7 @@ export default function DepartmentHeadDashboard({ user, onLogout, toast }) {
       )}
       {view === "budget" && <Budget deptEquipment={deptEquipment} />}
       {view === "reports" && <Reports user={user} toast={toast} />}
+      {view === "notifications" && <Notifications notifications={notifications} onRead={markNotifRead} />}
       {view === "profile" && <Profile user={user} toast={toast} />}
     </DashboardShell>
   );

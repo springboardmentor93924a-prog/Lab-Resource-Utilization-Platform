@@ -3,12 +3,12 @@ import { ViewHeader } from "../../common/ViewHeader.jsx";
 import { EmptyState } from "../../common/EmptyState.jsx";
 
 /* ================================================================== */
-/*  Manager -> Notifications                                            */
+/*  Department Head -> Notifications                                  */
 /* ================================================================== */
 export default function Notifications({ notifications, onRead }) {
   return (
     <div>
-      <ViewHeader title="Notifications" subtitle="Booking requests, maintenance alerts, and utilization reports." />
+      <ViewHeader title="Notifications" subtitle="Department alerts, resource updates, and system notices." />
       {notifications.length === 0 ? (
         <EmptyState icon={Bell} title="You're all caught up" />
       ) : (

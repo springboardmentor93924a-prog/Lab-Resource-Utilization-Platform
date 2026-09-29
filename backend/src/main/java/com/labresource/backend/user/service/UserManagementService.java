@@ -1,5 +1,6 @@
 package com.labresource.backend.user.service;
 
+import com.labresource.backend.auth.dto.UserSummaryDto;
 import com.labresource.backend.auth.entity.AppUser;
 import com.labresource.backend.auth.repository.AppUserRepository;
 import com.labresource.backend.billing.repository.CostRecordRepository;
@@ -524,5 +525,83 @@ public class UserManagementService {
         } catch (Exception e) {
             log.warn("Failed to send deactivation email to {}: {}", target.getEmail(), e.getMessage());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserSummaryDto> getAllUsers(String role, String status, Long institutionId, String search) {
+        List<AppUser> users = appUserRepository.findAll();
+
+        return users.stream()
+                .filter(u -> institutionId == null || (u.getInstitutionId() != null && u.getInstitutionId().equals(institutionId)))
+                .filter(u -> {
+                    if (role == null || role.isBlank() || "ALL".equalsIgnoreCase(role)) return true;
+                    return u.getRoles().stream().anyMatch(r -> r.getRoleName().equalsIgnoreCase(role.trim()));
+                })
+                .filter(u -> {
+                    if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) return true;
+                    if ("ACTIVE".equalsIgnoreCase(status)) return Boolean.TRUE.equals(u.getIsActive());
+                    if ("INACTIVE".equalsIgnoreCase(status)) return !Boolean.TRUE.equals(u.getIsActive());
+                    return true;
+                })
+                .filter(u -> {
+                    if (search == null || search.isBlank()) return true;
+                    String q = search.trim().toLowerCase();
+                    String fullName = (u.getFirstName() + " " + (u.getLastName() != null ? u.getLastName() : "")).toLowerCase();
+                    String email = u.getEmail() != null ? u.getEmail().toLowerCase() : "";
+                    String phone = u.getPhoneNumber() != null ? u.getPhoneNumber() : "";
+                    return fullName.contains(q) || email.contains(q) || phone.contains(q);
+                })
+                .map(this::enrichUserSummary)
+                .toList();
+    }
+
+    @Transactional
+    public UserSummaryDto toggleUserActiveStatus(UserPrincipal admin, Long targetUserId, String reason) {
+        AppUser target = appUserRepository.findById(targetUserId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found."));
+
+        if (Boolean.TRUE.equals(target.getIsActive())) {
+            // Deactivating
+            if (reason == null || reason.trim().isBlank()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Deactivation reason is mandatory when deactivating an account.");
+            }
+            target.setIsActive(false);
+            target.setDeactivatedAt(LocalDateTime.now());
+            target.setDeactivationReason(reason.trim());
+            target.setDeactivatedBy(admin.getUserId());
+        } else {
+            // Reactivating
+            target.setIsActive(true);
+            target.setDeactivationReason(null);
+        }
+
+        AppUser saved = appUserRepository.save(target);
+        log.info("User ID {} active status toggled to {} by System Admin ID {}", targetUserId, saved.getIsActive(), admin.getUserId());
+        return enrichUserSummary(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserSummaryDto> getPendingRegistrations() {
+        return appUserRepository.findAll().stream()
+                .filter(u -> !Boolean.TRUE.equals(u.getIsActive()) && Boolean.TRUE.equals(u.getIsEmailVerified()) && u.getReviewedBy() == null)
+                .map(this::enrichUserSummary)
+                .toList();
+    }
+
+    private UserSummaryDto enrichUserSummary(AppUser user) {
+        UserSummaryDto dto = UserSummaryDto.fromEntity(user);
+        if (user.getInstitutionId() != null) {
+            institutionRepository.findById(user.getInstitutionId()).ifPresent(inst -> {
+                dto.setInstitutionName(inst.getName());
+                dto.setInstitutionCode(inst.getCode());
+            });
+        }
+        if (user.getDepartmentId() != null) {
+            departmentRepository.findById(user.getDepartmentId()).ifPresent(dept -> {
+                dto.setDepartmentName(dept.getName());
+                dto.setDepartmentCode(dept.getCode());
+            });
+        }
+        return dto;
     }
 }

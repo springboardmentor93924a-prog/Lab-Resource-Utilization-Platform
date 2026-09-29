@@ -289,4 +289,15 @@ public class StaffInvitationService {
         inv.setStatus(StaffInvitation.STATUS_CANCELLED);
         invitationRepository.save(inv);
     }
+
+    @Transactional(readOnly = true)
+    public List<StaffInvitationResponseDto> getAllInvitations() {
+        return invitationRepository.findAll().stream()
+                .map(inv -> {
+                    String instName = institutionRepository.findById(inv.getInstitutionId()).map(Institution::getName).orElse("Institution");
+                    String deptName = departmentRepository.findById(inv.getDepartmentId()).map(Department::getName).orElse("Department");
+                    return StaffInvitationResponseDto.fromEntity(inv, instName, deptName);
+                })
+                .toList();
+    }
 }

@@ -36,9 +36,13 @@ public class AuthService {
     private final com.labresource.backend.otp.repository.OtpVerificationRepository otpVerificationRepository;
     private final com.labresource.backend.session.service.SessionService sessionService;
     private final com.labresource.backend.notification.service.NotificationService notificationService;
+    private final com.labresource.backend.settings.service.SystemSettingsService systemSettingsService;
 
     @Transactional
     public UserSummaryDto register(RegisterRequest request) {
+        if (!systemSettingsService.isResearcherRegistrationEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "User registration is currently disabled by system administrator.");
+        }
         String normalizedEmail = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : "";
         if (normalizedEmail.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Email is required.");
@@ -229,6 +233,11 @@ public class AuthService {
                 msg += " Reason: " + user.getDeactivationReason();
             }
             throw new ApiException(HttpStatus.FORBIDDEN, msg);
+        }
+
+        boolean isSysAdmin = user.getRoles().stream().anyMatch(r -> Role.SYSTEM_ADMIN.equals(r.getRoleName()));
+        if (systemSettingsService.isMaintenanceMode() && !isSysAdmin) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "Platform is currently under scheduled maintenance. Only System Administrators may log in at this time.");
         }
 
         UserPrincipal principal = new UserPrincipal(user);

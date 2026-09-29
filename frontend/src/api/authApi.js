@@ -22,4 +22,22 @@ export const authApi = {
   setupPassword: (payload) => apiFetch("/auth/setup-password", { method: "POST", body: payload }),
   sendOtp: (email, purpose) => apiFetch(`/auth/otp/send?email=${encodeURIComponent(email)}&purpose=${encodeURIComponent(purpose)}`, { method: "POST" }),
   verifyOtp: (email, purpose, otp) => apiFetch(`/auth/otp/verify?email=${encodeURIComponent(email)}&purpose=${encodeURIComponent(purpose)}&otp=${encodeURIComponent(otp)}`, { method: "POST" }),
+  getSystemAdminDashboard: () => apiFetch("/dashboard/system-admin"),
+  getAuditLogs: () => apiFetch("/audit-logs"),
+  getAllUsers: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.role) query.append("role", params.role);
+    if (params.status) query.append("status", params.status);
+    if (params.institutionId) query.append("institutionId", params.institutionId);
+    if (params.search) query.append("search", params.search);
+    const qStr = query.toString();
+    return apiFetch(`/users/all${qStr ? `?${qStr}` : ""}`);
+  },
+  toggleUserActiveStatus: (userId, reason) =>
+    apiFetch(`/users/${userId}/toggle-active`, { method: "POST", body: { reason } }),
+  getPendingRegistrations: () => apiFetch("/users/pending-registrations"),
+  getAllStaffInvitations: () => apiFetch("/staff/invitations/all"),
+  getPlatformAnalytics: () => apiFetch("/system-admin/analytics"),
+  getSystemSettings: () => apiFetch("/system-admin/settings"),
+  updateSystemSettings: (payload) => apiFetch("/system-admin/settings", { method: "PUT", body: payload }),
 };

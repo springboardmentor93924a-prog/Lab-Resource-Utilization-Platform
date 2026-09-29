@@ -18,6 +18,7 @@ import { formatDateTime } from "../../../utils/formatters.js";
 import { maintenanceApi } from "../../../api/maintenanceApi.js";
 import { equipmentApi } from "../../../api/equipmentApi.js";
 import { bookingApi } from "../../../api/bookingApi.js";
+import { notificationApi } from "../../../api/notificationApi.js";
 
 /* ================================================================== */
 /*  Manager -> Dashboard (orchestrator: state + nav + Home view)       */
@@ -63,6 +64,14 @@ export default function ManagerDashboard({ user, onLogout, toast }) {
     } catch (bkErr) {
       console.warn("Could not fetch real bookings for manager:", bkErr);
     }
+
+    // Fetch real notifications from backend via notificationApi
+    try {
+      const apiNotifs = await notificationApi.list();
+      setNotifications(apiNotifs || []);
+    } catch (nErr) {
+      console.warn("Could not fetch notifications for manager:", nErr);
+    }
   }, [user?.institutionId]);
 
   useEffect(() => {
@@ -80,7 +89,9 @@ export default function ManagerDashboard({ user, onLogout, toast }) {
   const [rejectTarget, setRejectTarget] = useState(null); // booking
 
   const equipmentById = useMemo(() => Object.fromEntries(equipment.map((e) => [e.id, e])), [equipment]);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !(n.isRead ?? n.read)).length;
+  }, [notifications]);
 
   const deptEquipment = useMemo(() => {
     const userDept = (user?.department || "Computer Science and Engineering").toLowerCase();
@@ -176,7 +187,16 @@ export default function ManagerDashboard({ user, onLogout, toast }) {
 
 
 
-  const markNotifRead = (id) => setNotifications((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  const markNotifRead = async (id) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications((list) =>
+        list.map((n) => ((n.notificationId === id || n.id === id) ? { ...n, isRead: true, read: true } : n))
+      );
+    } catch (err) {
+      toast(err?.message || "Could not update notification.", "error");
+    }
+  };
 
   const handleReportIssue = (issueData) => {
     const ticketId = `WO-${Date.now().toString().slice(-6)}`;
