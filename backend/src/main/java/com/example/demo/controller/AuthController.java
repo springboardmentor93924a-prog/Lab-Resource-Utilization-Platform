@@ -112,9 +112,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
+        System.out.println(">>> LOGIN ATTEMPT for email: " + request.getEmail());
+
         User user = userRepository
                 .findByEmail(request.getEmail())
                 .orElse(null);
+
+        System.out.println(">>> User found in DB: " + (user != null));
+        if (user != null) {
+            System.out.println(">>> Password matches: " + passwordEncoder.matches(request.getPassword(), user.getPassword()));
+        }
 
         if (user == null ||
                 !passwordEncoder.matches(

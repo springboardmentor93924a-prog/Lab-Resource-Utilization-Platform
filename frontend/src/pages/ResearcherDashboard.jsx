@@ -50,7 +50,7 @@ export default function ResearcherDashboard() {
   }
 
   const availableCount = equipmentList.filter((e) => e.status?.toUpperCase() === "AVAILABLE").length;
-    const upcomingBookings = myBookings.filter(
+  const upcomingBookings = myBookings.filter(
     (b) => b.bookingStatus === "PENDING_APPROVAL" || b.bookingStatus === "CONFIRMED"
   );
   const waitlistCount = myBookings.filter((b) => b.bookingStatus === "WAITLISTED").length;
@@ -68,59 +68,84 @@ export default function ResearcherDashboard() {
         <div className="rd-topbar">
           <h4>Researcher dashboard</h4>
           <div className="rd-top-right">
-
-    <button
-        className="profile-circle"
-        onClick={() => navigate("/profile")}
-        title="My Profile"
-        aria-label="My Profile"
-    ><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.1c0 .7.5 1.2 1.2 1.2h17.2c.7 0 1.2-.5 1.2-1.2v-2.1c0-3.3-6.5-4.9-9.8-4.9z"/></svg></button>
-</div>
+            <button
+              className="profile-circle"
+              onClick={() => navigate("/profile")}
+              title="My Profile"
+              aria-label="My Profile"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.1c0 .7.5 1.2 1.2 1.2h17.2c.7 0 1.2-.5 1.2-1.2v-2.1c0-3.3-6.5-4.9-9.8-4.9z"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="stats">
+          {/* MY BOOKINGS */}
+          <div
+            className="card stat blue"
+            onClick={() => navigate("/my-bookings")}
+            style={{ 
+              cursor: "pointer", 
+              background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)", 
+              color: "#ffffff",
+              borderRadius: "12px",
+              padding: "20px"
+            }}
+          >
+            <big><b style={{ color: "#ffffff" }}>My bookings</b></big>
+            <h2 style={{ color: "#ffffff", margin: "8px 0 0", fontSize: "1.8rem" }}>{upcomingBookings.length} upcoming</h2>
+          </div>
 
-  {/* MY BOOKINGS */}
-  <div
-    className="card stat blue"
-    onClick={() => navigate("/my-bookings")}
-    style={{ cursor: "pointer" }}
-  >
-    <big><b>My bookings</b></big>
-    <h2>{upcomingBookings.length} upcoming</h2>
-  </div>
+          {/* AVAILABLE EQUIPMENT */}
+          <div
+            className="card stat green"
+            onClick={() => navigate("/equipment?status=AVAILABLE")}
+            style={{ 
+              cursor: "pointer", 
+              background: "linear-gradient(135deg, #065f46 0%, #10b981 100%)", 
+              color: "#ffffff",
+              borderRadius: "12px",
+              padding: "20px"
+            }}
+          >
+            <big><b style={{ color: "#ffffff" }}>Available now</b></big>
+            <h2 style={{ color: "#ffffff", margin: "8px 0 0", fontSize: "1.8rem" }}>{availableCount} items</h2>
+          </div>
 
-  {/* AVAILABLE EQUIPMENT */}
-  <div
-    className="card stat green"
-    onClick={() => navigate("/equipment?status=AVAILABLE")}
-    style={{ cursor: "pointer" }}
-  >
-    <big><b>Available now</b></big>
-    <h2>{availableCount} items</h2>
-  </div>
+          {/* WAITLIST */}
+          <div
+            className="card stat orange"
+            onClick={() => navigate("/my-waitlist")}
+            style={{ 
+              cursor: "pointer", 
+              background: "linear-gradient(135deg, #78350f 0%, #f59e0b 100%)", 
+              color: "#ffffff",
+              borderRadius: "12px",
+              padding: "20px"
+            }}
+          >
+            <big><b style={{ color: "#ffffff" }}>Waitlisted</b></big>
+            <h2 style={{ color: "#ffffff", margin: "8px 0 0", fontSize: "1.8rem" }}>{waitlistCount} items</h2>
+          </div>
 
-  {/* WAITLIST */}
-  <div
-    className="card stat orange"
-    onClick={() => navigate("/my-waitlist")}
-    style={{ cursor: "pointer" }}
-  >
-    <big><b>Waitlisted</b></big>
-    <h2>{waitlistCount} items</h2>
-  </div>
-
-  {/* NOTIFICATIONS */}
-  <div
-    className="card stat gray"
-    onClick={() => navigate("/notifications")}
-    style={{ cursor: "pointer" }}
-  >
-    <big><b>Notifications</b></big>
-    <h2>{unreadCount} new</h2>
-  </div>
-
-</div>
+          {/* NOTIFICATIONS */}
+          <div
+            className="card stat purple"
+            onClick={() => navigate("/notifications")}
+            style={{ 
+              cursor: "pointer", 
+              background: "linear-gradient(135deg, #4c1d95 0%, #8b5cf6 100%)", 
+              color: "#ffffff",
+              borderRadius: "12px",
+              padding: "20px"
+            }}
+          >
+            <big><b style={{ color: "#ffffff" }}>Notifications</b></big>
+            <h2 style={{ color: "#ffffff", margin: "8px 0 0", fontSize: "1.8rem" }}>{unreadCount} new</h2>
+          </div>
+        </div>
 
         <h5 className="section-title">Upcoming reservations</h5>
         <div className="reservation-box">
@@ -138,25 +163,23 @@ export default function ResearcherDashboard() {
         <div className="equipment">
           {loading && <p>Loading equipment...</p>}
           {!loading && recommended.map((eq) => (
-  <div className="equipment-card" key={eq.equipmentId}>
-    <img
-      src={eq.imageUrl}
-      alt={eq.name}
-      style={{ width: "100%", height: "140px", objectFit: "cover", borderRadius: "8px", marginBottom: "10px" }}
-    />
-    <h6>{eq.name}</h6>
-    <span className="badge bg-success rounded-pill">
-      {eq.status?.toUpperCase() === "AVAILABLE" ? "Available" : eq.status}
-    </span>
-    <button className="btn btn-outline-dark mt-3" onClick={() => handleBookNow(eq.equipmentId)}>
-      Book now
-    </button>
-  </div>
-))}
+            <div className="equipment-card" key={eq.equipmentId}>
+              <img
+                src={eq.imageUrl}
+                alt={eq.name}
+                style={{ width: "100%", height: "140px", objectFit: "cover", borderRadius: "8px", marginBottom: "10px" }}
+              />
+              <h6>{eq.name}</h6>
+              <span className="badge bg-success rounded-pill">
+                {eq.status?.toUpperCase() === "AVAILABLE" ? "Available" : eq.status}
+              </span>
+              <button className="btn btn-outline-dark mt-3" onClick={() => handleBookNow(eq.equipmentId)}>
+                Book now
+              </button>
+            </div>
+          ))}
         </div>
       </main>
     </div>
   );
 }
-
-

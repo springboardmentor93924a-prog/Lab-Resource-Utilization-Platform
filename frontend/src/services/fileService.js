@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://lab-resource-utilization-platform-o09v.onrender.com/api/files";
+const API_BASE_URL = "http://localhost:8080/api/files";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -25,6 +25,7 @@ export async function uploadFile(file) {
 export function getFileUrl(filename) {
   return `${API_BASE_URL}/${filename}`;
 }
+
 export async function downloadFileAsBlob(filename) {
   const response = await api.get(`/${filename}`, { responseType: "blob" });
   const blobUrl = window.URL.createObjectURL(response.data);
