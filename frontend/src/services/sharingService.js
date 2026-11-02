@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/auth";
+const API_BASE_URL = "https://lab-resource-utilization-platform.onrender.com/auth";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
 });
 
 export async function getCurrentUserInfo() {
-  const { data } = await axios.get("http://localhost:8080/auth/me", {
+  const { data } = await axios.get("https://lab-resource-utilization-platform.onrender.com/auth/me", {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
   return data;

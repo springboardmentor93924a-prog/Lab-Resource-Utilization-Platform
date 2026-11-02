@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./EquipmentDetail.css";
@@ -125,7 +125,7 @@ export default function EquipmentDetail() {
   onClick={() => navigate("/profile")}
   title="My Profile"
 >
-  👤
+  ??
 </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function EquipmentDetail() {
                 {specs.map((spec) => (
                   <tr key={spec.label}>
                     <td>{spec.label}</td>
-                    <td>{spec.value || "—"}</td>
+                    <td>{spec.value || "�"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -188,7 +188,7 @@ export default function EquipmentDetail() {
             {bookingHistory.length === 0 && <p>No bookings yet.</p>}
             {bookingHistory.map((b) => (
               <div className="row-item" key={b.id}>
-                <span>{b.userFullName} — {b.bookingDate}, {b.startTime}-{b.endTime}</span>
+                <span>{b.userFullName} � {b.bookingDate}, {b.startTime}-{b.endTime}</span>
                 <span className="badge bg-secondary rounded-pill">{b.bookingStatus}</span>
               </div>
             ))}

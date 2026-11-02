@@ -1,4 +1,4 @@
-﻿export function getCurrentUserId() {
+export function getCurrentUserId() {
   const token = localStorage.getItem("token");
   if (!token) return null;
   try {
